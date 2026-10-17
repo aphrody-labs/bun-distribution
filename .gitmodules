@@ -569,3 +569,6 @@
 	path = packages/iecode-docs
 	url = https://github.com/aphrody-labs/iecode-docs.git
 	branch = os
+[submodule "crates/apkeep"]
+	path = crates/apkeep
+	url = https://github.com/aphrody-labs/apkeep.git
