@@ -1,0 +1,368 @@
+{
+  "schemaVersion": 1,
+  "note": "Frontend system list (EmulationStation/Recalbox style). `probe` arguments (exit codes in `probeExit`, default 0) qualify a release binary without a game. Each system maps console catalog ids to file extensions, the native Bun Engine machine, upstream release binaries installed by bep (usr/bin) and libretro cores run through RetroArch, in launch-priority order. `dats` are libretro-database files (vendor/libretro-database) matched by CRC32/MD5. `autoDetect` lists extensions too generic to assign a system from the extension alone.",
+  "autoDetect": {
+    "exclude": [
+      "md",
+      "bin",
+      "iso",
+      "img",
+      "chd",
+      "cue",
+      "zip",
+      "7z",
+      "elf",
+      "exe",
+      "pbp",
+      "cso",
+      "pkg",
+      "app"
+    ]
+  },
+  "emulators": {
+    "tetanes": { "args": ["{file}"], "probe": ["--help"] },
+    "mgba": { "args": ["{file}"], "probe": ["--version"] },
+    "melonds": { "args": ["{file}"], "probe": ["--help"] },
+    "gopher64": { "args": ["{file}"], "probe": ["--help"] },
+    "ares": { "args": ["{file}"], "probe": ["--help"] },
+    "duckstation": {
+      "args": ["-batch", "--", "{file}"],
+      "probe": ["-help"],
+      "probeExit": [0, 1]
+    },
+    "pcsx2": {
+      "args": ["-batch", "--", "{file}"],
+      "probe": ["-help"],
+      "probeExit": [0, 1]
+    },
+    "rpcs3": { "args": ["--no-gui", "{file}"], "probe": ["--version"] },
+    "ppsspp": { "args": ["{file}"], "probe": ["--version"] },
+    "vita3k": { "args": ["{file}"], "probe": ["--help"] },
+    "shadps4": { "args": ["-g", "{file}"], "probe": ["--help"] },
+    "azahar": { "args": ["{file}"], "probe": ["-v"] },
+    "cemu": { "args": ["-g", "{file}"], "probe": ["--help"] },
+    "xemu": { "args": ["-dvd_path", "{file}"], "probe": ["-version"] },
+    "flycast": { "args": ["{file}"], "probe": ["--help"] },
+    "jgenesis": { "args": ["--file-path", "{file}"], "probe": ["--help"] },
+    "mame": { "args": ["-rompath", "{dir}", "{stem}"], "probe": ["-version"] },
+    "retroarch": {
+      "args": ["-L", "{core}", "{file}"],
+      "probe": ["--version"],
+      "check": ["-L", "{core}", "{file}", "--max-frames=120"]
+    }
+  },
+  "systems": [
+    {
+      "id": "nes",
+      "name": "Nintendo Entertainment System",
+      "manufacturer": "Nintendo",
+      "year": 1983,
+      "consoles": ["nintendo-nes"],
+      "extensions": ["nes", "unf", "unif", "fds"],
+      "native": { "machine": "nes", "extensions": ["nes"] },
+      "binaries": ["tetanes", "ares", "mame"],
+      "libretro": ["nestopia", "fceumm", "mesen"],
+      "dats": [
+        "metadat/no-intro/Nintendo - Nintendo Entertainment System.dat",
+        "metadat/homebrew/Nintendo - Nintendo Entertainment System.dat"
+      ],
+      "headerBytes": { "nes": 16 }
+    },
+    {
+      "id": "snes",
+      "name": "Super Nintendo",
+      "manufacturer": "Nintendo",
+      "year": 1990,
+      "consoles": [],
+      "extensions": ["sfc", "smc"],
+      "binaries": ["jgenesis", "ares"],
+      "libretro": ["snes9x", "bsnes"],
+      "dats": [
+        "metadat/no-intro/Nintendo - Super Nintendo Entertainment System.dat",
+        "metadat/homebrew/Nintendo - Super Nintendo Entertainment System.dat"
+      ]
+    },
+    {
+      "id": "gb",
+      "name": "Game Boy / Game Boy Color",
+      "manufacturer": "Nintendo",
+      "year": 1989,
+      "consoles": ["nintendo-game-boy"],
+      "extensions": ["gb", "gbc", "sgb"],
+      "binaries": ["mgba", "ares", "jgenesis"],
+      "libretro": ["gambatte", "sameboy", "mgba"],
+      "dats": [
+        "metadat/no-intro/Nintendo - Game Boy.dat",
+        "metadat/no-intro/Nintendo - Game Boy Color.dat"
+      ]
+    },
+    {
+      "id": "gba",
+      "name": "Game Boy Advance",
+      "manufacturer": "Nintendo",
+      "year": 2001,
+      "consoles": ["nintendo-game-boy-advance", "nintendo-3ds-gba"],
+      "extensions": ["gba", "agb"],
+      "native": {
+        "machine": "gba",
+        "extensions": ["gba", "agb"],
+        "bios": {
+          "console": "nintendo-game-boy-advance",
+          "freeFirmware": "normmatt-gba-bios",
+          "required": false
+        }
+      },
+      "binaries": ["mgba", "ares"],
+      "libretro": ["mgba", "gpsp"],
+      "dats": [
+        "metadat/no-intro/Nintendo - Game Boy Advance.dat",
+        "metadat/homebrew/Nintendo - Game Boy Advance.dat"
+      ]
+    },
+    {
+      "id": "nds",
+      "name": "Nintendo DS",
+      "manufacturer": "Nintendo",
+      "year": 2004,
+      "consoles": ["nintendo-ds", "nintendo-ds-dsi"],
+      "extensions": ["nds", "dsi", "srl"],
+      "native": { "machine": "nds", "extensions": ["nds", "srl"] },
+      "binaries": ["melonds"],
+      "libretro": ["melondsds", "melonds", "desmume"],
+      "dats": [
+        "metadat/no-intro/Nintendo - Nintendo DS.dat",
+        "metadat/no-intro/Nintendo - Nintendo DSi.dat"
+      ]
+    },
+    {
+      "id": "3ds",
+      "name": "Nintendo 3DS",
+      "manufacturer": "Nintendo",
+      "year": 2011,
+      "consoles": ["nintendo-3ds"],
+      "extensions": ["3ds", "cci", "cxi", "3dsx", "cia", "app"],
+      "binaries": ["azahar"],
+      "libretro": ["citra"],
+      "dats": ["metadat/no-intro/Nintendo - Nintendo 3DS.dat"]
+    },
+    {
+      "id": "n64",
+      "name": "Nintendo 64",
+      "manufacturer": "Nintendo",
+      "year": 1996,
+      "consoles": ["nintendo-64"],
+      "extensions": ["z64", "n64", "v64"],
+      "binaries": ["gopher64", "ares"],
+      "libretro": ["mupen64plus_next", "parallel_n64"],
+      "dats": ["metadat/no-intro/Nintendo - Nintendo 64.dat"]
+    },
+    {
+      "id": "gc",
+      "name": "GameCube",
+      "manufacturer": "Nintendo",
+      "year": 2001,
+      "consoles": ["nintendo-wii-gamecube"],
+      "extensions": ["dol", "gcm", "iso", "rvz", "ciso", "gcz"],
+      "native": { "machine": "gc", "extensions": ["dol"] },
+      "binaries": [],
+      "libretro": ["dolphin"],
+      "dats": [
+        "metadat/redump/Nintendo - GameCube.dat",
+        "metadat/homebrew/Nintendo - GameCube.dat"
+      ]
+    },
+    {
+      "id": "wii",
+      "name": "Wii",
+      "manufacturer": "Nintendo",
+      "year": 2006,
+      "consoles": ["nintendo-wii-gamecube"],
+      "extensions": ["dol", "wbfs", "iso", "rvz", "wad"],
+      "native": { "machine": "wii", "extensions": ["dol"] },
+      "binaries": [],
+      "libretro": ["dolphin"],
+      "dats": ["metadat/redump/Nintendo - Wii.dat"]
+    },
+    {
+      "id": "wiiu",
+      "name": "Wii U",
+      "manufacturer": "Nintendo",
+      "year": 2012,
+      "consoles": [],
+      "extensions": ["wud", "wux", "wua", "rpx"],
+      "binaries": ["cemu"],
+      "libretro": [],
+      "dats": []
+    },
+    {
+      "id": "switch",
+      "name": "Nintendo Switch",
+      "manufacturer": "Nintendo",
+      "year": 2017,
+      "consoles": ["nintendo-switch"],
+      "extensions": ["nsp", "xci", "nro", "nca"],
+      "binaries": [],
+      "libretro": [],
+      "dats": []
+    },
+    {
+      "id": "psx",
+      "name": "PlayStation",
+      "manufacturer": "Sony",
+      "year": 1994,
+      "consoles": ["sony-playstation"],
+      "extensions": [
+        "exe",
+        "psexe",
+        "psx",
+        "cue",
+        "bin",
+        "chd",
+        "pbp",
+        "iso",
+        "m3u"
+      ],
+      "native": {
+        "machine": "psx",
+        "extensions": ["exe", "psexe", "psx", "bin", "iso"],
+        "bios": {
+          "console": "sony-playstation",
+          "freeFirmware": "openbios",
+          "required": true
+        }
+      },
+      "binaries": ["duckstation", "mame"],
+      "libretro": ["pcsx_rearmed", "swanstation", "mednafen_psx_hw"],
+      "dats": ["metadat/redump/Sony - PlayStation.dat"]
+    },
+    {
+      "id": "ps2",
+      "name": "PlayStation 2",
+      "manufacturer": "Sony",
+      "year": 2000,
+      "consoles": ["sony-playstation-2"],
+      "extensions": ["iso", "chd", "cso", "bin", "cue", "gz", "elf"],
+      "binaries": ["pcsx2"],
+      "libretro": ["pcsx2", "play"],
+      "dats": ["metadat/redump/Sony - PlayStation 2.dat"]
+    },
+    {
+      "id": "ps3",
+      "name": "PlayStation 3",
+      "manufacturer": "Sony",
+      "year": 2006,
+      "consoles": ["sony-playstation-3"],
+      "extensions": ["iso", "pkg", "self", "elf"],
+      "binaries": ["rpcs3"],
+      "libretro": [],
+      "dats": ["metadat/redump/Sony - PlayStation 3.dat"]
+    },
+    {
+      "id": "psp",
+      "name": "PlayStation Portable",
+      "manufacturer": "Sony",
+      "year": 2004,
+      "consoles": ["sony-psp"],
+      "extensions": ["iso", "cso", "pbp", "elf", "chd"],
+      "binaries": ["ppsspp"],
+      "libretro": ["ppsspp"],
+      "dats": ["metadat/redump/Sony - PlayStation Portable.dat"]
+    },
+    {
+      "id": "psvita",
+      "name": "PlayStation Vita",
+      "manufacturer": "Sony",
+      "year": 2011,
+      "consoles": ["sony-playstation-vita"],
+      "extensions": ["vpk"],
+      "binaries": ["vita3k"],
+      "libretro": [],
+      "dats": []
+    },
+    {
+      "id": "ps4",
+      "name": "PlayStation 4",
+      "manufacturer": "Sony",
+      "year": 2013,
+      "consoles": ["sony-playstation-4"],
+      "extensions": ["pkg", "bin"],
+      "binaries": ["shadps4"],
+      "libretro": [],
+      "dats": []
+    },
+    {
+      "id": "xbox",
+      "name": "Xbox",
+      "manufacturer": "Microsoft",
+      "year": 2001,
+      "consoles": ["microsoft-xbox"],
+      "extensions": ["iso", "xiso"],
+      "binaries": ["xemu"],
+      "libretro": [],
+      "dats": []
+    },
+    {
+      "id": "dreamcast",
+      "name": "Dreamcast",
+      "manufacturer": "Sega",
+      "year": 1998,
+      "consoles": ["sega-dreamcast"],
+      "extensions": ["cdi", "gdi", "chd", "cue"],
+      "binaries": ["flycast"],
+      "libretro": ["flycast"],
+      "dats": [
+        "metadat/redump/Sega - Dreamcast.dat",
+        "metadat/homebrew/Sega - Dreamcast.dat"
+      ]
+    },
+    {
+      "id": "megadrive",
+      "name": "Mega Drive / Genesis",
+      "manufacturer": "Sega",
+      "year": 1988,
+      "consoles": [],
+      "extensions": ["md", "gen", "smd", "bin", "sms", "gg"],
+      "binaries": ["jgenesis", "ares"],
+      "libretro": ["genesis_plus_gx", "picodrive"],
+      "dats": [
+        "metadat/no-intro/Sega - Mega Drive - Genesis.dat",
+        "metadat/homebrew/Sega - Mega Drive - Genesis.dat"
+      ]
+    },
+    {
+      "id": "arcade",
+      "name": "Arcade (MAME)",
+      "manufacturer": "Various",
+      "year": 1978,
+      "consoles": [],
+      "extensions": ["zip", "7z"],
+      "binaries": ["mame"],
+      "libretro": ["mame", "fbneo", "mame2003_plus"],
+      "dats": []
+    },
+    {
+      "id": "arm",
+      "name": "ARM firmware",
+      "manufacturer": "Bun Engine",
+      "year": 2026,
+      "consoles": [],
+      "extensions": ["bin", "img", "elf"],
+      "native": { "machine": "arm", "extensions": ["bin", "img", "elf"] },
+      "binaries": [],
+      "libretro": [],
+      "dats": []
+    },
+    {
+      "id": "x86",
+      "name": "x86 guest",
+      "manufacturer": "Bun Engine",
+      "year": 2026,
+      "consoles": [],
+      "extensions": ["img", "bin", "com"],
+      "native": { "machine": "x86", "extensions": ["img", "bin", "com"] },
+      "binaries": [],
+      "libretro": [],
+      "dats": []
+    }
+  ]
+}
