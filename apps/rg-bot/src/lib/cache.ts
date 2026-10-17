@@ -30,6 +30,11 @@ const metrics = {
 
 function getRedis(): RedisClient | null {
   if (initFailed) return null;
+  // `REDIS_URL=` (vide) : cache mémoire seul, sans tentative de connexion (rg-core, un processus par profil).
+  if (!REDIS_URL) {
+    initFailed = true;
+    return null;
+  }
   if (client) return client;
   try {
     client = new RedisClient(REDIS_URL);
