@@ -31,3 +31,12 @@ vectorcraft-format = { path = "../../crates/vectorcraft-format" }
 vectorcraft-text = { path = "../../crates/vectorcraft-text" }
 egui = "0.36"
 log = "0.4"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# `wgpu` pulls egui-wgpu's defaults: WebGPU plus the WebGL2 fallback.
+eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit"] }
+rfd = { workspace = true }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement", "HtmlIFrameElement", "HtmlAnchorElement", "Blob", "BlobPropertyBag", "ClipboardEvent", "DataTransfer", "File", "FileList", "Url", "Location", "CssStyleDeclaration", "Event", "EventTarget", "MouseEvent", "DragEvent", "Storage", "Navigator", "RequestInit", "Response", "AbortController", "AbortSignal"] }

@@ -33,3 +33,10 @@ figcraft-ui-egui = { path = "../../crates/figcraft-ui-egui" }
 figcraft-collab-net = { path = "../../crates/figcraft-collab-net" }
 egui = "0.36"
 log = "0.4"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# `wgpu` pulls egui-wgpu's defaults: WebGPU plus the WebGL2 fallback.
+eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit"] }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlCanvasElement", "Location", "MediaQueryList", "Navigator", "Gamepad", "GamepadButton", "GamepadMappingType"] }

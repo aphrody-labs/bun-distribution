@@ -9713,9 +9713,12 @@ dependencies = [
  "cadcraft-engine",
  "cadcraft-io",
  "cadcraft-ui-egui",
+ "eframe",
  "egui",
  "log",
  "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
 ]
 
@@ -13246,9 +13249,15 @@ version = "0.6.1"
 dependencies = [
  "deckcraft-engine",
  "deckcraft-ui-egui",
+ "eframe",
  "egui",
+ "js-sys",
  "log",
+ "rfd 0.17.2",
  "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -13973,10 +13982,16 @@ dependencies = [
  "designcraft-engine",
  "designcraft-format",
  "designcraft-ui-egui",
+ "eframe",
  "egui",
  "form_urlencoded",
+ "js-sys",
  "log",
+ "rfd 0.17.2",
  "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -16698,11 +16713,15 @@ dependencies = [
 name = "figcraft-web"
 version = "0.5.1"
 dependencies = [
+ "eframe",
  "egui",
  "figcraft-collab-net",
  "figcraft-engine",
  "figcraft-ui-egui",
  "log",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -20920,11 +20939,17 @@ dependencies = [
 name = "gridcraft-web"
 version = "0.6.1"
 dependencies = [
+ "eframe",
  "egui",
  "gridcraft-engine",
  "gridcraft-ui-egui",
+ "js-sys",
  "log",
+ "rfd 0.17.2",
  "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -25203,6 +25228,9 @@ name = "lightcraft-web"
 version = "0.7.1"
 dependencies = [
  "crc32fast",
+ "eframe",
+ "egui",
+ "js-sys",
  "lightcraft-codecs",
  "lightcraft-engine",
  "lightcraft-preview",
@@ -25211,6 +25239,9 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -29775,7 +29806,10 @@ version = "0.7.1"
 dependencies = [
  "eframe",
  "egui",
+ "js-sys",
  "pdfcraft-ui-egui",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -30647,7 +30681,9 @@ dependencies = [
 name = "photocraft-web"
 version = "0.8.2"
 dependencies = [
+ "eframe",
  "egui",
+ "js-sys",
  "log",
  "photocraft-codecs",
  "photocraft-doc",
@@ -30656,7 +30692,11 @@ dependencies = [
  "photocraft-paint",
  "photocraft-psd",
  "photocraft-ui-egui",
+ "rfd 0.17.2",
  "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -42723,12 +42763,18 @@ dependencies = [
 name = "vectorcraft-web"
 version = "0.10.0"
 dependencies = [
+ "eframe",
  "egui",
+ "js-sys",
  "log",
+ "rfd 0.17.2",
  "vectorcraft-engine",
  "vectorcraft-format",
  "vectorcraft-text",
  "vectorcraft-ui-egui",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -46067,9 +46113,15 @@ dependencies = [
 name = "wordcraft-web"
 version = "0.6.1"
 dependencies = [
+ "eframe",
  "egui",
+ "js-sys",
  "log",
+ "rfd 0.17.2",
  "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
  "wordcraft-doc",
  "wordcraft-engine",
  "wordcraft-fonts",
