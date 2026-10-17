@@ -1,0 +1,34 @@
+{
+  "$schema": "./theme.schema.json",
+  "schema": "bun-os-theme/1",
+  "id": "baseline",
+  "nameKey": "platform-theme-baseline",
+  "color": {
+    "seed": "#6750a4",
+    "variant": "tonal-spot",
+    "contrast": 0,
+    "mode": "dark",
+    "dynamic": "art"
+  },
+  "type": {
+    "font": "Google Sans Flex",
+    "scale": 1
+  },
+  "space": {
+    "xs": 4,
+    "sm": 8,
+    "md": 16,
+    "lg": 24,
+    "xl": 32,
+    "xxl": 48,
+    "xxxl": 64
+  },
+  "icon": {
+    "sm": 20,
+    "md": 24,
+    "lg": 40
+  },
+  "highContrast": {
+    "contrast": 1
+  }
+}

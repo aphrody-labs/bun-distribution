@@ -1,0 +1,9 @@
+-engine = Bun Engine
+engine-name = { -engine }
+engine-window-title = { $title } - { -engine }
+engine-paused = Pausiert
+engine-fast-forward = Vorspulen ×{ $speed }
+engine-state-saved = Zustand in Slot { $slot } gespeichert
+engine-state-loaded = Zustand aus Slot { $slot } geladen
+engine-needs-firmware = { $system } benötigt Firmware: { $file }
+engine-unsupported-image = { $file } ist kein unterstütztes Spielabbild

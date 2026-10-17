@@ -1,0 +1,37 @@
+{
+  "name": "@bun-os/platform",
+  "version": "1.4.4",
+  "private": true,
+  "description": "Bun OS platform layer shared by the console shell, play.aphrody.app and the Bun Engine: Fluent catalogs and locale negotiation, M3 theme files, Bun.plugin-style plugins, the file-type registry and the transfer service (downloads, mirrors, LAN cache, R2 uploads).",
+  "license": "Apache-2.0",
+  "author": "aphrody-dev <contact@aphrody.com>",
+  "type": "module",
+  "bin": {
+    "bun-os-platform": "./src/cli.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./i18n": "./src/i18n/index.ts",
+    "./i18n/web": "./src/i18n/web.ts",
+    "./i18n/fluent": "./src/i18n/fluent.ts",
+    "./theme": "./src/theme/index.ts",
+    "./theme/web": "./src/theme/web.ts",
+    "./plugins": "./src/plugins/index.ts",
+    "./files": "./src/files/index.ts",
+    "./transfer": "./src/transfer/index.ts",
+    "./server": "./src/server.ts",
+    "./locales/*": "./locales/*",
+    "./themes/*": "./themes/*"
+  },
+  "scripts": {
+    "check": "bun ./src/cli.ts check",
+    "typecheck": "bun check -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@aphrody/m3-tokens": "workspace:*",
+    "@rosegriffon/i18n": "workspace:*"
+  },
+  "engines": {
+    "bun": "=1.4.4"
+  }
+}

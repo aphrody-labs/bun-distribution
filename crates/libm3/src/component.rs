@@ -231,6 +231,30 @@ impl Component {
     }
 }
 
+impl Component {
+    /// Style of a component that can be selected (chips, tabs, switches, list rows) and is in
+    /// `interaction` at the same time: the selected container with the interaction's state layer
+    /// on top, as M3 composites them. `Disabled` and `Error` take precedence over selection.
+    pub fn style_with(self, theme: Theme, selected: bool, interaction: Interaction) -> ComponentStyle {
+        if !selected || matches!(interaction, Interaction::Disabled | Interaction::Error) {
+            return self.style(theme, interaction);
+        }
+        let mut style = self.style(theme, Interaction::Selected);
+        let layer = match interaction {
+            Interaction::Hovered => Some(m3_tokens::state::HOVER),
+            Interaction::Focused => Some(m3_tokens::state::FOCUS),
+            Interaction::Pressed => Some(m3_tokens::state::PRESSED),
+            _ => None,
+        };
+        if let Some(layer) = layer {
+            style.background = style
+                .background
+                .overlay(style.foreground, opacity(layer.opacity));
+        }
+        style
+    }
+}
+
 fn opacity(value: f32) -> u8 {
     (value * 255.0 + 0.5) as u8
 }

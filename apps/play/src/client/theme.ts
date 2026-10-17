@@ -5,19 +5,28 @@
  * comes from the M3 owner's `applyDynamicColor` (@aphrody/m3-tokens), in the light or dark mode
  * the player picked. With no art, the baseline seed of MASTER.md applies.
  */
+import { hexFromArgb } from "@aphrody/m3-tokens/dynamic-color";
 import {
-  applyDynamicColor,
-  hexFromArgb,
-} from "@aphrody/m3-tokens/dynamic-color";
+  applyWebTheme,
+  loadWebTheme,
+} from "../../../../packages/bun-os-platform/src/theme/web";
 import { sourceColorFromImageBytes } from "@material/material-color-utilities";
 
 export type ThemeMode = "system" | "light" | "dark";
 
 const STORAGE_KEY = "play-theme";
+// The user's theme file (platform layer): seed, variant, contrast, role overrides, high contrast.
+// Its stylesheet carries every non-color token (type scale, shape, motion, state, space).
+const themeFile = await loadWebTheme();
+const tokenSheet = document.createElement("link");
+tokenSheet.rel = "stylesheet";
+tokenSheet.href = "/api/platform/theme.css";
+document.head.append(tokenSheet);
 const BASELINE_SEED =
+  themeFile.color?.seed ??
   getComputedStyle(document.documentElement)
-    .getPropertyValue("--play-seed")
-    .trim() || "#6750a4";
+    .getPropertyValue("--bun-os-theme-seed")
+    .trim();
 const media = matchMedia("(prefers-color-scheme: dark)");
 const seeds = new Map<string, string>();
 let seed = BASELINE_SEED;
@@ -35,7 +44,7 @@ function isDark(): boolean {
 function apply(): void {
   const dark = isDark();
   const root = document.documentElement;
-  applyDynamicColor(seed, { dark, variant: "tonalSpot" });
+  applyWebTheme({ dark, seed });
   root.style.colorScheme = dark ? "dark" : "light";
   root.dataset.theme = dark ? "dark" : "light";
   document

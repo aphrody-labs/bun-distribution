@@ -11,6 +11,7 @@ import { frontendRoutes } from "../../../../packages/bun-engine/src/frontend/api
 import { runningGames } from "../../../../packages/bun-engine/src/frontend/launch";
 import { assertPublicRoot } from "../../../../packages/bun-engine/src/owned/guard";
 import { ownedRoutes } from "../../../../packages/bun-engine/src/owned/http";
+import { attachTransfers, platformRoutes } from "../../../../packages/bun-os-platform/src/server";
 import { artRoutes } from "./art";
 import { authRoutes, guarded, sessionOf, unauthorized } from "./auth";
 import { config } from "./config";
@@ -32,6 +33,7 @@ export const TOPICS = [
   "stream",
   "engine",
   "nginx",
+  "transfers",
 ] as const;
 export type Topic = (typeof TOPICS)[number];
 
@@ -180,6 +182,9 @@ export function createServer(
         }),
       },
       ...engineRoutes(),
+      // Platform layer (docs/bun-os/PLATFORM.md): catalogs, theme file and CSS, plugins, file
+      // inspection, transfers. Host-acting routes go through the session guard.
+      ...platformRoutes({ guard: guarded as never }),
       // Owned dumps (packages/bun-engine/src/owned/http.ts): signed-in only, never dump bytes.
       ...Object.fromEntries(
         Object.entries(ownedRoutes()).map(([path, methods]) => [
@@ -318,6 +323,7 @@ export function createServer(
   );
   every(3_000, () => publish("engine", { running: runningGames() }));
   every(15_000, async () => publish("nginx", await engineState()));
+  void attachTransfers((event) => publish("transfers", event, true));
 
   return server;
 }

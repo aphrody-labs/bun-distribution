@@ -1,0 +1,9 @@
+-engine = Bun Engine
+engine-name = { -engine }
+engine-window-title = { $title } - { -engine }
+engine-paused = 일시 정지됨
+engine-fast-forward = 빨리 감기 ×{ $speed }
+engine-state-saved = 슬롯 { $slot }에 상태를 저장했습니다
+engine-state-loaded = 슬롯 { $slot }에서 상태를 불러왔습니다
+engine-needs-firmware = { $system }에 펌웨어가 필요합니다: { $file }
+engine-unsupported-image = { $file }은(는) 지원되지 않는 게임 이미지입니다

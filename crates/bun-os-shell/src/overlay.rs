@@ -1,101 +1,108 @@
-//! The quick menu (Guide button) and the power dialog, drawn over any screen or game.
+//! The quick menu (Guide button), a side sheet that slides in over a scrim (DIRECTION.md), and
+//! the power dialog. Both sit above any screen or game.
 
+use bevy::ecs::hierarchy::ChildSpawnerCommands;
 use bevy::prelude::*;
 
 use crate::app::{Action, Overlay, PowerAction, QuickAction, Shell};
 use crate::runtime::Running;
 use crate::screens::Bind;
-use crate::theme::{shape, space, typescale as ts};
-use crate::ui::{DefaultFocus, FocusFx, Focusable, Kit, Layer, Motion, Spring, radius};
+use crate::text::t;
+use crate::theme::{R, icon, shape, size, space, typescale as ts};
+use crate::ui::{
+    DefaultFocus, FocusFx, Focusable, Kit, Layer, Motion, Spring, a11y_button, bg, bg_alpha,
+    radius, ring,
+};
 
+/// The quick menu sheet: slides from the right edge.
 #[derive(Component)]
 pub struct Sheet(pub Spring);
 
-fn overlay_focusable(action: Action) -> impl Bundle {
+fn overlay_focusable(action: Action, label: &str) -> impl Bundle {
     (
         Focusable(action),
-        FocusFx::new(0.07),
+        FocusFx::new(0.02),
         UiTransform::IDENTITY,
-        Outline {
-            width: px(3),
-            offset: px(4),
-            color: Color::NONE,
-        },
+        ring(),
         Layer::Overlay,
+        a11y_button(label),
     )
 }
 
-fn card(
-    p: &mut bevy::ecs::hierarchy::ChildSpawnerCommands,
+/// One quick-menu row: icon, label, live value.
+fn row(
+    p: &mut ChildSpawnerCommands,
     kit: &Kit,
-    icon: &str,
-    label: &str,
+    glyph: &str,
+    key: &str,
     action: QuickAction,
     initial: bool,
 ) {
-    let t = &kit.theme;
+    let label = t(key);
     let mut e = p.spawn((
         Node {
-            width: px(150),
-            height: px(132),
-            flex_direction: FlexDirection::Column,
-            justify_content: JustifyContent::Center,
+            height: px(size::TARGET),
+            padding: UiRect::horizontal(px(space::MD)),
+            column_gap: px(space::MD),
             align_items: AlignItems::Center,
-            row_gap: px(space::XS),
-            border_radius: radius(shape::LARGE),
+            border_radius: radius(shape::FULL),
             ..default()
         },
-        BackgroundColor(t.surface_container_highest),
-        overlay_focusable(Action::Quick(action)),
+        bg_alpha(R::ContainerHighest, 0.0),
+        overlay_focusable(Action::Quick(action), &label),
     ));
     if initial {
         e.insert(DefaultFocus);
     }
     e.with_children(|c| {
-        c.spawn(kit.icon(icon, 36.0, t.on_surface));
-        c.spawn(kit.text(label, ts::LABEL, t.on_surface));
-        c.spawn((
-            kit.text("", ts::LABEL_SMALL, t.primary),
-            Bind::QuickValue(action),
-        ));
+        c.spawn(kit.icon(glyph, icon::MD, R::OnSurfaceVariant));
+        c.spawn(kit.text(label, ts::BODY, R::OnSurface));
+        c.spawn(Node {
+            flex_grow: 1.0,
+            ..default()
+        });
+        c.spawn((kit.text("", ts::BODY_MEDIUM, R::Primary), Bind::QuickValue(action)));
     });
 }
 
-pub fn spawn_quick(
-    mut commands: Commands,
-    kit: Res<Kit>,
-    running: Res<Running>,
-    shell: Res<Shell>,
-) {
-    let t = &kit.theme;
+pub fn spawn_quick(mut commands: Commands, kit: Res<Kit>, running: Res<Running>, shell: Res<Shell>) {
     let in_game = running.machine.is_some() || running.external.is_some();
+    let title = running
+        .machine_game
+        .or_else(|| {
+            running
+                .external
+                .as_ref()
+                .and_then(|e| shell.library.games.iter().position(|g| g.key == e.key))
+        })
+        .and_then(|i| shell.library.games.get(i))
+        .map_or_else(|| t("quick.title"), |g| g.title.clone());
     commands
         .spawn((
             Node {
                 width: percent(100),
                 height: percent(100),
                 position_type: PositionType::Absolute,
+                justify_content: JustifyContent::FlexEnd,
                 ..default()
             },
-            BackgroundColor(t.scrim.with_alpha(0.55)),
+            bg_alpha(R::Scrim, 0.5),
             GlobalZIndex(20),
             DespawnOnExit(Overlay::Quick),
         ))
         .with_children(|r| {
             r.spawn((
                 Node {
-                    position_type: PositionType::Absolute,
-                    bottom: px(0),
-                    width: percent(100),
+                    width: px(size::QUICK_WIDTH),
+                    height: percent(100),
                     flex_direction: FlexDirection::Column,
-                    row_gap: px(space::LG),
-                    padding: UiRect::axes(px(space::XXXL), px(space::XL)),
-                    border_radius: BorderRadius::top(px(shape::EXTRA_LARGE)),
+                    row_gap: px(space::XS),
+                    padding: UiRect::axes(px(space::LG), px(space::XL)),
+                    border_radius: BorderRadius::left(px(shape::LARGE)),
                     ..default()
                 },
-                BackgroundColor(t.surface_container),
-                BoxShadow::new(Color::BLACK.with_alpha(0.5), px(0), px(-8), px(0), px(32)),
-                UiTransform::from_translation(Val2::px(0.0, 480.0)),
+                bg(R::Container),
+                UiTransform::from_translation(Val2::px(size::QUICK_WIDTH, 0.0)),
                 Sheet(Spring::spatial(1.0)),
             ))
             .with_children(|sheet| {
@@ -103,160 +110,72 @@ pub fn spawn_quick(
                     .spawn(Node {
                         align_items: AlignItems::Center,
                         column_gap: px(space::MD),
+                        margin: UiRect::bottom(px(space::MD)),
                         ..default()
                     })
-                    .with_children(|row| {
-                        row.spawn(kit.icon("sports_esports", 34.0, t.primary));
-                        let title = running
-                            .machine_game
-                            .or_else(|| {
-                                running.external.as_ref().and_then(|e| {
-                                    shell.library.games.iter().position(|g| g.key == e.key)
-                                })
-                            })
-                            .and_then(|i| shell.library.games.get(i))
-                            .map_or_else(|| "Quick menu".to_string(), |g| g.title.clone());
-                        row.spawn(kit.text(title, ts::HEADLINE_SMALL, t.on_surface));
-                        row.spawn(Node {
+                    .with_children(|head| {
+                        head.spawn(kit.text(title, ts::HEADLINE_SMALL, R::OnSurface));
+                        head.spawn(Node {
                             flex_grow: 1.0,
                             ..default()
                         });
-                        row.spawn((
-                            kit.text(crate::app::clock(), ts::TITLE, t.on_surface),
+                        head.spawn((
+                            kit.text(crate::app::clock(), ts::TITLE, R::OnSurface),
                             Bind::Clock,
                         ));
                     });
-                sheet
-                    .spawn(Node {
-                        column_gap: px(space::MD),
-                        flex_wrap: FlexWrap::Wrap,
-                        row_gap: px(space::MD),
-                        ..default()
-                    })
-                    .with_children(|row| {
-                        card(row, &kit, "home", "Home", QuickAction::Home, !in_game);
-                        if in_game {
-                            card(row, &kit, "play_arrow", "Resume", QuickAction::Resume, true);
-                            card(
-                                row,
-                                &kit,
-                                "close",
-                                "Close game",
-                                QuickAction::CloseGame,
-                                false,
-                            );
-                        }
-                        card(
-                            row,
-                            &kit,
-                            "photo_camera",
-                            "Screenshot",
-                            QuickAction::Screenshot,
-                            false,
-                        );
-                        card(
-                            row,
-                            &kit,
-                            "radio_button_checked",
-                            "Record",
-                            QuickAction::Record,
-                            false,
-                        );
-                        card(
-                            row,
-                            &kit,
-                            "monitoring",
-                            "Performance",
-                            QuickAction::Hud,
-                            false,
-                        );
-                        card(
-                            row,
-                            &kit,
-                            "speed",
-                            "Frame limit",
-                            QuickAction::FrameLimit,
-                            false,
-                        );
-                        card(
-                            row,
-                            &kit,
-                            "aspect_ratio",
-                            "Scaling",
-                            QuickAction::Scaling,
-                            false,
-                        );
-                        card(
-                            row,
-                            &kit,
-                            "volume_down",
-                            "Volume",
-                            QuickAction::VolumeDown,
-                            false,
-                        );
-                        card(
-                            row,
-                            &kit,
-                            "volume_up",
-                            "Volume",
-                            QuickAction::VolumeUp,
-                            false,
-                        );
-                        card(
-                            row,
-                            &kit,
-                            "power_settings_new",
-                            "Power",
-                            QuickAction::Power,
-                            false,
-                        );
-                    });
-                sheet
-                    .spawn(Node {
-                        column_gap: px(space::LG),
-                        ..default()
-                    })
-                    .with_children(|row| {
-                        for (icon, title, bind) in [
-                            ("memory", "NVIDIA", Bind::NvidiaPanel),
-                            ("hdr_on", "Display and capture", Bind::DisplayPanel),
-                            ("graphic_eq", "Session", Bind::SessionPanel),
-                        ] {
-                            row.spawn((
-                                Node {
-                                    flex_direction: FlexDirection::Column,
-                                    row_gap: px(space::SM),
-                                    padding: UiRect::all(px(space::LG)),
-                                    width: px(580),
-                                    border_radius: radius(shape::LARGE),
+                if in_game {
+                    row(sheet, &kit, "play_arrow", "action.resume", QuickAction::Resume, true);
+                }
+                row(sheet, &kit, "home", "action.home", QuickAction::Home, !in_game);
+                if in_game {
+                    row(sheet, &kit, "close", "action.close-game", QuickAction::CloseGame, false);
+                }
+                for (glyph, key, action) in [
+                    ("photo_camera", "action.screenshot", QuickAction::Screenshot),
+                    ("radio_button_checked", "action.record", QuickAction::Record),
+                    ("monitoring", "action.performance", QuickAction::Hud),
+                    ("speed", "action.frame-limit", QuickAction::FrameLimit),
+                    ("aspect_ratio", "action.scaling", QuickAction::Scaling),
+                    ("volume_down", "action.volume-down", QuickAction::VolumeDown),
+                    ("volume_up", "action.volume-up", QuickAction::VolumeUp),
+                    ("power_settings_new", "nav.power", QuickAction::Power),
+                ] {
+                    row(sheet, &kit, glyph, key, action, false);
+                }
+                for (glyph, key, bind) in [
+                    ("memory", "quick.nvidia", Bind::NvidiaPanel),
+                    ("hdr_on", "quick.display", Bind::DisplayPanel),
+                ] {
+                    sheet
+                        .spawn(Node {
+                            flex_direction: FlexDirection::Column,
+                            row_gap: px(space::XS),
+                            margin: UiRect::top(px(space::MD)),
+                            ..default()
+                        })
+                        .with_children(|panel| {
+                            panel
+                                .spawn(Node {
+                                    column_gap: px(space::SM),
+                                    align_items: AlignItems::Center,
                                     ..default()
-                                },
-                                BackgroundColor(t.surface_container_high),
-                            ))
-                            .with_children(|panel| {
-                                panel
-                                    .spawn(Node {
-                                        column_gap: px(space::SM),
-                                        align_items: AlignItems::Center,
-                                        ..default()
-                                    })
-                                    .with_children(|h| {
-                                        h.spawn(kit.icon(icon, 28.0, t.tertiary));
-                                        h.spawn(kit.text(title, ts::TITLE_MEDIUM, t.on_surface));
-                                    });
-                                panel.spawn((
-                                    kit.text("", ts::BODY_MEDIUM, t.on_surface_variant),
-                                    bind,
-                                ));
-                            });
-                        }
-                    });
+                                })
+                                .with_children(|h| {
+                                    h.spawn(kit.icon(glyph, icon::SM, R::Primary));
+                                    h.spawn(kit.text(t(key), ts::LABEL, R::Primary));
+                                });
+                            panel.spawn((
+                                kit.text("", ts::BODY_MEDIUM, R::OnSurfaceVariant),
+                                bind,
+                            ));
+                        });
+                }
             });
         });
 }
 
 pub fn spawn_power(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>) {
-    let t = &kit.theme;
     commands
         .spawn((
             Node {
@@ -267,7 +186,7 @@ pub fn spawn_power(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>) {
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(t.scrim.with_alpha(0.65)),
+            bg_alpha(R::Scrim, 0.65),
             GlobalZIndex(25),
             DespawnOnExit(Overlay::Power),
         ))
@@ -275,53 +194,54 @@ pub fn spawn_power(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>) {
             r.spawn((
                 Node {
                     flex_direction: FlexDirection::Column,
-                    row_gap: px(space::MD),
+                    row_gap: px(space::SM),
                     padding: UiRect::all(px(space::XL)),
-                    width: px(620),
+                    width: px(size::QUICK_WIDTH),
                     border_radius: radius(shape::EXTRA_LARGE),
                     ..default()
                 },
-                BackgroundColor(t.surface_container_high),
+                bg(R::ContainerHigh),
             ))
             .with_children(|d| {
-                d.spawn(kit.text("Power", ts::HEADLINE_SMALL, t.on_surface));
+                d.spawn(kit.text(t("power.title"), ts::HEADLINE_SMALL, R::OnSurface));
                 let desktop = if shell.session {
-                    "Return to the desktop"
+                    "action.desktop"
                 } else {
-                    "Close Bun OS"
+                    "action.close-shell"
                 };
-                for (icon, label, action) in [
-                    ("arrow_back", "Cancel", PowerAction::Cancel),
+                for (glyph, key, action) in [
+                    ("arrow_back", "action.cancel", PowerAction::Cancel),
                     ("logout", desktop, PowerAction::Desktop),
-                    ("bedtime", "Sleep", PowerAction::Sleep),
-                    ("restart_alt", "Restart", PowerAction::Restart),
-                    ("power_settings_new", "Shut down", PowerAction::Shutdown),
+                    ("bedtime", "action.sleep", PowerAction::Sleep),
+                    ("restart_alt", "action.restart-pc", PowerAction::Restart),
+                    ("power_settings_new", "action.shutdown", PowerAction::Shutdown),
                 ] {
+                    let label = t(key);
                     let mut e = d.spawn((
                         Node {
-                            height: px(64),
+                            height: px(size::TARGET),
                             padding: UiRect::horizontal(px(space::LG)),
                             column_gap: px(space::MD),
                             align_items: AlignItems::Center,
-                            border_radius: radius(shape::LARGE),
+                            border_radius: radius(shape::FULL),
                             ..default()
                         },
-                        BackgroundColor(t.surface_container_highest),
-                        overlay_focusable(Action::Power(action)),
+                        bg(R::ContainerHighest),
+                        overlay_focusable(Action::Power(action), &label),
                     ));
                     if action == PowerAction::Cancel {
                         e.insert(DefaultFocus);
                     }
                     e.with_children(|b| {
-                        b.spawn(kit.icon(icon, 30.0, t.on_surface));
-                        b.spawn(kit.text(label, ts::TITLE_MEDIUM, t.on_surface));
+                        b.spawn(kit.icon(glyph, icon::MD, R::OnSurface));
+                        b.spawn(kit.text(label, ts::TITLE_MEDIUM, R::OnSurface));
                     });
                 }
             });
         });
 }
 
-/// Quick-menu sheet slides up on the M3 spatial spring.
+/// The quick-menu sheet slides in from the right on the M3 spatial spring (input response).
 pub fn animate_sheet(
     time: Res<Time>,
     motion: Res<Motion>,
@@ -330,6 +250,6 @@ pub fn animate_sheet(
     for (mut sheet, mut transform) in &mut sheets {
         sheet.0.target = 0.0;
         sheet.0.step(time.delta_secs(), motion.reduced);
-        transform.translation = Val2::px(0.0, sheet.0.value() * 480.0);
+        transform.translation = Val2::px(sheet.0.value() * size::QUICK_WIDTH, 0.0);
     }
 }

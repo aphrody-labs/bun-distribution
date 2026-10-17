@@ -1,0 +1,8 @@
+{
+  "name": "bun-engine",
+  "version": "1.4.4",
+  "description": "Bun Engine as a platform plugin: console image and firmware detection with typed headers (packages/bun-engine/src/formats), the console machines of plugins/consoles, the free ROM packs as a game source and the bep mirror index as a transfer provider.",
+  "entry": "index.ts",
+  "permissions": ["files", "machines", "library", "transfer"],
+  "platform": "1"
+}

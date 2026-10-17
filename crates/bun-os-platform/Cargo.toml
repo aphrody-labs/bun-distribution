@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: Apache-2.0
+# Native side of the Bun OS platform layer (packages/bun-os-platform): Fluent catalogs with ICU4X
+# number/date formatting, OS locale negotiation, M3 theme files resolved by aphrody-m3-tokens, and
+# the typed sidecar IPC to the Bun platform service (plugins, file types, transfers). The `bevy`
+# feature exposes them to the console shell and the Bun Engine runtime as resources and messages.
+[package]
+name = "bun-os-platform"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-dev <contact@aphrody.com>"]
+license = "Apache-2.0"
+repository = "https://github.com/aphrody-labs/bun-os"
+description = "Bun OS platform layer for native hosts: Fluent i18n with ICU4X, M3 theme files, plugin/file/transfer sidecar IPC and Bevy resources."
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+default = []
+bevy = ["dep:bevy_app", "dep:bevy_ecs"]
+
+[dependencies]
+aphrody-m3-tokens = { path = "../aphrody-m3-tokens", features = ["serde"] }
+fluent-bundle = "0.16"
+unic-langid = "0.9"
+intl-memoizer = "0.5"
+icu_decimal = "2.3"
+icu_datetime = "2.3"
+icu_locale_core = "2.3"
+# `sync`: Send + Sync formatter data, required by the concurrent Fluent memoizer.
+icu_provider = { version = "2.3", features = ["sync"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+toml = { workspace = true, features = ["parse", "serde"] }
+bevy_app = { workspace = true, optional = true }
+bevy_ecs = { workspace = true, optional = true }
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = ["Win32_Globalization", "Win32_UI_Accessibility", "Win32_UI_WindowsAndMessaging"] }
+
+[[bin]]
+name = "bun-os-platform-native"
+path = "src/main.rs"

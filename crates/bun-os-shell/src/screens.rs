@@ -1,48 +1,49 @@
-//! The screens: Home (hero art, game rail, activity cards), Library (all games, filters), Game
-//! hub (profile), Downloads, Settings and the in-game view, plus the always-on toast and
-//! performance HUD. Views are Bevy UI trees built on `OnEnter` and despawned on exit; live values
-//! go through `Bind` text bindings and springs.
-
-use std::path::PathBuf;
+//! Screens, laid out per design-system/bun-os-play/DIRECTION.md: the focused game's real art
+//! full-bleed with the M3 scheme regenerated from it, the game title as display type, one rail of
+//! capsules, quiet chrome. Library, Game hub, Downloads, Settings and the game view follow the
+//! same tokens. Views are Bevy UI trees built on `OnEnter` and despawned on exit; live values go
+//! through `Bind` text bindings, colors through `Tint`.
 
 use bevy::ecs::hierarchy::ChildSpawnerCommands;
 use bevy::prelude::*;
 use bevy::ui::{BackgroundGradient, ColorStop, LinearGradient};
 
-use crate::app::{Action, MotionPref, Overlay, ProfileField, Screen, SettingKey, Settings, Shell};
-use crate::assets::Art;
+use crate::app::{
+    Action, MotionPref, Overlay, ProfileField, QuickAction, Screen, SettingKey, Settings, Shell,
+};
+use crate::assets::{Art, ArtRef};
 use crate::library::{Game, Kind, Source};
 use crate::machine::Suspended;
 use crate::runtime::Running;
-use crate::theme::{shape, space, typescale as ts};
-use crate::ui::{Cover, DefaultFocus, FocusFx, Focusable, Kit, Layer, Motion, Spring, radius};
-
-pub const RAIL_TILE: (f32, f32) = (300.0, 140.0);
-pub const RAIL_GAP: f32 = 20.0;
-pub const RAIL_COUNT: usize = 18;
+use crate::text::{t, tf};
+use crate::theme::{R, Theme, icon, shape, size, space, typescale as ts};
+use crate::ui::{
+    Cover, DefaultFocus, FocusFx, Focusable, Kit, Layer, Motion, Spring, a11y_button, bg, bg_alpha,
+    radius, ring,
+};
 
 /// Text whose content follows shell state.
 #[derive(Component, Clone, Copy, PartialEq)]
 pub enum Bind {
     Clock,
     Gpu,
+    HeroPlatform,
     HeroTitle,
     HeroMeta,
-    HeroPlay,
     Toast,
     Hud,
     Profile(ProfileField),
     Setting(SettingKey),
-    QuickValue(crate::app::QuickAction),
+    QuickValue(QuickAction),
     NvidiaPanel,
     DisplayPanel,
     SessionPanel,
     HubState,
 }
 
-/// A slot that shows an artwork file once the loader decoded it.
+/// A slot that shows real artwork once the loader has it (hidden until then).
 #[derive(Component)]
-pub struct ArtSlot(pub PathBuf);
+pub struct ArtSlot(pub ArtRef);
 
 #[derive(Component)]
 pub struct GameTile {
@@ -50,17 +51,28 @@ pub struct GameTile {
     pub slot: usize,
 }
 
-#[derive(Component)]
+/// The full-bleed hero picture: cross-fades with the scheme re-tint.
+#[derive(Component, Default)]
 pub struct HeroBg {
-    pub fade: Spring,
-    pub shown: Option<PathBuf>,
+    pub shown: Option<String>,
+}
+
+/// Scrims whose gradient follows the scheme (text legibility over the art, not decoration).
+#[derive(Component, Clone, Copy)]
+pub enum Scrim {
+    Hero,
+    Hub,
 }
 
 #[derive(Component)]
-pub struct HeroButton;
+pub struct PlayButton;
 
 #[derive(Component)]
-pub struct HeroHubButton;
+pub struct HubButton;
+
+/// Marks the label text inside the hero Play button.
+#[derive(Component)]
+pub struct PlayLabelSlot;
 
 #[derive(Component)]
 pub struct RailTrack(pub Spring);
@@ -72,39 +84,26 @@ pub struct LibraryScroll(pub Spring);
 pub struct ToastBox(pub Spring);
 
 #[derive(Component)]
+pub struct HudBox;
+
+/// The controller indicator in the top bar (shown while a pad is connected).
+#[derive(Component)]
+pub struct PadIndicator;
+
+#[derive(Component)]
 pub struct MachineView;
 
-pub fn short_system(game: &Game) -> &'static str {
-    match &game.kind {
-        Kind::Steam { .. } => "STEAM",
-        Kind::Web { .. } => "WASM",
-        Kind::Native { system, .. } | Kind::Route { system, .. } => match system.as_str() {
-            "nes" => "NES",
-            "gba" => "GBA",
-            "nds" => "DS",
-            "psx" => "PS1",
-            "gc" => "GC",
-            "wii" => "WII",
-            "3ds" => "3DS",
-            _ => "EMU",
-        },
+/// Artwork for a game's hero: the suspend picture of a machine game (its real last frame) first,
+/// then the Steam or libretro art.
+pub fn hero_art(shell: &Shell, game: &Game) -> ArtRef {
+    let thumb = Suspended::of(&shell.paths.states(), &game.key).thumb;
+    if game.is_native() && thumb.is_file() {
+        return ArtRef::file(thumb).then(game.hero.clone());
     }
+    game.hero.clone()
 }
 
-/// Artwork for a game: Steam art, else its suspend thumbnail.
-pub fn art_for(shell: &Shell, game: &Game, hero: bool) -> Option<PathBuf> {
-    let steam = if hero {
-        game.hero.clone().or_else(|| game.tile.clone())
-    } else {
-        game.tile.clone().or_else(|| game.hero.clone())
-    };
-    steam.or_else(|| {
-        let thumb = Suspended::of(&shell.paths.states(), &game.key).thumb;
-        thumb.is_file().then_some(thumb)
-    })
-}
-
-fn root(screen: Screen, color: Color) -> impl Bundle {
+fn root(screen: Screen) -> impl Bundle {
     (
         Node {
             width: percent(100),
@@ -112,220 +111,177 @@ fn root(screen: Screen, color: Color) -> impl Bundle {
             position_type: PositionType::Absolute,
             ..default()
         },
-        BackgroundColor(color),
+        bg(R::SurfaceDim),
         DespawnOnExit(screen),
     )
 }
 
-fn focusable(action: Action, grow: f32) -> impl Bundle {
+fn focusable(action: Action, grow: f32, label: &str) -> impl Bundle {
     (
         Focusable(action),
         FocusFx::new(grow),
         UiTransform::IDENTITY,
-        Outline {
-            width: px(3),
-            offset: px(4),
-            color: Color::NONE,
-        },
+        ring(),
         Layer::Screen,
+        a11y_button(label),
     )
 }
 
-/// Filled (primary) or tonal button with a leading icon.
+/// Filled (primary) or tonal button with a leading icon and a text label.
 pub fn button(
     p: &mut ChildSpawnerCommands,
     kit: &Kit,
-    icon: &str,
+    glyph: &str,
     label: &str,
     filled: bool,
     action: Action,
     extra: impl Bundle,
 ) {
-    let t = &kit.theme;
-    let (bg, fg) = if filled {
-        (t.primary, t.on_primary)
+    let (container, content) = if filled {
+        (R::Primary, R::OnPrimary)
     } else {
-        (t.secondary_container, t.on_secondary_container)
+        (R::SecondaryContainer, R::OnSecondaryContainer)
     };
     p.spawn((
         Node {
-            height: px(64),
-            padding: UiRect::horizontal(px(space::LG + 4.0)),
-            column_gap: px(space::SM + 4.0),
+            height: px(size::BUTTON_HEIGHT),
+            padding: UiRect::horizontal(px(space::LG + space::XS)),
+            column_gap: px(space::SM + space::XS),
             align_items: AlignItems::Center,
             border_radius: radius(shape::FULL),
             ..default()
         },
-        BackgroundColor(bg),
-        focusable(action, 0.06),
+        bg(container),
+        focusable(action, 0.04, label),
         extra,
     ))
     .with_children(|b| {
-        b.spawn(kit.icon(icon, 30.0, fg));
-        b.spawn(kit.text(label, ts::TITLE_MEDIUM, fg));
+        b.spawn(kit.icon(glyph, icon::MD, content));
+        b.spawn((kit.text(label, ts::TITLE_MEDIUM, content), PlayLabelSlot));
     });
 }
 
-fn icon_button(p: &mut ChildSpawnerCommands, kit: &Kit, icon: &str, action: Action) {
+fn icon_button(p: &mut ChildSpawnerCommands, kit: &Kit, glyph: &str, label: &str, action: Action) {
     p.spawn((
         Node {
-            width: px(56),
-            height: px(56),
+            width: px(size::TARGET),
+            height: px(size::TARGET),
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
             border_radius: radius(shape::FULL),
             ..default()
         },
-        BackgroundColor(kit.theme.surface_container_high.with_alpha(0.85)),
-        focusable(action, 0.1),
+        bg_alpha(R::ContainerHigh, 0.85),
+        focusable(action, 0.06, label),
     ))
     .with_children(|b| {
-        b.spawn(kit.icon(icon, 30.0, kit.theme.on_surface));
+        b.spawn(kit.icon(glyph, icon::MD, R::OnSurface));
     });
 }
 
 fn chip(p: &mut ChildSpawnerCommands, kit: &Kit, label: &str, selected: bool, action: Action) {
-    let t = &kit.theme;
-    let (bg, fg) = if selected {
-        (t.secondary_container, t.on_secondary_container)
+    let (container, content) = if selected {
+        (R::SecondaryContainer, R::OnSecondaryContainer)
     } else {
-        (Color::NONE, t.on_surface_variant)
+        (R::ContainerHigh, R::OnSurfaceVariant)
     };
     p.spawn((
         Node {
-            height: px(44),
-            padding: UiRect::horizontal(px(space::MD + 4.0)),
+            height: px(size::CHIP_HEIGHT),
+            padding: UiRect::horizontal(px(space::MD + space::XS)),
             align_items: AlignItems::Center,
-            border: UiRect::all(px(if selected { 0 } else { 1 })),
-            border_radius: radius(shape::SMALL),
+            border_radius: radius(shape::FULL),
             ..default()
         },
-        BackgroundColor(bg),
-        BorderColor::all(t.outline_variant),
-        focusable(action, 0.05),
+        bg_alpha(container, if selected { 1.0 } else { 0.7 }),
+        focusable(action, 0.04, label),
     ))
     .with_children(|b| {
-        b.spawn(kit.text(label, ts::LABEL, fg));
+        b.spawn(kit.text(label, ts::LABEL, content));
     });
 }
 
-/// A game tile: artwork (cover-cropped) or a tonal placeholder with the platform mark.
-fn tile(
+/// A rail or library capsule: real art when it exists, otherwise a typographic tile of the real
+/// title and system name.
+fn capsule(
     p: &mut ChildSpawnerCommands,
     kit: &Kit,
     shell: &Shell,
     index: usize,
     slot: usize,
-    size: (f32, f32),
+    dims: (f32, f32),
     initial: bool,
 ) {
     let game = &shell.library.games[index];
-    let t = &kit.theme;
-    let art = art_for(shell, game, false);
     let mut entity = p.spawn((
         Node {
-            width: px(size.0),
-            height: px(size.1),
+            width: px(dims.0),
+            height: px(dims.1),
             flex_shrink: 0.0,
             overflow: Overflow::clip(),
-            border_radius: radius(shape::LARGE),
+            border_radius: radius(shape::MEDIUM),
             ..default()
         },
-        BackgroundColor(t.surface_container_high),
-        BoxShadow::new(Color::BLACK.with_alpha(0.45), px(0), px(8), px(0), px(18)),
-        focusable(Action::Play(index), 0.08),
+        bg(R::ContainerHigh),
+        focusable(Action::Play(index), size::FOCUS_GROW, &game.title),
         GameTile { game: index, slot },
     ));
     if initial {
         entity.insert(DefaultFocus);
     }
     entity.with_children(|c| {
-        if let Some(path) = art {
+        c.spawn(Node {
+            width: percent(100),
+            height: percent(100),
+            padding: UiRect::all(px(space::MD)),
+            flex_direction: FlexDirection::Column,
+            justify_content: JustifyContent::SpaceBetween,
+            ..default()
+        })
+        .with_children(|c| {
             c.spawn((
-                Node {
-                    width: percent(100),
-                    height: percent(100),
-                    position_type: PositionType::Absolute,
-                    ..default()
-                },
-                ImageNode::default(),
-                Cover,
-                ArtSlot(path),
+                kit.text(&game.title, ts::TITLE_MEDIUM, R::OnSurface),
+                TextLayout::linebreak(LineBreak::WordBoundary),
             ));
-        } else {
-            c.spawn((
-                Node {
-                    width: percent(100),
-                    height: percent(100),
-                    padding: UiRect::all(px(space::MD)),
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::SpaceBetween,
-                    ..default()
-                },
-                BackgroundGradient::from(LinearGradient::to_bottom_right(vec![
-                    ColorStop::auto(t.primary_container),
-                    ColorStop::auto(t.tertiary_container),
-                ])),
-            ))
-            .with_children(|c| {
-                c.spawn(kit.text(
-                    short_system(game),
-                    ts::HEADLINE_SMALL,
-                    t.on_primary_container,
-                ));
-                c.spawn((
-                    kit.text(&game.title, ts::LABEL, t.on_primary_container),
-                    TextLayout {
-                        linebreak: LineBreak::WordBoundary,
-                        ..default()
-                    },
-                ));
-            });
-        }
+            c.spawn(kit.text(&game.platform, ts::LABEL_SMALL, R::OnSurfaceVariant));
+        });
+        c.spawn((
+            Node {
+                width: percent(100),
+                height: percent(100),
+                position_type: PositionType::Absolute,
+                ..default()
+            },
+            ImageNode::default(),
+            Cover,
+            ArtSlot(game.tile.clone()),
+            Visibility::Hidden,
+        ));
     });
 }
 
 fn top_bar(p: &mut ChildSpawnerCommands, kit: &Kit, shell: &Shell, current: Screen) {
-    let t = &kit.theme;
     p.spawn(Node {
         width: percent(100),
-        height: px(64),
+        height: px(size::TARGET),
         align_items: AlignItems::Center,
-        column_gap: px(space::MD),
+        column_gap: px(space::SM + space::XS),
         ..default()
     })
     .with_children(|bar| {
-        bar.spawn(kit.icon("sports_esports", 40.0, t.primary));
-        bar.spawn(kit.text("Bun OS", ts::TITLE, t.on_surface));
-        bar.spawn(Node {
-            width: px(space::LG),
-            ..default()
-        });
+        chip(bar, kit, &t("nav.games"), current == Screen::Home, Action::Go(Screen::Home));
+        chip(bar, kit, &t("nav.library"), current == Screen::Library, Action::Filter(shell.filter));
         chip(
             bar,
             kit,
-            "Games",
-            current == Screen::Home,
-            Action::Go(Screen::Home),
-        );
-        chip(
-            bar,
-            kit,
-            "Library",
-            current == Screen::Library,
-            Action::Filter(shell.filter),
-        );
-        chip(
-            bar,
-            kit,
-            "Downloads",
+            &t("nav.downloads"),
             current == Screen::Downloads,
             Action::Go(Screen::Downloads),
         );
         chip(
             bar,
             kit,
-            "Settings",
+            &t("nav.settings"),
             current == Screen::Settings,
             Action::Go(Screen::Settings),
         );
@@ -333,582 +289,341 @@ fn top_bar(p: &mut ChildSpawnerCommands, kit: &Kit, shell: &Shell, current: Scre
             flex_grow: 1.0,
             ..default()
         });
-        bar.spawn((
-            Node {
-                padding: UiRect::axes(px(space::MD), px(space::SM)),
-                border_radius: radius(shape::FULL),
-                column_gap: px(space::SM),
-                align_items: AlignItems::Center,
-                ..default()
-            },
-            BackgroundColor(t.surface_container_high.with_alpha(0.8)),
-        ))
-        .with_children(|pill| {
-            pill.spawn(kit.icon("memory", 24.0, t.tertiary));
-            pill.spawn((
-                kit.text("NVIDIA", ts::LABEL, t.on_surface_variant),
-                Bind::Gpu,
-            ));
-        });
-        icon_button(
-            bar,
-            kit,
-            "power_settings_new",
-            Action::Quick(crate::app::QuickAction::Power),
-        );
-        bar.spawn((
-            kit.text(crate::app::clock(), ts::TITLE, t.on_surface),
-            Bind::Clock,
-        ));
+        bar.spawn((kit.text("", ts::LABEL, R::OnSurfaceVariant), Bind::Gpu));
+        bar.spawn((kit.icon("sports_esports", icon::MD, R::OnSurfaceVariant), PadIndicator));
+        bar.spawn((kit.text(crate::app::clock(), ts::TITLE, R::OnSurface), Bind::Clock));
+        icon_button(bar, kit, "power_settings_new", &t("nav.power"), Action::Quick(QuickAction::Power));
     });
 }
 
-pub fn spawn_home(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>, running: Res<Running>) {
-    let t = &kit.theme;
-    let visible: Vec<usize> = (0..shell.library.games.len()).take(RAIL_COUNT).collect();
-    let focus_slot = visible
-        .iter()
-        .position(|&i| i == shell.selected)
-        .unwrap_or(0);
-    commands
-        .spawn(root(Screen::Home, t.surface_dim))
-        .with_children(|r| {
-            r.spawn((
-                Node {
-                    width: percent(100),
-                    height: percent(100),
-                    position_type: PositionType::Absolute,
-                    ..default()
-                },
-                ImageNode::default().with_color(Color::WHITE.with_alpha(0.0)),
-                Cover,
-                HeroBg {
-                    fade: Spring::effects(0.0),
-                    shown: None,
-                },
-            ));
-            r.spawn((
-                Node {
-                    width: percent(100),
-                    height: percent(100),
-                    position_type: PositionType::Absolute,
-                    ..default()
-                },
-                BackgroundGradient(vec![
-                    LinearGradient::new(
-                        LinearGradient::TO_RIGHT,
-                        vec![
-                            ColorStop::new(t.surface_dim.with_alpha(0.96), percent(0)),
-                            ColorStop::new(t.surface_dim.with_alpha(0.72), percent(38)),
-                            ColorStop::new(t.surface_dim.with_alpha(0.0), percent(78)),
-                        ],
-                    )
-                    .into(),
-                    LinearGradient::new(
-                        LinearGradient::TO_TOP,
-                        vec![
-                            ColorStop::new(t.surface_dim, percent(0)),
-                            ColorStop::new(t.surface_dim.with_alpha(0.0), percent(48)),
-                        ],
-                    )
-                    .into(),
-                ]),
-            ));
-            r.spawn(Node {
-                width: percent(100),
-                height: percent(100),
-                position_type: PositionType::Absolute,
-                flex_direction: FlexDirection::Column,
-                padding: UiRect::axes(px(space::XXXL), px(space::XL + 8.0)),
-                ..default()
-            })
-            .with_children(|col| {
-                top_bar(col, &kit, &shell, Screen::Home);
-                // Game rail (the focused tile scrolls to the left edge, PS5-style).
-                col.spawn(Node {
-                    width: percent(100),
-                    height: px(RAIL_TILE.1 + 40.0),
-                    margin: UiRect::top(px(space::XL)),
-                    padding: UiRect::axes(px(8), px(20)),
-                    overflow: Overflow::visible(),
-                    ..default()
-                })
-                .with_children(|rail| {
-                    rail.spawn((
-                        Node {
-                            column_gap: px(RAIL_GAP),
-                            left: px(0),
-                            ..default()
-                        },
-                        RailTrack(Spring::spatial(0.0)),
-                    ))
-                    .with_children(|track| {
-                        for (slot, &index) in visible.iter().enumerate() {
-                            tile(
-                                track,
-                                &kit,
-                                &shell,
-                                index,
-                                slot,
-                                RAIL_TILE,
-                                slot == focus_slot,
-                            );
-                        }
-                        track
-                            .spawn((
-                                Node {
-                                    width: px(RAIL_TILE.0 * 0.7),
-                                    height: px(RAIL_TILE.1),
-                                    flex_direction: FlexDirection::Column,
-                                    justify_content: JustifyContent::Center,
-                                    align_items: AlignItems::Center,
-                                    row_gap: px(space::SM),
-                                    border_radius: radius(shape::LARGE),
-                                    ..default()
-                                },
-                                BackgroundColor(t.surface_container_high.with_alpha(0.9)),
-                                focusable(Action::Filter(None), 0.08),
-                                GameTile {
-                                    game: usize::MAX,
-                                    slot: visible.len(),
-                                },
-                            ))
-                            .with_children(|c| {
-                                c.spawn(kit.icon("grid_view", 40.0, t.on_surface));
-                                c.spawn(kit.text(
-                                    format!("Library · {}", shell.library.games.len()),
-                                    ts::LABEL,
-                                    t.on_surface,
-                                ));
-                            });
-                    });
-                });
-                // Hero information and actions.
-                col.spawn(Node {
-                    flex_direction: FlexDirection::Column,
-                    row_gap: px(space::MD),
-                    margin: UiRect::top(px(space::XL)),
-                    max_width: px(1100),
-                    ..default()
-                })
-                .with_children(|hero| {
-                    hero.spawn((kit.text("", ts::DISPLAY, t.on_surface), Bind::HeroTitle));
-                    hero.spawn((kit.text("", ts::BODY, t.on_surface_variant), Bind::HeroMeta));
-                    hero.spawn(Node {
-                        column_gap: px(space::MD),
-                        margin: UiRect::top(px(space::SM)),
-                        ..default()
-                    })
-                    .with_children(|row| {
-                        button(
-                            row,
-                            &kit,
-                            "play_arrow",
-                            "Play",
-                            true,
-                            Action::Play(shell.selected),
-                            HeroButton,
-                        );
-                        row.spawn((
-                            Node {
-                                width: px(64),
-                                height: px(64),
-                                justify_content: JustifyContent::Center,
-                                align_items: AlignItems::Center,
-                                border_radius: radius(shape::FULL),
-                                ..default()
-                            },
-                            BackgroundColor(t.secondary_container),
-                            focusable(Action::Hub(shell.selected), 0.1),
-                            HeroHubButton,
-                        ))
-                        .with_children(|b| {
-                            b.spawn(kit.icon("tune", 30.0, t.on_secondary_container));
-                        });
-                    });
-                });
-                col.spawn(Node {
-                    flex_grow: 1.0,
-                    ..default()
-                });
-                activity(col, &kit, &shell, &running);
-            });
-        });
+fn hero_backdrop(r: &mut ChildSpawnerCommands, scrim: Scrim) {
+    r.spawn((
+        Node {
+            width: percent(100),
+            height: percent(100),
+            position_type: PositionType::Absolute,
+            ..default()
+        },
+        ImageNode::default().with_color(Color::WHITE.with_alpha(0.0)),
+        Cover,
+        HeroBg::default(),
+    ));
+    r.spawn((
+        Node {
+            width: percent(100),
+            height: percent(100),
+            position_type: PositionType::Absolute,
+            ..default()
+        },
+        BackgroundGradient::default(),
+        scrim,
+    ));
 }
 
-/// Activity cards: resume points, the running external game, transfers, NVIDIA, last session.
+pub fn spawn_home(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>, running: Res<Running>) {
+    let shown: Vec<usize> = (0..shell.library.games.len()).take(size::RAIL_SHOWN).collect();
+    let focus_slot = shown.iter().position(|&i| i == shell.selected).unwrap_or(0);
+    commands.spawn(root(Screen::Home)).with_children(|r| {
+        hero_backdrop(r, Scrim::Hero);
+        r.spawn(Node {
+            width: percent(100),
+            height: percent(100),
+            position_type: PositionType::Absolute,
+            flex_direction: FlexDirection::Column,
+            padding: UiRect::axes(px(space::XXXL), px(space::XL + space::SM)),
+            ..default()
+        })
+        .with_children(|col| {
+            top_bar(col, &kit, &shell, Screen::Home);
+            col.spawn(Node {
+                flex_grow: 1.0,
+                ..default()
+            });
+            col.spawn(Node {
+                flex_direction: FlexDirection::Column,
+                row_gap: px(space::SM),
+                max_width: px(1200),
+                ..default()
+            })
+            .with_children(|hero| {
+                hero.spawn((kit.text("", ts::TITLE_MEDIUM, R::Primary), Bind::HeroPlatform));
+                hero.spawn((kit.text("", ts::DISPLAY_LARGE, R::OnSurface), Bind::HeroTitle));
+                hero.spawn((kit.text("", ts::BODY, R::OnSurfaceVariant), Bind::HeroMeta));
+                hero.spawn(Node {
+                    column_gap: px(space::MD),
+                    margin: UiRect::top(px(space::MD)),
+                    ..default()
+                })
+                .with_children(|row| {
+                    let play = t("action.play");
+                    button(row, &kit, "play_arrow", &play, true, Action::Play(shell.selected), PlayButton);
+                    let hub = t("action.game-hub");
+                    button(row, &kit, "tune", &hub, false, Action::Hub(shell.selected), HubButton);
+                });
+            });
+            activity(col, &kit, &shell, &running);
+            col.spawn(Node {
+                width: percent(100),
+                height: px(size::CAPSULE.1 + space::XL),
+                margin: UiRect::top(px(space::LG)),
+                padding: UiRect::axes(px(space::SM), px(space::MD)),
+                ..default()
+            })
+            .with_children(|rail| {
+                rail.spawn((
+                    Node {
+                        column_gap: px(size::CAPSULE_GAP),
+                        left: px(0),
+                        ..default()
+                    },
+                    RailTrack(Spring::spatial(0.0)),
+                ))
+                .with_children(|track| {
+                    for (slot, &index) in shown.iter().enumerate() {
+                        capsule(track, &kit, &shell, index, slot, size::CAPSULE, slot == focus_slot);
+                    }
+                    let count = tf("library.count", &[("count", &shell.library.games.len())]);
+                    track
+                        .spawn((
+                            Node {
+                                width: px(size::CAPSULE.0),
+                                height: px(size::CAPSULE.1),
+                                flex_direction: FlexDirection::Column,
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::Center,
+                                row_gap: px(space::SM),
+                                border_radius: radius(shape::MEDIUM),
+                                ..default()
+                            },
+                            bg_alpha(R::ContainerHigh, 0.9),
+                            focusable(Action::Filter(None), size::FOCUS_GROW, &t("nav.library")),
+                            GameTile {
+                                game: usize::MAX,
+                                slot: shown.len(),
+                            },
+                        ))
+                        .with_children(|c| {
+                            c.spawn(kit.icon("grid_view", icon::LG, R::OnSurface));
+                            c.spawn(kit.text(t("nav.library"), ts::TITLE_MEDIUM, R::OnSurface));
+                            c.spawn(kit.text(count, ts::LABEL_SMALL, R::OnSurfaceVariant));
+                        });
+                });
+            });
+        });
+    });
+}
+
+/// Activity: one quiet line of real entries (resume point, running game, transfers, last
+/// session), each a pill sized by its content.
 fn activity(col: &mut ChildSpawnerCommands, kit: &Kit, shell: &Shell, running: &Running) {
-    let t = &kit.theme;
-    let mut cards: Vec<(String, String, &str, Action, Option<PathBuf>)> = Vec::new();
+    let mut items: Vec<(String, String, &str, Action)> = Vec::new();
     if let Some(ext) = &running.external {
-        cards.push((
-            "Running".into(),
-            ext.title.clone(),
-            "sports_esports",
-            Action::ReturnToGame,
-            None,
-        ));
+        items.push((t("activity.running"), ext.title.clone(), "sports_esports", Action::ReturnToGame));
     }
-    for (i, game) in shell.library.games.iter().enumerate() {
-        let suspended = Suspended::of(&shell.paths.states(), &game.key);
-        if suspended.exists() && cards.len() < 2 {
-            let label = if running.machine_key() == Some(game.key.as_str()) {
-                "Suspended · instant"
-            } else {
-                "Resume"
-            };
-            cards.push((
-                label.into(),
-                game.title.clone(),
-                "history",
-                Action::Play(i),
-                suspended.thumb.is_file().then_some(suspended.thumb),
-            ));
-        }
+    if let Some((i, game)) = shell.library.games.iter().enumerate().find(|(i, g)| {
+        *i != shell.selected && g.is_native() && Suspended::of(&shell.paths.states(), &g.key).exists()
+    }) {
+        items.push((t("activity.resume"), game.title.clone(), "history", Action::Play(i)));
     }
     let transfers = shell.library.downloads.len();
-    cards.push((
-        "Downloads".into(),
+    items.push((
+        t("activity.downloads"),
         if transfers == 0 {
-            format!("{} packages installed", shell.library.packages.len())
+            tf("activity.packages", &[("count", &shell.library.packages.len())])
         } else {
-            format!("{transfers} Steam transfers")
+            tf("activity.transfers", &[("count", &transfers)])
         },
         "download",
         Action::Go(Screen::Downloads),
-        None,
-    ));
-    cards.push((
-        "NVIDIA".into(),
-        String::new(),
-        "monitoring",
-        Action::Quick(crate::app::QuickAction::Hud),
-        None,
     ));
     let recent = shell.store.lock().unwrap().recent(1);
-    if let Some((key, _, at, seconds)) = recent.first()
-        && let Some((i, game)) = shell
-            .library
-            .games
-            .iter()
-            .enumerate()
-            .find(|(_, g)| &g.key == key)
+    if let Some((key, _, _, _)) = recent.first()
+        && let Some((i, game)) = shell.library.games.iter().enumerate().find(|(_, g)| &g.key == key)
     {
-        cards.push((
-            format!("Last played · {:.0} min", seconds / 60.0),
-            format!("{} · {}", game.title, at.get(..16).unwrap_or(at)),
-            "videogame_asset",
-            Action::Hub(i),
-            None,
-        ));
+        items.push((t("activity.last"), game.title.clone(), "videogame_asset", Action::Hub(i)));
     }
-    col.spawn(kit.text("Activity", ts::TITLE_MEDIUM, t.on_surface_variant));
     col.spawn(Node {
-        column_gap: px(space::LG),
-        margin: UiRect::top(px(space::MD)),
+        column_gap: px(space::SM + space::XS),
+        margin: UiRect::top(px(space::LG)),
+        align_items: AlignItems::Center,
         ..default()
     })
     .with_children(|row| {
-        for (title, body, icon, action, image) in cards.into_iter().take(4) {
-            let gpu = title == "NVIDIA";
+        row.spawn(kit.text(t("activity.title"), ts::LABEL, R::OnSurfaceVariant));
+        for (title, body, glyph, action) in items {
+            let label = format!("{title}: {body}");
             row.spawn((
                 Node {
-                    width: px(400),
-                    height: px(150),
-                    padding: UiRect::all(px(space::LG)),
-                    column_gap: px(space::MD),
+                    height: px(size::CHIP_HEIGHT),
+                    padding: UiRect::horizontal(px(space::MD)),
+                    column_gap: px(space::SM),
                     align_items: AlignItems::Center,
-                    overflow: Overflow::clip(),
-                    border_radius: radius(shape::EXTRA_LARGE),
+                    border_radius: radius(shape::FULL),
                     ..default()
                 },
-                BackgroundColor(t.surface_container.with_alpha(0.92)),
-                BoxShadow::new(Color::BLACK.with_alpha(0.35), px(0), px(6), px(0), px(16)),
-                focusable(action, 0.05),
+                bg_alpha(R::ContainerHigh, 0.8),
+                focusable(action, 0.04, &label),
             ))
-            .with_children(|card| {
-                if let Some(path) = image {
-                    card.spawn((
-                        Node {
-                            width: px(150),
-                            height: px(102),
-                            flex_shrink: 0.0,
-                            border_radius: radius(shape::MEDIUM),
-                            ..default()
-                        },
-                        ImageNode::default(),
-                        Cover,
-                        ArtSlot(path),
-                    ));
-                } else {
-                    card.spawn((
-                        Node {
-                            width: px(64),
-                            height: px(64),
-                            flex_shrink: 0.0,
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            border_radius: radius(shape::FULL),
-                            ..default()
-                        },
-                        BackgroundColor(t.primary_container),
-                    ))
-                    .with_children(|c| {
-                        c.spawn(kit.icon(icon, 34.0, t.on_primary_container));
-                    });
-                }
-                card.spawn(Node {
-                    flex_direction: FlexDirection::Column,
-                    row_gap: px(space::XS),
-                    ..default()
-                })
-                .with_children(|c| {
-                    c.spawn(kit.text(title, ts::LABEL, t.primary));
-                    if gpu {
-                        c.spawn((kit.text("", ts::BODY_MEDIUM, t.on_surface), Bind::Gpu));
-                    } else {
-                        c.spawn(kit.text(body, ts::BODY_MEDIUM, t.on_surface));
-                    }
-                });
+            .with_children(|pill| {
+                pill.spawn(kit.icon(glyph, icon::SM, R::Primary));
+                pill.spawn(kit.text(title, ts::LABEL, R::Primary));
+                pill.spawn(kit.text(body, ts::LABEL, R::OnSurface));
             });
         }
     });
 }
 
 pub fn spawn_library(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>) {
-    let t = &kit.theme;
     let games = shell.visible_games();
     let focus = games.iter().position(|&i| i == shell.selected).unwrap_or(0);
-    commands
-        .spawn(root(Screen::Library, t.surface_dim))
-        .with_children(|r| {
-            r.spawn(Node {
-                width: percent(100),
-                height: percent(100),
-                flex_direction: FlexDirection::Column,
-                padding: UiRect::axes(px(space::XXXL), px(space::XL + 8.0)),
-                row_gap: px(space::LG),
+    commands.spawn(root(Screen::Library)).with_children(|r| {
+        r.spawn(Node {
+            width: percent(100),
+            height: percent(100),
+            flex_direction: FlexDirection::Column,
+            padding: UiRect::axes(px(space::XXXL), px(space::XL + space::SM)),
+            row_gap: px(space::LG),
+            ..default()
+        })
+        .with_children(|col| {
+            top_bar(col, &kit, &shell, Screen::Library);
+            col.spawn(Node {
+                column_gap: px(space::SM),
+                align_items: AlignItems::Center,
                 ..default()
             })
-            .with_children(|col| {
-                top_bar(col, &kit, &shell, Screen::Library);
-                col.spawn(Node {
-                    column_gap: px(space::SM),
-                    align_items: AlignItems::Center,
+            .with_children(|row| {
+                let count = tf("library.count", &[("count", &games.len())]);
+                row.spawn(kit.text(count, ts::HEADLINE_SMALL, R::OnSurface));
+                row.spawn(Node {
+                    width: px(space::LG),
                     ..default()
-                })
-                .with_children(|row| {
-                    row.spawn(kit.text(
-                        format!("{} games", games.len()),
-                        ts::HEADLINE_SMALL,
-                        t.on_surface,
-                    ));
-                    row.spawn(Node {
-                        width: px(space::LG),
-                        ..default()
-                    });
-                    for (label, filter) in [
-                        ("All", None),
-                        ("Steam", Some(Source::Steam)),
-                        ("Emulators", Some(Source::Emulators)),
-                        ("Web", Some(Source::Web)),
-                    ] {
-                        chip(
-                            row,
-                            &kit,
-                            label,
-                            shell.filter == filter,
-                            Action::Filter(filter),
-                        );
-                    }
                 });
-                col.spawn((Node {
-                    width: percent(100),
-                    flex_grow: 1.0,
-                    overflow: Overflow::clip(),
-                    padding: UiRect::all(px(12)),
-                    ..default()
-                },))
-                    .with_children(|viewport| {
-                        viewport
-                            .spawn((
-                                Node {
-                                    width: percent(100),
-                                    flex_wrap: FlexWrap::Wrap,
-                                    column_gap: px(space::LG),
-                                    row_gap: px(space::LG),
-                                    top: px(0),
-                                    align_content: AlignContent::FlexStart,
-                                    ..default()
-                                },
-                                LibraryScroll(Spring::spatial(0.0)),
-                            ))
-                            .with_children(|grid| {
-                                for (slot, &index) in games.iter().enumerate() {
-                                    tile(
-                                        grid,
-                                        &kit,
-                                        &shell,
-                                        index,
-                                        slot,
-                                        (262.0, 122.0),
-                                        slot == focus,
-                                    );
-                                }
-                            });
+                for (key, filter) in [
+                    ("library.all", None),
+                    ("library.steam", Some(Source::Steam)),
+                    ("library.emulators", Some(Source::Emulators)),
+                    ("library.web", Some(Source::Web)),
+                ] {
+                    chip(row, &kit, &t(key), shell.filter == filter, Action::Filter(filter));
+                }
+            });
+            if games.is_empty() && shell.filter == Some(Source::Emulators) {
+                col.spawn(kit.text(t("library.empty-emulators"), ts::BODY, R::OnSurfaceVariant));
+            }
+            col.spawn(Node {
+                width: percent(100),
+                flex_grow: 1.0,
+                overflow: Overflow::clip(),
+                padding: UiRect::all(px(space::MD)),
+                ..default()
+            })
+            .with_children(|viewport| {
+                viewport
+                    .spawn((
+                        Node {
+                            width: percent(100),
+                            flex_wrap: FlexWrap::Wrap,
+                            column_gap: px(space::LG),
+                            row_gap: px(space::LG),
+                            top: px(0),
+                            align_content: AlignContent::FlexStart,
+                            ..default()
+                        },
+                        LibraryScroll(Spring::spatial(0.0)),
+                    ))
+                    .with_children(|grid| {
+                        for (slot, &index) in games.iter().enumerate() {
+                            capsule(grid, &kit, &shell, index, slot, size::GRID_CAPSULE, slot == focus);
+                        }
                     });
             });
         });
+    });
 }
 
 pub fn spawn_hub(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>, running: Res<Running>) {
-    let t = &kit.theme;
     let index = shell.hub;
     let Some(game) = shell.library.games.get(index) else {
         return;
     };
     let suspended = Suspended::of(&shell.paths.states(), &game.key);
     let active = running.machine_key() == Some(game.key.as_str());
-    let hero = art_for(&shell, game, true);
-    commands
-        .spawn(root(Screen::Hub, t.surface_dim))
-        .with_children(|r| {
-            if let Some(path) = hero {
-                r.spawn((
-                    Node {
-                        width: percent(100),
-                        height: percent(100),
-                        position_type: PositionType::Absolute,
-                        ..default()
-                    },
-                    ImageNode::default().with_color(Color::WHITE.with_alpha(0.55)),
-                    Cover,
-                    ArtSlot(path),
-                ));
-            }
-            r.spawn((
-                Node {
-                    width: percent(100),
-                    height: percent(100),
-                    position_type: PositionType::Absolute,
-                    ..default()
-                },
-                BackgroundGradient::from(LinearGradient::new(
-                    LinearGradient::TO_RIGHT,
-                    vec![
-                        ColorStop::new(t.surface_dim, percent(0)),
-                        ColorStop::new(t.surface_dim.with_alpha(0.55), percent(70)),
-                    ],
-                )),
-            ));
-            r.spawn(Node {
-                width: percent(100),
-                height: percent(100),
-                position_type: PositionType::Absolute,
-                padding: UiRect::axes(px(space::XXXL), px(space::XXL)),
-                column_gap: px(space::XXL),
+    commands.spawn(root(Screen::Hub)).with_children(|r| {
+        hero_backdrop(r, Scrim::Hub);
+        r.spawn(Node {
+            width: percent(100),
+            height: percent(100),
+            position_type: PositionType::Absolute,
+            padding: UiRect::axes(px(space::XXXL), px(space::XXL)),
+            column_gap: px(space::XXL),
+            ..default()
+        })
+        .with_children(|row| {
+            row.spawn(Node {
+                flex_direction: FlexDirection::Column,
+                row_gap: px(space::MD),
+                width: px(1000),
                 ..default()
             })
-            .with_children(|row| {
-                row.spawn(Node {
-                    flex_direction: FlexDirection::Column,
-                    row_gap: px(space::MD),
-                    width: px(980),
+            .with_children(|col| {
+                col.spawn(kit.text(&game.platform, ts::TITLE_MEDIUM, R::Primary));
+                col.spawn(kit.text(&game.title, ts::DISPLAY_LARGE, R::OnSurface));
+                col.spawn((kit.text("", ts::BODY, R::OnSurfaceVariant), Bind::HubState));
+                col.spawn(Node {
+                    column_gap: px(space::MD),
+                    margin: UiRect::vertical(px(space::LG)),
                     ..default()
                 })
-                .with_children(|col| {
-                    col.spawn(kit.text(&game.platform, ts::TITLE_MEDIUM, t.primary));
-                    col.spawn(kit.text(&game.title, ts::DISPLAY, t.on_surface));
-                    col.spawn((kit.text("", ts::BODY, t.on_surface_variant), Bind::HubState));
-                    col.spawn(Node {
-                        column_gap: px(space::MD),
-                        margin: UiRect::vertical(px(space::LG)),
-                        ..default()
-                    })
-                    .with_children(|actions| {
-                        let label = if active || (game.is_native() && suspended.exists()) {
-                            "Resume"
-                        } else {
-                            "Play"
-                        };
-                        button(
-                            actions,
-                            &kit,
-                            "play_arrow",
-                            label,
-                            true,
-                            Action::Play(index),
-                            DefaultFocus,
-                        );
-                        if game.is_native() && (suspended.exists() || active) {
-                            button(
-                                actions,
-                                &kit,
-                                "replay",
-                                "Start fresh",
-                                false,
-                                Action::Fresh(index),
-                                (),
-                            );
-                        }
-                        button(
-                            actions,
-                            &kit,
-                            "arrow_back",
-                            "Home",
-                            false,
-                            Action::Go(Screen::Home),
-                            (),
-                        );
-                    });
-                    col.spawn(kit.text("Game profile", ts::TITLE, t.on_surface));
-                    let mut rows = vec![
-                        ("speed", "Frame limit", ProfileField::FrameLimit),
-                        ("aspect_ratio", "Scaling", ProfileField::Scaler),
-                        ("history", "Instant resume", ProfileField::InstantResume),
-                        ("monitoring", "Performance overlay", ProfileField::Hud),
-                    ];
-                    if !game.is_native() {
-                        rows.insert(
-                            0,
-                            (
-                                "fullscreen",
-                                "Borderless full screen",
-                                ProfileField::Borderless,
-                            ),
-                        );
+                .with_children(|actions| {
+                    let label = if active || (game.is_native() && suspended.exists()) {
+                        t("action.resume")
+                    } else {
+                        play_verb(game)
+                    };
+                    button(actions, &kit, "play_arrow", &label, true, Action::Play(index), DefaultFocus);
+                    if game.is_native() && (suspended.exists() || active) {
+                        let restart = t("action.restart");
+                        button(actions, &kit, "replay", &restart, false, Action::Fresh(index), ());
                     }
-                    for (icon, label, field) in rows {
-                        setting_row(
-                            col,
-                            &kit,
-                            icon,
-                            label,
-                            Action::Profile(index, field),
-                            Bind::Profile(field),
-                        );
-                    }
+                    let home = t("action.home");
+                    button(actions, &kit, "home", &home, false, Action::Go(Screen::Home), ());
                 });
-                row.spawn((
-                    Node {
-                        flex_direction: FlexDirection::Column,
-                        row_gap: px(space::SM),
-                        padding: UiRect::all(px(space::LG)),
-                        width: px(560),
-                        align_self: AlignSelf::FlexEnd,
-                        border_radius: radius(shape::EXTRA_LARGE),
-                        ..default()
-                    },
-                    BackgroundColor(t.surface_container.with_alpha(0.9)),
-                ))
-                .with_children(|panel| {
-                    panel.spawn(kit.text("Details", ts::TITLE_MEDIUM, t.on_surface));
-                    for line in details(game) {
-                        panel.spawn(kit.text(line, ts::BODY_MEDIUM, t.on_surface_variant));
-                    }
-                });
+                col.spawn(kit.text(t("hub.profile"), ts::TITLE, R::OnSurface));
+                let mut rows = vec![
+                    ("speed", "profile.frame-limit", ProfileField::FrameLimit),
+                    ("aspect_ratio", "profile.scaling", ProfileField::Scaler),
+                    ("history", "profile.instant-resume", ProfileField::InstantResume),
+                    ("monitoring", "profile.performance", ProfileField::Hud),
+                ];
+                if !game.is_native() {
+                    rows.insert(0, ("fullscreen", "profile.borderless", ProfileField::Borderless));
+                }
+                for (glyph, key, field) in rows {
+                    let action = Action::Profile(index, field);
+                    setting_row(col, &kit, glyph, &t(key), action, Bind::Profile(field));
+                }
+            });
+            row.spawn((
+                Node {
+                    flex_direction: FlexDirection::Column,
+                    row_gap: px(space::SM),
+                    padding: UiRect::all(px(space::LG)),
+                    width: px(560),
+                    align_self: AlignSelf::FlexEnd,
+                    border_radius: radius(shape::LARGE),
+                    ..default()
+                },
+                bg_alpha(R::Container, 0.92),
+            ))
+            .with_children(|panel| {
+                panel.spawn(kit.text(t("hub.details"), ts::TITLE_MEDIUM, R::OnSurface));
+                for line in details(game) {
+                    panel.spawn(kit.text(line, ts::BODY_MEDIUM, R::OnSurfaceVariant));
+                }
             });
         });
+    });
 }
 
 fn details(game: &Game) -> Vec<String> {
@@ -917,13 +632,13 @@ fn details(game: &Game) -> Vec<String> {
         Kind::Steam { app_id, installed } => {
             lines.push(format!("Steam app {app_id}"));
             lines.push(if *installed {
-                "Launch: steam://rungameid".into()
+                "steam://rungameid".into()
             } else {
-                "Not installed on this PC".into()
+                t("platform.steam-not-installed")
             });
         }
         Kind::Native { system, path, .. } => {
-            lines.push(format!("Runs in Bun Engine ({system}), in-process"));
+            lines.push(format!("{} ({system})", t("meta.bun-engine")));
             lines.push(
                 path.file_name()
                     .map(|f| f.to_string_lossy().to_string())
@@ -931,28 +646,23 @@ fn details(game: &Game) -> Vec<String> {
             );
         }
         Kind::Route { route, system, .. } => {
-            lines.push(format!(
-                "Route: {}",
-                route.clone().unwrap_or_else(|| format!("{system} default"))
-            ));
-            lines.push("Release emulator from usr/ (bep)".into());
+            lines.push(route.clone().unwrap_or_else(|| system.clone()));
         }
         Kind::Web { core, systems } => {
-            lines.push(format!("Browser core {core} ({})", systems.join(", ")));
+            lines.push(format!("{core} ({})", systems.join(", ")));
         }
     }
     if game.size > 0 {
-        lines.push(format!("Size: {:.1} MB", game.size as f64 / 1_048_576.0));
+        lines.push(format!("{:.1} MB", game.size as f64 / 1_048_576.0));
     }
     if let Some(d) = &game.developer {
-        lines.push(format!("Developer: {d}"));
+        lines.push(d.clone());
     }
     if let Some(y) = &game.year {
-        lines.push(format!("Year: {y}"));
+        lines.push(y.clone());
     }
-    lines.push(format!("Played {} times", game.play_count));
     if let Some(last) = &game.last_played {
-        lines.push(format!("Last played: {}", last.get(..16).unwrap_or(last)));
+        lines.push(tf("meta.last-played", &[("date", &last.get(..10).unwrap_or(last))]));
     }
     lines
 }
@@ -961,249 +671,197 @@ fn details(game: &Game) -> Vec<String> {
 pub fn setting_row(
     p: &mut ChildSpawnerCommands,
     kit: &Kit,
-    icon: &str,
+    glyph: &str,
     label: &str,
     action: Action,
     bind: Bind,
 ) {
-    let t = &kit.theme;
     p.spawn((
         Node {
-            width: px(820),
-            height: px(68),
+            width: px(size::ROW_WIDTH),
+            height: px(size::ROW_HEIGHT),
             padding: UiRect::horizontal(px(space::LG)),
             column_gap: px(space::MD),
             align_items: AlignItems::Center,
             border_radius: radius(shape::LARGE),
             ..default()
         },
-        BackgroundColor(t.surface_container_high.with_alpha(0.85)),
-        focusable(action, 0.02),
+        bg_alpha(R::ContainerHigh, 0.9),
+        focusable(action, 0.015, label),
     ))
     .with_children(|row| {
-        row.spawn(kit.icon(icon, 28.0, t.on_surface_variant));
-        row.spawn(kit.text(label, ts::BODY, t.on_surface));
+        row.spawn(kit.icon(glyph, icon::MD, R::OnSurfaceVariant));
+        row.spawn(kit.text(label, ts::BODY, R::OnSurface));
         row.spawn(Node {
             flex_grow: 1.0,
             ..default()
         });
-        row.spawn((kit.text("", ts::BODY, t.primary), bind));
-        row.spawn(kit.icon("chevron_right", 26.0, t.on_surface_variant));
+        row.spawn((kit.text("", ts::BODY, R::Primary), bind));
+        row.spawn(kit.icon("chevron_right", icon::MD, R::OnSurfaceVariant));
     });
 }
 
 pub fn spawn_downloads(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>) {
-    let t = &kit.theme;
-    commands
-        .spawn(root(Screen::Downloads, t.surface_dim))
-        .with_children(|r| {
-            r.spawn(Node {
-                width: percent(100),
-                height: percent(100),
-                flex_direction: FlexDirection::Column,
-                padding: UiRect::axes(px(space::XXXL), px(space::XL + 8.0)),
-                row_gap: px(space::LG),
-                ..default()
-            })
-            .with_children(|col| {
-                top_bar(col, &kit, &shell, Screen::Downloads);
-                col.spawn(kit.text("Steam transfers", ts::HEADLINE_SMALL, t.on_surface));
-                if shell.library.downloads.is_empty() {
-                    col.spawn(kit.text(
-                        "No download or update in progress.",
-                        ts::BODY,
-                        t.on_surface_variant,
-                    ));
-                }
-                for (i, d) in shell.library.downloads.iter().enumerate() {
-                    let progress = if d.total > 0 {
-                        d.done as f32 / d.total as f32
-                    } else {
-                        0.0
-                    };
-                    col.spawn((
+    commands.spawn(root(Screen::Downloads)).with_children(|r| {
+        r.spawn(Node {
+            width: percent(100),
+            height: percent(100),
+            flex_direction: FlexDirection::Column,
+            padding: UiRect::axes(px(space::XXXL), px(space::XL + space::SM)),
+            row_gap: px(space::LG),
+            ..default()
+        })
+        .with_children(|col| {
+            top_bar(col, &kit, &shell, Screen::Downloads);
+            col.spawn(kit.text(t("downloads.steam"), ts::HEADLINE_SMALL, R::OnSurface));
+            if shell.library.downloads.is_empty() {
+                col.spawn(kit.text(t("downloads.none"), ts::BODY, R::OnSurfaceVariant));
+            }
+            for (i, d) in shell.library.downloads.iter().enumerate() {
+                let progress = if d.total > 0 {
+                    d.done as f32 / d.total as f32
+                } else {
+                    0.0
+                };
+                col.spawn((
+                    Node {
+                        width: px(1200),
+                        flex_direction: FlexDirection::Column,
+                        row_gap: px(space::SM),
+                        padding: UiRect::all(px(space::LG)),
+                        border_radius: radius(shape::LARGE),
+                        ..default()
+                    },
+                    bg(R::ContainerHigh),
+                    focusable(Action::Noop, 0.01, &d.title),
+                ))
+                .insert_if(DefaultFocus, || i == 0)
+                .with_children(|c| {
+                    let line = format!("{} · {}", d.title, d.state);
+                    c.spawn(kit.text(line, ts::TITLE_MEDIUM, R::OnSurface));
+                    c.spawn((
                         Node {
-                            width: px(1200),
-                            flex_direction: FlexDirection::Column,
-                            row_gap: px(space::SM),
-                            padding: UiRect::all(px(space::LG)),
-                            border_radius: radius(shape::LARGE),
+                            width: percent(100),
+                            height: px(space::SM),
+                            border_radius: radius(space::XS),
                             ..default()
                         },
-                        BackgroundColor(t.surface_container_high),
-                        focusable(Action::Noop, 0.02),
+                        bg(R::ContainerHighest),
                     ))
-                    .insert_if(DefaultFocus, || i == 0)
-                    .with_children(|c| {
-                        c.spawn(kit.text(
-                            format!("{} · {}", d.title, d.state),
-                            ts::TITLE_MEDIUM,
-                            t.on_surface,
-                        ));
-                        c.spawn((
+                    .with_children(|bar| {
+                        bar.spawn((
                             Node {
-                                width: percent(100),
-                                height: px(8),
-                                border_radius: radius(4.0),
+                                width: percent(progress * 100.0),
+                                height: percent(100),
+                                border_radius: radius(space::XS),
                                 ..default()
                             },
-                            BackgroundColor(t.surface_container_highest),
-                        ))
-                        .with_children(|bar| {
-                            bar.spawn((
-                                Node {
-                                    width: percent(progress * 100.0),
-                                    height: percent(100),
-                                    border_radius: radius(4.0),
-                                    ..default()
-                                },
-                                BackgroundColor(t.primary),
-                            ));
-                        });
-                        c.spawn(kit.text(
-                            format!(
-                                "{:.1} / {:.1} GB",
-                                d.done as f64 / 1e9,
-                                d.total as f64 / 1e9
-                            ),
-                            ts::BODY_MEDIUM,
-                            t.on_surface_variant,
+                            bg(R::Primary),
                         ));
                     });
+                    let done = format!("{:.1}", d.done as f64 / 1e9);
+                    let total = format!("{:.1}", d.total as f64 / 1e9);
+                    c.spawn(kit.text(
+                        tf("downloads.progress", &[("done", &done), ("total", &total)]),
+                        ts::BODY_MEDIUM,
+                        R::OnSurfaceVariant,
+                    ));
+                });
+            }
+            col.spawn(kit.text(t("downloads.packages"), ts::HEADLINE_SMALL, R::OnSurface));
+            col.spawn(Node {
+                flex_wrap: FlexWrap::Wrap,
+                column_gap: px(space::SM),
+                row_gap: px(space::SM),
+                width: percent(100),
+                ..default()
+            })
+            .with_children(|list| {
+                for (i, package) in shell.library.packages.iter().enumerate() {
+                    let label = format!("{} {}", package.id, package.version);
+                    list.spawn((
+                        Node {
+                            height: px(size::CHIP_HEIGHT),
+                            padding: UiRect::horizontal(px(space::MD)),
+                            column_gap: px(space::SM),
+                            align_items: AlignItems::Center,
+                            border_radius: radius(shape::FULL),
+                            ..default()
+                        },
+                        bg(R::Container),
+                        focusable(Action::Noop, 0.03, &label),
+                    ))
+                    .insert_if(DefaultFocus, || i == 0 && shell.library.downloads.is_empty())
+                    .with_children(|c| {
+                        c.spawn(kit.text(&package.id, ts::LABEL, R::OnSurface));
+                        c.spawn(kit.text(&package.version, ts::LABEL, R::OnSurfaceVariant));
+                    });
                 }
-                col.spawn(kit.text(
-                    "Emulators and cores installed by bep (usr/)",
-                    ts::HEADLINE_SMALL,
-                    t.on_surface,
-                ));
-                col.spawn(Node {
-                    flex_wrap: FlexWrap::Wrap,
-                    column_gap: px(space::MD),
-                    row_gap: px(space::MD),
-                    width: percent(100),
+            });
+        });
+    });
+}
+
+pub fn spawn_settings(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>) {
+    commands.spawn(root(Screen::Settings)).with_children(|r| {
+        r.spawn(Node {
+            width: percent(100),
+            height: percent(100),
+            flex_direction: FlexDirection::Column,
+            padding: UiRect::axes(px(space::XXXL), px(space::XL + space::SM)),
+            row_gap: px(space::MD),
+            ..default()
+        })
+        .with_children(|col| {
+            top_bar(col, &kit, &shell, Screen::Settings);
+            col.spawn(Node {
+                column_gap: px(space::XXL),
+                margin: UiRect::top(px(space::LG)),
+                ..default()
+            })
+            .with_children(|row| {
+                row.spawn(Node {
+                    flex_direction: FlexDirection::Column,
+                    row_gap: px(space::SM + space::XS),
                     ..default()
                 })
-                .with_children(|grid| {
-                    for (i, package) in shell.library.packages.iter().enumerate() {
-                        grid.spawn((
-                            Node {
-                                width: px(330),
-                                padding: UiRect::all(px(space::MD)),
-                                flex_direction: FlexDirection::Column,
-                                border_radius: radius(shape::LARGE),
-                                ..default()
-                            },
-                            BackgroundColor(t.surface_container),
-                            focusable(Action::Noop, 0.03),
-                        ))
-                        .insert_if(DefaultFocus, || {
-                            i == 0 && shell.library.downloads.is_empty()
-                        })
-                        .with_children(|c| {
-                            c.spawn(kit.text(&package.id, ts::TITLE_MEDIUM, t.on_surface));
-                            c.spawn(kit.text(
-                                format!(
-                                    "{} · {}",
-                                    package.version,
-                                    package.installed_at.get(..10).unwrap_or("")
-                                ),
-                                ts::BODY_MEDIUM,
-                                t.on_surface_variant,
-                            ));
-                        });
+                .with_children(|list| {
+                    list.spawn(kit.text(t("settings.console"), ts::TITLE, R::OnSurface));
+                    for (glyph, key, setting) in [
+                        ("vibration", "settings.haptics", SettingKey::Haptics),
+                        ("motion_photos_off", "settings.motion", SettingKey::Motion),
+                        ("monitoring", "settings.performance", SettingKey::Hud),
+                        ("library_books", "settings.reload", SettingKey::Rescan),
+                        ("desktop_windows", "settings.session", SettingKey::Session),
+                        ("logout", "settings.desktop", SettingKey::Desktop),
+                    ] {
+                        let action = Action::Setting(setting);
+                        setting_row(list, &kit, glyph, &t(key), action, Bind::Setting(setting));
+                    }
+                });
+                row.spawn((
+                    Node {
+                        flex_direction: FlexDirection::Column,
+                        row_gap: px(space::SM),
+                        padding: UiRect::all(px(space::LG)),
+                        width: px(700),
+                        border_radius: radius(shape::LARGE),
+                        ..default()
+                    },
+                    bg(R::Container),
+                ))
+                .with_children(|about| {
+                    about.spawn(kit.text(t("settings.system"), ts::TITLE, R::OnSurface));
+                    for bind in [Bind::NvidiaPanel, Bind::DisplayPanel, Bind::SessionPanel] {
+                        about.spawn((kit.text("", ts::BODY_MEDIUM, R::OnSurfaceVariant), bind));
                     }
                 });
             });
         });
+    });
 }
 
-pub fn spawn_settings(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>) {
-    let t = &kit.theme;
-    commands
-        .spawn(root(Screen::Settings, t.surface_dim))
-        .with_children(|r| {
-            r.spawn(Node {
-                width: percent(100),
-                height: percent(100),
-                flex_direction: FlexDirection::Column,
-                padding: UiRect::axes(px(space::XXXL), px(space::XL + 8.0)),
-                row_gap: px(space::MD),
-                ..default()
-            })
-            .with_children(|col| {
-                top_bar(col, &kit, &shell, Screen::Settings);
-                col.spawn(Node {
-                    column_gap: px(space::XXL),
-                    margin: UiRect::top(px(space::LG)),
-                    ..default()
-                })
-                .with_children(|row| {
-                    row.spawn(Node {
-                        flex_direction: FlexDirection::Column,
-                        row_gap: px(space::MD),
-                        ..default()
-                    })
-                    .with_children(|list| {
-                        list.spawn(kit.text("Console", ts::TITLE, t.on_surface));
-                        let rows = [
-                            ("music_note", "UI sounds", SettingKey::Sounds),
-                            ("vibration", "Controller haptics", SettingKey::Haptics),
-                            ("motion_photos_off", "Reduced motion", SettingKey::Motion),
-                            ("monitoring", "Performance overlay", SettingKey::Hud),
-                            ("library_books", "Reload library", SettingKey::Rescan),
-                            (
-                                "desktop_windows",
-                                "Start at sign-in (opt-in)",
-                                SettingKey::Session,
-                            ),
-                            ("logout", "Return to the desktop", SettingKey::Desktop),
-                        ];
-                        for (i, (icon, label, key)) in rows.into_iter().enumerate() {
-                            list.spawn(Node::default()).with_children(|slot| {
-                                setting_row(
-                                    slot,
-                                    &kit,
-                                    icon,
-                                    label,
-                                    Action::Setting(key),
-                                    Bind::Setting(key),
-                                );
-                            });
-                            let _ = i;
-                        }
-                    });
-                    row.spawn((
-                        Node {
-                            flex_direction: FlexDirection::Column,
-                            row_gap: px(space::SM),
-                            padding: UiRect::all(px(space::LG)),
-                            width: px(700),
-                            border_radius: radius(shape::EXTRA_LARGE),
-                            ..default()
-                        },
-                        BackgroundColor(t.surface_container),
-                    ))
-                    .with_children(|about| {
-                        about.spawn(kit.text("System", ts::TITLE, t.on_surface));
-                        about.spawn((
-                            kit.text("", ts::BODY_MEDIUM, t.on_surface_variant),
-                            Bind::NvidiaPanel,
-                        ));
-                        about.spawn((
-                            kit.text("", ts::BODY_MEDIUM, t.on_surface_variant),
-                            Bind::DisplayPanel,
-                        ));
-                        about.spawn((
-                            kit.text("", ts::BODY_MEDIUM, t.on_surface_variant),
-                            Bind::SessionPanel,
-                        ));
-                    });
-                });
-            });
-        });
-}
-
-pub fn spawn_playing(mut commands: Commands, kit: Res<Kit>, running: Res<Running>) {
+pub fn spawn_playing(mut commands: Commands, running: Res<Running>) {
     let (w, h) = running.image_size;
     let aspect = if h > 0 && w > 1 {
         w as f32 / h as f32
@@ -1234,11 +892,10 @@ pub fn spawn_playing(mut commands: Commands, kit: Res<Kit>, running: Res<Running
                 ImageNode::new(running.image.clone()),
                 MachineView,
             ));
-            let _ = &kit;
         });
 }
 
-/// Keeps the machine image node on the latest handle and aspect ratio.
+/// Keeps the game view on the latest engine picture and aspect ratio.
 pub fn update_machine_view(
     running: Res<Running>,
     mut views: Query<(&mut ImageNode, &mut Node), With<MachineView>>,
@@ -1259,7 +916,6 @@ pub fn update_machine_view(
 
 /// Global toast and performance HUD (live across screens).
 pub fn spawn_global(mut commands: Commands, kit: Res<Kit>) {
-    let t = &kit.theme;
     commands
         .spawn((
             Node {
@@ -1280,14 +936,13 @@ pub fn spawn_global(mut commands: Commands, kit: Res<Kit>) {
                     max_width: px(1400),
                     ..default()
                 },
-                BackgroundColor(t.surface_container_highest),
-                BoxShadow::new(Color::BLACK.with_alpha(0.5), px(0), px(6), px(0), px(20)),
+                bg(R::ContainerHighest),
                 UiTransform::IDENTITY,
                 ToastBox(Spring::spatial(0.0)),
                 Visibility::Hidden,
             ))
             .with_children(|b| {
-                b.spawn((kit.text("", ts::BODY, t.on_surface), Bind::Toast));
+                b.spawn((kit.text("", ts::BODY, R::OnSurface), Bind::Toast));
             });
         });
     commands
@@ -1300,35 +955,38 @@ pub fn spawn_global(mut commands: Commands, kit: Res<Kit>) {
                 border_radius: radius(shape::MEDIUM),
                 ..default()
             },
-            BackgroundColor(Color::BLACK.with_alpha(0.62)),
+            bg_alpha(R::Scrim, 0.7),
             GlobalZIndex(40),
             Visibility::Hidden,
-            Bind::Hud,
+            HudBox,
         ))
         .with_children(|b| {
-            b.spawn((kit.text("", ts::LABEL, Color::WHITE), Bind::Hud));
+            b.spawn((kit.text("", ts::LABEL, R::OnSurface), Bind::Hud));
         });
 }
 
-/// Fill `ArtSlot` images once decoded.
-pub fn fill_art(mut art: ResMut<Art>, mut slots: Query<(&ArtSlot, &mut ImageNode)>) {
-    for (slot, mut image) in &mut slots {
-        if image.image == Handle::default()
+/// Show artwork once decoded; the typographic tile stays when no real art exists.
+pub fn fill_art(
+    mut art: ResMut<Art>,
+    mut slots: Query<(&ArtSlot, &mut ImageNode, &mut Visibility)>,
+) {
+    for (slot, mut image, mut visibility) in &mut slots {
+        if *visibility == Visibility::Hidden
             && let Some(handle) = art.get(&slot.0)
         {
             image.image = handle;
+            *visibility = Visibility::Inherited;
         }
     }
 }
 
-/// Follow focus on game tiles: selected game, rail scroll and library scroll.
-#[allow(clippy::type_complexity)]
+/// Follow focus on capsules: selected game, rail scroll and library scroll.
 pub fn follow_focus(
     focus: Res<bevy::input_focus::InputFocus>,
     tiles: Query<&GameTile>,
     mut shell: ResMut<Shell>,
     mut rails: Query<&mut RailTrack>,
-    mut grids: Query<(&mut LibraryScroll, &ComputedNode)>,
+    mut grids: Query<&mut LibraryScroll>,
 ) {
     if !focus.is_changed() {
         return;
@@ -1336,16 +994,15 @@ pub fn follow_focus(
     let Some(tile) = focus.get().and_then(|e| tiles.get(e).ok()) else {
         return;
     };
-    if tile.game != usize::MAX {
+    if tile.game != usize::MAX && shell.selected != tile.game {
         shell.selected = tile.game;
     }
     for mut rail in &mut rails {
-        rail.0.target = -((tile.slot as f32) * (RAIL_TILE.0 + RAIL_GAP));
+        rail.0.target = -((tile.slot as f32) * (size::CAPSULE.0 + size::CAPSULE_GAP));
     }
-    for (mut grid, _) in &mut grids {
-        let per_row = 6.0;
-        let row = (tile.slot as f32 / per_row).floor();
-        grid.0.target = -(row - 1.0).max(0.0) * (122.0 + space::LG);
+    for mut grid in &mut grids {
+        let row = (tile.slot / size::GRID_COLUMNS) as f32;
+        grid.0.target = -(row - 1.0).max(0.0) * (size::GRID_CAPSULE.1 + space::LG);
     }
 }
 
@@ -1372,56 +1029,115 @@ pub fn animate_scroll(
     }
 }
 
-/// Hero art crossfade and hero texts/actions for the selected game.
-#[allow(clippy::too_many_arguments)]
-pub fn update_hero(
+/// The orchestrated moment: when the focused game's art is ready, the hero cross-fades and the
+/// scheme re-tints toward the art's source color together (~300 ms, emphasized easing).
+pub fn hero_and_tint(
     time: Res<Time>,
     motion: Res<Motion>,
     shell: Res<Shell>,
-    running: Res<Running>,
+    screen: Res<State<Screen>>,
     mut art: ResMut<Art>,
-    mut bg: Query<(&mut HeroBg, &mut ImageNode)>,
-    mut play: Query<&mut Focusable, (With<HeroButton>, Without<HeroHubButton>)>,
-    mut hub: Query<&mut Focusable, (With<HeroHubButton>, Without<HeroButton>)>,
-    children: Query<&Children>,
-    mut texts: Query<(&mut Text, Option<&Bind>)>,
-    buttons: Query<Entity, With<HeroButton>>,
+    mut theme: ResMut<Theme>,
+    mut heroes: Query<(&mut HeroBg, &mut ImageNode)>,
 ) {
-    let Some(game) = shell.library.games.get(shell.selected) else {
-        return;
+    let index = if *screen.get() == Screen::Hub {
+        shell.hub
+    } else {
+        shell.selected
     };
-    let wanted = art_for(&shell, game, true);
-    for (mut hero, mut image) in &mut bg {
-        if hero.shown != wanted {
-            if let Some(path) = &wanted {
-                if let Some(handle) = art.get(path) {
-                    image.image = handle;
-                    hero.shown = wanted.clone();
-                    hero.fade.state.value = 0.0;
-                    hero.fade.target = 0.85;
-                }
-            } else {
-                hero.shown = None;
-                hero.fade.target = 0.0;
+    let game = shell.library.games.get(index);
+    let wanted = game.map(|g| hero_art(&shell, g));
+    let ready = wanted.as_ref().and_then(|a| art.entry(a));
+    let tile_seed = game.and_then(|g| art.entry(&g.tile)).map(|(_, seed)| seed);
+    let gone = wanted.as_ref().is_none_or(|a| art.unavailable(a));
+    let id = wanted.as_ref().map(ArtRef::id);
+    for (mut hero, mut image) in &mut heroes {
+        if hero.shown == id {
+            continue;
+        }
+        if let Some((handle, seed)) = &ready {
+            image.image = handle.clone();
+            hero.shown = id.clone();
+            theme.retint(*seed, motion.reduced);
+        } else if gone {
+            hero.shown = id.clone();
+            image.color = Color::WHITE.with_alpha(0.0);
+            theme.retint(tile_seed.unwrap_or(crate::theme::BASELINE_SEED), motion.reduced);
+        }
+    }
+    let running = theme.step(time.delta_secs());
+    let alpha = if running {
+        theme.progress() * size::HERO_OPACITY
+    } else {
+        size::HERO_OPACITY
+    };
+    if ready.is_some() {
+        for (hero, mut image) in &mut heroes {
+            if hero.shown == id {
+                image.color = Color::WHITE.with_alpha(alpha);
             }
         }
-        hero.fade.step(time.delta_secs(), motion.reduced);
-        image.color = Color::WHITE.with_alpha(hero.fade.value().clamp(0.0, 1.0));
     }
+}
+
+/// Re-tint the legibility scrims with the scheme.
+pub fn tint_scrims(theme: Res<Theme>, mut scrims: Query<(Ref<Scrim>, &mut BackgroundGradient)>) {
+    for (scrim, mut gradient) in &mut scrims {
+        if !theme.is_changed() && !scrim.is_added() {
+            continue;
+        }
+        let s = theme.get(R::SurfaceDim);
+        let (side, bottom) = match *scrim {
+            Scrim::Hero => ((0.94, 0.62, 52.0, 82.0), (0.98, 52.0)),
+            Scrim::Hub => ((0.96, 0.72, 58.0, 100.0), (0.9, 40.0)),
+        };
+        *gradient = BackgroundGradient(vec![
+            LinearGradient::new(
+                LinearGradient::TO_RIGHT,
+                vec![
+                    ColorStop::new(s.with_alpha(side.0), percent(0)),
+                    ColorStop::new(s.with_alpha(side.1), percent(side.2)),
+                    ColorStop::new(s.with_alpha(0.0), percent(side.3)),
+                ],
+            )
+            .into(),
+            LinearGradient::new(
+                LinearGradient::TO_TOP,
+                vec![
+                    ColorStop::new(s.with_alpha(bottom.0), percent(0)),
+                    ColorStop::new(s.with_alpha(0.0), percent(bottom.1)),
+                ],
+            )
+            .into(),
+        ]);
+    }
+}
+
+/// Keep the hero actions on the selected game.
+#[allow(clippy::type_complexity)]
+pub fn hero_actions(
+    shell: Res<Shell>,
+    running: Res<Running>,
+    mut play: Query<&mut Focusable, (With<PlayButton>, Without<HubButton>)>,
+    mut hub: Query<&mut Focusable, (With<HubButton>, Without<PlayButton>)>,
+    children: Query<&Children>,
+    buttons: Query<Entity, With<PlayButton>>,
+    mut labels: Query<&mut Text, With<PlayLabelSlot>>,
+) {
     for mut f in &mut play {
-        if f.0 != crate::app::Action::Play(shell.selected) {
-            f.0 = crate::app::Action::Play(shell.selected);
+        if f.0 != Action::Play(shell.selected) {
+            f.0 = Action::Play(shell.selected);
         }
     }
     for mut f in &mut hub {
-        if f.0 != crate::app::Action::Hub(shell.selected) {
-            f.0 = crate::app::Action::Hub(shell.selected);
+        if f.0 != Action::Hub(shell.selected) {
+            f.0 = Action::Hub(shell.selected);
         }
     }
     let label = play_label(&shell, &running, shell.selected);
     for button in &buttons {
         for child in children.iter_descendants(button) {
-            if let Ok((mut text, None)) = texts.get_mut(child)
+            if let Ok(mut text) = labels.get_mut(child)
                 && text.0 != label
             {
                 text.0 = label.clone();
@@ -1430,29 +1146,33 @@ pub fn update_hero(
     }
 }
 
+fn play_verb(game: &Game) -> String {
+    match game.kind {
+        Kind::Steam {
+            installed: false, ..
+        } => t("action.steam-page"),
+        Kind::Web { .. } => t("action.open"),
+        _ => t("action.play"),
+    }
+}
+
 pub fn play_label(shell: &Shell, running: &Running, index: usize) -> String {
     let Some(game) = shell.library.games.get(index) else {
-        return "Play".into();
+        return t("action.play");
     };
     if running.external.as_ref().is_some_and(|e| e.key == game.key) {
-        return "Return to game".into();
+        return t("action.return");
     }
     if running.machine_key() == Some(game.key.as_str())
         || (game.is_native() && Suspended::of(&shell.paths.states(), &game.key).exists())
     {
-        return "Resume".into();
+        return t("action.resume");
     }
-    match game.kind {
-        Kind::Steam {
-            installed: false, ..
-        } => "View in Steam".into(),
-        Kind::Web { .. } => "Open".into(),
-        _ => "Play".into(),
-    }
+    play_verb(game)
 }
 
 fn hero_meta(shell: &Shell, game: &Game) -> String {
-    let mut parts = vec![game.platform.clone()];
+    let mut parts = Vec::new();
     if let Some(y) = &game.year {
         parts.push(y.clone());
     }
@@ -1460,22 +1180,72 @@ fn hero_meta(shell: &Shell, game: &Game) -> String {
         parts.push(d.clone());
     }
     if game.is_native() {
-        parts.push(
-            if Suspended::of(&shell.paths.states(), &game.key).exists() {
-                "Instant resume ready".into()
-            } else {
-                "Bun Engine".into()
-            },
-        );
+        parts.push(if Suspended::of(&shell.paths.states(), &game.key).exists() {
+            t("meta.instant-resume")
+        } else {
+            t("meta.bun-engine")
+        });
     }
     if let Some(last) = &game.last_played {
-        parts.push(format!("Last played {}", last.get(..10).unwrap_or(last)));
+        parts.push(tf("meta.last-played", &[("date", &last.get(..10).unwrap_or(last))]));
     }
     parts.join("  ·  ")
 }
 
-/// Every `Bind` text, refreshed at 4 Hz (the clock, NVIDIA and values) or on change.
-#[allow(clippy::too_many_arguments)]
+fn onoff(b: bool) -> String {
+    t(if b { "value.on" } else { "value.off" })
+}
+
+fn limit(fps: u32) -> String {
+    if fps == 0 {
+        t("value.display-rate")
+    } else {
+        tf("value.fps", &[("fps", &fps)])
+    }
+}
+
+fn scaler(s: &str) -> String {
+    match s {
+        "smooth" => t("value.smooth"),
+        "fsr1" => t("value.fsr1"),
+        _ => t("value.sharp"),
+    }
+}
+
+fn nvidia_panel(gpu: &crate::nvidia::GpuState) -> String {
+    if !gpu.available {
+        return gpu.summary();
+    }
+    let vrr = gpu.vrr.map_or("unknown".to_string(), |(on, possible, active)| {
+        format!(
+            "{}{}{}",
+            if on { "on" } else { "off" },
+            if possible { "" } else { ", display not capable" },
+            if active { ", active" } else { "" }
+        )
+    });
+    format!(
+        "{}\nDriver {}\n{}°C · core {} MHz · memory {} MHz · load {}%\n{:.0} W of {:.0} W · VRAM {} of {} MB\nG-SYNC/VRR {vrr}\nReflex {}",
+        gpu.name,
+        gpu.driver,
+        gpu.temperature_c.unwrap_or(0),
+        gpu.core_mhz.unwrap_or(0),
+        gpu.memory_mhz.unwrap_or(0),
+        gpu.load_percent.unwrap_or(0),
+        gpu.power_w.unwrap_or(0.0),
+        gpu.power_limit_w.unwrap_or(0.0),
+        gpu.vram_used_mb.unwrap_or(0),
+        gpu.vram_total_mb.unwrap_or(0),
+        if gpu.reflex_api {
+            "available in the driver, enabled by games"
+        } else {
+            "not exposed"
+        },
+    )
+}
+
+/// Every `Bind`, refreshed at 4 Hz (clock, NVIDIA, values) or on change; toast and HUD visibility.
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub fn update_bindings(
     time: Res<Time>,
     mut since: Local<f32>,
@@ -1486,9 +1256,14 @@ pub fn update_bindings(
     stats: Res<crate::script::Stats>,
     overlay: Res<State<Overlay>>,
     screen: Res<State<Screen>>,
+    pads: Query<(), With<Gamepad>>,
     mut texts: Query<(&mut Text, &Bind)>,
-    mut huds: Query<&mut Visibility, (With<Bind>, Without<Text>, Without<ToastBox>)>,
-    mut toasts: Query<(&mut Visibility, &mut ToastBox, &mut UiTransform), Without<Bind>>,
+    mut huds: Query<&mut Visibility, (With<HudBox>, Without<ToastBox>, Without<PadIndicator>)>,
+    mut pad_icons: Query<&mut Visibility, (With<PadIndicator>, Without<HudBox>, Without<ToastBox>)>,
+    mut toasts: Query<
+        (&mut Visibility, &mut ToastBox, &mut UiTransform),
+        (Without<PadIndicator>, Without<HudBox>),
+    >,
 ) {
     let dt = time.delta_secs();
     for (mut visibility, mut toast, mut transform) in &mut toasts {
@@ -1500,7 +1275,7 @@ pub fn update_bindings(
         } else {
             Visibility::Hidden
         };
-        transform.translation = Val2::px(0.0, (1.0 - v) * 40.0);
+        transform.translation = Val2::px(0.0, (1.0 - v) * space::XL);
     }
     *since += dt;
     let refresh = *since >= 0.25
@@ -1519,7 +1294,7 @@ pub fn update_bindings(
         .clone()
         .filter(|_| running.machine.is_some())
         .unwrap_or_else(|| {
-            shell.library.games.get(shell.hub).map_or_else(
+            shell.library.games.get(shell.selected).map_or_else(
                 || crate::profiles::Profile::new(""),
                 |g| shell.store.lock().unwrap().profile(&g.key),
             )
@@ -1540,36 +1315,22 @@ pub fn update_bindings(
             Visibility::Hidden
         };
     }
-    let onoff = |b: bool| if b { "On" } else { "Off" }.to_string();
-    let limit = |fps: u32| {
-        if fps == 0 {
-            "Display rate".to_string()
+    let pad_count = pads.iter().count();
+    for mut v in &mut pad_icons {
+        *v = if pad_count > 0 {
+            Visibility::Inherited
         } else {
-            format!("{fps} fps")
-        }
-    };
-    let scaler = |s: &str| match s {
-        "smooth" => "Smooth (bilinear)".to_string(),
-        "fsr1" => "FSR 1 (EASU + RCAS)".to_string(),
-        _ => "Sharp (nearest)".to_string(),
-    };
+            Visibility::Hidden
+        };
+    }
+    let selected = shell.library.games.get(shell.selected);
     for (mut text, bind) in &mut texts {
         let value = match bind {
             Bind::Clock => crate::app::clock(),
             Bind::Gpu => gpu.summary(),
-            Bind::HeroTitle => shell
-                .library
-                .games
-                .get(shell.selected)
-                .map(|g| g.title.clone())
-                .unwrap_or_default(),
-            Bind::HeroMeta => shell
-                .library
-                .games
-                .get(shell.selected)
-                .map(|g| hero_meta(&shell, g))
-                .unwrap_or_default(),
-            Bind::HeroPlay => play_label(&shell, &running, shell.selected),
+            Bind::HeroPlatform => selected.map(|g| g.platform.clone()).unwrap_or_default(),
+            Bind::HeroTitle => selected.map(|g| g.title.clone()).unwrap_or_default(),
+            Bind::HeroMeta => selected.map(|g| hero_meta(&shell, g)).unwrap_or_default(),
             Bind::Toast => shell
                 .toast
                 .as_ref()
@@ -1577,16 +1338,13 @@ pub fn update_bindings(
                 .unwrap_or_default(),
             Bind::Hud => {
                 let mut lines = vec![format!(
-                    "UI {:.0} fps · {:.2} ms (p99 {:.2})",
+                    "UI {:.0} fps · {:.2} ms · p99 {:.2} ms",
                     stats.fps(),
                     stats.mean_ms(),
                     stats.p99_ms()
                 )];
                 if let Some(i) = &info {
-                    lines.push(format!(
-                        "{} {:.1} fps · {:.2} ms/frame",
-                        i.name, i.fps, i.frame_ms
-                    ));
+                    lines.push(format!("{} {:.1} fps", i.name, i.fps));
                 }
                 if gpu.available {
                     lines.push(format!(
@@ -1610,135 +1368,92 @@ pub fn update_bindings(
                 }
             }
             Bind::Setting(key) => match key {
-                SettingKey::Sounds => onoff(settings.sounds),
                 SettingKey::Haptics => onoff(settings.haptics),
                 SettingKey::Hud => onoff(settings.hud),
                 SettingKey::Motion => match settings.motion {
-                    MotionPref::System => format!(
-                        "System ({})",
-                        if motion.reduced { "reduced" } else { "full" }
-                    ),
-                    MotionPref::Reduced => "Reduced".into(),
-                    MotionPref::Full => "Full".into(),
+                    MotionPref::System => {
+                        let mode = t(if motion.reduced {
+                            "value.reduced"
+                        } else {
+                            "value.full"
+                        });
+                        tf("value.system", &[("mode", &mode)])
+                    }
+                    MotionPref::Reduced => t("value.reduced"),
+                    MotionPref::Full => t("value.full"),
                 },
-                SettingKey::Rescan => format!("{} games", shell.library.games.len()),
+                SettingKey::Rescan => tf("library.count", &[("count", &shell.library.games.len())]),
                 SettingKey::Session => {
                     #[cfg(windows)]
                     {
-                        if crate::system::session_entry().is_some() {
-                            "Registered".into()
+                        t(if crate::system::session_entry().is_some() {
+                            "value.registered"
                         } else {
-                            "Not registered".into()
-                        }
+                            "value.not-registered"
+                        })
                     }
                     #[cfg(not(windows))]
                     {
                         String::new()
                     }
                 }
-                SettingKey::Desktop => {
-                    if shell.session {
-                        "Session".into()
-                    } else {
-                        "Window".into()
-                    }
-                }
+                SettingKey::Desktop => String::new(),
             },
-            Bind::QuickValue(action) => {
-                use crate::app::QuickAction as Q;
-                match action {
-                    Q::Hud => onoff(settings.hud),
-                    Q::FrameLimit => limit(profile.fps_limit),
-                    Q::Scaling => scaler(&profile.scaler),
-                    Q::Record => {
-                        if running.recorder.is_some() {
-                            "Recording".into()
-                        } else {
-                            "Off".into()
-                        }
+            Bind::QuickValue(action) => match action {
+                QuickAction::Hud => onoff(settings.hud),
+                QuickAction::FrameLimit => limit(profile.fps_limit),
+                QuickAction::Scaling => scaler(&profile.scaler),
+                QuickAction::Record => {
+                    if running.recorder.is_some() {
+                        t("value.recording")
+                    } else {
+                        t("value.off")
                     }
-                    Q::VolumeDown | Q::VolumeUp => shell
-                        .volume
-                        .map(|v| format!("{:.0}%", v * 100.0))
-                        .unwrap_or_default(),
-                    _ => String::new(),
                 }
-            }
-            Bind::NvidiaPanel => {
-                if gpu.available {
-                    let vrr = gpu.vrr.map_or("unknown".into(), |(on, possible, active)| {
-                        format!(
-                            "{} ({}{})",
-                            if on { "enabled" } else { "disabled" },
-                            if possible { "capable" } else { "not capable" },
-                            if active { ", active" } else { "" }
-                        )
-                    });
-                    format!(
-                        "{}\nDriver {}\n{}°C · core {} MHz · memory {} MHz · load {}%\nPower {:.0} W of {:.0} W · VRAM {} / {} MB\nG-SYNC/VRR: {vrr}\nReflex low latency: {}",
-                        gpu.name,
-                        gpu.driver,
-                        gpu.temperature_c.unwrap_or(0),
-                        gpu.core_mhz.unwrap_or(0),
-                        gpu.memory_mhz.unwrap_or(0),
-                        gpu.load_percent.unwrap_or(0),
-                        gpu.power_w.unwrap_or(0.0),
-                        gpu.power_limit_w.unwrap_or(0.0),
-                        gpu.vram_used_mb.unwrap_or(0),
-                        gpu.vram_total_mb.unwrap_or(0),
-                        if gpu.reflex_api {
-                            "driver API present (games enable it)"
-                        } else {
-                            "not exposed"
-                        },
-                    )
-                } else {
-                    gpu.summary()
-                }
-            }
+                QuickAction::VolumeDown | QuickAction::VolumeUp => shell
+                    .volume
+                    .map(|v| format!("{:.0}%", v * 100.0))
+                    .unwrap_or_default(),
+                _ => String::new(),
+            },
+            Bind::NvidiaPanel => nvidia_panel(&gpu),
             Bind::DisplayPanel => format!(
-                "Display: {}\nCapture: {}",
+                "{}\n{}",
                 shell.display.summary(),
                 shell
                     .encoders
                     .first()
                     .cloned()
-                    .unwrap_or_else(|| "no hardware encoder found".into())
+                    .unwrap_or_else(|| "No hardware video encoder".into())
             ),
             Bind::SessionPanel => match (&info, &running.external) {
                 (Some(i), _) => format!(
-                    "{}: {:.1} fps, {:.2} ms per frame{}{}",
+                    "{} · {:.1} fps{}{}",
                     i.name,
                     i.fps,
-                    i.frame_ms,
-                    if i.paused { ", suspended" } else { "" },
+                    if i.paused { " · suspended" } else { "" },
                     if i.resumed_from_disk {
-                        ", resumed from disk"
+                        " · resumed from disk"
                     } else {
                         ""
                     }
                 ),
                 (None, Some(ext)) => format!(
-                    "{} running ({:.0} s)",
+                    "{} · {:.0} s",
                     ext.title,
                     ext.started.elapsed().as_secs_f32()
                 ),
-                _ => format!(
-                    "Shell {} · {}",
-                    if shell.session { "session" } else { "window" },
-                    env!("CARGO_PKG_VERSION")
-                ),
+                _ => format!("{} {}", t("app.name"), env!("CARGO_PKG_VERSION")),
             },
             Bind::HubState => shell
                 .library
                 .games
                 .get(shell.hub)
                 .map(|g| {
-                    let s = Suspended::of(&shell.paths.states(), &g.key);
                     if running.machine_key() == Some(g.key.as_str()) {
-                        "Suspended in memory: resumes instantly".to_string()
-                    } else if s.exists() {
-                        "Suspend state on disk: resumes where you left".to_string()
+                        t("hub.suspended-memory")
+                    } else if Suspended::of(&shell.paths.states(), &g.key).exists() {
+                        t("hub.suspended-disk")
                     } else {
                         hero_meta(&shell, g)
                     }

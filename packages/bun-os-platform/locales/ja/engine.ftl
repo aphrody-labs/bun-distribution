@@ -1,0 +1,9 @@
+-engine = Bun Engine
+engine-name = { -engine }
+engine-window-title = { $title } - { -engine }
+engine-paused = 一時停止中
+engine-fast-forward = 早送り ×{ $speed }
+engine-state-saved = スロット { $slot } にステートを保存しました
+engine-state-loaded = スロット { $slot } からステートを読み込みました
+engine-needs-firmware = { $system } にはファームウェアが必要です: { $file }
+engine-unsupported-image = { $file } は対応していないゲームイメージです

@@ -108,6 +108,12 @@ impl BunEnginePlugin {
     }
 }
 
+/// Whether the host chose the window size; otherwise the first machine sizes it (2x its screen).
+#[derive(Resource, Clone, Copy, Debug)]
+pub struct EngineWindowSize {
+    pub explicit: bool,
+}
+
 /// Marker of the camera spawned by [`BunEnginePlugin`].
 #[derive(Component, Clone, Copy, Debug, Default)]
 pub struct EngineCamera;
@@ -185,8 +191,10 @@ impl BunEnginePlugin {
             app.insert_resource(WinitSettings { focused_mode: reactive, unfocused_mode: reactive });
         }
         if self.camera {
-            app.add_systems(crate::bevy::app::Startup, spawn_camera);
+            app.insert_resource(crate::bevy::camera::ClearColor(crate::bevy::color::Color::BLACK))
+                .add_systems(crate::bevy::app::Startup, spawn_camera);
         }
+        app.insert_resource(EngineWindowSize { explicit: self.size.is_some() });
         if self.escape_exits {
             app.add_systems(Update, exit_on_escape);
         }
@@ -206,4 +214,13 @@ fn exit_on_escape(
     mut exit: MessageWriter<AppExit>,
 ) {
     if keys.is_some_and(|k| k.just_pressed(crate::bevy::input::keyboard::KeyCode::Escape)) {
-        exit.write(AppE
+        exit.write(AppExit::Success);
+    }
+}
+
+/// Write an [`AppExit`] carrying `why` into [`EngineExit`].
+pub fn fail(world: &mut World, why: impl Into<String>) {
+    let why = why.into();
+    world.get_resource_or_init::<EngineExit>().fail(why);
+    world.write_message(AppExit::error());
+}

@@ -26,7 +26,7 @@ use crate::bevy::{
         mouse::{MouseButton, MouseButtonInput, MouseMotion, MouseScrollUnit, MouseWheel},
     },
     render::{
-        ExtractSchedule, Render, RenderApp, RenderSystems,
+        Render, RenderApp, RenderSystems,
         camera::ExtractedCamera,
         renderer::{RenderContext, RenderDevice, RenderQueue, ViewQuery},
         view::ViewTarget,
@@ -280,7 +280,6 @@ impl Plugin for StreamPlugin {
         render_app
             .insert_resource(core)
             .insert_resource(StreamGpu(Mutex::new(GpuState::default())))
-            .add_systems(ExtractSchedule, |_: Commands| {})
             .add_systems(Core2d, render_stream.after(upscaling))
             .add_systems(Render, signal_presented.in_set(RenderSystems::Cleanup));
     }

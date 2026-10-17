@@ -877,6 +877,17 @@
       "name": "@aphrody/bun-loaders",
       "version": "1.4.4",
     },
+    "packages/bun-os-platform": {
+      "name": "@bun-os/platform",
+      "version": "1.4.4",
+      "bin": {
+        "bun-os-platform": "./src/cli.ts",
+      },
+      "dependencies": {
+        "@aphrody/m3-tokens": "workspace:*",
+        "@rosegriffon/i18n": "workspace:*",
+      },
+    },
     "packages/bun-steam": {
       "name": "@aphrody/bun-steam",
       "version": "1.4.4",
@@ -6708,6 +6719,8 @@
     "@bufbuild/protobuf": ["@bufbuild/protobuf@2.16.0", "", {}, "sha512-FWa0sPlqYGJgpTs6OxBRcL/AW4JT0OIO+W1ajerluoTVh8CV0B7XM1qsNCRgnkSCkRCgOICKHRQlY17jrsm0+Q=="],
 
     "@bun-os/package-converter": ["@bun-os/package-converter@workspace:packages/package-converter"],
+
+    "@bun-os/platform": ["@bun-os/platform@workspace:packages/bun-os-platform"],
 
     "@bun-os/re": ["@bun-os/re@workspace:packages/re"],
 
@@ -14001,4 +14014,6 @@
 
     "webpack-dev-server/express/type-is/mime-types/mime-db": ["mime-db@1.52.0", "", {}, "sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg=="],
 
-    "shadcn/ts-morph/@ts-morph/common/minimatch/brace-expansion/balanced-match": ["balanced-match@4.0.4", "", {}, "sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU
+    "shadcn/ts-morph/@ts-morph/common/minimatch/brace-expansion/balanced-match": ["balanced-match@4.0.4", "", {}, "sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA=="],
+  }
+}

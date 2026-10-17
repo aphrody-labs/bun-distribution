@@ -1,11 +1,13 @@
-//! Shared UI pieces: the widget kit (Material 3 text, buttons, chips, cards, icons as Bevy UI
-//! bundles), springs from the M3 motion tokens (reduced motion snaps them), controller-first input
-//! (gamepads through `bevy_gilrs`, keyboard, mouse via picking) turned into navigation intents, and
-//! focus handling on top of Bevy's automatic directional navigation.
+//! Shared UI: the widget kit (Material 3 text, icons, surfaces as Bevy UI bundles tinted by the
+//! live scheme), accessibility names, springs from the M3 motion tokens (reduced motion snaps
+//! them), controller-first input turned into navigation intents, and focus on top of Bevy's
+//! automatic directional navigation.
 
 use std::time::Duration;
 
+use accesskit::{Node as AxNode, Role as AxRole};
 use aphrody_m3_tokens::motion::{self, M3Spring, SpringState};
+use bevy::a11y::AccessibilityNode;
 use bevy::input::gamepad::{GamepadRumbleIntensity, GamepadRumbleRequest};
 use bevy::input_focus::{FocusCause, InputFocus, InputFocusVisible};
 use bevy::math::CompassOctant;
@@ -14,32 +16,33 @@ use bevy::prelude::*;
 use bevy::text::{FontSize, FontWeight};
 use bevy::ui::auto_directional_navigation::{AutoDirectionalNavigation, AutoDirectionalNavigator};
 
-use crate::assets::{Fonts, Icons, Sounds};
-use crate::theme::{Theme, typescale::Style};
+use crate::assets::Fonts;
+use crate::theme::{R, Theme, size, timing, typescale::Style};
 
-/// Everything a view needs to build widgets.
+/// Fonts for building widgets; colors come from the live [`Theme`] through [`Tint`].
 #[derive(Resource, Clone)]
 pub struct Kit {
-    pub theme: Theme,
     pub font: Handle<Font>,
-    pub icons: std::collections::HashMap<&'static str, Handle<Image>>,
+    pub symbols: Handle<Font>,
+}
+
+/// Which property of a node follows a scheme role (re-tinted per focused game).
+#[derive(Component, Clone, Copy, Debug)]
+pub enum Tint {
+    Text(R, f32),
+    Bg(R, f32),
+    Border(R, f32),
 }
 
 impl Kit {
-    pub fn from_world(theme: &Theme, fonts: &Fonts, icons: &Icons) -> Self {
+    pub fn from_fonts(fonts: &Fonts) -> Self {
         Self {
-            theme: theme.clone(),
             font: fonts.text.clone(),
-            icons: icons.0.clone(),
+            symbols: fonts.symbols.clone(),
         }
     }
 
-    pub fn text(
-        &self,
-        value: impl Into<String>,
-        style: Style,
-        color: Color,
-    ) -> (Text, TextFont, TextColor) {
+    pub fn text(&self, value: impl Into<String>, style: Style, role: R) -> impl Bundle {
         (
             Text::new(value),
             TextFont {
@@ -48,20 +51,78 @@ impl Kit {
                 weight: FontWeight(style.weight),
                 ..default()
             },
-            TextColor(color),
+            TextColor(Color::NONE),
+            Tint::Text(role, 1.0),
         )
     }
 
-    pub fn icon(&self, name: &str, size: f32, color: Color) -> (ImageNode, Node) {
+    /// A Material Symbols Rounded glyph (font ligature, vector-rendered at `size`).
+    pub fn icon(&self, name: &str, size: f32, role: R) -> impl Bundle {
         (
-            ImageNode::new(self.icons.get(name).cloned().unwrap_or_default()).with_color(color),
+            Text::new(name),
+            TextFont {
+                font: self.symbols.clone().into(),
+                font_size: FontSize::Px(size),
+                ..default()
+            },
+            TextLayout::no_wrap(),
+            TextColor(Color::NONE),
+            Tint::Text(role, 1.0),
             Node {
                 width: px(size),
                 height: px(size),
                 flex_shrink: 0.0,
+                overflow: Overflow::clip(),
                 ..default()
             },
+            AccessibilityNode::from(AxNode::new(AxRole::GenericContainer)),
         )
+    }
+}
+
+pub fn bg(role: R) -> impl Bundle {
+    (BackgroundColor(Color::NONE), Tint::Bg(role, 1.0))
+}
+
+pub fn bg_alpha(role: R, alpha: f32) -> impl Bundle {
+    (BackgroundColor(Color::NONE), Tint::Bg(role, alpha))
+}
+
+/// Accessible button node named `label` (icon-only controls carry their action name).
+pub fn a11y_button(label: &str) -> AccessibilityNode {
+    let mut node = AxNode::new(AxRole::Button);
+    node.set_label(label.to_string());
+    AccessibilityNode::from(node)
+}
+
+/// Apply the live scheme to every tinted node (when it changes or nodes appear).
+pub fn apply_tint(
+    theme: Res<Theme>,
+    mut texts: Query<(Ref<Tint>, &mut TextColor)>,
+    mut bgs: Query<(Ref<Tint>, &mut BackgroundColor), Without<TextColor>>,
+    mut borders: Query<(Ref<Tint>, &mut BorderColor), (Without<TextColor>, Without<BackgroundColor>)>,
+) {
+    let all = theme.is_changed();
+    for (tint, mut color) in &mut texts {
+        if let Tint::Text(role, alpha) = *tint
+            && (all || tint.is_added())
+        {
+            color.0 = theme.get(role).with_alpha(alpha);
+        }
+    }
+    for (tint, mut color) in &mut bgs {
+        if let Tint::Bg(role, alpha) = *tint
+            && (all || tint.is_added() || tint.is_changed())
+        {
+            color.0 = theme.get(role).with_alpha(alpha);
+        }
+    }
+    for (tint, mut color) in &mut borders {
+        if let Tint::Border(role, alpha) = *tint
+            && (all || tint.is_added())
+        {
+            *color = BorderColor::all(theme.get(role).with_alpha(alpha));
+        }
     }
 }
 
@@ -76,7 +137,7 @@ pub enum Layer {
 #[derive(Component, Clone, Debug, PartialEq)]
 pub struct Focusable(pub crate::app::Action);
 
-/// Focus animation: scale and outline follow a spring toward 1 when focused.
+/// Focus feedback: scale and ring follow a spring toward 1 when focused (no layout shift).
 #[derive(Component, Clone, Copy)]
 pub struct FocusFx {
     pub grow: f32,
@@ -175,7 +236,8 @@ pub enum Intent {
 #[derive(Message, Clone, Debug)]
 pub struct Activate(pub crate::app::Action);
 
-/// Feedback the shell plays for an intent: sound effect and controller haptics.
+/// Controller feedback for an intent (haptics; the shell ships no UI sounds until a
+/// free-licensed set is vendored).
 #[derive(Message, Clone, Copy)]
 pub enum Feedback {
     Navigate,
@@ -189,11 +251,9 @@ pub struct Repeat {
     held: Option<(CompassOctant, f32)>,
 }
 
-const REPEAT_DELAY: f32 = 0.38;
-const REPEAT_RATE: f32 = 0.085;
-
 fn direction(x: f32, y: f32) -> Option<CompassOctant> {
-    if x.abs() < 0.5 && y.abs() < 0.5 {
+    let dead = timing::STICK_DEAD_ZONE;
+    if x.abs() < dead && y.abs() < dead {
         return None;
     }
     Some(if x.abs() > y.abs() {
@@ -209,7 +269,7 @@ fn direction(x: f32, y: f32) -> Option<CompassOctant> {
     })
 }
 
-/// Keyboard and gamepads to intents (in-game input is routed to the machine instead).
+/// Keyboard and gamepads to intents (in-game input goes to the engine's `EngineInput`).
 #[allow(clippy::too_many_arguments)]
 pub fn gather(
     keys: Res<ButtonInput<KeyCode>>,
@@ -223,7 +283,7 @@ pub fn gather(
     let in_game = *playing.get() == crate::app::Screen::Playing
         && *overlay.get() == crate::app::Overlay::Closed;
     // Guide: keyboard Home/F1 (Escape too while a game is shown), the pad Guide button when the
-    // backend reports it, or View+Menu held together.
+    // backend reports it, View alone in menus, or View+Menu held together in game.
     let mut guide = keys.just_pressed(KeyCode::Home)
         || keys.just_pressed(KeyCode::F1)
         || (in_game && keys.just_pressed(KeyCode::Escape));
@@ -281,14 +341,14 @@ pub fn gather(
             let t = t - time.delta_secs();
             if t <= 0.0 {
                 intents.write(Intent::Move(dir));
-                repeat.held = Some((dir, REPEAT_RATE));
+                repeat.held = Some((dir, timing::REPEAT_RATE));
             } else {
                 repeat.held = Some((dir, t));
             }
         }
         (Some(dir), _) => {
             intents.write(Intent::Move(dir));
-            repeat.held = Some((dir, REPEAT_DELAY));
+            repeat.held = Some((dir, timing::REPEAT_DELAY));
         }
         (None, _) => repeat.held = None,
     }
@@ -324,7 +384,10 @@ pub fn navigate(
                 }
             }
             Intent::Accept => {
-                if let Some(action) = navigator.input_focus().and_then(|e| focusables.get(e).ok()) {
+                if let Some(action) = navigator
+                    .input_focus()
+                    .and_then(|e| focusables.get(e).ok())
+                {
                     feedback.write(Feedback::Select);
                     activate.write(Activate(action.0.clone()));
                 }
@@ -337,11 +400,10 @@ pub fn navigate(
 /// Mouse hover moves focus; click activates.
 pub fn on_pointer_over(
     mut over: On<PointerOver>,
-    focusables: Query<(), With<Focusable>>,
-    nav: Query<(), With<AutoDirectionalNavigation>>,
+    focusables: Query<(), (With<Focusable>, With<AutoDirectionalNavigation>)>,
     mut focus: ResMut<InputFocus>,
 ) {
-    if focusables.contains(over.entity) && nav.contains(over.entity) {
+    if focusables.contains(over.entity) {
         over.propagate(false);
         if focus.get() != Some(over.entity) {
             focus.set(over.entity, FocusCause::Pressed);
@@ -394,14 +456,12 @@ pub fn sync_layers(
                 .entity(entity)
                 .insert(AutoDirectionalNavigation::default());
         } else if !active && has {
-            commands
-                .entity(entity)
-                .remove::<AutoDirectionalNavigation>();
+            commands.entity(entity).remove::<AutoDirectionalNavigation>();
         }
     }
 }
 
-/// Focus the `DefaultFocus` item of the active layer when nothing valid is focused.
+/// Keep focus valid: the last screen focus after an overlay closes, else the view's default.
 pub fn ensure_focus(
     mut commands: Commands,
     mut focus: ResMut<InputFocus>,
@@ -429,16 +489,17 @@ pub fn ensure_focus(
     }
 }
 
-/// Focus scale and outline on the M3 fast spatial spring.
+/// Focus scale and ring on the M3 fast spatial spring (a transform: no layout shift).
 pub fn focus_fx(
     time: Res<Time>,
     motion: Res<Motion>,
     focus: Res<InputFocus>,
     visible: Res<InputFocusVisible>,
-    kit: Res<Kit>,
+    theme: Res<Theme>,
     mut items: Query<(Entity, &mut FocusFx, &mut UiTransform, Option<&mut Outline>)>,
 ) {
     let dt = time.delta_secs();
+    let ring = theme.get(R::Primary);
     for (entity, mut fx, mut transform, outline) in &mut items {
         let target = if focus.get() == Some(entity) && visible.0 {
             1.0
@@ -458,57 +519,49 @@ pub fn focus_fx(
             transform.scale = Vec2::splat(scale);
         }
         if let Some(mut outline) = outline {
-            let alpha = v.clamp(0.0, 1.0);
-            outline.color = kit.theme.primary.with_alpha(alpha);
+            let color = ring.with_alpha(v.clamp(0.0, 1.0));
+            if outline.color != color {
+                outline.color = color;
+            }
         }
     }
 }
 
-/// Plays the UI sound and controller rumble for each feedback event.
+/// Focus ring bundle (width and offset tokens).
+pub fn ring() -> Outline {
+    Outline {
+        width: px(size::FOCUS_RING),
+        offset: px(size::FOCUS_OFFSET),
+        color: Color::NONE,
+    }
+}
+
+/// Controller rumble for each feedback event.
 pub fn feedback(
-    mut commands: Commands,
     mut events: MessageReader<Feedback>,
-    sounds: Res<Sounds>,
     settings: Res<crate::app::Settings>,
     pads: Query<Entity, With<Gamepad>>,
     mut rumble: MessageWriter<GamepadRumbleRequest>,
 ) {
     for event in events.read() {
-        if settings.sounds {
-            let (sound, volume) = match event {
-                Feedback::Navigate => (&sounds.navigate, 0.35),
-                Feedback::Select => (&sounds.select, 0.5),
-                Feedback::Back => (&sounds.back, 0.45),
-                Feedback::Open => (&sounds.open, 0.5),
-            };
-            commands.spawn((
-                AudioPlayer::new(sound.clone()),
-                PlaybackSettings {
-                    volume: bevy::audio::Volume::Linear(volume),
-                    ..PlaybackSettings::DESPAWN
-                },
-            ));
+        if !settings.haptics {
+            continue;
         }
-        if settings.haptics {
-            let (ms, intensity) = match event {
-                Feedback::Navigate => (28, GamepadRumbleIntensity::weak_motor(0.25)),
-                Feedback::Select => (
-                    60,
-                    GamepadRumbleIntensity {
-                        strong_motor: 0.35,
-                        weak_motor: 0.5,
-                    },
-                ),
-                Feedback::Back => (40, GamepadRumbleIntensity::weak_motor(0.35)),
-                Feedback::Open => (90, GamepadRumbleIntensity::strong_motor(0.45)),
-            };
-            for gamepad in &pads {
-                rumble.write(GamepadRumbleRequest::Add {
-                    duration: Duration::from_millis(ms),
-                    intensity,
-                    gamepad,
-                });
-            }
+        let (ms, weak, strong) = match event {
+            Feedback::Navigate => timing::RUMBLE_NAVIGATE,
+            Feedback::Select => timing::RUMBLE_SELECT,
+            Feedback::Back => timing::RUMBLE_BACK,
+            Feedback::Open => timing::RUMBLE_OPEN,
+        };
+        for gamepad in &pads {
+            rumble.write(GamepadRumbleRequest::Add {
+                duration: Duration::from_millis(ms),
+                intensity: GamepadRumbleIntensity {
+                    strong_motor: strong,
+                    weak_motor: weak,
+                },
+                gamepad,
+            });
         }
     }
 }

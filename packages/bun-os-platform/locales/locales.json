@@ -1,0 +1,16 @@
+{
+  "$comment": "Locales shipped by the Bun OS platform. en is the source and the last fallback. The set follows the owner's other products: Rose Griffon (fr, en, ja), the NIE wiki (de, es, it, ko, pt, zh-Hans, zh-Hant) and figcraft (pt-BR). `name` is the autonym shown in language pickers.",
+  "default": "en",
+  "locales": [
+    { "tag": "en", "name": "English", "direction": "ltr" },
+    { "tag": "fr", "name": "Français", "direction": "ltr" },
+    { "tag": "ja", "name": "日本語", "direction": "ltr" },
+    { "tag": "de", "name": "Deutsch", "direction": "ltr" },
+    { "tag": "es", "name": "Español", "direction": "ltr" },
+    { "tag": "it", "name": "Italiano", "direction": "ltr" },
+    { "tag": "ko", "name": "한국어", "direction": "ltr" },
+    { "tag": "pt-BR", "name": "Português (Brasil)", "direction": "ltr" },
+    { "tag": "zh-Hans", "name": "简体中文", "direction": "ltr" },
+    { "tag": "zh-Hant", "name": "繁體中文", "direction": "ltr" }
+  ]
+}

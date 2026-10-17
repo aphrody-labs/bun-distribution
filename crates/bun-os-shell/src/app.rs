@@ -42,7 +42,6 @@ pub enum ProfileField {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SettingKey {
-    Sounds,
     Haptics,
     Motion,
     Hud,
@@ -101,7 +100,6 @@ pub enum MotionPref {
 
 #[derive(Resource, Clone)]
 pub struct Settings {
-    pub sounds: bool,
     pub haptics: bool,
     pub hud: bool,
     pub motion: MotionPref,
@@ -130,7 +128,7 @@ impl Shell {
     pub fn toast(&mut self, message: impl Into<String>) {
         let message = message.into();
         info!("{message}");
-        self.toast = Some((message, 3.5));
+        self.toast = Some((message, crate::theme::timing::TOAST));
     }
 
     pub fn visible_games(&self) -> Vec<usize> {
@@ -213,7 +211,6 @@ pub fn tick_toast(time: Res<Time>, mut shell: ResMut<Shell>) {
 pub fn load_settings(store: &Store) -> Settings {
     let flag = |name: &str, default: bool| store.setting(name).map_or(default, |v| v == "1");
     Settings {
-        sounds: flag("sounds", true),
         haptics: flag("haptics", true),
         hud: flag("hud", false),
         motion: match store.setting("motion").as_deref() {
@@ -225,7 +222,6 @@ pub fn load_settings(store: &Store) -> Settings {
 }
 
 pub fn save_settings(store: &Store, settings: &Settings) {
-    store.set_setting("sounds", if settings.sounds { "1" } else { "0" });
     store.set_setting("haptics", if settings.haptics { "1" } else { "0" });
     store.set_setting("hud", if settings.hud { "1" } else { "0" });
     store.set_setting(

@@ -1,183 +1,33 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * User-visible strings of play.aphrody.app, by message id (Fluent ids and `{ $var }` placeables).
- * This is the en-US source catalog only: negotiation, plural rules and other locales come from
- * the Bun OS platform i18n layer (docs/bun-os/PLATFORM.md), which replaces `t`'s lookup.
+ * User-visible strings of play.aphrody.app, by Fluent message id. The catalogs are the platform
+ * layer's (`packages/bun-os-platform/locales/<locale>/{common,play}.ftl`, docs/bun-os/PLATFORM.md):
+ * the server negotiates `?lang=`, the `bun-os-locale` cookie, then Accept-Language, and sends the
+ * fallback chain's sources; plurals, numbers and dates go through Intl. Add a string by adding
+ * its id to `locales/en/play.ftl` and every other locale (`bun-os-platform check` enforces it).
  */
-export const enUS = {
-  "app-name": "Bun OS Play",
-  "skip-to-content": "Skip to content",
-  "nav-primary": "Primary",
-  "nav-library": "Library",
-  "nav-steam": "Steam",
-  "nav-stream": "Stream",
-  "nav-engine": "Engine",
-  "nav-requires-sign-in": "{ $label }, sign in required",
-  "menu-open": "Open quick menu",
-  "menu-title": "Quick menu",
-  "menu-close": "Close",
-  "menu-systems": "Systems",
-  "menu-all-systems": "All systems",
-  "menu-theme": "Theme",
-  "theme-system": "System",
-  "theme-light": "Light",
-  "theme-dark": "Dark",
-  "menu-credits": "Credits",
-  "credits-icons": "Icons: Material Symbols (Apache 2.0).",
-  "credits-systems":
-    "System icons: Systematic theme, libretro/retroarch-assets (CC BY 4.0).",
-  "credits-thumbnails": "Game screenshots: libretro-thumbnails.",
-  "credits-steam": "Steam art: Steam library cache and the Steam CDN.",
-  "account-signed-in": "Signed in as { $user }",
-  "account-sign-in": "Sign in",
-  "account-sign-out": "Sign out",
-  "signin-title": "Sign in",
-  "signin-body":
-    "Steam, the LAN cache, streaming and the engine controls need an Aphrody identity.",
-  "signin-mesh": "Sign in on the Aphrody mesh",
-  "signin-steam": "Sign in through Steam",
-  "signin-mesh-hint":
-    "The mesh link opens from a device on the Aphrody WireGuard network and returns here signed in.",
-  "signin-denied":
-    "Sign-in was refused. Use an allowed Steam account or the Aphrody mesh.",
-  "signin-expired": "The sign-in code expired. Open the mesh link again.",
-  "locked-title": "Sign in to open { $page }",
-  "locked-body":
-    "This page controls the gaming host: Steam, streaming and installs.",
-  "rail-games": "Games",
-  "rail-empty":
-    "No games here yet. Sign in to add your Steam library, or pick another system in the quick menu.",
-  "hero-empty-title": "Pick a game",
-  "action-play": "Play",
-  "action-stream": "Stream from { $host }",
-  "action-details": "Details",
-  "action-back": "Back to the library",
-  "action-fullscreen": "Full screen",
-  "action-reconnect": "Reconnect",
-  "action-audit": "Run network audit",
-  "action-reload-engine": "Validate and reload",
-  "action-scan": "Scan the VPS library",
-  "toast-streaming": "Streaming from { $host }",
-  "toast-reloaded": "Engine reloaded",
-  "toast-scan": "Scanning the VPS library",
-  "toast-audit": "Network audit started",
-  "source-steam": "Steam",
-  "core-none":
-    "No browser core for { $system } is published yet. Stream it from { $host } instead.",
-  "core-loading": "Loading { $core }",
-  "core-running": "{ $core } is running",
-  "core-failed":
-    "{ $core } failed to start: { $error }. Reload the page; if it fails again, the core build is broken.",
-  "core-isolation": "Cross-origin isolated",
-  "core-not-isolated": "Not isolated, threaded cores are unavailable",
-  "core-webgpu": "WebGPU",
-  "core-webgpu-missing": "WebGPU is unavailable in this browser",
-  "controls-title": "Controls",
-  "controls-keys":
-    "Arrow keys move, X is A, Z is B, Enter is Start, Backspace is Select, A and S are L and R. Gamepads use the standard mapping.",
-  "label-system": "System",
-  "label-core": "Core",
-  "label-status": "Status",
-  "label-license": "License",
-  "steam-title": "Steam on { $host }",
-  "steam-client": "Client at { $root }",
-  "steam-missing":
-    "No Steam client on the host. Install it with infra/config/host/apps/vps/gaming/steam.sh.",
-  "steam-downloads": "Downloads",
-  "steam-rate": "Download rate",
-  "steam-no-updates": "No update in the recent client log.",
-  "steam-done": "Done",
-  "steam-lancache": "LAN cache",
-  "steam-lancache-wait": "Waiting for the cache audit on 127.0.0.1:8099.",
-  "steam-served": "Served",
-  "steam-served-value": "{ $bytes } in { $requests } requests",
-  "steam-hit-ratio": "Hit ratio",
-  "steam-miss-rate": "Upstream rate",
-  "steam-errors": "Errors",
-  "steam-installed": "Installed games",
-  "steam-none-installed":
-    "No game installed yet. Install one from Steam on { $host }.",
-  "steam-libraries": "Libraries",
-  "steam-tools": "Compatibility tools",
-  "steam-remote-play": "Remote Play",
-  "steam-no-peers": "No Remote Play peer yet.",
-  "steam-audit": "Network audit",
-  "steam-audit-none":
-    "No audit yet. Run one to probe content servers, CM servers and the resolver.",
-  "steam-audit-running": "The audit is running. It takes about a minute.",
-  "steam-audit-last": "Last audit { $at }",
-  "steam-free": "{ $bytes } free",
-  "steam-apps": "{ $count } apps",
-  "col-game": "Game",
-  "col-app": "App ID",
-  "col-size": "Size",
-  "col-build": "Build",
-  "col-state": "State",
-  "col-update": "Update",
-  "col-depot": "Depot",
-  "col-chunks": "Chunks",
-  "col-bytes": "Bytes",
-  "col-system": "System",
-  "col-maker": "Maker",
-  "col-year": "Year",
-  "col-machine": "Native machine",
-  "col-games": "Games",
-  "col-routes": "Launch routes",
-  "col-default": "Default",
-  "stream-title": "Stream from { $host }",
-  "stream-frame": "Game stream",
-  "stream-ready": "Sender ready",
-  "stream-no-sender":
-    "No sender is running. Start the stream container with infra/config/host/apps/vps/gaming/stream/up.sh.",
-  "stream-unreachable":
-    "The stream server on the mesh is unreachable. Start the stream container with infra/config/host/apps/vps/gaming/stream/up.sh.",
-  "stream-sender": "Sender",
-  "stream-video": "Video",
-  "stream-sessions": "Sessions",
-  "stream-none": "None",
-  "stream-path":
-    "WebRTC video is decoded with WebCodecs and upscaled with WebGPU FSR 1. Media flows over the Aphrody mesh.",
-  "stream-input":
-    "Keyboard, mouse and gamepads go over the WebRTC data channel. Click the stream to capture the pointer.",
-  "engine-title": "NGINX engine",
-  "engine-state": "State",
-  "engine-running": "Running, master { $pid }",
-  "engine-stopped": "Stopped",
-  "engine-version": "Version",
-  "engine-capabilities": "Capabilities",
-  "engine-module": "Rust module",
-  "engine-sources": "Sources",
-  "engine-last-reload": "Last reload",
-  "engine-error": "Error",
-  "engine-machines": "Running machines",
-  "engine-no-machines":
-    "No native machine is running on the host. Launch one from a game's details.",
-  "engine-systems": "Systems",
-  "engine-jobs": "Jobs",
-  "engine-no-jobs": "No job yet.",
-  "engine-test-roms":
-    "{ $count } test ROMs are available for core qualification.",
-  "not-found": "This page does not exist. Go back to the library.",
-  "error-load":
-    "{ $what } did not load: { $error }. Check that the play service runs on the VPS.",
-  "status-gamepad": "Gamepad connected",
-  "status-no-gamepad": "No gamepad",
-} as const;
+import {
+  loadWebLocalizer,
+  setWebLocale,
+} from "../../../../packages/bun-os-platform/src/i18n/web";
 
-export type MessageId = keyof typeof enUS;
+const { catalog, l10n } = await loadWebLocalizer(["common", "play"], {
+  lang: new URLSearchParams(location.search).get("lang") ?? undefined,
+});
 
-const escape = (value: string) =>
-  value.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+/** A Fluent message id of the `common` or `play` catalogs. */
+export type MessageId = string;
 
-/** The message `id` with its `{ $name }` placeables filled. Returns plain text. */
+/** The message `id` with its placeables filled (numbers select plurals). Returns plain text. */
 export function t(
   id: MessageId,
   args: Record<string, string | number> = {},
 ): string {
-  return enUS[id].replace(/\{ \$([a-z]+) \}/g, (_, name: string) =>
-    String(args[name] ?? ""),
-  );
+  return l10n.t(id, args);
 }
+
+const escape = (value: string) =>
+  value.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 /** `t` escaped for HTML templates. Arguments are escaped too. */
 export function th(
@@ -187,4 +37,16 @@ export function th(
   return escape(t(id, args));
 }
 
-export const locale = "en-US";
+/** The negotiated UI locale (BCP 47), for Intl formatters. */
+export const locale = catalog.locale;
+/** Shipped locales with their autonyms, for a language picker. */
+export const locales = catalog.locales;
+export { l10n };
+
+/** Switches the UI language (persisted in a cookie the server reads) and reloads. */
+export function setLocale(tag: string | null): void {
+  setWebLocale(tag);
+  const url = new URL(location.href);
+  url.searchParams.delete("lang");
+  location.replace(url);
+}

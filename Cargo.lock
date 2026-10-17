@@ -8551,6 +8551,7 @@ dependencies = [
  "intl-memoizer",
  "serde",
  "serde_json",
+ "sha2 0.11.1",
  "toml 1.1.8+spec-1.1.0",
  "unic-langid",
  "windows 0.62.2",
@@ -8565,6 +8566,7 @@ dependencies = [
  "aphrody-svg",
  "bevy",
  "bun-engine",
+ "bun-os-platform",
  "bun-steam",
  "image",
  "raw-window-handle",
@@ -24655,8 +24657,10 @@ checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
 name = "libm3"
 version = "1.4.4"
 dependencies = [
+ "accesskit 0.24.1",
  "aphrody-m3",
  "aphrody-m3-tokens 1.4.4",
+ "bevy",
  "libcosmic",
 ]
 

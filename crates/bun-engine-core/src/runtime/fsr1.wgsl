@@ -39,6 +39,7 @@ struct Params {
 @group(0) @binding(0) var<uniform> P: Params;
 
 // The EASU source is one sRGB RGB(A) texture bound as `luma_tex` instead of NV12 planes.
+// `runtime/fsr1.rs` rewrites these two declarations into `const`s per pipeline variant.
 override RGB_SOURCE: bool = false;
 // The RCAS / HUD target has an sRGB format: output linear values so the hardware re-encodes them.
 override SRGB_TARGET: bool = false;

@@ -1,0 +1,8 @@
+{
+  "name": "bun-loaders",
+  "version": "1.4.4",
+  "description": "@aphrody/bun-loaders as a platform plugin: PE, APK, 3D scene and media inspectors for previews, and the Bun.plugin runtime loaders.",
+  "entry": "index.ts",
+  "permissions": ["files", "bun.plugin"],
+  "platform": "1"
+}

@@ -42,6 +42,7 @@
     "packages/bun-steam",
     "packages/bun-gamestream",
     "packages/bun-loaders",
+    "packages/bun-os-platform",
     "packages/bun-video-project",
     "packages/bun-workspace",
     "packages/canvas",

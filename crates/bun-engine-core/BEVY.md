@@ -117,4 +117,16 @@ focus, gamepads).
 
 `steam::SteamPlugin::new(steam::RunOptions, system, rom)` wraps steamworks-rs (bevy-steamworks
 0.17 targets Bevy 0.19). `runtime::steam` binds it: overlay -> `MachineStatus::paused`, Steam Input
--> `ExternalPads["steam"]`, screenshots from `MachineScreen`, Deck l
+-> `ExternalPads["steam"]`, screenshots from `MachineScreen`, Deck layout on the primary window.
+
+## CLI
+
+`bun-engine run <system> <image>` builds the same app (`runtime::run::machine_app`); `--fsr`,
+`--sharpness`, `--frames`, `--out`, `--steam*`. `--headless` keeps the direct `run_frame` loop
+(scripted `--input`, `--trace` digests) used by CI and replay. `bun-engine stream` runs
+`StreamPlugin`.
+
+## Web
+
+`examples/bevy_web.rs` (`--target wasm32-unknown-unknown --no-default-features --features
+runtime-web,nes`): the NES machine on Bevy's WebGPU backend in `<canvas id="bun-engine">`.

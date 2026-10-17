@@ -167,15 +167,20 @@ fn main() -> ExitCode {
             sharpness_stops: sharpness,
             ..Default::default()
         };
-        let (mut app, report) = bun_engine::runtime::run::machine_app(machine, &options);
+        // Steam starts before the window and GPU device (overlay hook), so before `machine_app`.
         #[cfg(feature = "steam")]
-        if !steam_args.is_empty() {
+        let steam = if steam_args.is_empty() {
+            None
+        } else {
             match bun_engine::steam::options::parse(&steam_args) {
-                Ok(steam) => {
-                    app.add_plugins(bun_engine::steam::SteamPlugin::new(steam, system.as_str(), path.as_str()));
-                }
+                Ok(steam) => Some(bun_engine::steam::SteamPlugin::new(steam, system.as_str(), path.as_str())),
                 Err(e) => return fail(e),
             }
+        };
+        let (mut app, report) = bun_engine::runtime::run::machine_app(machine, &options);
+        #[cfg(feature = "steam")]
+        if let Some(steam) = steam {
+            app.add_plugins(steam);
         }
         let exit = app.run();
         let report = report.lock().unwrap().clone();

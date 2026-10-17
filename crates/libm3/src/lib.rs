@@ -1,20 +1,25 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Material 3 contracts independent of a window system, with an optional COSMIC renderer.
+//! Material 3 contracts independent of a window system, with optional COSMIC (`cosmic`) and Bevy
+//! UI (`bevy`) renderers.
 //! Material owns the native token engine. This crate adapts its values for application layouts
 //! and COSMIC widgets; it does not maintain a separate color algorithm or token palette.
 #![no_std]
 
-#[cfg(any(feature = "cosmic", feature = "std"))]
+#[cfg(any(feature = "cosmic", feature = "std", feature = "bevy"))]
 extern crate std;
 
 pub mod color;
 pub mod component;
+pub mod containers;
 pub mod layout;
 pub mod theme;
 pub mod tokens;
 
 #[cfg(feature = "cosmic")]
 pub mod cosmic;
+
+#[cfg(feature = "bevy")]
+pub mod bevy;
 
 pub use color::{Color, ColorScheme, Role};
 pub use component::{Component, ComponentStyle, Interaction};

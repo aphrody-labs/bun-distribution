@@ -497,6 +497,7 @@ pub mod view {
         screen: Res<MachineScreen>,
         mut cameras: Query<&mut Projection, With<EngineCamera>>,
         mut windows: Query<&mut Window, With<PrimaryWindow>>,
+        window_size: Option<Res<crate::runtime::EngineWindowSize>>,
         mut sized: Local<bool>,
     ) {
         if !screen.spawn_view {
@@ -512,9 +513,9 @@ pub mod view {
         // Twice the native size for the first machine, unless the host chose a size.
         if !*sized {
             *sized = true;
-            for mut window in &mut windows {
-                if window.resolution.physical_width() == 1024 && window.resolution.physical_height() == 768 {
-                    window.resolution.set_physical_resolution(screen.size.x * 2, screen.size.y * 2);
+            if window_size.is_some_and(|s| !s.explicit) {
+                for mut window in &mut windows {
+                    window.resolution.set(size.x * 2.0, size.y * 2.0);
                 }
             }
         }

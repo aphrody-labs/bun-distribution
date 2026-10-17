@@ -1,15 +1,16 @@
 # Bun Engine
 
-Unified Rust kernel (`bun-engine` crate): plugin scheduling, binary inspection, the C ABI, and
-every emulation machine behind one `machine::Machine` trait, one `machine::Input`, one wgpu/winit
-window (`window`) and one CLI (`bun-engine run <system> <image>`). The same window hosts the native
-game-stream client (`bun-engine stream`, see [STREAM.md](STREAM.md)).
+Unified Rust kernel (`bun-engine` crate): binary inspection, the C ABI, and every emulation machine
+behind one `machine::Machine` trait and one `machine::Input`, run by Bevy 0.20 (`runtime`: one App,
+window, input, audio, UI and render graph on wgpu 30; see [BEVY.md](BEVY.md)) and one CLI
+(`bun-engine run <system> <image>`). The same runtime hosts the native game-stream client
+(`bun-engine stream`, see [STREAM.md](STREAM.md)).
 
 ## Absorbed owners
 
 | Former crate | Now |
 | --- | --- |
-| `bun-emu` | `machine` (DS, ARM, x86), `window`, the `bun-engine` binary |
+| `bun-emu` | `machine` (DS, ARM, x86), `runtime`, the `bun-engine` binary |
 | `aphrody-nie-emu` | `backend` (backend registry, capability contracts, headless sessions) |
 | `aphrody-emulator-host` | `host` (Bevy scheduling of the DS core) |
 | `bun-engine-nds` | `cartridge` (DS header inspection), `bun-engine info`, `dotnet/` Tinke |
@@ -19,14 +20,14 @@ with `crates/re`, rea and Replica.
 
 ## Features
 
-`window`, `nds`, `host` (`bevy-web` for wasm), `nes`, `gba`, `psx`, `arm`, `x86`, `wii`, `ctr` (3DS), `switch`, `cartridge`, `stream` (game-stream client, default), `steam` (Steamworks: `steam::SteamPlugin`, the `steam` commands and `run --steam`; see `docs/bun-engine/STEAM.md`). Consumers take
+`runtime`, `render`, `window`, `audio`, `gamepad`, `runtime-web` (Bevy runtime, see BEVY.md), `nds`, `host` (`bevy-web` for wasm), `nes`, `gba`, `psx`, `arm`, `x86`, `wii`, `ctr` (3DS), `switch`, `cartridge`, `stream` (game-stream client, default), `steam` (Steamworks: `steam::SteamPlugin`, the `steam` commands and `run --steam`; see `docs/bun-engine/STEAM.md`). Consumers take
 `bun-engine` from the workspace with `default-features = false` and enable what they share.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `bun-engine run <system> <image>` | Run a machine (table below) in the single window; `--headless --frames N --out DIR` dumps screens |
+| `bun-engine run <system> <image>` | Run a machine (table below) in the Bevy window (`--fsr` for FSR1 upscaling); `--headless --frames N --out DIR` dumps screens |
 | `bun-engine info <rom.nds> [--json]` | Read-only DS cartridge header inspection |
 | `bun-engine stream <host>` | Moonlight/GameStream client for Sunshine, Wolf or Moonshine: PIN pairing, launch, RTSP, encrypted ENet control with keyboard/raw-mouse/XInput forwarding, RTP + Reed-Solomon FEC video, zero-copy DXVA decode (H.264/HEVC/AV1) into wgpu, FSR1 EASU+RCAS upscale, low-latency present, latency HUD |
 | `bun-engine stream --pair <host>` / `--apps` / `--quit-app` | Pair only (PIN printed for the owner to enter on the host), list host apps, stop the running app |

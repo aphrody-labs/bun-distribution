@@ -1,8 +1,8 @@
 # Bun Engine game-stream client
 
-`bun-engine stream` is a native Moonlight/GameStream client built into Bun Engine's single
-winit/wgpu window (`src/window.rs`, the shared `aphrody-gpu-backend` device and the engine's one
-input layer). It targets the CPU-only VPS that streams games through Wolf or Sunshine to a PC with
+`bun-engine stream` is a native Moonlight/GameStream client built as a Bevy plugin of Bun Engine's
+runtime (`stream::session::StreamPlugin`: Bevy's window, wgpu 30 device and input; see
+[BEVY.md](BEVY.md)). It targets the CPU-only VPS that streams games through Wolf or Sunshine to a PC with
 a hardware decoder (RTX 4070 here): the PC does decode, upscale and present on the GPU.
 
 ## Usage
@@ -32,7 +32,7 @@ HUD, `+Q` quits. Focus loss releases the mouse and every held key.
 | HTTPS pairing, app list, launch/resume | `stream/http.rs` | 5-step PIN pairing (AES-128-ECB keyed by SHA-256(salt‖PIN), RSA-SHA256 secrets), mutual TLS (rustls + ring) pinned to the paired server certificate |
 | RTSP setup | `stream/rtsp.rs` | OPTIONS, DESCRIBE (codec + encryption discovery), SETUP audio/video/control, ANNOUNCE (SDP), PLAY |
 | Control stream | `stream/control.rs` | ENet (rusty_enet) with Sunshine "control v2" AES-128-GCM framing; IDR request + start, 100 ms pings, input, rumble to XInput, termination |
-| Input | `stream/input.rs`, `window.rs` | winit key codes -> Windows VK, raw (unaccelerated) mouse deltas from `DeviceEvent::MouseMotion`, wheel, XInput pads polled by the window (also mapped onto emulator buttons) |
+| Input | `stream/input.rs`, `stream/session.rs`, `window.rs` | Bevy `KeyboardInput` key codes -> Windows VK, raw (unaccelerated) `MouseMotion` deltas, wheel, gilrs gamepads in XInput layout (`window::pad_from_bevy`) |
 | Video receive | `stream/video.rs`, `stream/fec/` | RTP + NV headers, per-block Reed-Solomon recovery (SIMD GF(2^8)), optional AES-GCM shard decryption, in-order delivery, IDR request on loss |
 | Decode | `stream/decode.rs` | Media Foundation decoder MFT (DXVA) on a D3D11 device created on the wgpu adapter (same LUID); each picture is GPU-copied into a 5-slot ring of NT-shared NV12 textures and a shared fence is signalled |
 | Import | `stream/decode.rs` | the ring is opened through the wgpu D3D12 device (`texture_from_raw` + `create_texture_from_hal`, NV12 with Plane0/Plane1 views); the wgpu queue waits on the shared fence on the GPU, no CPU sync, no readback |
@@ -73,6 +73,9 @@ crates at opt-level 3). Decoder: Microsoft H264 Video Decoder MFT with DXVA, zer
 59.8 fps. Without the HUD, receive -> glass drops to 3.5 ms mean (2.6 ms p50) and 3.2 ms at 1:1
 scale. The GPU stays in its low P-state (P8, about 210 MHz) under this light load, so the GPU stages
 are clock-bound rather than work-bound; a game-sized stream raises the clocks.
+
+These figures predate the Bevy runtime (own winit/wgpu loop); the Bevy path keeps the same zero-copy
+decode, ring import and FSR1 passes, rendered in the `Core2d` schedule into the camera output.
 
 Screenshot of the running window: `target/stream-selftest/loopback.png` (not versioned).
 

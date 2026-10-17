@@ -145,3 +145,22 @@ impl Motion {
         }
     }
 }
+
+/// Parse an M3 easing token (`cubic-bezier(x1, y1, x2, y2)`) into an evaluable curve, so
+/// renderers animate with the owner's token instead of restating its control points.
+pub fn easing_curve(easing: m3_tokens::motion::Easing) -> Option<m3_tokens::motion::CubicBezier> {
+    let inner = easing
+        .cubic_bezier
+        .trim()
+        .strip_prefix("cubic-bezier(")?
+        .strip_suffix(')')?;
+    let mut values = inner.split(',').map(|v| v.trim().parse::<f32>());
+    let mut next = || values.next().and_then(Result::ok);
+    let curve = m3_tokens::motion::CubicBezier {
+        x1: next()?,
+        y1: next()?,
+        x2: next()?,
+        y2: next()?,
+    };
+    Some(curve)
+}

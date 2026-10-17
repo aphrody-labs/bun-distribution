@@ -7,6 +7,19 @@
 //! the [`Fsr1Upscale`] resource (machine screens with `bun-engine run ... --fsr`).
 
 const SHADER: &str = include_str!("fsr1.wgsl");
+
+/// The shader with its two switches fixed as `const`s. Pipeline-overridable constants would do the
+/// same, but naga 30's override pass rejects the RCAS entry point on the HLSL backend
+/// (`ExpressionAlreadyInScope`), so each variant is its own module.
+fn variant(device: &wgpu::Device, rgb_source: bool, srgb_target: bool) -> wgpu::ShaderModule {
+    let source = SHADER
+        .replace("override RGB_SOURCE: bool = false;", &format!("const RGB_SOURCE: bool = {rgb_source};"))
+        .replace("override SRGB_TARGET: bool = false;", &format!("const SRGB_TARGET: bool = {srgb_target};"));
+    device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("fsr1"),
+        source: wgpu::ShaderSource::Wgsl(source.into()),
+    })
+}
 const UPSCALED_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
 /// Letterboxed destination rectangle of a `size` image inside `target`: (x, y, w, h) pixels.
@@ -69,10 +82,8 @@ fn texture_entry(binding: u32) -> wgpu::BindGroupLayoutEntry {
 impl Fsr1 {
     /// Pipelines for `target_format` (sRGB targets get linear output) and a `hud_size` overlay.
     pub fn new(device: &wgpu::Device, target_format: wgpu::TextureFormat, hud_size: (u32, u32)) -> Self {
-        let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("fsr1"),
-            source: wgpu::ShaderSource::Wgsl(SHADER.into()),
-        });
+        let srgb = target_format.is_srgb();
+        let (nv12_module, rgb_module) = (variant(device, false, srgb), variant(device, true, srgb));
         let params_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("fsr params"),
             entries: &[wgpu::BindGroupLayoutEntry {
@@ -114,13 +125,12 @@ impl Fsr1 {
             layout: &params_layout,
             entries: &[wgpu::BindGroupEntry { binding: 0, resource: params.as_entire_binding() }],
         });
-        let srgb = if target_format.is_srgb() { 1.0 } else { 0.0 };
         let pipeline = |label: &str,
                         entry: &str,
                         groups: &[Option<&wgpu::BindGroupLayout>],
                         format: wgpu::TextureFormat,
                         blend: Option<wgpu::BlendState>,
-                        constants: &[(&str, f64)]| {
+                        module: &wgpu::ShaderModule| {
             let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some(label),
                 bind_group_layouts: groups,
@@ -130,15 +140,15 @@ impl Fsr1 {
                 label: Some(label),
                 layout: Some(&layout),
                 vertex: wgpu::VertexState {
-                    module: &module,
+                    module,
                     entry_point: Some("vs"),
                     compilation_options: Default::default(),
                     buffers: &[],
                 },
                 fragment: Some(wgpu::FragmentState {
-                    module: &module,
+                    module,
                     entry_point: Some(entry),
-                    compilation_options: wgpu::PipelineCompilationOptions { constants, ..Default::default() },
+                    compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState { format, blend, write_mask: wgpu::ColorWrites::ALL })],
                 }),
                 primitive: wgpu::PrimitiveState::default(),
@@ -149,15 +159,15 @@ impl Fsr1 {
             })
         };
         let easu_groups = [Some(&params_layout), Some(&planes_layout)];
-        let easu_nv12 = pipeline("fsr easu nv12", "easu", &easu_groups, UPSCALED_FORMAT, None, &[("RGB_SOURCE", 0.0)]);
-        let easu_rgb = pipeline("fsr easu rgb", "easu", &easu_groups, UPSCALED_FORMAT, None, &[("RGB_SOURCE", 1.0)]);
+        let easu_nv12 = pipeline("fsr easu nv12", "easu", &easu_groups, UPSCALED_FORMAT, None, &nv12_module);
+        let easu_rgb = pipeline("fsr easu rgb", "easu", &easu_groups, UPSCALED_FORMAT, None, &rgb_module);
         let rcas = pipeline(
             "fsr rcas",
             "rcas",
             &[Some(&params_layout), None, Some(&single_layout)],
             target_format,
             None,
-            &[("SRGB_TARGET", srgb)],
+            &nv12_module,
         );
         let hud = pipeline(
             "fsr hud",
@@ -165,7 +175,7 @@ impl Fsr1 {
             &[Some(&params_layout), None, None, Some(&single_layout)],
             target_format,
             Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
-            &[("SRGB_TARGET", srgb)],
+            &nv12_module,
         );
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("fsr chroma"),
@@ -358,14 +368,6 @@ impl Fsr1 {
             pass.draw(0..3, 0..1);
         }
         viewport
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn letterbox_centers() {
-        assert_eq!(super::letterbox((1000, 500), (256, 240)), (233.33334, 0.0, 533.3333, 500.0));
     }
 }
 

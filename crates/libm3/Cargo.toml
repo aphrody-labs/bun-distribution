@@ -16,10 +16,14 @@ cosmic-wgpu = ["cosmic", "cosmic/wgpu"]
 cosmic-x11 = ["cosmic", "cosmic/x11"]
 cosmic-wayland = ["cosmic", "cosmic/wayland"]
 cosmic-a11y = ["cosmic", "cosmic/a11y"]
+# Bevy UI renderer (`libm3::bevy`): the M3 widget kit of the console shell and Bun Engine menus.
+bevy = ["std", "dep:bevy", "dep:accesskit"]
 
 [dependencies]
 m3-engine = { package = "aphrody-m3", path = "../aphrody-m3", default-features = false, optional = true }
 m3-tokens = { package = "aphrody-m3-tokens", path = "../aphrody-m3-tokens", default-features = false }
+bevy = { workspace = true, optional = true, features = ["ui"] }
+accesskit = { version = "0.24", default-features = false, optional = true }
 cosmic = { package = "libcosmic", git = "https://github.com/aphrody-labs/libcosmic", rev = "7f715bc5d2d383a070fd8c760aa52c5627df96b6", default-features = false, features = ["winit", "tokio"], optional = true }
 
 [lints.rust]

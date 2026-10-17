@@ -4,29 +4,27 @@
 // The master key lives in the OS credential store (Bun.secrets aphrody.bun-engine/owned-dumps-key),
 // is created on first use and is never printed.
 //
+// Transport: the platform transfer service (objectTarget "r2:private/owned", the private R2 bucket
+// with its protected credentials and bandwidth caps); file: targets serve local tests only.
+//
 // Layout under the target prefix:  <objectId>/part-00000 ...  <objectId>/manifest
 // Resume: parts already recorded in owned_sync (and present remotely) are skipped; part IVs are
 // derived from (sha256, index), so a re-sealed part is byte-identical. Integrity: each part is
 // checked after upload (size, ETag = MD5 when the store reports one) and on restore (SHA-256 of
 // every sealed part from the manifest, GCM tags, SHA-256 of the whole dump).
-import { existsSync } from "node:fs";
 import { mkdir, rename, rm } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { ObjectTarget } from "../../../bun-os-platform/src/transfer";
 import { type OwnedDump, ownedBySha, ownedDb, storePath } from "./store";
+
+export type { ObjectTarget };
 
 const secretService = "aphrody.bun-engine";
 const keySecret = "owned-dumps-key";
-const bucketSecret = "owned-bucket";
 const defaultPartBytes = 32 * 1024 * 1024;
-
-export interface ObjectTarget {
-  id: string;
-  put(key: string, bytes: Uint8Array): Promise<void>;
-  stat(key: string): Promise<{ size: number; etag?: string } | null>;
-  get(key: string): Promise<Uint8Array>;
-  delete(key: string): Promise<void>;
-}
+/** The private R2 bucket of the platform transfer service, under the owned/ prefix. */
+export const defaultTarget = "r2:private/owned";
 
 const encoder = new TextEncoder();
 /** Web Crypto wants ArrayBuffer-backed views; Bun's byte APIs never return shared buffers. */
@@ -112,11 +110,22 @@ async function openManifest<T>(sealed: Uint8Array, aad: string): Promise<T> {
 
 // ---- targets ----------------------------------------------------------------------------------
 
-function fileTarget(root: string): ObjectTarget {
+const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
+
+/** Local directory target for tests, throttled like the bucket. */
+function fileTarget(root: string, bandwidth = 0): ObjectTarget {
   const at = (key: string) => join(root, ...key.split("/"));
+  let moved = 0;
+  const started = performance.now();
+  const throttle = async (bytes: number) => {
+    moved += bytes;
+    const due = bandwidth ? (moved / bandwidth) * 1000 - (performance.now() - started) : 0;
+    if (due > 0) await sleep(due);
+  };
   return {
     id: `file:${root}`,
     async put(key, bytes) {
+      await throttle(bytes.length);
       await mkdir(dirname(at(key)), { recursive: true });
       await Bun.write(`${at(key)}.tmp`, bytes);
       await rename(`${at(key)}.tmp`, at(key));
@@ -127,7 +136,9 @@ function fileTarget(root: string): ObjectTarget {
       return { size: file.size, etag: new Bun.CryptoHasher("md5").update(await file.bytes()).digest("hex") };
     },
     async get(key) {
-      return Bun.file(at(key)).bytes();
+      const bytes = await Bun.file(at(key)).bytes();
+      await throttle(bytes.length);
+      return bytes;
     },
     async delete(key) {
       await rm(at(key), { force: true });
@@ -135,70 +146,26 @@ function fileTarget(root: string): ObjectTarget {
   };
 }
 
-interface BucketCredentials {
-  bucket: string;
-  endpoint?: string;
-  region?: string;
-  accessKeyId: string;
-  secretAccessKey: string;
-}
-
-/** The platform transfer service when it exports `objectTarget`; Bun.S3Client with stored credentials otherwise. */
-async function bucketTarget(spec: string): Promise<ObjectTarget> {
-  const platform = resolve(import.meta.dir, "..", "..", "..", "bun-os-platform", "src", "transfer", "index.ts");
-  if (existsSync(platform)) {
-    const transfer = (await import(platform)) as {
-      objectTarget?: (spec: string, options?: { private?: boolean }) => Promise<ObjectTarget>;
-    };
-    if (transfer.objectTarget) return transfer.objectTarget(spec, { private: true });
-  }
-  const stored = await Bun.secrets.get({ service: secretService, name: bucketSecret });
-  if (!stored)
-    throw new Error(
-      `no private bucket credentials: store them with \`bep owned bucket\` (Bun.secrets ${secretService}/${bucketSecret}) or expose objectTarget from @bun-os/platform/transfer`,
-    );
-  const credentials = JSON.parse(stored) as BucketCredentials;
-  const url = new URL(spec.startsWith("s3://") ? spec : `s3://${credentials.bucket}/${spec.replace(/^private:?/, "")}`);
-  const prefix = url.pathname.replace(/^\/+|\/+$/g, "");
-  const client = new Bun.S3Client({ ...credentials, bucket: url.hostname || credentials.bucket });
-  const at = (key: string) => (prefix ? `${prefix}/${key}` : key);
-  return {
-    id: `s3://${url.hostname || credentials.bucket}/${prefix}`,
-    async put(key, bytes) {
-      await client.write(at(key), bytes, { type: "application/octet-stream" });
-    },
-    async stat(key) {
-      try {
-        const stat = await client.stat(at(key));
-        return { size: stat.size, etag: stat.etag?.replaceAll('"', "") };
-      } catch {
-        return null;
-      }
-    },
-    async get(key) {
-      return client.file(at(key)).bytes();
-    },
-    async delete(key) {
-      await client.delete(at(key));
-    },
-  };
-}
-
-/** `file:///dir` or `file:C:/dir` for local copies (tests), anything else is a private bucket. */
-export async function openTarget(spec = "private"): Promise<ObjectTarget> {
+/**
+ * `file:///dir` or `file:C:/dir` for local copies (tests); anything else goes through the platform
+ * transfer service (`r2:private[/<prefix>]`, `r2:<bucket>/<prefix>`, `r2://`, `s3://`), which
+ * holds the R2 credentials and refuses any bucket but the configured private one.
+ * `bandwidth` caps the transfer in bytes per second (0 = the platform's global cap only).
+ */
+export async function openTarget(spec = defaultTarget, bandwidth = 0): Promise<ObjectTarget> {
   if (spec.startsWith("file:")) {
     const path = spec.startsWith("file://") ? fileURLToPath(spec) : spec.slice(5);
-    return fileTarget(resolve(path));
+    return fileTarget(resolve(path), bandwidth);
   }
-  return bucketTarget(spec);
+  const { objectTarget } = await import("../../../bun-os-platform/src/transfer");
+  return objectTarget(spec === "private" ? defaultTarget : spec, { private: true, bandwidth });
 }
 
-/** Stores the private-bucket credentials (JSON on stdin) in the OS credential store. */
-export async function saveBucketCredentials(json: string): Promise<string> {
-  const value = JSON.parse(json) as BucketCredentials;
-  if (!value.bucket || !value.accessKeyId || !value.secretAccessKey) throw new Error("bucket, accessKeyId and secretAccessKey are required");
-  await Bun.secrets.set({ service: secretService, name: bucketSecret, value: JSON.stringify(value) });
-  return `${secretService}/${bucketSecret}`;
+/** A part already stored remotely: same size, and the same MD5 when the store reports a plain ETag. */
+function sameObject(remote: { size: number; etag?: string } | null, size: number, md5: string): boolean {
+  if (!remote || remote.size !== size) return false;
+  const etag = remote.etag?.replaceAll('"', "").toLowerCase();
+  return !etag || !/^[0-9a-f]{32}$/.test(etag) || etag === md5;
 }
 
 // ---- push / pull ------------------------------------------------------------------------------
@@ -217,8 +184,6 @@ interface SealedManifest {
 
 export interface PushOptions {
   partBytes?: number;
-  /** Upload cap in bytes per second (0 = unlimited). */
-  limit?: number;
   /** Stop after this many uploaded parts (exercises resume). */
   stopAfterParts?: number;
 }
@@ -233,8 +198,6 @@ export interface PushResult {
   bytes: number;
   complete: boolean;
 }
-
-const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
 
 /** Seals and uploads one dump; an interrupted push resumes at the first missing part. */
 export async function pushDump(dump: OwnedDump, target: ObjectTarget, options: PushOptions = {}): Promise<PushResult> {
@@ -255,7 +218,6 @@ export async function pushDump(dump: OwnedDump, target: ObjectTarget, options: P
   let uploaded = 0;
   let skipped = 0;
   let bytes = 0;
-  const started = performance.now();
   for (let index = 0; index < count; index++) {
     const key = `${object}/part-${String(index).padStart(5, "0")}`;
     const aad = `bep-owned-v1:${object}:${index}:${count}`;
@@ -265,7 +227,7 @@ export async function pushDump(dump: OwnedDump, target: ObjectTarget, options: P
     const md5 = new Bun.CryptoHasher("md5").update(sealed).digest("hex");
     parts.push({ bytes: sealed.length, sha256: digest });
     const remote = index < (state?.done ?? 0) || state?.state === "done" ? await target.stat(key) : null;
-    if (remote && remote.size === sealed.length && (!remote.etag || !/^[0-9a-f]{32}$/.test(remote.etag) || remote.etag === md5)) {
+    if (sameObject(remote, sealed.length, md5)) {
       skipped++;
       continue;
     }
@@ -273,16 +235,11 @@ export async function pushDump(dump: OwnedDump, target: ObjectTarget, options: P
       return { sha256: dump.sha256, target: target.id, object, parts: count, uploaded, skipped, bytes, complete: false };
     }
     await target.put(key, sealed);
-    const check = await target.stat(key);
-    if (!check || check.size !== sealed.length || (check.etag && /^[0-9a-f]{32}$/.test(check.etag) && check.etag !== md5))
+    if (!sameObject(await target.stat(key), sealed.length, md5))
       throw new Error(`part ${index} of ${dump.sha256.slice(0, 12)} failed its integrity check after upload`);
     uploaded++;
     bytes += sealed.length;
     record.run({ sha256: dump.sha256, target: target.id, state: "partial", parts: partBytes, done: index + 1, bytes, updatedAt: new Date().toISOString() });
-    if (options.limit) {
-      const due = (bytes / options.limit) * 1000 - (performance.now() - started);
-      if (due > 0) await sleep(due);
-    }
   }
   const manifest: SealedManifest = {
     v: 1,

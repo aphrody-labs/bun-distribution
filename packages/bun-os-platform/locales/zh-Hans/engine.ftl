@@ -1,0 +1,9 @@
+-engine = Bun Engine
+engine-name = { -engine }
+engine-window-title = { $title } - { -engine }
+engine-paused = 已暂停
+engine-fast-forward = 快进 ×{ $speed }
+engine-state-saved = 已将状态保存到槽位 { $slot }
+engine-state-loaded = 已从槽位 { $slot } 读取状态
+engine-needs-firmware = { $system } 需要固件：{ $file }
+engine-unsupported-image = { $file } 不是受支持的游戏镜像

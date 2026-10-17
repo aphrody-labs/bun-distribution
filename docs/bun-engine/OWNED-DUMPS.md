@@ -105,9 +105,8 @@ the limit stays at 1 MiB.
 ### Private bucket
 
 ```sh
-bep owned bucket < credentials.json   # {bucket, endpoint, accessKeyId, secretAccessKey}
-bep owned push [<sha...>|--all] [--to private|s3://bucket/prefix|file:<dir>] [--part-size 32M] [--limit 8M]
-bep owned pull <sha> <file> [--from <target>]
+bep owned push [<sha...>|--all] [--to r2:private/owned|file:<dir>] [--part-size 32M] [--limit 8M]
+bep owned pull <sha> <file> [--from <target>] [--limit 8M]
 bep owned forget <sha...> [--from <target>]
 ```
 
@@ -127,10 +126,13 @@ restore, it checks each sealed part against the SHA-256 in the manifest,
 checks the GCM tags, and checks the SHA-256 of the whole dump. A tampered
 part aborts the restore.
 
-**Transport.** bep moves the bytes through the platform transfer service
-(`@bun-os/platform/transfer`, `objectTarget`) once that service exposes the
-export. Until then, it uses `Bun.S3Client` with the credentials stored by
-`bep owned bucket`.
+**Transport.** bep moves the sealed bytes through the platform transfer
+service (`@bun-os/platform/transfer`, `objectTarget`). The default target
+is `r2:private/owned`: the private R2 bucket of the platform settings
+(`bun-os-private`, no public URL), under the `owned/` prefix. The platform
+holds the R2 credentials in its protected store, refuses any bucket other than
+the configured private one, and applies `--limit` together with its global
+bandwidth cap. `file:<dir>` targets are for local tests only.
 
 ### VPS test host
 

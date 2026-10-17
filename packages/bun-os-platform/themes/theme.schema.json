@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aphrody.app/schemas/bun-os-theme-1.json",
+  "title": "Bun OS theme (bun-os-theme/1)",
+  "description": "A theme layers over themes/baseline.json. The same keys are accepted in TOML; CSS themes use --bun-os-theme-{seed,variant,contrast,mode,dynamic,id,name,font,type-scale}, --md-sys-color-<role>, --md-sys-shape-corner-<name>, --md-sys-motion-duration-<name>, --md-sys-motion-easing-<name>, --md-sys-typescale-<style>-{size,line-height,weight,tracking}, --md-sys-state-<name>-state-layer-opacity, --bun-os-space-<name> and --bun-os-icon-<name>. Resolved by aphrody-m3-tokens (native) and @aphrody/m3-tokens (web).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema": { "const": "bun-os-theme/1" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9/-]*$" },
+    "name": { "type": "string", "description": "Display name when no nameKey is given." },
+    "nameKey": { "type": "string", "description": "Fluent id of the display name." },
+    "color": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "seed": { "$ref": "#/$defs/hex" },
+        "variant": { "enum": ["tonal-spot", "content", "fidelity", "expressive", "vibrant", "neutral", "monochrome", "rainbow", "fruit-salad"] },
+        "contrast": { "type": "number", "minimum": -1, "maximum": 1 },
+        "mode": { "enum": ["dark", "light", "system"] },
+        "dynamic": { "enum": ["art", "none"], "description": "art: re-seed from the focused game's art (DIRECTION.md)." },
+        "roles": { "$ref": "#/$defs/roles" },
+        "light": { "$ref": "#/$defs/roles" },
+        "dark": { "$ref": "#/$defs/roles" }
+      }
+    },
+    "type": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "font": { "type": "string" },
+        "scale": { "type": "number", "exclusiveMinimum": 0 },
+        "styles": {
+          "type": "object",
+          "propertyNames": { "pattern": "^(display|headline|title|body|label)-(large|medium|small)$" },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "size": { "type": "number" },
+              "lineHeight": { "type": "number" },
+              "weight": { "type": "integer", "minimum": 1, "maximum": 1000 },
+              "tracking": { "type": "number" },
+              "font": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "shape": { "$ref": "#/$defs/numbers" },
+    "motion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "durations": { "$ref": "#/$defs/numbers" },
+        "easings": {
+          "type": "object",
+          "additionalProperties": { "type": "array", "items": { "type": "number" }, "minItems": 4, "maxItems": 4 }
+        },
+        "reduced": { "type": "boolean" }
+      }
+    },
+    "elevation": { "$ref": "#/$defs/numbers" },
+    "state": { "$ref": "#/$defs/numbers" },
+    "space": { "$ref": "#/$defs/numbers" },
+    "icon": { "$ref": "#/$defs/numbers" },
+    "highContrast": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contrast": { "type": "number", "minimum": -1, "maximum": 1 },
+        "roles": { "$ref": "#/$defs/roles" }
+      }
+    }
+  },
+  "$defs": {
+    "hex": { "type": "string", "pattern": "^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$" },
+    "roles": {
+      "type": "object",
+      "description": "Kebab-case M3 color roles (primary, on-primary, surface-container-high...).",
+      "propertyNames": { "pattern": "^[a-z]+(-[a-z]+)*$" },
+      "additionalProperties": { "$ref": "#/$defs/hex" }
+    },
+    "numbers": { "type": "object", "additionalProperties": { "type": "number" } }
+  }
+}

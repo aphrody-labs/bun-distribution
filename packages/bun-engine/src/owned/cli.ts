@@ -3,14 +3,14 @@ import { checkStaged, installHook } from "./guard";
 import { runInbox } from "./inbox";
 import { testOwned } from "./runner";
 import { describe, ingestPaths, listOwned, type OwnedKind, ownedBySha, removeOwned } from "./store";
-import { deleteRemote, openTarget, pullDump, pushDump, saveBucketCredentials } from "./vault";
+import { defaultTarget, deleteRemote, openTarget, pullDump, pushDump } from "./vault";
 import { syncVps } from "./vps";
 
 export const ownedUsage = [
   "bep import <file|dir|archive...> [--system <id>]",
   "bep owned ls [--kind firmware|rom|keys] [--system <id>] | rm <sha...> | inbox [--watch] [--system <id>]",
-  "bep owned push [<sha...>|--all] [--to private|s3://bucket/prefix|file:<dir>] [--part-size <bytes>] [--limit <bytes/s>]",
-  "bep owned pull <sha> <file> [--from <target>] | forget <sha...> [--from <target>] | bucket (credentials JSON on stdin)",
+  `bep owned push [<sha...>|--all] [--to ${defaultTarget}|r2:private/<prefix>|file:<dir>] [--part-size <bytes>] [--limit <bytes/s>]`,
+  "bep owned pull <sha> <file> [--from <target>] [--limit <bytes/s>] | forget <sha...> [--from <target>]",
   "bep owned sync vps [<sha...>] [--limit 4M] [--keys] [--system <id>] [--prune] [--host vps] [--root /games/private]",
   "bep owned hook | guard",
   "bep test owned [<sha...>] [--system <id>] [--frames N] [--timeout <ms>] [--no-roms] [--no-bios]",
@@ -48,6 +48,11 @@ function print(value: unknown): number {
 function text(flags: Map<string, string | true>, name: string): string | undefined {
   const value = flags.get(name);
   return typeof value === "string" ? value : undefined;
+}
+
+function limitOf(flags: Map<string, string | true>): number {
+  const value = text(flags, "--limit");
+  return value ? parseBytes(value) : 0;
 }
 
 export async function runImport(args: string[]): Promise<number> {
@@ -97,7 +102,7 @@ export async function runOwned(args: string[]): Promise<number> {
         }),
       );
     case "push": {
-      const target = await openTarget(text(flags, "--to") ?? "private");
+      const target = await openTarget(text(flags, "--to") ?? defaultTarget, limitOf(flags));
       const dumps =
         flags.has("--all") || !positional.length
           ? listOwned()
@@ -111,7 +116,6 @@ export async function runOwned(args: string[]): Promise<number> {
         results.push(
           await pushDump(dump, target, {
             partBytes: text(flags, "--part-size") ? parseBytes(text(flags, "--part-size")!) : undefined,
-            limit: text(flags, "--limit") ? parseBytes(text(flags, "--limit")!) : undefined,
           }),
         );
       return print(results);
@@ -120,16 +124,14 @@ export async function runOwned(args: string[]): Promise<number> {
       const [sha, file] = positional;
       if (!sha || !file) throw new Error("usage: bep owned pull <sha> <file> [--from <target>]");
       const dump = ownedBySha(sha);
-      return print(await pullDump(dump?.sha256 ?? sha, await openTarget(text(flags, "--from") ?? "private"), file));
+      return print(await pullDump(dump?.sha256 ?? sha, await openTarget(text(flags, "--from") ?? defaultTarget, limitOf(flags)), file));
     }
     case "forget": {
-      const target = await openTarget(text(flags, "--from") ?? "private");
+      const target = await openTarget(text(flags, "--from") ?? defaultTarget);
       const removed = [];
       for (const sha of positional) removed.push({ sha, objects: await deleteRemote(ownedBySha(sha)?.sha256 ?? sha, target) });
       return print(removed);
     }
-    case "bucket":
-      return print({ stored: await saveBucketCredentials(await Bun.stdin.text()) });
     case "sync": {
       if (positional[0] !== "vps") throw new Error(`usage: ${ownedUsage[4]}`);
       return print(

@@ -17,6 +17,7 @@ pub mod runtime;
 pub mod screens;
 pub mod script;
 pub mod system;
+pub mod text;
 pub mod theme;
 pub mod ui;
 
@@ -207,9 +208,11 @@ fn run(options: Options) {
         toast: None,
         hwnd: None,
     };
+    // Fluent catalogs (common + shell) for the negotiated locale, before any text is built.
+    bun_os_platform::i18n::init(&["common", "shell"]);
     let theme = theme::Theme::default();
     let window = Window {
-        title: "Bun OS".into(),
+        title: text::t("app.name"),
         mode: if full {
             WindowMode::BorderlessFullscreen(MonitorSelection::Current)
         } else {
@@ -236,15 +239,26 @@ fn run(options: Options) {
             }),
             ..default()
         }))
-        .add_plugins((
-            DirectionalNavigationPlugin,
-            bun_engine::runtime::fsr1::Fsr1Plugin,
-        ))
+        .add_plugins(DirectionalNavigationPlugin)
+        // Platform layer: locale/theme resources and messages, plugin menu entries, file types and
+        // transfers through the Bun sidecar (docs/bun-os/PLATFORM.md).
+        .add_plugins(bun_os_platform::bevy::PlatformPlugin {
+            reduced_motion: reduced,
+            ..bun_os_platform::bevy::PlatformPlugin::new(&["common", "shell"])
+        })
+        // The engine runtime on the shell's App: machine systems registered once
+        // (InsertMachine/RemoveMachine), EngineInput from keyboard and pads, FSR1, machine audio.
+        .add_plugins(bun_engine::runtime::BunEnginePlugin {
+            default_plugins: false,
+            escape_exits: false,
+            camera: false,
+            ..bun_engine::runtime::BunEnginePlugin::windowed(text::t("app.name"))
+        })
         .insert_resource(WinitSettings {
             focused_mode: UpdateMode::Continuous,
             unfocused_mode: UpdateMode::reactive_low_power(Duration::from_millis(100)),
         })
-        .insert_resource(ClearColor(theme.surface_dim))
+        .insert_resource(ClearColor(theme.get(theme::R::SurfaceDim)))
         .insert_resource(InputFocusVisible(true))
         .insert_resource(AutoNavigationConfig {
             min_alignment_factor: 0.0,
@@ -299,18 +313,13 @@ fn run(options: Options) {
                 (assets::receive_art, screens::fill_art, ui::cover).chain(),
                 ui::focus_fx,
                 (screens::follow_focus, screens::animate_scroll).chain(),
-                screens::update_hero.run_if(in_state(Screen::Home)),
+                (screens::hero_and_tint, screens::tint_scrims, ui::apply_tint).chain(),
+                screens::hero_actions.run_if(in_state(Screen::Home)),
                 screens::update_bindings,
                 overlay::animate_sheet,
                 app::tick_toast,
-                (
-                    runtime::machine_input,
-                    runtime::upload_frames,
-                    screens::update_machine_view,
-                )
-                    .chain(),
+                (runtime::sync_machine, screens::update_machine_view).chain(),
                 runtime::pause_for_overlay,
-                runtime::fsr1_scaler,
                 runtime::track_external,
                 (ui_scale, capture_window, announce_pads),
             ),
@@ -322,13 +331,8 @@ fn run(options: Options) {
         .run();
 }
 
-fn make_kit(
-    mut commands: Commands,
-    theme: Res<theme::Theme>,
-    fonts: Res<assets::Fonts>,
-    icons: Res<assets::Icons>,
-) {
-    commands.insert_resource(ui::Kit::from_world(&theme, &fonts, &icons));
+fn make_kit(mut commands: Commands, fonts: Res<assets::Fonts>) {
+    commands.insert_resource(ui::Kit::from_fonts(&fonts));
 }
 
 fn spawn_camera(mut commands: Commands) {
@@ -380,6 +384,6 @@ fn announce_pads(pads: Query<(&Gamepad, Option<&Name>), Added<Gamepad>>, mut she
             .vendor_id()
             .map(|v| format!(" ({v:04x})"))
             .unwrap_or_default();
-        shell.toast(format!("{name}{vendor} connected"));
+        shell.toast(text::tf("toast.controller", &[("name", &format!("{name}{vendor}"))]));
     }
 }

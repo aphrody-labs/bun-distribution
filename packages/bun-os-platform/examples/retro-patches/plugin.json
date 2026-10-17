@@ -1,0 +1,9 @@
+{
+  "name": "retro-patches",
+  "version": "0.1.0",
+  "description": "Sample Bun OS plugin: IPS/BPS/UPS ROM patch loader, a theme and a menu entry.",
+  "entry": "index.ts",
+  "permissions": ["files", "themes", "locales", "ui"],
+  "platform": "1",
+  "source": "packages/bun-os-platform/examples/retro-patches"
+}

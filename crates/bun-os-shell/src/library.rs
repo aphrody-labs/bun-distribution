@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 
 use rusqlite::{Connection, OpenFlags};
 
+use crate::assets::{ArtRef, Source as ArtSource};
 use crate::paths::Paths;
 
 /// Systems the shell runs in-process on Bun Engine machines (instant resume).
@@ -40,8 +41,10 @@ pub struct Game {
     /// Platform line (`Steam`, `Nintendo Entertainment System`, ...).
     pub platform: String,
     pub kind: Kind,
-    pub hero: Option<PathBuf>,
-    pub tile: Option<PathBuf>,
+    /// Full-bleed hero picture (Steam `library_hero`, libretro snap/title screen).
+    pub hero: ArtRef,
+    /// Rail capsule (Steam `library_600x900`, libretro box art).
+    pub tile: ArtRef,
     pub last_played: Option<String>,
     pub play_count: i64,
     pub size: u64,
@@ -143,38 +146,73 @@ fn steam_names(steam: &Path) -> HashMap<u32, (String, String)> {
     names
 }
 
-fn steam_art(steam: &Path, app_id: u32) -> (Option<PathBuf>, Option<PathBuf>) {
-    let dir = steam
-        .join("appcache")
-        .join("librarycache")
-        .join(app_id.to_string());
-    let pick = |names: &[&str]| names.iter().map(|n| dir.join(n)).find(|p| p.is_file());
-    let mut any = None;
-    if let Ok(entries) = std::fs::read_dir(&dir) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path
-                .extension()
-                .is_some_and(|e| e.eq_ignore_ascii_case("jpg"))
-            {
-                any = Some(path);
-                break;
-            }
-        }
-    }
-    let hero =
-        pick(&["library_hero.jpg", "library_hero.png", "header.jpg"]).or_else(|| any.clone());
-    let tile = pick(&[
-        "header.jpg",
-        "header_english.jpg",
-        "header_french.jpg",
-        "library_600x900.jpg",
-    ])
-    .or(any);
+/// Steam library art: the client cache first, then the public Steam CDN (cached locally).
+fn steam_art(steam: &Path, cache: &Path, app_id: u32) -> (ArtRef, ArtRef) {
+    let local = steam.join("appcache").join("librarycache").join(app_id.to_string());
+    let source = |file: &str| {
+        let mut refs = vec![ArtSource::File(local.join(file))];
+        refs.push(ArtSource::Remote {
+            url: format!("https://cdn.cloudflare.steamstatic.com/steam/apps/{app_id}/{file}"),
+            cache: cache.join("steam").join(app_id.to_string()).join(file),
+        });
+        ArtRef(refs)
+    };
+    let hero = source("library_hero.jpg").then(source("header.jpg"));
+    let tile = source("library_600x900.jpg").then(source("header.jpg"));
     (hero, tile)
 }
 
-fn load_steam(library: &mut Library) {
+/// libretro-thumbnails name rules: `&*/:`<>?\|"` become `_`.
+fn libretro_name(value: &str) -> String {
+    value
+        .chars()
+        .map(|c| if "&*/:`<>?\\|\"".contains(c) { '_' } else { c })
+        .collect()
+}
+
+fn percent(value: &str) -> String {
+    let mut out = String::new();
+    for b in value.bytes() {
+        if b.is_ascii_alphanumeric() || b"-_.~()!',".contains(&b) {
+            out.push(b as char);
+        } else {
+            out.push_str(&format!("%{b:02X}"));
+        }
+    }
+    out
+}
+
+/// libretro-thumbnails art for a DAT-matched game: a local thumbnails tree (`LIBRETRO_THUMBNAILS`
+/// or `usr/share/bun-engine/thumbnails`), then thumbnails.libretro.com (cached locally).
+fn libretro_art(paths: &Paths, cache: &Path, dat: &str, title: &str, kinds: &[&str]) -> ArtRef {
+    let playlist = Path::new(dat)
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+    if playlist.is_empty() {
+        return ArtRef::default();
+    }
+    let name = format!("{}.png", libretro_name(title));
+    let local_root = std::env::var_os("LIBRETRO_THUMBNAILS")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| paths.usr.join("share").join("bun-engine").join("thumbnails"));
+    let mut refs = Vec::new();
+    for kind in kinds {
+        refs.push(ArtSource::File(local_root.join(&playlist).join(kind).join(&name)));
+        refs.push(ArtSource::Remote {
+            url: format!(
+                "https://thumbnails.libretro.com/{}/{}/{}",
+                percent(&playlist),
+                kind,
+                percent(&name)
+            ),
+            cache: cache.join("libretro").join(&playlist).join(kind).join(&name),
+        });
+    }
+    ArtRef(refs)
+}
+
+fn load_steam(library: &mut Library, cache: &Path) {
     let Some(steam) = bun_steam::find_steam_dir() else {
         return;
     };
@@ -200,11 +238,11 @@ fn load_steam(library: &mut Library) {
                 continue;
             }
             seen.insert(m.app_id);
-            let (hero, tile) = steam_art(&steam, m.app_id);
+            let (hero, tile) = steam_art(&steam, cache, m.app_id);
             library.games.push(Game {
                 key: format!("steam:{}", m.app_id),
                 title: m.name.clone(),
-                platform: "Steam".into(),
+                platform: crate::text::t("platform.steam"),
                 kind: Kind::Steam {
                     app_id: m.app_id,
                     installed: m.is_installed(),
@@ -239,14 +277,18 @@ fn load_steam(library: &mut Library) {
             if kind != "game" {
                 continue;
             }
-            let (hero, tile) = steam_art(&steam, app_id);
-            if tile.is_none() {
+            let (hero, tile) = steam_art(&steam, cache, app_id);
+            let local = steam
+                .join("appcache")
+                .join("librarycache")
+                .join(app_id.to_string());
+            if !local.join("header.jpg").is_file() && !local.join("library_600x900.jpg").is_file() {
                 continue;
             }
             cached.push(Game {
                 key: format!("steam:{app_id}"),
                 title: name.clone(),
-                platform: "Steam · not installed".into(),
+                platform: crate::text::t("platform.steam-not-installed"),
                 kind: Kind::Steam {
                     app_id,
                     installed: false,
@@ -271,7 +313,7 @@ fn load_bep(library: &mut Library, paths: &Paths) {
     let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
     if let Ok(db) = Connection::open_with_flags(paths.bep.join("library.db"), flags)
         && let Ok(mut statement) = db.prepare(
-            "SELECT id, system, path, name, title, size, developer, year, route, playCount, lastPlayed \
+            "SELECT id, system, path, name, title, size, developer, year, route, playCount, lastPlayed, dat \
              FROM games ORDER BY lastPlayed IS NULL, lastPlayed DESC, playCount DESC, COALESCE(title, name)",
         )
     {
@@ -288,10 +330,20 @@ fn load_bep(library: &mut Library, paths: &Paths) {
                 row.get::<_, Option<String>>(8)?,
                 row.get::<_, i64>(9)?,
                 row.get::<_, Option<String>>(10)?,
+                row.get::<_, Option<String>>(11)?,
             ))
         });
         if let Ok(rows) = rows {
-            for (id, system, path, name, title, size, developer, year, route, plays, last) in rows.flatten() {
+            let cache = paths.usr.join("var").join("cache").join("bun-os-shell");
+            for (id, system, path, name, title, size, developer, year, route, plays, last, dat) in rows.flatten() {
+                let dat_name = title.clone().unwrap_or_else(|| name.clone());
+                let (hero, tile) = match dat.as_deref() {
+                    Some(dat) => (
+                        libretro_art(paths, &cache, dat, &dat_name, &["Named_Snaps", "Named_Titles"]),
+                        libretro_art(paths, &cache, dat, &dat_name, &["Named_Boxarts", "Named_Titles"]),
+                    ),
+                    None => (ArtRef::default(), ArtRef::default()),
+                };
                 let native_route = route.as_deref().is_none_or(|r| r.starts_with("native:"));
                 let kind = if NATIVE_SYSTEMS.contains(&system.as_str()) && native_route {
                     Kind::Native { id, system: system.clone(), path: PathBuf::from(&path) }
@@ -306,8 +358,8 @@ fn load_bep(library: &mut Library, paths: &Paths) {
                     title,
                     platform: system_label(&system).into(),
                     kind,
-                    hero: None,
-                    tile: None,
+                    hero,
+                    tile,
                     last_played: last,
                     play_count: plays,
                     size: size.max(0) as u64,
@@ -366,13 +418,13 @@ fn load_web(library: &mut Library, paths: &Paths) {
         library.games.push(Game {
             key: format!("web:{id}"),
             title: name.to_string(),
-            platform: "Web core (wasm)".into(),
+            platform: crate::text::t("platform.web"),
             kind: Kind::Web {
                 core: id.to_string(),
                 systems,
             },
-            hero: None,
-            tile: None,
+            hero: ArtRef::default(),
+            tile: ArtRef::default(),
             last_played: None,
             play_count: 0,
             size: 0,
@@ -404,7 +456,7 @@ impl Library {
     pub fn load(paths: &Paths) -> Self {
         let mut library = Self::default();
         load_bep(&mut library, paths);
-        load_steam(&mut library);
+        load_steam(&mut library, &paths.usr.join("var").join("cache").join("bun-os-shell"));
         load_web(&mut library, paths);
         // Played first (bep order already carries it), then installed Steam games, then the rest.
         library.games.sort_by_key(|g| match &g.kind {

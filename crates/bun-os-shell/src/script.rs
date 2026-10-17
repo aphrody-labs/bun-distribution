@@ -202,8 +202,8 @@ pub fn write_report(
     let mut report = stats.report();
     if let Some(info) = crate::runtime::machine_info(&running) {
         report["machine"] = serde_json::json!({
-            "name": info.name, "fps": info.fps, "frameMs": info.frame_ms, "frames": info.frames,
-            "resumedFromDisk": info.resumed_from_disk, "saves": info.saves, "error": info.error,
+            "name": info.name, "fps": info.fps, "refreshHz": info.refresh, "frames": info.frames, "paused": info.paused,
+            "resumedFromDisk": info.resumed_from_disk, "error": info.error,
         });
     }
     report["script"] = serde_json::json!(script.log);

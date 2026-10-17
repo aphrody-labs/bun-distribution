@@ -1,0 +1,550 @@
+{
+  "schema_version": 1,
+  "shape": [
+    {
+      "name": "none",
+      "dp": 0
+    },
+    {
+      "name": "extra-small",
+      "dp": 4
+    },
+    {
+      "name": "small",
+      "dp": 8
+    },
+    {
+      "name": "medium",
+      "dp": 12
+    },
+    {
+      "name": "large",
+      "dp": 16
+    },
+    {
+      "name": "large-increased",
+      "dp": 20
+    },
+    {
+      "name": "extra-large",
+      "dp": 28
+    },
+    {
+      "name": "extra-large-increased",
+      "dp": 32
+    },
+    {
+      "name": "extra-extra-large",
+      "dp": 48
+    },
+    {
+      "name": "full",
+      "dp": 9999
+    }
+  ],
+  "typography": [
+    {
+      "name": "display-large",
+      "font": "Google Sans Flex",
+      "weight": 400,
+      "size_dp": 57,
+      "line_height_dp": 64,
+      "letter_spacing_dp": -0.25
+    },
+    {
+      "name": "display-medium",
+      "font": "Google Sans Flex",
+      "weight": 400,
+      "size_dp": 45,
+      "line_height_dp": 52,
+      "letter_spacing_dp": 0
+    },
+    {
+      "name": "display-small",
+      "font": "Google Sans Flex",
+      "weight": 400,
+      "size_dp": 36,
+      "line_height_dp": 44,
+      "letter_spacing_dp": 0
+    },
+    {
+      "name": "headline-large",
+      "font": "Google Sans Flex",
+      "weight": 400,
+      "size_dp": 32,
+      "line_height_dp": 40,
+      "letter_spacing_dp": 0
+    },
+    {
+      "name": "headline-medium",
+      "font": "Google Sans Flex",
+      "weight": 400,
+      "size_dp": 28,
+      "line_height_dp": 36,
+      "letter_spacing_dp": 0
+    },
+    {
+      "name": "headline-small",
+      "font": "Google Sans Flex",
+      "weight": 400,
+      "size_dp": 24,
+      "line_height_dp": 32,
+      "letter_spacing_dp": 0
+    },
+    {
+      "name": "title-large",
+      "font": "Google Sans Flex",
+      "weight": 400,
+      "size_dp": 22,
+      "line_height_dp": 28,
+      "letter_spacing_dp": 0
+    },
+    {
+      "name": "title-medium",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 16,
+      "line_height_dp": 24,
+      "letter_spacing_dp": 0.15
+    },
+    {
+      "name": "title-small",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 14,
+      "line_height_dp": 20,
+      "letter_spacing_dp": 0.1
+    },
+    {
+      "name": "body-large",
+      "font": "Google Sans Flex",
+      "weight": 400,
+      "size_dp": 16,
+      "line_height_dp": 24,
+      "letter_spacing_dp": 0.5
+    },
+    {
+      "name": "body-medium",
+      "font": "Google Sans Flex",
+      "weight": 400,
+      "size_dp": 14,
+      "line_height_dp": 20,
+      "letter_spacing_dp": 0.25
+    },
+    {
+      "name": "body-small",
+      "font": "Google Sans Flex",
+      "weight": 400,
+      "size_dp": 12,
+      "line_height_dp": 16,
+      "letter_spacing_dp": 0.4
+    },
+    {
+      "name": "label-large",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 14,
+      "line_height_dp": 20,
+      "letter_spacing_dp": 0.1
+    },
+    {
+      "name": "label-medium",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 12,
+      "line_height_dp": 16,
+      "letter_spacing_dp": 0.5
+    },
+    {
+      "name": "label-small",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 11,
+      "line_height_dp": 16,
+      "letter_spacing_dp": 0.5
+    }
+  ],
+  "typography_emphasized": [
+    {
+      "name": "display-large",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 57,
+      "line_height_dp": 64,
+      "letter_spacing_dp": 0
+    },
+    {
+      "name": "display-medium",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 45,
+      "line_height_dp": 52,
+      "letter_spacing_dp": 0
+    },
+    {
+      "name": "display-small",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 36,
+      "line_height_dp": 44,
+      "letter_spacing_dp": 0
+    },
+    {
+      "name": "headline-large",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 32,
+      "line_height_dp": 40,
+      "letter_spacing_dp": 0
+    },
+    {
+      "name": "headline-medium",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 28,
+      "line_height_dp": 36,
+      "letter_spacing_dp": 0
+    },
+    {
+      "name": "headline-small",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 24,
+      "line_height_dp": 32,
+      "letter_spacing_dp": 0
+    },
+    {
+      "name": "title-large",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 22,
+      "line_height_dp": 28,
+      "letter_spacing_dp": 0
+    },
+    {
+      "name": "title-medium",
+      "font": "Google Sans Flex",
+      "weight": 700,
+      "size_dp": 16,
+      "line_height_dp": 24,
+      "letter_spacing_dp": 0.15
+    },
+    {
+      "name": "title-small",
+      "font": "Google Sans Flex",
+      "weight": 700,
+      "size_dp": 14,
+      "line_height_dp": 20,
+      "letter_spacing_dp": 0.1
+    },
+    {
+      "name": "body-large",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 16,
+      "line_height_dp": 24,
+      "letter_spacing_dp": 0.15
+    },
+    {
+      "name": "body-medium",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 14,
+      "line_height_dp": 20,
+      "letter_spacing_dp": 0.25
+    },
+    {
+      "name": "body-small",
+      "font": "Google Sans Flex",
+      "weight": 500,
+      "size_dp": 12,
+      "line_height_dp": 16,
+      "letter_spacing_dp": 0.4
+    },
+    {
+      "name": "label-large",
+      "font": "Google Sans Flex",
+      "weight": 700,
+      "size_dp": 14,
+      "line_height_dp": 20,
+      "letter_spacing_dp": 0.1
+    },
+    {
+      "name": "label-medium",
+      "font": "Google Sans Flex",
+      "weight": 700,
+      "size_dp": 12,
+      "line_height_dp": 16,
+      "letter_spacing_dp": 0.5
+    },
+    {
+      "name": "label-small",
+      "font": "Google Sans Flex",
+      "weight": 700,
+      "size_dp": 11,
+      "line_height_dp": 16,
+      "letter_spacing_dp": 0.5
+    }
+  ],
+  "motion": {
+    "easings": [
+      {
+        "name": "emphasized",
+        "cubic_bezier": "cubic-bezier(0.2, 0, 0, 1)"
+      },
+      {
+        "name": "emphasized-decelerate",
+        "cubic_bezier": "cubic-bezier(0.05, 0.7, 0.1, 1)"
+      },
+      {
+        "name": "emphasized-accelerate",
+        "cubic_bezier": "cubic-bezier(0.3, 0, 0.8, 0.15)"
+      },
+      {
+        "name": "standard",
+        "cubic_bezier": "cubic-bezier(0.2, 0, 0, 1)"
+      },
+      {
+        "name": "standard-decelerate",
+        "cubic_bezier": "cubic-bezier(0, 0, 0, 1)"
+      },
+      {
+        "name": "standard-accelerate",
+        "cubic_bezier": "cubic-bezier(0.3, 0, 1, 1)"
+      },
+      {
+        "name": "linear",
+        "cubic_bezier": "cubic-bezier(0, 0, 1, 1)"
+      }
+    ],
+    "durations": [
+      {
+        "name": "short1",
+        "ms": 50
+      },
+      {
+        "name": "short2",
+        "ms": 100
+      },
+      {
+        "name": "short3",
+        "ms": 150
+      },
+      {
+        "name": "short4",
+        "ms": 200
+      },
+      {
+        "name": "medium1",
+        "ms": 250
+      },
+      {
+        "name": "medium2",
+        "ms": 300
+      },
+      {
+        "name": "medium3",
+        "ms": 350
+      },
+      {
+        "name": "medium4",
+        "ms": 400
+      },
+      {
+        "name": "long1",
+        "ms": 450
+      },
+      {
+        "name": "long2",
+        "ms": 500
+      },
+      {
+        "name": "long3",
+        "ms": 550
+      },
+      {
+        "name": "long4",
+        "ms": 600
+      },
+      {
+        "name": "extra-long1",
+        "ms": 700
+      },
+      {
+        "name": "extra-long2",
+        "ms": 800
+      },
+      {
+        "name": "extra-long3",
+        "ms": 900
+      },
+      {
+        "name": "extra-long4",
+        "ms": 1000
+      }
+    ],
+    "web_springs": [
+      {
+        "name": "expressive-fast-spatial",
+        "curve": [
+          0.475,
+          1.498,
+          0.084,
+          1
+        ],
+        "ms": 320
+      },
+      {
+        "name": "expressive-default-spatial",
+        "curve": [
+          0.318,
+          0.475,
+          0.143,
+          1.149
+        ],
+        "ms": 370
+      },
+      {
+        "name": "expressive-slow-spatial",
+        "curve": [
+          0.312,
+          0.461,
+          0.146,
+          1.154
+        ],
+        "ms": 510
+      },
+      {
+        "name": "expressive-fast-effects",
+        "curve": [
+          0.317,
+          0.573,
+          0.151,
+          0.99
+        ],
+        "ms": 130
+      },
+      {
+        "name": "expressive-default-effects",
+        "curve": [
+          0.213,
+          0.224,
+          0.114,
+          1.059
+        ],
+        "ms": 200
+      },
+      {
+        "name": "expressive-slow-effects",
+        "curve": [
+          0.194,
+          0.135,
+          0.124,
+          1.057
+        ],
+        "ms": 270
+      },
+      {
+        "name": "standard-fast-spatial",
+        "curve": [
+          0.236,
+          0.172,
+          0.217,
+          1.031
+        ],
+        "ms": 160
+      },
+      {
+        "name": "standard-default-spatial",
+        "curve": [
+          0.236,
+          0.158,
+          0.231,
+          1.019
+        ],
+        "ms": 220
+      },
+      {
+        "name": "standard-slow-spatial",
+        "curve": [
+          0.231,
+          0.132,
+          0.237,
+          1.013
+        ],
+        "ms": 330
+      },
+      {
+        "name": "standard-fast-effects",
+        "curve": [
+          0.317,
+          0.573,
+          0.151,
+          0.99
+        ],
+        "ms": 130
+      },
+      {
+        "name": "standard-default-effects",
+        "curve": [
+          0.213,
+          0.224,
+          0.114,
+          1.059
+        ],
+        "ms": 200
+      },
+      {
+        "name": "standard-slow-effects",
+        "curve": [
+          0.194,
+          0.135,
+          0.124,
+          1.057
+        ],
+        "ms": 270
+      }
+    ]
+  },
+  "elevation": [
+    {
+      "level": 0,
+      "dp": 0,
+      "shadow": "none"
+    },
+    {
+      "level": 1,
+      "dp": 1,
+      "shadow": "0px 1px 2px 0px rgba(0,0,0,0.30), 0px 1px 3px 1px rgba(0,0,0,0.15)"
+    },
+    {
+      "level": 2,
+      "dp": 3,
+      "shadow": "0px 1px 2px 0px rgba(0,0,0,0.30), 0px 2px 6px 2px rgba(0,0,0,0.15)"
+    },
+    {
+      "level": 3,
+      "dp": 6,
+      "shadow": "0px 1px 3px 0px rgba(0,0,0,0.30), 0px 4px 8px 3px rgba(0,0,0,0.15)"
+    },
+    {
+      "level": 4,
+      "dp": 8,
+      "shadow": "0px 2px 3px 0px rgba(0,0,0,0.30), 0px 6px 10px 4px rgba(0,0,0,0.15)"
+    },
+    {
+      "level": 5,
+      "dp": 12,
+      "shadow": "0px 4px 4px 0px rgba(0,0,0,0.30), 0px 8px 12px 6px rgba(0,0,0,0.15)"
+    }
+  ],
+  "state": {
+    "disabled-container": 0.12,
+    "disabled-content": 0.38,
+    "dragged": 0.16,
+    "focus": 0.1,
+    "hover": 0.08,
+    "pressed": 0.1
+  },
+  "$comment": "Generated by `bun-os-platform-native tables` from crates/aphrody-m3-tokens (export_token_tables + state layers). Do not edit; regenerate."
+}
