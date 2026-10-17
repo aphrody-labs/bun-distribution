@@ -93,12 +93,12 @@
 }
 
 /* La détection automatique de Tailwind s'arrête à la racine du projet et ignore
- * `node_modules`, où `@rosegriffon/ui` est un lien symbolique : sans ce
+ * `node_modules`, où `@rosegriffon/ui` est un lien symbolique : sans ces
  * `@source`, les utilitaires employés uniquement par les composants partagés
  * (page « Mon compte », largeurs de sidebar en variables CSS…) ne sont jamais
  * générés. Azalée déclare la même source. */
-@source "../../node_modules/@rosegriffon/ui/src";
-@source "../../../../../packages/rg/app-shell/src";
+@source "../../../../packages/rg-ui/src";
+@source "../../../../packages/rg-app-shell/src";
 
 /* Font Faces from Supabase Assets */
 @font-face {

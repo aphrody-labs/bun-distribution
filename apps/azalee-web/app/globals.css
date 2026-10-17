@@ -9,8 +9,8 @@
  * (ex: w-(--sidebar-width), w-(--sidebar-width-icon), barres de nav, header, footer) que l'app n'utilise pas
  * directement — sans ça le sidebar-gap reste à width:0 et le sidebar recouvre
  * le contenu au lieu de le décaler. source(none) impose ce @source explicite. */
-@source "../../../packages/ui/src";
-@source "../../../packages/app-shell/src";
+@source "../../../packages/rg-ui/src";
+@source "../../../packages/rg-app-shell/src";
 @plugin "tailwindcss-animate";
 @plugin "@tailwindcss/typography";
 
