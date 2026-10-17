@@ -8639,6 +8639,7 @@ dependencies = [
  "hashbrown 0.17.1",
  "hex",
  "iced-x86",
+ "js-sys",
  "lz4_flex 0.14.0",
  "magika",
  "md-5 0.11.0",
@@ -35584,6 +35585,15 @@ dependencies = [
  "bstr",
  "dirs 6.0.0",
  "os_str_bytes",
+]
+
+[[package]]
+name = "shenron-dbxv2"
+version = "1.4.4"
+dependencies = [
+ "bun-re",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
