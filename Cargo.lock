@@ -7546,6 +7546,7 @@ dependencies = [
  "rustboyadvance-core",
  "serde",
  "serde_json",
+ "starpsx-core",
  "tetanes-core",
  "wgpu 30.0.1",
  "windows 0.62.2",
@@ -11195,6 +11196,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7359bf1de037ddada72729c3acec9b040f3468400c6e9e740b01ba0cd2e89562"
 dependencies = [
  "libloading 0.9.0",
+]
+
+[[package]]
+name = "cue"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
 ]
 
 [[package]]
@@ -29476,6 +29484,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "procmac"
+version = "0.1.0"
+dependencies = [
+ "quote 1.0.47",
+ "syn 2.0.119",
+]
+
+[[package]]
 name = "prodash"
 version = "31.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -34718,6 +34734,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "115beb9c69db2393ff10b75a1b8587a51716e5551d015001e55320ed279d32f9"
 dependencies = [
  "const_panic",
+]
+
+[[package]]
+name = "starpsx-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "arrayvec",
+ "bitfield",
+ "bytemuck",
+ "cue",
+ "derive_more 2.1.1",
+ "num_enum",
+ "procmac",
+ "starpsx-renderer",
+ "tracing",
+]
+
+[[package]]
+name = "starpsx-renderer"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "derive_more 2.1.1",
+ "num_enum",
+ "tracing",
 ]
 
 [[package]]

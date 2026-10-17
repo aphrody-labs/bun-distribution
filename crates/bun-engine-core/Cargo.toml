@@ -11,7 +11,7 @@ crate-type = ["rlib", "cdylib", "staticlib"]
 
 # Every consumer selects what it shares; nothing is duplicated in another crate.
 [features]
-default = ["window", "nds", "nes", "gba", "host", "arm", "x86", "wii", "cartridge"]
+default = ["window", "nds", "nes", "gba", "psx", "host", "arm", "x86", "wii", "cartridge"]
 # Nintendo DS machine on Dust with software 2D/3D rendering.
 nds = ["dep:aphrody-dust-soft-2d", "dep:aphrody-dust-soft-3d"]
 # Bevy scheduling of the DS core (wasm and desktop hosts).
@@ -21,6 +21,8 @@ bevy-web = ["host", "bevy_app/web"]
 arm = ["dep:rdynarmic"]
 # Game Boy Advance on RustBoyAdvance-NG with its free BIOS.
 gba = ["dep:rustboyadvance-core"]
+# PlayStation on StarPSX.
+psx = ["dep:starpsx-core"]
 # NES on TetaNES.
 nes = ["dep:tetanes-core"]
 # GameCube and Wii on the Gekko/Broadway interpreter.
@@ -41,6 +43,7 @@ bevy_app = { workspace = true, optional = true }
 bevy_ecs = { workspace = true, optional = true }
 rdynarmic = { path = "../rdynarmic", optional = true }
 tetanes-core = { path = "../../vendor/tetanes/tetanes-core", optional = true }
+starpsx-core = { path = "../../vendor/starpsx/core", optional = true }
 rustboyadvance-core = { path = "../../vendor/rustboyadvance-ng/core", default-features = false, optional = true }
 aphrody-wii-runtime = { path = "../aphrody-wii-runtime", optional = true }
 aphrody-wii-image = { path = "../aphrody-wii-image", default-features = false, optional = true }
@@ -59,4 +62,4 @@ serde_json = { workspace = true }
 [[bin]]
 name = "bun-engine"
 path = "src/bin/bun-engine.rs"
-required-features = ["window", "nds", "nes", "gba", "arm", "wii", "cartridge"]
+required-features = ["window", "nds", "nes", "gba", "psx", "arm", "wii", "cartridge"]

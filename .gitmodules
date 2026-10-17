@@ -375,6 +375,7 @@
 [submodule "vendor/starpsx"]
 	path = vendor/starpsx
 	url = https://github.com/aphrody-labs/starpsx.git
+	branch = bun-os
 [submodule "vendor/steamcmd"]
 	path = vendor/steamcmd
 	url = https://github.com/aphrody-labs/steamcmd.git

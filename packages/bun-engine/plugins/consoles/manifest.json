@@ -439,7 +439,7 @@
       "license": "GPL-3.0-only",
       "publicationGate": "deferred-review",
       "integration": "submodule",
-      "sourceRev": "e8551eedac6d15a4ed7b7fb123c70f97217d1ed4",
+      "sourceRev": "32907922e01b12b0e6673347132480b92ed69f28",
       "buildOwner": "docs/RUST-EMULATORS.md#starpsx",
       "sources": [
         {

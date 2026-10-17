@@ -6,7 +6,7 @@ use bun_engine::cartridge::dust::rom::raw;
 use bun_engine::machine::{Machine, Step, arm::ArmFirmware, nds::Nds};
 use serde_json::json;
 
-const USAGE: &str = "usage: bun-engine info <rom.nds> [--json] | bun-engine run <nds|gba|nes|wii|gc|arm|x86|linux> <image> [--headless] [--frames N] [--out DIR] [--cmdline ARGS]";
+const USAGE: &str = "usage: bun-engine info <rom.nds> [--json] | bun-engine run <nds|gba|nes|psx|wii|gc|arm|x86|linux> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] [--cmdline ARGS]";
 
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1).peekable();
@@ -25,11 +25,13 @@ fn main() -> ExitCode {
         return ExitCode::from(2);
     };
     let (mut frames, mut out, mut headless) = (u64::MAX, None::<PathBuf>, false);
+    let mut bios = None::<PathBuf>;
     let mut cmdline = String::from("console=ttyS0 earlyprintk=serial,ttyS0 reboot=k panic=1 pci=off nomodule noapic");
     while let Some(a) = args.next() {
         match a.as_str() {
             "--frames" => frames = args.next().and_then(|v| v.parse().ok()).unwrap_or(frames),
             "--headless" => headless = true,
+            "--bios" => bios = args.next().map(PathBuf::from),
             "--out" => out = args.next().map(PathBuf::from),
             "--cmdline" => cmdline = args.next().unwrap_or(cmdline),
             _ => {
@@ -47,7 +49,16 @@ fn main() -> ExitCode {
             Ok(m) => Box::new(m),
             Err(e) => return fail(e),
         },
-        "gba" => match bun_engine::machine::gba::Gba::from_rom(&rom, None) {
+        "psx" => {
+            let Some(bios) = bios.as_ref().and_then(|p| fs::read(p).ok()) else {
+                return fail("psx needs --bios <512 KiB BIOS> (bep add free-firmware openbios)".into());
+            };
+            match bun_engine::machine::psx::Psx::new(&bios, &rom) {
+                Ok(m) => Box::new(m),
+                Err(e) => return fail(e),
+            }
+        }
+        "gba" => match bun_engine::machine::gba::Gba::from_rom(&rom, bios.as_ref().and_then(|p| fs::read(p).ok()).as_deref()) {
             Ok(m) => Box::new(m),
             Err(e) => return fail(e),
         },
