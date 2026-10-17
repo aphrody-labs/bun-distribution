@@ -33,7 +33,6 @@
     "packages/azalee",
     "packages/bun-app-host",
     "packages/bun-android",
-    "packages/bun-emu",
     "packages/bun-arch-mcp",
     "packages/bun-artifacts",
     "packages/bun-blender",

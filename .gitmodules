@@ -203,9 +203,9 @@
 	path = vendor/libctru
 	url = https://github.com/aphrody-labs/libctru.git
 
-[submodule "vendor/melonds"]
-	path = vendor/melonds
-	url = https://github.com/melonDS-emu/melonDS.git
+[submodule "crates/bun-emu/vendor/melonds"]
+	path = crates/bun-emu/vendor/melonds
+	url = https://github.com/aphrody-labs/melonds.git
 
 [submodule "vendor/mingw-packages"]
 	path = vendor/mingw-packages
@@ -313,9 +313,9 @@
 [submodule "vendor/ares"]
 	path = vendor/ares
 	url = https://github.com/ares-emulator/ares.git
-[submodule "vendor/azahar"]
-	path = vendor/azahar
-	url = https://github.com/azahar-emu/azahar.git
+[submodule "crates/bun-emu/vendor/azahar"]
+	path = crates/bun-emu/vendor/azahar
+	url = https://github.com/aphrody-labs/azahar.git
 [submodule "vendor/calico"]
 	path = vendor/calico
 	url = https://github.com/aphrody-labs/calico.git
@@ -340,9 +340,9 @@
 [submodule "vendor/directx-samples"]
 	path = vendor/directx-samples
 	url = https://github.com/microsoft/DirectX-Graphics-Samples.git
-[submodule "vendor/dolphin"]
-	path = vendor/dolphin
-	url = https://github.com/dolphin-emu/dolphin.git
+[submodule "crates/bun-emu/vendor/dolphin"]
+	path = crates/bun-emu/vendor/dolphin
+	url = https://github.com/aphrody-labs/dolphin.git
 [submodule "vendor/ghidra"]
 	path = vendor/ghidra
 	url = https://github.com/aphrody-labs/ghidra.git
@@ -572,6 +572,6 @@
 [submodule "crates/apkeep"]
 	path = crates/apkeep
 	url = https://github.com/aphrody-labs/apkeep.git
-[submodule "apps/pcsx2"]
-	path = apps/pcsx2
+[submodule "crates/bun-emu/vendor/pcsx2"]
+	path = crates/bun-emu/vendor/pcsx2
 	url = https://github.com/aphrody-labs/pcsx2.git

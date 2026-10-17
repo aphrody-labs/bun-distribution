@@ -3,6 +3,7 @@ exclude = ["vendor/uutils", "packages/bun-tauri", "apps/aphrody-model-view", "to
 resolver = "3"
 members = [
   "crates/apkeep",
+  "crates/bun-emu",
   "crates/aphrody-google",
   "crates/aphrody-gemini-web",
   "crates/aphrody-gemini-runtime",

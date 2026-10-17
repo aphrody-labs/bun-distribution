@@ -5,20 +5,29 @@
     {
       "id": "switch-aarch64",
       "console": "nintendo-switch",
-      "cpu": ["aarch64"],
-      "runtime": "bounded-interpreter",
+      "cpu": [
+        "aarch64"
+      ],
+      "runtime": "dynamic-recompiler",
       "firmwarePolicy": "not-required",
       "license": "GPL-3.0-or-later",
       "publicationGate": "deferred-review",
       "integration": "local-plugin",
       "sourceRev": "58fc06ffe480415c847415d187aa295215423226",
-      "buildOwner": "Cargo.toml#aphrody-aarch64",
-      "sources": [{ "kind": "rust-crate", "path": "crates/aphrody-aarch64/Cargo.toml" }]
+      "buildOwner": "Cargo.toml#rdynarmic",
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "crates/rdynarmic/Cargo.toml"
+        }
+      ]
     },
     {
       "id": "switch-texture",
       "console": "nintendo-switch",
-      "cpu": ["tegra-gpu"],
+      "cpu": [
+        "tegra-gpu"
+      ],
       "runtime": "texture-primitives",
       "firmwarePolicy": "not-required",
       "license": "GPL-2.0-or-later",
@@ -26,12 +35,20 @@
       "integration": "local-plugin",
       "sourceRev": "58fc06ffe480415c847415d187aa295215423226",
       "buildOwner": "Cargo.toml#aphrody-switch",
-      "sources": [{ "kind": "rust-crate", "path": "crates/aphrody-switch/Cargo.toml" }]
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "crates/aphrody-switch/Cargo.toml"
+        }
+      ]
     },
     {
       "id": "wii-cpu-runtime",
       "console": "nintendo-wii-gamecube",
-      "cpu": ["powerpc-broadway", "powerpc-gekko"],
+      "cpu": [
+        "powerpc-broadway",
+        "powerpc-gekko"
+      ],
       "runtime": "branch-and-dol-runtime",
       "firmwarePolicy": "not-required",
       "license": "GPL-3.0-only",
@@ -39,7 +56,12 @@
       "integration": "local-plugin",
       "sourceRev": "58fc06ffe480415c847415d187aa295215423226",
       "buildOwner": "Cargo.toml#aphrody-wii",
-      "sources": [{ "kind": "rust-crate", "path": "crates/aphrody-wii/Cargo.toml" }]
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "crates/aphrody-wii/Cargo.toml"
+        }
+      ]
     },
     {
       "id": "wii-image-parsers",
@@ -52,12 +74,20 @@
       "integration": "local-plugin",
       "sourceRev": "58fc06ffe480415c847415d187aa295215423226",
       "buildOwner": "Cargo.toml#aphrody-wii-image",
-      "sources": [{ "kind": "rust-crate", "path": "crates/aphrody-wii-image/Cargo.toml" }]
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "crates/aphrody-wii-image/Cargo.toml"
+        }
+      ]
     },
     {
       "id": "devkitpro-libnds",
       "console": "nintendo-ds",
-      "cpu": ["arm7", "arm9"],
+      "cpu": [
+        "arm7",
+        "arm9"
+      ],
       "runtime": "homebrew-sdk-library",
       "firmwarePolicy": "not-required",
       "license": "Zlib",
@@ -65,12 +95,20 @@
       "integration": "submodule",
       "sourceRev": "84e6082ce27c87ed218fb369a9944644aa2243a6",
       "buildOwner": "packages/bun-engine/src/console/catalog.ts#libnds",
-      "sources": [{ "kind": "c-source-tree", "path": "vendor/libnds" }]
+      "sources": [
+        {
+          "kind": "c-source-tree",
+          "path": "vendor/libnds"
+        }
+      ]
     },
     {
       "id": "devkitpro-libogc",
       "console": "nintendo-wii-gamecube",
-      "cpu": ["powerpc-broadway", "powerpc-gekko"],
+      "cpu": [
+        "powerpc-broadway",
+        "powerpc-gekko"
+      ],
       "runtime": "homebrew-sdk-library",
       "firmwarePolicy": "not-required",
       "license": "Zlib",
@@ -78,12 +116,20 @@
       "integration": "submodule",
       "sourceRev": "adf4c782da8c55c8f17aca2047e128502e7eddc2",
       "buildOwner": "packages/bun-engine/src/console/catalog.ts#libogc",
-      "sources": [{ "kind": "c-source-tree", "path": "vendor/libogc" }]
+      "sources": [
+        {
+          "kind": "c-source-tree",
+          "path": "vendor/libogc"
+        }
+      ]
     },
     {
       "id": "devkitpro-calico",
       "console": "nintendo-ds-dsi",
-      "cpu": ["arm7", "arm9"],
+      "cpu": [
+        "arm7",
+        "arm9"
+      ],
       "runtime": "system-runtime-library",
       "firmwarePolicy": "not-required",
       "license": "ZPL-2.1",
@@ -91,12 +137,20 @@
       "integration": "submodule",
       "sourceRev": "81b75e314d57ed1784545e28554e567f26f572f1",
       "buildOwner": "docs/CONSOLE-PROVENANCE.md#calico",
-      "sources": [{ "kind": "c-source-tree", "path": "vendor/calico" }]
+      "sources": [
+        {
+          "kind": "c-source-tree",
+          "path": "vendor/calico"
+        }
+      ]
     },
     {
       "id": "devkitpro-libctru",
       "console": "nintendo-3ds",
-      "cpu": ["arm11", "arm9"],
+      "cpu": [
+        "arm11",
+        "arm9"
+      ],
       "runtime": "homebrew-sdk-library",
       "firmwarePolicy": "not-required",
       "license": "Zlib",
@@ -104,12 +158,20 @@
       "integration": "submodule",
       "sourceRev": "9b55eda44cf80b971503991e0c78f9bc8fe50425",
       "buildOwner": "docs/CONSOLE-PROVENANCE.md#libctru",
-      "sources": [{ "kind": "c-source-tree", "path": "vendor/libctru" }]
+      "sources": [
+        {
+          "kind": "c-source-tree",
+          "path": "vendor/libctru"
+        }
+      ]
     },
     {
       "id": "devkitpro-citro3d",
       "console": "nintendo-3ds",
-      "cpu": ["arm11", "pica200"],
+      "cpu": [
+        "arm11",
+        "pica200"
+      ],
       "runtime": "graphics-library",
       "firmwarePolicy": "not-required",
       "license": "Zlib",
@@ -117,12 +179,20 @@
       "integration": "submodule",
       "sourceRev": "9f21cf7b380ce6f9e01a0420f19f0763e5443ca7",
       "buildOwner": "docs/CONSOLE-PROVENANCE.md#citro3d",
-      "sources": [{ "kind": "c-source-tree", "path": "vendor/citro3d" }]
+      "sources": [
+        {
+          "kind": "c-source-tree",
+          "path": "vendor/citro3d"
+        }
+      ]
     },
     {
       "id": "devkitpro-citro2d",
       "console": "nintendo-3ds",
-      "cpu": ["arm11", "pica200"],
+      "cpu": [
+        "arm11",
+        "pica200"
+      ],
       "runtime": "graphics-library",
       "firmwarePolicy": "not-required",
       "license": "Zlib",
@@ -130,12 +200,19 @@
       "integration": "submodule",
       "sourceRev": "147b02aae021da61b1f620446ad2892ecc45411e",
       "buildOwner": "docs/CONSOLE-PROVENANCE.md#citro2d",
-      "sources": [{ "kind": "c-source-tree", "path": "vendor/citro2d" }]
+      "sources": [
+        {
+          "kind": "c-source-tree",
+          "path": "vendor/citro2d"
+        }
+      ]
     },
     {
       "id": "rust3ds-ctru-rs",
       "console": "nintendo-3ds",
-      "cpu": ["arm11"],
+      "cpu": [
+        "arm11"
+      ],
       "runtime": "rust-homebrew-sdk",
       "firmwarePolicy": "not-required",
       "license": "Zlib",
@@ -143,12 +220,20 @@
       "integration": "submodule",
       "sourceRev": "6b578230b3cd3cbc1eeb0dd71bbb8d7e3b12f21e",
       "buildOwner": "Cargo.toml#ctru-rs",
-      "sources": [{ "kind": "rust-crate", "path": "vendor/ctru-rs" }]
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "vendor/ctru-rs"
+        }
+      ]
     },
     {
       "id": "melonds",
       "console": "nintendo-ds-dsi",
-      "cpu": ["arm7", "arm9"],
+      "cpu": [
+        "arm7",
+        "arm9"
+      ],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-3.0-only",
@@ -156,12 +241,19 @@
       "integration": "submodule",
       "sourceRev": "906e9ebb27da8c6a715cd7abab4abfe8a8d29427",
       "buildOwner": "packages/bun-engine/src/console/catalog.ts#melonds",
-      "sources": [{ "kind": "cpp-source-tree", "path": "vendor/melonds" }]
+      "sources": [
+        {
+          "kind": "cpp-source-tree",
+          "path": "crates/bun-emu/vendor/melonds"
+        }
+      ]
     },
     {
       "id": "open-agb-firm",
       "console": "nintendo-3ds-gba",
-      "cpu": ["arm9"],
+      "cpu": [
+        "arm9"
+      ],
       "runtime": "free-firmware-source",
       "firmwarePolicy": "redistributable-only",
       "license": "GPL-3.0-or-later",
@@ -169,12 +261,19 @@
       "integration": "submodule",
       "sourceRev": "401c3dff900f658d3edf77ababcfaf5dca54a0a8",
       "buildOwner": "packages/bun-engine/src/console/catalog.ts#open-agb-firm",
-      "sources": [{ "kind": "c-source-tree", "path": "vendor/open-agb-firm" }]
+      "sources": [
+        {
+          "kind": "c-source-tree",
+          "path": "vendor/open-agb-firm"
+        }
+      ]
     },
     {
       "id": "ares",
       "console": "multi-system",
-      "cpu": ["multi-architecture"],
+      "cpu": [
+        "multi-architecture"
+      ],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "ISC",
@@ -182,12 +281,20 @@
       "integration": "submodule",
       "sourceRev": "9408cb43d4948fc3ea6e152a307a34348df3fe04",
       "buildOwner": "docs/CONSOLE-PROVENANCE.md#ares",
-      "sources": [{ "kind": "cpp-source-tree", "path": "vendor/ares" }]
+      "sources": [
+        {
+          "kind": "cpp-source-tree",
+          "path": "vendor/ares"
+        }
+      ]
     },
     {
       "id": "dolphin",
       "console": "nintendo-wii-gamecube",
-      "cpu": ["powerpc-broadway", "powerpc-gekko"],
+      "cpu": [
+        "powerpc-broadway",
+        "powerpc-gekko"
+      ],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-2.0-or-later",
@@ -195,12 +302,20 @@
       "integration": "submodule",
       "sourceRev": "8d2ad1a662472955497e5bb79d7b9ec6999e1f0d",
       "buildOwner": "docs/CONSOLE-PROVENANCE.md#dolphin",
-      "sources": [{ "kind": "cpp-source-tree", "path": "vendor/dolphin" }]
+      "sources": [
+        {
+          "kind": "cpp-source-tree",
+          "path": "crates/bun-emu/vendor/dolphin"
+        }
+      ]
     },
     {
       "id": "azahar",
       "console": "nintendo-3ds",
-      "cpu": ["arm11", "arm9"],
+      "cpu": [
+        "arm11",
+        "arm9"
+      ],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-3.0-only",
@@ -208,12 +323,19 @@
       "integration": "submodule",
       "sourceRev": "73ed0e9106a5b69a8ef67d920f534150e82c6277",
       "buildOwner": "docs/CONSOLE-PROVENANCE.md#azahar",
-      "sources": [{ "kind": "cpp-source-tree", "path": "vendor/azahar" }]
+      "sources": [
+        {
+          "kind": "cpp-source-tree",
+          "path": "crates/bun-emu/vendor/azahar"
+        }
+      ]
     },
     {
       "id": "mame",
       "console": "multi-system",
-      "cpu": ["multi-architecture"],
+      "cpu": [
+        "multi-architecture"
+      ],
       "runtime": "device-reference",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-2.0-or-later",
@@ -221,12 +343,19 @@
       "integration": "submodule",
       "sourceRev": "c51cea1d8975d3918bfde7cfdd0ec9abcf3fe5a5",
       "buildOwner": "docs/CONSOLE-PROVENANCE.md#mame",
-      "sources": [{ "kind": "cpp-source-tree", "path": "vendor/mame" }]
+      "sources": [
+        {
+          "kind": "cpp-source-tree",
+          "path": "vendor/mame"
+        }
+      ]
     },
     {
       "id": "retroarch",
       "console": "multi-system",
-      "cpu": ["multi-architecture"],
+      "cpu": [
+        "multi-architecture"
+      ],
       "runtime": "frontend",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-3.0-only",
@@ -234,12 +363,19 @@
       "integration": "submodule",
       "sourceRev": "9ecdcecf6fe7b976bf3ccbc1baa6642c496eabac",
       "buildOwner": "docs/CONSOLE-PROVENANCE.md#retroarch",
-      "sources": [{ "kind": "c-source-tree", "path": "vendor/retroarch" }]
+      "sources": [
+        {
+          "kind": "c-source-tree",
+          "path": "vendor/retroarch"
+        }
+      ]
     },
     {
       "id": "tetanes",
       "console": "nintendo-nes",
-      "cpu": ["mos-6502"],
+      "cpu": [
+        "mos-6502"
+      ],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "MIT-OR-Apache-2.0",
@@ -247,12 +383,19 @@
       "integration": "submodule",
       "sourceRev": "a0a6b17f8ba9c5ee451453fb2409753fd06e5a31",
       "buildOwner": "docs/RUST-EMULATORS.md#tetanes",
-      "sources": [{ "kind": "rust-crate", "path": "vendor/tetanes" }]
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "vendor/tetanes"
+        }
+      ]
     },
     {
       "id": "retroboy",
       "console": "nintendo-game-boy",
-      "cpu": ["sharp-lr35902"],
+      "cpu": [
+        "sharp-lr35902"
+      ],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "Apache-2.0",
@@ -260,12 +403,19 @@
       "integration": "submodule",
       "sourceRev": "edf90d9fb192372a657a18d44f5c9841805fa554",
       "buildOwner": "docs/RUST-EMULATORS.md#retroboy",
-      "sources": [{ "kind": "rust-crate", "path": "vendor/retroboy" }]
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "vendor/retroboy"
+        }
+      ]
     },
     {
       "id": "rustboyadvance-ng",
       "console": "nintendo-game-boy-advance",
-      "cpu": ["arm7tdmi"],
+      "cpu": [
+        "arm7tdmi"
+      ],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "MIT",
@@ -273,12 +423,20 @@
       "integration": "submodule",
       "sourceRev": "1d7ff23a6adb42d803ebd393c3d27d94e4fea15e",
       "buildOwner": "docs/RUST-EMULATORS.md#rustboyadvance-ng",
-      "sources": [{ "kind": "rust-crate", "path": "vendor/rustboyadvance-ng" }]
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "vendor/rustboyadvance-ng"
+        }
+      ]
     },
     {
       "id": "dust",
       "console": "nintendo-ds",
-      "cpu": ["arm7", "arm9"],
+      "cpu": [
+        "arm7",
+        "arm9"
+      ],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-3.0-only",
@@ -286,12 +444,19 @@
       "integration": "submodule",
       "sourceRev": "76d79f25e4ea3ce355c4ac868f5ac9a233e64b89",
       "buildOwner": "docs/RUST-EMULATORS.md#dust",
-      "sources": [{ "kind": "rust-crate", "path": "vendor/dust" }]
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "vendor/dust"
+        }
+      ]
     },
     {
       "id": "gopher64",
       "console": "nintendo-64",
-      "cpu": ["mips-r4300i"],
+      "cpu": [
+        "mips-r4300i"
+      ],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-3.0-only",
@@ -299,12 +464,19 @@
       "integration": "submodule",
       "sourceRev": "9b312ea60d1db87e85964c2a4c6fe5dae1540609",
       "buildOwner": "docs/RUST-EMULATORS.md#gopher64",
-      "sources": [{ "kind": "rust-crate", "path": "vendor/gopher64" }]
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "vendor/gopher64"
+        }
+      ]
     },
     {
       "id": "jgenesis",
       "console": "multi-system",
-      "cpu": ["multi-architecture"],
+      "cpu": [
+        "multi-architecture"
+      ],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-3.0-only",
@@ -312,12 +484,19 @@
       "integration": "submodule",
       "sourceRev": "9fcfd9c9495ae6a65c3a9354599665d3bf62a047",
       "buildOwner": "docs/RUST-EMULATORS.md#jgenesis",
-      "sources": [{ "kind": "rust-crate", "path": "vendor/jgenesis" }]
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "vendor/jgenesis"
+        }
+      ]
     },
     {
       "id": "starpsx",
       "console": "sony-playstation",
-      "cpu": ["mips-r3000a"],
+      "cpu": [
+        "mips-r3000a"
+      ],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "GPL-3.0-only",
@@ -325,12 +504,20 @@
       "integration": "submodule",
       "sourceRev": "e8551eedac6d15a4ed7b7fb123c70f97217d1ed4",
       "buildOwner": "docs/RUST-EMULATORS.md#starpsx",
-      "sources": [{ "kind": "rust-crate", "path": "vendor/starpsx" }]
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "vendor/starpsx"
+        }
+      ]
     },
     {
       "id": "zakuro",
       "console": "nintendo-3ds",
-      "cpu": ["arm11", "arm9"],
+      "cpu": [
+        "arm11",
+        "arm9"
+      ],
       "runtime": "hle-core",
       "firmwarePolicy": "caller-supplied-only",
       "license": "MIT",
@@ -338,7 +525,32 @@
       "integration": "submodule",
       "sourceRev": "0ce36eeb64adf8969c5d94bc907ccb68b9e73f35",
       "buildOwner": "docs/RUST-EMULATORS.md#zakuro",
-      "sources": [{ "kind": "rust-crate", "path": "vendor/zakuro" }]
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "vendor/zakuro"
+        }
+      ]
+    },
+    {
+      "id": "pcsx2",
+      "console": "sony-playstation-2",
+      "cpu": [
+        "mips-r5900"
+      ],
+      "runtime": "hle-core",
+      "firmwarePolicy": "caller-supplied-only",
+      "license": "GPL-3.0-or-later",
+      "publicationGate": "deferred-review",
+      "integration": "submodule",
+      "sourceRev": "091ab68708a555198d80a7216965481c7ddd0d98",
+      "buildOwner": "crates/bun-emu/vendor/pcsx2/CMakeLists.txt",
+      "sources": [
+        {
+          "kind": "cpp-source-tree",
+          "path": "crates/bun-emu/vendor/pcsx2"
+        }
+      ]
     }
   ]
 }
