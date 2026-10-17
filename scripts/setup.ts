@@ -81,6 +81,17 @@ if (process.platform === "win32" && requiresForge) {
 await run(["git", "submodule", "update", "--init", "--depth", "1"], submoduleEnv);
 await mkdir(resolve(root, "build/packages"), { recursive: true });
 for (const command of material.commands) await run(command.argv, env, command.cwd);
+// The tarball is packed on this machine, so its integrity is a local artifact: record it before the frozen install.
+const lockPath = resolve(root, "bun.lock");
+const digest = new Bun.CryptoHasher("sha512").update(await Bun.file(material.archive).bytes()).digest("base64");
+const lock = await Bun.file(lockPath).text();
+await Bun.write(
+  lockPath,
+  lock.replace(
+    /(\["@aphrody\/material-web@build\/packages\/material-web\.tgz", \{.*?\}, )"sha512-[^"]+"/,
+    `$1"sha512-${digest}"`,
+  ),
+);
 await run([process.execPath, "install", "--frozen-lockfile"]);
 await run([process.execPath, "scripts/node-modules.ts"]);
 const cargo = await inspectCargoWorkspace(await loadConfig(root), {
