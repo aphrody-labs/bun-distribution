@@ -17,9 +17,12 @@ const buildRoot = path.resolve(process.cwd(), "../../");
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
+  // Self-hosted (systemd behind nginx on the VPS) runs the standalone server; Vercel uses its own output.
+  ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
   outputFileTracingRoot: buildRoot,
-  // Vercel optimise les images en amont : l'addon natif de sharp n'a rien à faire dans les fonctions.
-  outputFileTracingExcludes: { "*": ["node_modules/sharp/**", "node_modules/@img/**"] },
+  // Vercel optimise les images en amont : l'addon natif de sharp n'a rien à faire dans ses fonctions.
+  // Le serveur autonome du VPS garde sharp pour l'optimiseur d'images de Next.
+  ...(process.env.VERCEL && { outputFileTracingExcludes: { "*": ["node_modules/sharp/**", "node_modules/@img/**"] } }),
   turbopack: {
     root: buildRoot,
   },
