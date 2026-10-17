@@ -1,10 +1,14 @@
 name: Setup Bun
-description: Installs the pinned Aphrody Bun runtime (aphrody-labs/bun releases).
+description: Installs the pinned Aphrody Bun runtime (published aphrody-labs/bun release).
 
 inputs:
   bun-version:
-    description: Runtime version from the workspace engines field.
-    default: "1.4.4"
+    description: Published release tag of aphrody-labs/bun (bun-v<version>).
+    default: "1.4.5"
+    required: false
+  token:
+    description: Token able to read aphrody-labs/bun releases.
+    default: ${{ github.token }}
     required: false
 
 runs:
@@ -19,10 +23,15 @@ runs:
       shell: bash
       env:
         BUN_VERSION: ${{ inputs.bun-version }}
+        GH_TOKEN: ${{ inputs.token }}
       run: |
         set -euo pipefail
         if ! "$HOME/.bun/bin/bun" --version 2>/dev/null | grep -q "^${BUN_VERSION}"; then
-          curl -fsSL https://aphrody.app/install | bash -s -- "bun-v${BUN_VERSION}"
+          tmp="$(mktemp -d)"
+          gh release download "bun-v${BUN_VERSION}" -R aphrody-labs/bun -p bun-linux-x64.zip -D "$tmp"
+          mkdir -p "$HOME/.bun/bin"
+          unzip -qjo "$tmp/bun-linux-x64.zip" "*/bun" -d "$HOME/.bun/bin"
+          chmod +x "$HOME/.bun/bin/bun"
         fi
         echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
         "$HOME/.bun/bin/bun" --version
