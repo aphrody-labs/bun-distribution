@@ -1,0 +1,70 @@
+name: Real upstream Cutter verification
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [real-cutter-upstream]
+
+permissions:
+  contents: read
+
+jobs:
+  windows-native-artifact:
+    name: Build Windows bridge security boundary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: setup-bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the cross compiler used by the Windows native lane
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y g++-mingw-w64-x86-64
+      - run: bun run build:windows-native
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cutter-windows-native
+          path: native/windows/build/
+          if-no-files-found: error
+
+  cutter-upstream:
+    name: Cutter upstream smoke (${{ matrix.platform }})
+    needs: windows-native-artifact
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            runner: [self-hosted, cutter-upstream, linux]
+          - platform: macOS
+            runner: [self-hosted, cutter-upstream, macOS]
+          - platform: Windows
+            runner: [self-hosted, cutter-upstream, Windows]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: setup-bun
+        uses: ./.github/actions/setup-bun
+      - if: matrix.platform == 'Windows'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: cutter-windows-native
+          path: native/windows/build/
+      - if: matrix.platform == 'Windows'
+        run: bun run verify:windows-native:artifact
+      - if: matrix.platform == 'Windows'
+        run: bun run build:cached
+      - if: matrix.platform == 'Windows'
+        run: bun run verify:windows-native
+      - name: Verify host and real Cutter bridge
+        env:
+          EXPECTED_PLATFORM: ${{ matrix.platform }}
+        run: bun run verify:cutter
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: cutter-upstream-${{ matrix.platform }}
+          path: cutter-smoke.json
+          if-no-files-found: ignore
+          retention-days: 30

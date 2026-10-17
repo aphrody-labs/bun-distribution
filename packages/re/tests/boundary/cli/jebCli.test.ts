@@ -1,0 +1,55 @@
+import { expect, it } from "../../support/bunTest.js";
+
+import { serveCli } from "./cliServeHarness.js";
+
+const jebEnvironment = {
+  REA_JEB_MCP_URL: "http://127.0.0.1:1/mcp",
+};
+
+const serve = async (
+  argv: readonly string[],
+): Promise<{ readonly stdout: string; readonly exitCode: number }> =>
+  serveCli(argv, jebEnvironment);
+
+it("reports an unreachable engine endpoint with recovery guidance", async () => {
+  const result = await serve(["inspect-jeb-client", "--json"]);
+  expect(result.stdout).toContain("capability_unavailable");
+  expect(result.stdout).toContain("REA_JEB_MCP_URL");
+});
+
+it("validates decompile item input before contacting the engine", async () => {
+  const result = await serve(["decompile-jeb-item", "", "method", "--json"]);
+  expect(result.exitCode).toBe(1);
+  expect(JSON.parse(result.stdout)).toMatchObject({
+    code: "VALIDATION_ERROR",
+    fieldErrors: [
+      {
+        code: "too_small",
+        path: "item-address",
+      },
+    ],
+  });
+});
+
+it.each([
+  { setting: "REA_JEB_MCP_URL", value: "http://localhost:8425/mcp" },
+  { setting: "REA_JEB_MCP_TIMEOUT_MS", value: "1.5" },
+])(
+  "reports invalid $setting without breaking other commands",
+  async ({ setting, value }) => {
+    const environment = { [setting]: value };
+    const jeb = await serveCli(["inspect-jeb-client", "--json"], environment);
+    expect(JSON.parse(jeb.stdout)).toMatchObject({
+      code: "configuration_invalid",
+      details: { settings: [{ setting }] },
+    });
+    const capabilities = await serveCli(
+      ["capabilities", "--json"],
+      environment,
+    );
+    expect(capabilities.exitCode).toBe(0);
+    expect(JSON.parse(capabilities.stdout)).toMatchObject({
+      capabilities: expect.any(Array),
+    });
+  },
+);

@@ -1,0 +1,41 @@
+name: Real JavaScript recovery
+
+on:
+  workflow_call:
+    inputs:
+      description: Portable build cache artifact from the calling CI run.
+      required: false
+      type: string
+      default: ""
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  HUSKY: "0"
+  NODE_OPTIONS: "--max-old-space-size=768"
+  RAYON_NUM_THREADS: "1"
+
+jobs:
+  real-javascript-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: setup-bun
+        uses: ./.github/actions/setup-bun
+      - name: Fetch pinned Wakaru release into the job workspace
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/rea-wakaru"
+          curl --fail --location --retry 3 https://github.com/pionxzh/wakaru/releases/download/v1.14.0/wakaru-linux-x64.tar.gz -o "$RUNNER_TEMP/rea-wakaru/release.tar.gz"
+          tar -xzf "$RUNNER_TEMP/rea-wakaru/release.tar.gz" -C "$RUNNER_TEMP/rea-wakaru" wakaru
+          printf '%s  %s\n' 664fa06782a61eda7ed15885134b52525fd565dd77607e642062ceb6cd927c38 "$RUNNER_TEMP/rea-wakaru/wakaru" | sha256sum --check
+      - name: Install isolated fixture compilers
+        run: mkdir -p "$RUNNER_TEMP/rea-fixture-compilers" && bun add --cwd "$RUNNER_TEMP/rea-fixture-compilers" --ignore-scripts --exact esbuild@0.25.10 webpack@5.101.3
+      - run: bun run build:cached
+      - run: bun run verify:javascript:recovery
+        env:
+          REA_WAKARU_COMMAND: ${{ runner.temp }}/rea-wakaru/wakaru
+          REA_JAVASCRIPT_FIXTURE_TOOLS: ${{ runner.temp }}/rea-fixture-compilers

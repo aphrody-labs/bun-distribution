@@ -1,0 +1,47 @@
+name: Real offline binary layout
+
+on:
+  workflow_dispatch:
+    inputs:
+      large_mcp:
+        description: "Also verify the complete 65,281-section result over MCP (slow)"
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      description: Portable build cache artifact from the calling CI run.
+      required: false
+      type: string
+      default: ""
+
+permissions:
+  contents: read
+
+env:
+  NODE_OPTIONS: --max-old-space-size=768
+  HUSKY: "0"
+  REA_VERIFY_LARGE_ELF_MCP: ${{ inputs.large_mcp && '1' || '0' }}
+
+jobs:
+  real-binary-layout:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: setup-bun
+        uses: ./.github/actions/setup-bun
+      - name: Acquire exact upstream libraries in an isolated runner environment
+        shell: bash
+        run: |
+          layout_python_root="${RUNNER_TEMP}/rea-pwntools-layout"
+          python3 -m venv "${layout_python_root}"
+          "${layout_python_root}/bin/python" -m pip install --disable-pip-version-check \
+            'pwntools==4.15.0' 'pyelftools==0.33' 'unicorn==2.1.2'
+          command -v gcc
+          command -v ld
+          command -v strip
+          command -v strace
+          echo "REA_PWNTOOLS_PYTHON=${layout_python_root}/bin/python" >> "${GITHUB_ENV}"
+          echo "REA_VERIFY_STRACE_COMMAND=$(command -v strace)" >> "${GITHUB_ENV}"
+      - name: Verify source-owned fixtures through public CLI and MCP
+        run: bun run verify:binary:layout

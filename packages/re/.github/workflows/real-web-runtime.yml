@@ -1,0 +1,25 @@
+name: Real website runtime attribution
+on:
+  workflow_call:
+    inputs:
+      description: Portable build cache artifact from the calling CI run.
+      required: false
+      type: string
+      default: ""
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  HUSKY: "0"
+jobs:
+  real-web-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: setup-bun
+        uses: ./.github/actions/setup-bun
+      - run: env -u DBUS_SESSION_BUS_ADDRESS bun run verify:browser:runtime
+        env:
+          REA_BROWSER_EXECUTABLE: /usr/bin/google-chrome
+          REA_BROWSER_NO_SANDBOX: "true"

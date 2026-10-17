@@ -1,0 +1,1159 @@
+{
+  "src/config.test.ts": [
+    "prefers REA-managed and user-local launchers over system paths",
+    "selects the system path before the installer user path"
+  ],
+  "src/windows/WindowsOwnedProcess.test.ts": [
+    "repolls without the 25ms idle delay while the child keeps producing output",
+    "resumes polling when a blocked output stream is destroyed"
+  ],
+  "tests/acceptance/applications/javascriptFactoryCompletion.test.ts": [
+    "retains guarded factory fallthrough through CLI and real stdio MCP"
+  ],
+  "tests/acceptance/setup/piClientSetup.test.ts": [
+    "malformed Pi overrides do not block selected Codex setup or doctor and never fall back for Pi"
+  ],
+  "tests/acceptance/setup/registrationRuntimeEnvironmentCli.test.ts": [
+    "OpenCode CLI validates dependent settings after merging JSON and JSONC"
+  ],
+  "tests/acceptance/tools/historicalCaptureResources.test.ts": [
+    "reports real HAR memory exhaustion through CLI and MCP and preserves server usability"
+  ],
+  "tests/acceptance/tools/inspectorLifecycle.test.ts": [
+    "observes a real Node Inspector and releases attachments after cancellation and failures"
+  ],
+  "tests/boundary/browser/browserProcessStartup.test.ts": [
+    "classifies signal termination instead of timing out"
+  ],
+  "tests/boundary/browser/cdpBrowserProvider.lifecycle_failures.test.ts": [
+    "waits for navigation commit and rechecks the attached main-frame origin"
+  ],
+  "tests/boundary/browser/cdpBrowserProvider.storage_completeness.test.ts": [
+    "compares shared complete values with malformed cache inventory",
+    "compares shared complete values with unavailable cache inventory",
+    "preserves unknown inventory coverage from CacheStorage.requestCacheNames: {\"caches\":[null]}",
+    "preserves unknown inventory coverage from CacheStorage.requestCacheNames: {\"caches\":[{\"cacheName\":\"assets-v1\",\"cacheId\":\"secret-id\"},null]}",
+    "preserves unknown inventory coverage from CacheStorage.requestCacheNames: {\"caches\":[{\"cacheName\":\"assets-v1\"}]}",
+    "preserves unknown inventory coverage from CacheStorage.requestCacheNames: {\"caches\":null}",
+    "preserves unknown inventory coverage from CacheStorage.requestCacheNames: {}",
+    "preserves unknown inventory coverage from DOMStorage.getDOMStorageItems: {\"entries\":[null]}",
+    "preserves unknown inventory coverage from IndexedDB.requestDatabaseNames: {\"databaseNames\":[null]}"
+  ],
+  "tests/boundary/browser/cdpConnection.test.ts": [
+    "accepts an exact UTF-8 payload and rejects one byte more at the selected limit",
+    "uses the shared protocol budget by default and rejects an oversized frame header"
+  ],
+  "tests/boundary/browser/cdpTargetSessionOwner.test.ts": [
+    "accepts asynchronous terminate success only after the close event"
+  ],
+  "tests/boundary/browser/cdpWebRuntime.test.ts": [
+    "binds complete producer stacks by script ID and ignores foreign sessions without URL guessing",
+    "joins a reordered multi-script coverage sample by identity and preserves unavailable bounds",
+    "reports disconnected cleanup as unknown instead of successful detachment",
+    "retains same-URL script identities, UTF-16 bounds, nested zero counts and actual cleanup"
+  ],
+  "tests/boundary/browser/cdpWebRuntimeReview.test.ts": [
+    "accepts a stable loader for listeners while retaining the initial location",
+    "retains reported metadata without claiming ownership or reading unowned source"
+  ],
+  "tests/boundary/browser/sazWebCapture.test.ts": [
+    "retains folded headers, stored chunk framing and BOM-marked UTF-16 metadata"
+  ],
+  "tests/boundary/captures/captureProvider.test.ts": [
+    "preserves malformed-copy failure and releases the process and snapshot AnalysisArtifactChangedError"
+  ],
+  "tests/boundary/cli/analysisViewCli.test.ts": [
+    "projects one section from a JSON file of inline layout Evidence"
+  ],
+  "tests/boundary/cli/apktoolCli.test.ts": [
+    "[\"decode-android-resources\",\"/targets/app.apk\",\"--json\"] with REA_APKTOOL_COMMAND=/nonexistent/apktool names the host requirement The selected apktool launcher was not found: /nonexistent/apktool. Set REA_APKTOOL_COMMAND",
+    "[\"inspect-apktool-client\",\"--json\"] with REA_APKTOOL_COMMAND=/nonexistent/apktool names the host requirement The selected apktool launcher was not found: /nonexistent/apktool. Set REA_APKTOOL_COMMAND"
+  ],
+  "tests/boundary/cli/browserInputDiagnostics.test.ts": [
+    "[ 'list-javascript-runtime-targets', 'inspector_endpoint' ] does not echo rejected endpoint credentials",
+    "analyze-web-bundle retains the named contract's correction details"
+  ],
+  "tests/boundary/cli/cliCompileCache.test.ts": [
+    "collects requested child coverage without populating the fixture cache"
+  ],
+  "tests/boundary/cli/cliInputSchemaRequired.test.ts": [
+    "accepts the one-argument keyed-archive call and keeps its constraints",
+    "aligns advertised bounds with the parser's accepted values",
+    "keeps limits and defaults from its shared input contract",
+    "require exactly the inputs whose omission the parser rejects"
+  ],
+  "tests/boundary/cli/cliOptionAliases.test.ts": [
+    "accepts kebab-case long options without registered aliases"
+  ],
+  "tests/boundary/cli/cliOutput.test.ts": [
+    "fails promptly across output formats without invoking the command",
+    "retains closed slices and multiple filter paths"
+  ],
+  "tests/boundary/cli/cliStartupImports.test.ts": [
+    "detects each deferred package when its command code loads",
+    "does not load native provider composition for JavaScript application analysis",
+    "loads native provider composition when a provider operation is called"
+  ],
+  "tests/boundary/cli/clientProfiles.test.ts": [
+    "Gemini workspace definitions use shallow precedence and remain read-only",
+    "OpenCode doctor sees a global registration when the custom directory is absent",
+    "OpenCode retains the XDG global layer when a custom directory is selected"
+  ],
+  "tests/boundary/cli/cutterCommands.test.ts": [
+    "lists sessions from the selected bridge directory",
+    "reports an unavailable selected session for a command",
+    "returns Evidence when the selected Cutter session completes a command"
+  ],
+  "tests/boundary/cli/evidenceBundleCommands.test.ts": [
+    "reports standalone import counts for every unknown revision"
+  ],
+  "tests/boundary/cli/idaRetainedCleanupCli.test.ts": [
+    "exits after a retained-cleanup failure instead of waiting on the supervisor"
+  ],
+  "tests/boundary/cli/javascriptRuntimeObservationCli.test.ts": [
+    "returns the same passive Inspector Evidence contracts"
+  ],
+  "tests/boundary/cli/javascriptSelfImportRelationships.test.ts": [
+    "resolves ESM specifiers containing whitespace using URL text semantics"
+  ],
+  "tests/boundary/cli/jsonInputSize.test.ts": [
+    "returns a typed container assembly constraint and allows a following read",
+    "returns a typed string assembly constraint under a bounded heap",
+    "traces valid Evidence beyond the whole-document string limit"
+  ],
+  "tests/boundary/cli/jsonInputStatus.test.ts": [
+    "keeps the failure status with JSON output",
+    "keeps the failure status with JSONL output",
+    "keeps the failure status with default output"
+  ],
+  "tests/boundary/cli/packageRunnerRegistration.test.ts": [
+    "bunx setup registers the pinned bunx launcher instead of its cache",
+    "npx setup registers the pinned npx launcher instead of its cache"
+  ],
+  "tests/boundary/cli/pcapCli.test.ts": [
+    "inspect-pcap-capture names the missing Wireshark tool to configure /nonexistent/capture.pcap",
+    "inspect-pcap-client names the missing Wireshark tool to configure"
+  ],
+  "tests/boundary/cli/referenceSourceLegacyFacts.test.ts": [
+    "imports a legacy subtree of a Git checkout with its own source facts"
+  ],
+  "tests/boundary/cli/referenceSourceUtf8.test.ts": [
+    "retains malformed source bytes without inventing decoded import targets"
+  ],
+  "tests/boundary/cli/scenarioCliInputDiagnostics.test.ts": [
+    "names the unresolved Electron application_path",
+    "names the unresolved Electron application_root",
+    "names the unresolved Electron executable_path"
+  ],
+  "tests/boundary/cli/workflowInputIdentities.test.ts": [
+    "preserves workflow identity validation through CLI and inline, retained and mixed MCP inputs"
+  ],
+  "tests/boundary/evm/solidityMetadataWorker.test.ts": [
+    "retains independent BOM text metadata through the actual worker 00a1617864efbbbf610008 decoded",
+    "retains independent compiler metadata through the actual worker 00a164736f6c634300081e000a decoded",
+    "retains independent floating point metadata through the actual worker 00a16178fa3f8000000008 not-decoded",
+    "retains independent integer metadata through the actual worker 00a1011bffffffffffffffff000b decoded",
+    "retains independent invalid UTF-8 metadata through the actual worker 00a1617861ff0005 not-decoded",
+    "retains independent nested value metadata through the actual worker 00a1617881000005 partial",
+    "retains independent unavailable trailer metadata through the actual worker 00 unavailable",
+    "retains independent unsupported tag metadata through the actual worker 00a16178c0000005 not-decoded"
+  ],
+  "tests/boundary/filesystem/analysisSnapshot.test.ts": [
+    "writes canonical private v2 JSON and rejects changed query identity"
+  ],
+  "tests/boundary/filesystem/artifactZipIntegrity.test.ts": [
+    "preserves encrypted-member and corrupt-CRC observations"
+  ],
+  "tests/boundary/filesystem/asarListingAdmission.test.ts": [
+    "preserves POSIX literal backslashes and rejects Windows component separators",
+    "rejects raw ASAR component \".\" before host normalization can alias another entry",
+    "rejects raw ASAR component \"..\" before host normalization can alias another entry",
+    "rejects raw ASAR component \"a/../b\" before host normalization can alias another entry",
+    "rejects raw ASAR component \"a/b\" before host normalization can alias another entry"
+  ],
+  "tests/boundary/filesystem/asarStreamingAllocation.test.ts": [
+    "rejects a copied entry with a changed unpacked flag for unpacked=false",
+    "rejects a copied entry with a changed unpacked flag for unpacked=true"
+  ],
+  "tests/boundary/filesystem/callerPath.test.ts": [
+    "makes a relative POSIX cwd absolute before appending the path"
+  ],
+  "tests/boundary/filesystem/ciPrHealth.test.ts": [
+    "public CLI uses only GET and produces a report from fixture GitHub responses"
+  ],
+  "tests/boundary/filesystem/clientConfigurationDialects.test.ts": [
+    "honors Copilot CLI and Devin platform configuration roots",
+    "honors Grok Build and Grok Bot configuration roots",
+    "prefers an existing OpenCode JSONC file and honors explicit harness roots",
+    "recognizes prior exact REA releases while rejecting foreign package commands",
+    "registers in mcp.servers, replaces REA's V1 entry, and uninstalls",
+    "registers, reads back, and uninstalls antigravity",
+    "registers, reads back, and uninstalls commandcode",
+    "registers, reads back, and uninstalls copilot_cli",
+    "registers, reads back, and uninstalls devin",
+    "registers, reads back, and uninstalls omp",
+    "registers, reads back, and uninstalls opencode",
+    "registers, reads back, and uninstalls pi",
+    "registers, reads back, and uninstalls vscode",
+    "reports and removes a V1 entry that OpenCode still loads beside mcp.servers",
+    "resolves VS Code user MCP path for darwin /home/a {} /home/a/Library/Application Support/Code/User/mcp.json",
+    "resolves VS Code user MCP path for linux /home/a { XDG_CONFIG_HOME: '/config' } /config/Code/User/mcp.json",
+    "resolves VS Code user MCP path for linux /home/a {} /home/a/.config/Code/User/mcp.json",
+    "resolves VS Code user MCP path for win32 C:/Users/a {} C:/Users/a/AppData/Roaming/Code/User/mcp.json",
+    "treats a V2 table holding a server named type as native"
+  ],
+  "tests/boundary/filesystem/clientLifecycle.test.ts": [
+    "removes an owned entry through a symlink without replacing it",
+    "updates a symlink target without replacing the TOML config symlink"
+  ],
+  "tests/boundary/filesystem/clientRegistrationStatus.test.ts": [
+    "discovers Claude Code from its config file without a marker directory",
+    "distinguishes aligned, stale, missing, and invalid registrations",
+    "reports a malformed server table %j as invalid"
+  ],
+  "tests/boundary/filesystem/flutterBuildProvider.test.ts": [
+    "accepts a section-stripped ELF32 header and bounds its program table",
+    "accepts an APK whose path contains spaces through the owned snapshot",
+    "applies the library cap only to selected ABI arm64-v8a",
+    "applies the library cap only to selected ABI mips",
+    "applies the library cap only to selected ABI undefined",
+    "applies the library cap only to selected ABI x86_64",
+    "classifies owned snapshot close failure (EIO) separately from source input",
+    "classifies owned snapshot open failure (EPERM) separately from source input",
+    "classifies owned snapshot stat failure (EIO) separately from source input",
+    "classifies owned snapshot write failure (ENOSPC) separately from source input",
+    "classifies owned snapshot zip-library failure (EIO) separately from source input",
+    "does not let two VM records replace a missing isolate header hash",
+    "honors cancellation during final close work",
+    "honors cancellation during final elf work",
+    "honors cancellation during final pool work",
+    "identifies a valid ELF when ZIP chunks are only 1 bytes",
+    "identifies a valid ELF when ZIP chunks are only 20 bytes",
+    "identifies a valid ELF when ZIP chunks are only 47 bytes",
+    "identifies a valid ELF when ZIP chunks are only 48 bytes",
+    "identifies a valid ELF when ZIP chunks are only 61 bytes",
+    "identify_flutter_build preserves a real ZIP metadata budget refusal",
+    "identify_flutter_build refuses ABI metadata expansion before opening empty libraries",
+    "identify_flutter_build rejects duplicate real ZIP members before extracting either occurrence",
+    "identify_flutter_build retains a reader whose close failed before removing its root",
+    "identify_flutter_build uses the selected path in malformed-APK diagnostics",
+    "inspect_dart_aot preserves a real ZIP metadata budget refusal",
+    "inspect_dart_aot refuses ABI metadata expansion before opening empty libraries",
+    "inspect_dart_aot rejects duplicate real ZIP members before extracting either occurrence",
+    "inspect_dart_aot retains a reader whose close failed before removing its root",
+    "inspect_dart_aot uses the selected path in malformed-APK diagnostics",
+    "inspects a full synthetic AOT image end to end",
+    "preserves conflicting snapshot hash candidates from the AOT image",
+    "preserves native stream aborts during identify_flutter_build digest",
+    "preserves native stream aborts during inspect_dart_aot digest",
+    "projects each payload shape through the owned snapshot",
+    "refuses a requested ABI the payload does not carry",
+    "refuses an AOT image whose snapshot names are all undefined imports",
+    "refuses an APK without a Dart payload",
+    "refuses truncated hash-candidate evidence and includes five-character tokens",
+    "reports a 0-byte ELF prefix as partial without throwing",
+    "reports a 20-byte ELF prefix as partial without throwing",
+    "reports a 4-byte ELF prefix as partial without throwing",
+    "reports a 47-byte ELF prefix as partial without throwing",
+    "reports a 61-byte ELF prefix as partial without throwing",
+    "reports aliased snapshot data symbols as partial coverage",
+    "reports omitted Dart labels independently of toolchain labels",
+    "retains failed local file-handle closure at acquisition stage 2",
+    "retains failed local file-handle closure at acquisition stage 3",
+    "retains failed snapshot cleanup and retries it on close",
+    "retains hash observations with partial coverage for absent program table",
+    "retains hash observations with partial coverage for extended section count",
+    "retains hash observations with partial coverage for program table past EOF",
+    "retains hash observations with partial coverage for section table past EOF",
+    "retains hash observations with partial coverage for short section entry width",
+    "retains hash observations with partial coverage for table inside header",
+    "retains hash observations with partial coverage for unsafe table offset",
+    "retains hash observations with partial coverage for unsupported byte order",
+    "retains hash observations with partial coverage for unsupported class",
+    "retains hash observations with partial coverage for zero program entry width",
+    "retains hash observations with partial coverage for zeroed offsets",
+    "retains malformed snapshot length 0n as partial evidence",
+    "retains malformed snapshot length 15n as partial evidence",
+    "retains malformed snapshot length 47n as partial evidence",
+    "retains malformed snapshot length 49n as partial evidence",
+    "retains malformed snapshot length 9223372036854775808n as partial evidence"
+  ],
+  "tests/boundary/filesystem/hermesClientConfiguration.test.ts": [
+    "expands and trims Hermes overrides without changing the suffix",
+    "honours HERMES_HOME and Hermes's data-directory suffix"
+  ],
+  "tests/boundary/filesystem/installScript.test.ts": [
+    "accepts a valid prerelease version without build metadata",
+    "accepts supported Node 22.19.0 without installing or replacing it",
+    "accepts supported Node 24.11.0 without installing or replacing it",
+    "accepts supported Node 26.0.0 without installing or replacing it",
+    "fails closed with actionable recovery for missing installed command [ '--version', '0.3.0' ] { FAKE_NPM_SKIP_BINARY: '1' } REA installation failed: npm completed without installing the rea command. Check the npm global bin directory and PATH, then retry.",
+    "fails closed with actionable recovery for npm failure [ '--version', '0.3.0' ] { FAKE_NPM_FAIL: '1' } REA installation failed: npm could not install REA. Check registry access and npm permissions, then retry.",
+    "fails closed with actionable recovery for npm prefix [ '--version', '0.3.0' ] { FAKE_PLATFORM: 'Darwin', FAKE_NPM_PREFIX_FAIL: '1' } REA installation failed: the npm global prefix could not be read. Repair the npm configuration, then retry.",
+    "fails closed with actionable recovery for release lookup [] { FAKE_CURL_FAIL: '1' } REA installation failed: the latest REA release could not be resolved. Check network access or pass --version VERSION, then retry.",
+    "fails closed with actionable recovery for release response [] { FAKE_CURL_BODY: 'not-json' } REA installation failed: the release response was invalid. Retry later or pass --version VERSION.",
+    "fails closed with actionable recovery for release tag [] { FAKE_CURL_BODY: '{\"tag_name\":\"unrelated-1.0.0\"}' } REA installation failed: the latest release tag was invalid. Retry later or pass --version VERSION.",
+    "fails closed with actionable recovery for unreadable Node version [ '--version', '0.3.0' ] { FAKE_NODE_VERSION: 'invalid' } REA installation failed: the active Node.js version could not be read. Check that node works and is on PATH, then retry.",
+    "fails closed with actionable recovery for unreadable installed version [ '--version', '0.3.0' ] { FAKE_REA_VERSION_FAIL: '1' } REA installation failed: the installed REA version could not be read. Reinstall the requested version, then retry.",
+    "fails closed with actionable recovery for unsupported Node [ '--version', '0.3.0' ] { FAKE_NODE_VERSION: '20.0.0' } REA installation failed: Node.js 20.0.0 is unsupported.",
+    "fails closed with actionable recovery for version mismatch [ '--version', '0.3.0' ] { FAKE_REA_VERSION: '9.9.9' } REA installation failed: installed version 9.9.9 does not match 0.3.0. Reinstall the requested version, then retry.",
+    "installs on Darwin with an empty prefix argument array",
+    "installs only a pinned REA CLI with closed stdin",
+    "prints a dry run without invoking npm",
+    "prints the executed arguments as a reusable command with shell metacharacters",
+    "rejects an empty version from a successful installed command",
+    "rejects an explicitly empty version instead of selecting latest",
+    "rejects an invalid semantic version from the latest release tag",
+    "rejects build metadata in the latest release tag before printing a plan",
+    "rejects malformed semantic versions before invoking npm: 1.2.3-\"; printf unexpected; #",
+    "rejects malformed semantic versions before invoking npm: 1.2.3-$(printf unexpected)",
+    "rejects malformed semantic versions before invoking npm: 1.2.3-01",
+    "rejects unsupported Node 22.18.9 before invoking npm",
+    "rejects unsupported Node 23.0.0 before invoking npm",
+    "rejects unsupported Node 24.10.9 before invoking npm",
+    "rejects unsupported Node 26.0.0-rc.1 before invoking npm",
+    "rejects valid build metadata before printing a plan or invoking npm",
+    "reports exact recovery when curl is missing",
+    "resolves and validates the latest REA release tag",
+    "runs nothing and prints nothing until the closing brace arrives",
+    "runs nothing from a download truncated after the npm install line",
+    "skips automatic setup when stderr is redirected"
+  ],
+  "tests/boundary/filesystem/javascript-applications/javascriptFileUrlPaths.test.ts": [
+    "resolves ./preload%3F%23.cjs to the file read by Node preload?#.cjs main.mjs"
+  ],
+  "tests/boundary/filesystem/javascript-applications/javascriptModuleSpecifierPaths.test.ts": [
+    "matches Node import across package exports and main path representations",
+    "matches Node require across package exports and main path representations",
+    "resolves URL-encoded imports to the files loaded by Node"
+  ],
+  "tests/boundary/filesystem/javascript-applications/javascriptRuntimeReconciliation.test.ts": [
+    "retains uncertainty for overlapping file mappings with distinct application interpretations"
+  ],
+  "tests/boundary/filesystem/javascriptApplicationDeepReturns.test.ts": [
+    "analyzes direct returns after deep source without exhausting the default process stack"
+  ],
+  "tests/boundary/filesystem/javascriptArtifactTypeScriptDialect.test.ts": [
+    "establishes the valid disambiguated cts producer syntax",
+    "establishes the valid disambiguated mts producer syntax",
+    "validates as.ts with the locked TypeScript producer",
+    "validates assertion.ts with the locked TypeScript producer",
+    "validates component.d.tsx with the locked TypeScript producer",
+    "validates component.jsx with the locked TypeScript producer",
+    "validates component.tsx with the locked TypeScript producer",
+    "validates generic.ts with the locked TypeScript producer",
+    "validates wrapped-as.ts with the locked TypeScript producer",
+    "validates wrapped.ts with the locked TypeScript producer"
+  ],
+  "tests/boundary/filesystem/javascriptPackageExportTargets.test.ts": [
+    "matches Node import and require target selection for active condition rejects instead of selecting default",
+    "matches Node import and require target selection for active module-sync rejects an invalid target instead of default",
+    "matches Node import and require target selection for an invalid target following null remains invalid",
+    "matches Node import and require target selection for directory target does not load its index",
+    "matches Node import and require target selection for encoded separator is selected before final path refusal",
+    "matches Node import and require target selection for encoded underscore and letters do not borrow a forbidden directory",
+    "matches Node import and require target selection for extensionless target is not completed with an extension",
+    "matches Node import and require target selection for inactive invalid condition does not block default",
+    "matches Node import and require target selection for invalid target \"\"",
+    "matches Node import and require target selection for invalid target \"../outside.cjs\"",
+    "matches Node import and require target selection for invalid target \"./%2e%2e/outside.cjs\"",
+    "matches Node import and require target selection for invalid target \"./../outside.cjs\"",
+    "matches Node import and require target selection for invalid target \"././actual.cjs\"",
+    "matches Node import and require target selection for invalid target \"./NODE_MODULES/actual.cjs\"",
+    "matches Node import and require target selection for invalid target \"./lib/../actual.cjs\"",
+    "matches Node import and require target selection for invalid target \"./lib\\\\..\\\\actual.cjs\"",
+    "matches Node import and require target selection for invalid target \"./n%6fde_modules/actual.cjs\"",
+    "matches Node import and require target selection for invalid target \"./node_modules/actual.cjs\"",
+    "matches Node import and require target selection for invalid target \"/actual.cjs\"",
+    "matches Node import and require target selection for invalid target \"actual.cjs\"",
+    "matches Node import and require target selection for invalid target \"file:./actual.cjs\"",
+    "matches Node import and require target selection for last invalid target retains its reason",
+    "matches Node import and require target selection for malformed URL ./bad%.cjs is selected before URL decoding",
+    "matches Node import and require target selection for malformed URL ./bad%C3.cjs is selected before URL decoding",
+    "matches Node import and require target selection for missing first target does not select a second file",
+    "matches Node import and require target selection for module-sync null blocks default",
+    "matches Node import and require target selection for nested arrays skip invalid package-local segments",
+    "matches Node import and require target selection for nested directory is valid",
+    "matches Node import and require target selection for node_modules substring is not a forbidden segment",
+    "matches Node import and require target selection for null following an invalid target blocks exports",
+    "matches Node import and require target selection for percent encoding is applied once",
+    "matches Node import and require target selection for root array skips encoded invalid segments",
+    "matches Node import and require target selection for root subpath rejects a parent segment",
+    "matches Node import and require target selection for top-level array skips an invalid target",
+    "matches Node import and require target selection for unmatched nested module-sync permits default"
+  ],
+  "tests/boundary/filesystem/javascriptPackagePrecedence.test.ts": [
+    "matches Node package resolution for exports array skips invalid and unmatched entries",
+    "matches Node package resolution for nested root exports array",
+    "matches the native Node loader when import selects module-sync before default",
+    "matches the native Node loader when require selects nested module-sync before default"
+  ],
+  "tests/boundary/filesystem/kimiClientConfiguration.test.ts": [
+    "accepts explicit stdio transport without causing repeated rewrites",
+    "preserves an explicitly stored full profile",
+    "preserves selected timeout values through refresh and keeps backups idempotent",
+    "registers without type, preserves unrelated settings, backs up, and is idempotent",
+    "reports startupTimeoutMs timeout 1 as aligned",
+    "reports toolTimeoutMs timeout 1 as aligned",
+    "uses the existing shared skill destination without a separate skill root"
+  ],
+  "tests/boundary/filesystem/macHopperInstallOwnership.test.ts": [
+    "leaves pre-existing staging-looking sibling directories untouched",
+    "retains a moved backup and never overwrites a later destination on rollback"
+  ],
+  "tests/boundary/filesystem/ompClientConfiguration.test.ts": [
+    "follows the active named profile like OMP",
+    "uses the default agent directory and OMP's environment overrides"
+  ],
+  "tests/boundary/filesystem/piClientConfiguration.test.ts": [
+    "doctor handles type stdio and enabled true without OMP allowlist overrides aligned",
+    "doctor handles type undefined and enabled true without OMP allowlist overrides aligned",
+    "initializes a missing Pi configuration as valid strict JSON without a backup",
+    "preserves unrelated content and OMP-only lists during setup, repeat, and uninstall",
+    "uses Pi's agent directory for , independently of OMP /home/a/.pi/agent",
+    "uses Pi's agent directory for undefined, independently of OMP /home/a/.pi/agent",
+    "uses Pi's agent directory for ~/custom/agent, independently of OMP /home/a/custom/agent"
+  ],
+  "tests/boundary/filesystem/qwenClientConfiguration.test.ts": [
+    "installs and removes the shared skill with a custom home: false",
+    "installs and removes the shared skill with a custom home: true",
+    "reports a package-runner registration as aligned"
+  ],
+  "tests/boundary/filesystem/referenceSourceCleanupOwnership.test.ts": [
+    "keeps cancelled traversal typed when native directory close rejects after invalidation",
+    "preserves a directory read failure when closing that directory also fails",
+    "preserves admission EIO and retains an invalidated failed-close owner",
+    "retains partial file bytes and retries the same live owner before new work (enclosing Git repository: false)",
+    "retains partial file bytes and retries the same live owner before new work (enclosing Git repository: true)"
+  ],
+  "tests/boundary/filesystem/referenceSourceComputedRequire.test.ts": [
+    "distinguishes computed require member values from literal members in source evidence"
+  ],
+  "tests/boundary/filesystem/referenceSourceDockerfileLanguage.test.ts": [
+    "imports Dockerfile-prefixed TypeScript with ordinary source evidence and uncertainty",
+    "retains parser failures and hashes for malformed Dockerfile-prefixed TypeScript"
+  ],
+  "tests/boundary/filesystem/referenceSourceDynamicImports.test.ts": [
+    "loads an extensionless JSON target only through CommonJS require",
+    "resolves dynamic source imports while retaining computed targets as unknown"
+  ],
+  "tests/boundary/filesystem/referenceSourceFailureDetails.test.ts": [
+    "preserves an ordinary readable source-file control"
+  ],
+  "tests/boundary/filesystem/referenceSourceImport.test.ts": [
+    "does not omit selected files by secret-like path or filename",
+    "does not rebase an absolute import onto a coincidentally matching source member",
+    "does not treat an excluded file as an excluded directory for a child link",
+    "imports BMP and supplementary filenames in Unicode code point order",
+    "imports the caller-selected directory and honors cancellation",
+    "is relocation-stable, resolves imports, and excludes secrets before capture",
+    "keeps dot-prefixed bare specifiers external while resolving explicit relative paths",
+    "records bounded local Git state without invoking Git",
+    "retains external symlink targets as local graph diagnostics",
+    "retains links into a caller-excluded directory without importing it",
+    "retains links into a default-ignored directory without importing it",
+    "retains links into a project-ignored directory without importing it",
+    "retains manifest, test, generated and language classifications through import",
+    "returns every written entry with complete coverage at any scale"
+  ],
+  "tests/boundary/filesystem/referenceSourceMetadataCleanup.test.ts": [
+    "keeps a later packed-ref read error primary over earlier loose-ref cleanup",
+    "preserves Git metadata cleanup failure and the completed source read",
+    "retains failed .gitignore cleanup under the caller's scope",
+    "retains later packed-ref cleanup after an earlier loose-ref read failure"
+  ],
+  "tests/boundary/filesystem/referenceSourceReader.test.ts": [
+    "applies exclusions to normalized paths after no-follow type inspection",
+    "keeps selected-root paths in actionable filesystem errors",
+    "reads a source file larger than the former 16 MiB ceiling",
+    "reports physical external symlink targets without following them",
+    "returns explicit entries in canonical code-point path order",
+    "returns typed failures for cancellation and invalid roots",
+    "sanitizes exclusion callback failures",
+    "traverses source directories deeper than the former depth ceiling"
+  ],
+  "tests/boundary/filesystem/referenceSourceRecovery.test.ts": [
+    "preserves recovered diagnostics and file evidence through filesystem import"
+  ],
+  "tests/boundary/filesystem/referenceSourceShadowedRequire.test.ts": [
+    "does not attribute overwritten require members to Node's resolver",
+    "keeps require edges according to the loader at each source site",
+    "resolves require calls by lexical binding and source mode"
+  ],
+  "tests/boundary/filesystem/referenceSourceTestFilenames.test.ts": [
+    "imports test-suffixed filenames with unchanged paths, hashes, and languages",
+    "keeps parser failures and unknown dependencies visible for test filenames"
+  ],
+  "tests/boundary/filesystem/referenceSourceTypeScriptExtensions.test.ts": [
+    "does not substitute TypeScript sources for a JavaScript runtime import",
+    "imports valid CommonJS wrapper syntax without inventing a parse failure",
+    "resolves main.cts runtime-extension imports to present source dep.cjs/dep.cts",
+    "resolves main.cts runtime-extension imports to present source dep.cjs/dep.d.cts",
+    "resolves main.d.cts runtime-extension imports to present source dep.cjs/dep.d.cts",
+    "resolves main.d.mts runtime-extension imports to present source dep.mjs/dep.d.mts",
+    "resolves main.d.ts runtime-extension imports to present source dep.js/dep.d.ts",
+    "resolves main.mts runtime-extension imports to present source dep.mjs/dep.d.mts",
+    "resolves main.mts runtime-extension imports to present source dep.mjs/dep.mts",
+    "resolves main.ts runtime-extension imports to present source dep.js/dep.d.ts",
+    "resolves main.ts runtime-extension imports to present source dep.js/dep.ts",
+    "resolves main.ts runtime-extension imports to present source dep.jsx/dep.tsx",
+    "resolves main.tsx runtime-extension imports to present source dep.js/dep.tsx",
+    "retains an existing declared runtime file for main.js",
+    "retains an existing declared runtime file for main.ts"
+  ],
+  "tests/boundary/filesystem/referenceSourceUnreadableDirectories.test.ts": [
+    "keeps readable and empty directories enumerated exactly once"
+  ],
+  "tests/boundary/filesystem/releaseNotes.test.ts": [
+    "binds publication to complete recorded history and the reviewed base",
+    "checks the live merged PR and exact Git snapshot before either publication route",
+    "fails closed on partial GitHub errors and non-advancing pagination without saving an inventory",
+    "inventories side branches and paginated credits, then checks and renders synchronized notes",
+    "rejects lost grouped credits, fabricated references, bots, and stale PR bodies"
+  ],
+  "tests/boundary/filesystem/releaseRecovery.test.ts": [
+    "limits recovery to verification and dependent MCP publication from the released source"
+  ],
+  "tests/boundary/filesystem/setupClientConfigCleanupOwnership.test.ts": [
+    "retains a failed ZCode fallback close during configure until host cleanup",
+    "retains a failed ZCode fallback close during preflight until host cleanup",
+    "retains invalid UTF-8 diagnostics and the uninstall read owner when close fails",
+    "stops configuration and retains the malformed UTF-8 read owner until host close <Buffer ff>",
+    "stops configuration and retains the valid UTF-8 read owner until host close <Buffer 7b 22 73 65 72 76 65 72 73 22 3a 20 7b 22 6f 74 68 65 72 22 3a 20 7b 7d 7d 7d 0a>",
+    "waits for an admitted configuration read and rejects later admissions"
+  ],
+  "tests/boundary/filesystem/setupConfig.test.ts": [
+    "does not rewrite an equivalent configuration with reordered environment keys",
+    "migrates an unversioned npx registration and preserves sibling configuration",
+    "performs no write or second backup when configuration already matches",
+    "persists a custom Hopper launcher and remains idempotent",
+    "preserves existing keys, creates a backup, and reads back the MCP entry",
+    "updates a symlink target without replacing the JSON config symlink"
+  ],
+  "tests/boundary/filesystem/setupSkillCleanupOwnership.test.ts": [
+    "preserves read and host cleanup failures when doctor identity cannot complete",
+    "retains a failed setup skill read until setup host disposal",
+    "returns uninstall changes with a failed cleanup item for a retained handle",
+    "waits for an admitted skill read before its resource scope closes"
+  ],
+  "tests/boundary/filesystem/sourceToBundlePaths.test.ts": [
+    "declines source references without a trustworthy file path: ",
+    "declines source references without a trustworthy file path: #original.js",
+    "declines source references without a trustworthy file path: %2e",
+    "declines source references without a trustworthy file path: %2e%2e",
+    "declines source references without a trustworthy file path: .",
+    "declines source references without a trustworthy file path: ../../outside/a.js",
+    "declines source references without a trustworthy file path: ./",
+    "declines source references without a trustworthy file path: ./?version.js",
+    "declines source references without a trustworthy file path: ?version.js",
+    "declines source references without a trustworthy file path: \\\\bad host\\share\\a.js",
+    "declines source references without a trustworthy file path: bad%zz.js",
+    "declines source references without a trustworthy file path: child%2fpart.js",
+    "declines source references without a trustworthy file path: child%5cpart.js",
+    "declines source references without a trustworthy file path: child.js/",
+    "declines source references without a trustworthy file path: child/..",
+    "keeps leaf source roots distinct after indexed maps are serialized",
+    "keeps literal hash characters in historical/current filesystem paths",
+    "matches source-map originals named relative to the map",
+    "preserves the literal UNC filesystem name a#b.js without selecting a URL decoy",
+    "preserves the literal UNC filesystem name a%23b.js without selecting a URL decoy",
+    "preserves the literal UNC filesystem name a?b.js without selecting a URL decoy",
+    "projects source references from C:\\repo\\src\\a.js only when they name a file",
+    "projects source references from data:\\src\\a.js only when they name a file",
+    "projects source references from data:text/javascript,virtual/../src/a.js only when they name a file",
+    "projects source references from data:text/javascript,virtual/src/a.js only when they name a file",
+    "projects source references from file://server/share/src/a.js only when they name a file",
+    "projects source references from file:/repo/src/a.js only when they name a file",
+    "projects source references from file:/repo/src/a.js?version=2#original only when they name a file",
+    "projects source references from file:C:/repo/src/a.js only when they name a file",
+    "projects source references from file:C:\\repo\\src\\a.js only when they name a file",
+    "projects source references from https://example.com/src/a.js#original only when they name a file",
+    "projects source references from node:internal/src/a.js only when they name a file",
+    "projects source references from webpack:///src/a.js only when they name a file",
+    "resolves ../../src/a.js against apps/pkg/dist/maps/main.js.map without selecting a same-basename decoy",
+    "resolves ../actual/%252e%252e/src/a.js against pkg/maps/main.js.map without selecting a same-basename decoy",
+    "resolves ../actual/%2e%2e/src/a.js against pkg/maps/main.js.map without selecting a same-basename decoy",
+    "resolves ../src/a.js against pkg#name?/maps/main.js.map without selecting a same-basename decoy",
+    "resolves ../src/a.js against pkg/dist/main.js.map without selecting a same-basename decoy",
+    "resolves ..\\src\\a.js against pkg/dist/main.js.map without selecting a same-basename decoy",
+    "resolves /vendor/a.js against pkg/maps/main.map without selecting a same-basename decoy",
+    "resolves a.js against pkg/dist/main.js.map without selecting a same-basename decoy",
+    "resolves generated/../src/a.js against pkg/maps/main.js.map without selecting a same-basename decoy",
+    "resolves modules/a%20b.js against pkg/maps/main.js.map without selecting a same-basename decoy",
+    "resolves modules/a%23b.js against pkg/maps/main.js.map without selecting a same-basename decoy",
+    "resolves modules/a.js against pkg/maps/main.js.map without selecting a same-basename decoy",
+    "resolves parent segments against a nested source map's directory",
+    "resolves src/a.js against pkg/maps/main.js.map without selecting a same-basename decoy",
+    "retains every map location when identical map artifacts merge",
+    "uses the relative URL pathname rather than a literal #original.js filename",
+    "uses the relative URL pathname rather than a literal ?version.js filename",
+    "uses the relative URL pathname rather than a literal ?version.js#original.js filename"
+  ],
+  "tests/boundary/filesystem/webArtifactReadOwnership.test.ts": [
+    "retains cancelled source read ownership until service close retries it"
+  ],
+  "tests/boundary/filesystem/webScriptExport.test.ts": [
+    "accepts a capture symlink to a regular file and preserves its selected path",
+    "cancels before work and rolls back cancellation after output creation",
+    "identifies a missing capture file and rejected host path syntax",
+    "isolates empty query and fragment identities while retaining durable script bytes",
+    "links authenticated input Evidence",
+    "makes scope close wait for an admitted capture read",
+    "preserves adapter-reported limitations without strengthening their string contract",
+    "preserves an existing destination and refuses output through a symlink",
+    "preserves binary and empty response bytes and provenance for browser-decoded-response-bytes",
+    "preserves binary and empty response bytes and provenance for playwright-response-body-bytes",
+    "rejects malformed capture bytes before creating output",
+    "reports a directory selected as the capture as invalid input",
+    "reports a recovered close failure without marking cleanup incomplete",
+    "retains a handle after capture read and close both fail",
+    "retains a setup-failed output tree in the caller resource scope",
+    "retains missing sources in a manifest without inventing an analysis directory",
+    "retains published output and its result while cleanup remains unresolved",
+    "retains the failed handle and keeps invalid JSON primary",
+    "returns completed output when retry closes a descriptor after commit",
+    "rolls back only the new owned output when durable byte verification fails",
+    "verifies durable bytes, manifest, capture identity, and existing module analysis"
+  ],
+  "tests/boundary/inspector/javascriptRuntimeObservation.test.ts": [
+    "captures complete metadata with two enable commands",
+    "includes targets outside the old caller root filter",
+    "rejects a CDP event larger than the configured transport payload budget"
+  ],
+  "tests/boundary/inspector/javascriptRuntimeUnresolvedTarget.test.ts": [
+    "keeps unresolved target identity unknown while matching verified loaded scripts"
+  ],
+  "tests/boundary/javascript/packageConditionalExports.test.ts": [
+    "applies self exports before the CommonJS sibling for @scope/fi%xture",
+    "applies self exports before the CommonJS sibling for fi%xture",
+    "does not fall back to main or a sibling when self exports block the root",
+    "does not report valid metadata as malformed",
+    "matches Node refusal for {\"import\":[42,7]} ERR_INVALID_PACKAGE_TARGET rejected",
+    "matches Node refusal for {\"import\":[42,null]} ERR_PACKAGE_PATH_NOT_EXPORTED external",
+    "matches Node refusal for {\"import\":[null,42]} ERR_INVALID_PACKAGE_TARGET rejected",
+    "matches Node refusal for {\"import\":[null,null]} ERR_PACKAGE_PATH_NOT_EXPORTED external",
+    "matches Node refusal for {\"import\":{\"node\":null},\"default\":\"./default.cjs\"} ERR_PACKAGE_PATH_NOT_EXPORTED external",
+    "preserves CommonJS sibling-file priority for root exports 0",
+    "preserves CommonJS sibling-file priority for root exports 42",
+    "preserves CommonJS sibling-file priority for root exports false",
+    "preserves CommonJS sibling-file priority for root exports true",
+    "preserves condition names in unmatched target [[{\"browser\":\"./default.cjs\"},{\"rea-inactive\":\"./node.cjs\"}]] browser, rea-inactive",
+    "preserves condition names in unmatched target [{\"browser\":\"./default.cjs\"}] browser",
+    "preserves condition names in unmatched target {\"node\":[{\"browser\":\"./default.cjs\"}]} node, browser",
+    "preserves the blocking source value in [[],null] an explicit null exports target",
+    "preserves the blocking source value in [] an empty exports target array",
+    "preserves the blocking source value in [null,[]] an empty exports target array",
+    "preserves the blocking source value in {\"node\":[]} an empty exports target array",
+    "preserves the refusal for \"../outside.cjs\" despite a same-named sibling file ERR_INVALID_PACKAGE_TARGET rejected",
+    "preserves the refusal for {\".\":null} despite a same-named sibling file ERR_PACKAGE_PATH_NOT_EXPORTED external",
+    "rejects invalid exports configuration {\".\":\"./default.cjs\",\"import\":\"./specific.cjs\"} without fallback",
+    "rejects invalid exports configuration {\".\":{\"1.5\":\"./specific.cjs\",\"default\":\"./default.cjs\"}} without fallback",
+    "rejects invalid exports configuration {\"0\":\"./specific.cjs\",\"default\":\"./default.cjs\"} without fallback",
+    "rejects invalid exports configuration {\"default\":\"./default.cjs\",\"./feature\":\"./specific.cjs\"} without fallback",
+    "rejects invalid exports configuration {\"node\":[{\"4294967294\":null},\"./array.cjs\"],\"default\":\"./default.cjs\"} without fallback",
+    "rejects the ESM package name @scope/fi%xture before metadata or sibling lookup",
+    "rejects the ESM package name @sc{ packageName: '@sc%ope/fixture', metadataText: '{' }pe/fixture before metadata or sibling lookup",
+    "rejects the ESM package name fi%xture before metadata or sibling lookup",
+    "reports malformed nearest metadata without resolving an ancestor self export",
+    "resolves an exported self subpath for a percent-named package",
+    "resolves normalized target \"./.\\t./example/array.cjs\" through both loaders",
+    "resolves normalized target \"./arr\\tay.cjs\" through both loaders",
+    "resolves normalized target \"./array.cjs \\t\" through both loaders",
+    "resolves normalized target \"./array.cjs?selected=one#fragment\" through both loaders",
+    "resolves normalized target [\"./.%\\n2e/outside.cjs\",\"./array.cjs\"] through both loaders",
+    "resolves normalized target [\"./.\\r./outside.cjs\",\"./array.cjs\"] through both loaders",
+    "resolves normalized target [\"./.\\t./outside.cjs\",\"./array.cjs\"] through both loaders",
+    "selects the same target as Node for {\"import\":[\"../outside.cjs\",\"./array.cjs\"]} array.cjs",
+    "selects the same target as Node for {\"import\":[42,\"./array.cjs\"]} array.cjs",
+    "selects the same target as Node for {\"import\":[null,\"./array.cjs\"]} array.cjs",
+    "still rejects nested scalar target 42 without a sibling fallback",
+    "still rejects nested scalar target false without a sibling fallback",
+    "stops self lookup at node_modules when the nearer package has no metadata",
+    "uses the legacy main for import with numeric root exports and no sibling",
+    "uses the legacy main for require with numeric root exports and no sibling"
+  ],
+  "tests/boundary/javascript/packageImportAliases.test.ts": [
+    "keeps URL decoding and missing-file failures after array selection",
+    "keeps empty, null, invalid, and unmatched array outcomes distinct",
+    "matches Node refusal for a missing key, explicit null, and reserved specifier",
+    "matches literal imports keys containing path-like bytes in both Node loaders",
+    "normalizes targets before package-root validation and array selection",
+    "preserves invalid, null, and unsupported-package outcomes in arrays",
+    "skips invalid parent, absolute, and URL targets before an exact fallback",
+    "still rejects unsafe selected targets for literal imports keys"
+  ],
+  "tests/boundary/mcp/androidLateCompletionMcp.test.ts": [
+    "retains completed Android Evidence through the MCP cancellation delivery path"
+  ],
+  "tests/boundary/mcp/cutterMcp.test.ts": [
+    "preserves live Cutter command Evidence and parity through the MCP boundary"
+  ],
+  "tests/boundary/mcp/electronFusesMcp.test.ts": [
+    "advertises fuse inspection and preserves unknown fuse bytes through MCP"
+  ],
+  "tests/boundary/mcp/fridaLifecycleMcp.test.ts": [
+    "awaits an admitted attach on server shutdown and retries failed native cleanup",
+    "does not dispatch a cancelled queued Frida load through MCP",
+    "does not dispatch a cancelled queued Frida resume through MCP",
+    "does not dispatch a cancelled queued Frida unload through MCP",
+    "drains remote discovery before shutdown and retains failed connection cleanup",
+    "keeps MCP load Evidence consistent with queued resume across settlement timing 0",
+    "keeps MCP load Evidence consistent with queued resume across settlement timing 1",
+    "keeps MCP load Evidence consistent with queued resume across settlement timing 2",
+    "keeps MCP load Evidence consistent with queued resume across settlement timing 3",
+    "keeps MCP load Evidence consistent with queued resume across settlement timing 4",
+    "keeps MCP load Evidence consistent with queued resume across settlement timing 8",
+    "releases only the new script when MCP cancellation arrives during native create",
+    "releases only the new script when MCP cancellation arrives during native load",
+    "retains the identity of a cancelled native create for an explicit MCP unload retry",
+    "retains the identity of a cancelled native load for an explicit MCP unload retry",
+    "settles cancelled native-load cleanup before a queued resume (unload failures: 0)",
+    "settles cancelled native-load cleanup before a queued resume (unload failures: 1)"
+  ],
+  "tests/boundary/mcp/ghidraStartupCancellationMcp.test.ts": [
+    "releases cancelled MCP startup caller 0 while its peer completes and stays warm",
+    "releases cancelled MCP startup caller 1 while its peer completes and stays warm"
+  ],
+  "tests/boundary/mcp/goBinaryMcp.test.ts": [
+    "advertises valid schemas and inspects real file bytes through MCP without an active target",
+    "distinguishes unsupported MZ carriers from malformed PE through MCP",
+    "preserves invalid embedded Go text bytes through MCP",
+    "reports native ENAMETOOLONG path failure as invalid selected-path input through Go MCP"
+  ],
+  "tests/boundary/mcp/javascriptAnalysisResources.test.ts": [
+    "retains every static finding through public module views when application expansion exceeds memory, then accepts more work"
+  ],
+  "tests/boundary/mcp/javascriptSourceSelection.test.ts": [
+    "resolves ESM whitespace specifiers through the public application tool"
+  ],
+  "tests/boundary/mcp/mcpDoctor.test.ts": [
+    "kills a child that misses the absolute startup deadline"
+  ],
+  "tests/boundary/mcp/reverseEngineeringEnvironmentMcp.test.ts": [
+    "prefers an explicit provider environment over the captured server environment",
+    "snapshots an explicit provider environment when the server is created",
+    "uses the captured server environment to resolve reverse-engineering providers"
+  ],
+  "tests/boundary/mcp/reverseEngineeringProviderEnvironmentMcp.test.ts": [
+    "uses the server-selected environment unless a provider environment overrides it"
+  ],
+  "tests/boundary/mcp/serverIdentity.test.ts": [
+    "exposes live identity, a stable catalog, and changing availability"
+  ],
+  "tests/boundary/mcp/serverLifecycleMcp.test.ts": [
+    "drains an admitted SQLite inspection before changing the session binding",
+    "records completed SQLite evidence before delivering a cleanup failure"
+  ],
+  "tests/boundary/native/pwntoolsArtifactCleanup.test.ts": [
+    "reports the read failure without stale incomplete-cleanup state when close retry succeeds",
+    "retains a persistent failed input descriptor and refuses the next acquisition"
+  ],
+  "tests/boundary/pcap/pcapCommand.test.ts": [
+    "does not spend the tool execution deadline preparing native ownership"
+  ],
+  "tests/boundary/process/androidAnalysisMcp.test.ts": [
+    "retains Android partial observations for empty handshake identity mismatch through MCP",
+    "retains Android partial observations for failed upstream reply through MCP",
+    "retains Android partial observations for transport error after successful replies through MCP"
+  ],
+  "tests/boundary/process/androidSearchEvidenceBudget.test.ts": [
+    "delivers bounded search_android_classes Evidence while retaining the complete inventory",
+    "keeps the complete search inventory inline without a retaining session"
+  ],
+  "tests/boundary/process/binarySessionCleanupRetry.test.ts": [
+    "reports a direct Hopper close failure and retries the retained owned process",
+    "retains Hopper process handles, private files, and lease until an actual session cleanup retry succeeds"
+  ],
+  "tests/boundary/process/electronLaunchRejections.test.ts": [
+    "re-raises a Playwright rejection when the launch succeeds",
+    "still fails at once on an unrelated rejection while a launch is pending",
+    "still fails on an unrelated Playwright rejection beside a failing launch's own orphans"
+  ],
+  "tests/boundary/process/jadxHashCleanup.test.ts": [
+    "keeps hash cleanup live until the exact retained descriptor closes",
+    "resolves descriptor uncertainty after an immediate owned hash close retry"
+  ],
+  "tests/boundary/process/javascriptSourceModes.test.ts": [
+    "accepts Node CommonJS syntax while retaining module errors: return;",
+    "accepts Node CommonJS syntax while retaining module errors: var await = 1; return;",
+    "accepts Node CommonJS syntax while retaining module errors: void new.target;",
+    "accepts Node CommonJS syntax while retaining module errors: with ({ value: 1 }) { void value; } void new.target;"
+  ],
+  "tests/boundary/process/ownedCommand.test.ts": [
+    "collects a real owned command and verifies its exit before returning diagnostics",
+    "streams stdout beyond the diagnostic budget into a sink and returns after it finishes"
+  ],
+  "tests/boundary/process/ownedDebuggerSession.test.ts": [
+    "retains an exited debugger when output settlement throws (POSIX Error) linux Error: pipe state unknown",
+    "retains an exited debugger when output settlement throws (POSIX non-Error) linux pipe state unknown /inherited output stream settlement could not be verified: pipe state unknown/",
+    "retains an exited debugger when output settlement throws (Windows Error) win32 Error: job state unknown",
+    "retains an exited debugger when output settlement throws (Windows non-Error) win32 job state unknown /Windows Job Object settlement could not be verified: job state unknown/",
+    "retains ownership after stop until inherited output writers close"
+  ],
+  "tests/boundary/process/packagePackIsolation.test.ts": [
+    "keeps npm pack output in the owned workspace when package validation fails"
+  ],
+  "tests/boundary/process/packageTarListing.test.ts": [
+    "accepts exact bridge entries from a CRLF tar listing and still rejects generated bytecode",
+    "accepts exact bridge entries from an LF tar listing",
+    "preserves a literal trailing CR in an LF-listed member"
+  ],
+  "tests/boundary/process/processCli.test.ts": [
+    "captures the minimal executable-and-arguments scenario",
+    "feeds the documented JSON capture into the comparison CLI"
+  ],
+  "tests/boundary/process/providerProcess.test.ts": [
+    "allocates a private runtime root and removes it idempotently",
+    "spawns an owned process group with exact identity coordinates"
+  ],
+  "tests/boundary/process/runtimeBundle.test.ts": [
+    "rejects module-relative resolution and unknown import metadata during the build"
+  ],
+  "tests/boundary/providers/CutterBridgeCapacity.test.ts": [
+    "bounds simultaneous socket probes while examining every admitted descriptor",
+    "rejects expanded authenticated frames before dispatch and retains no cleanup owner",
+    "reports descriptor capacity without opening candidates or claiming no live sessions"
+  ],
+  "tests/boundary/providers/CutterBridgeClient.test.ts": [
+    "accepts only the exact completed-command receipt from status",
+    "covers command response defaults, failures, malformed data, and generation changes",
+    "handles an abort detected immediately after listener registration",
+    "handles malformed framed JSON and fragmented response frames",
+    "rejects bridge frames that exceed the bounded response size",
+    "rejects stale sessions and preserves failures before command dispatch",
+    "reports discovery failure when reading bridge directory entries fails",
+    "reports unavailable directories and ignores a non-directory bridge path",
+    "returns unknown completion for invalid JSON and rejects a pre-aborted request",
+    "supports platforms without O_NOFOLLOW using the documented read-only flags",
+    "times out a dispatched bridge request without claiming completion",
+    "uses descriptor status values when a live bridge omits optional fields",
+    "uses the packaged Windows authority for descriptor verification and reads",
+    "uses the selected caller home for tilde and default bridge discovery"
+  ],
+  "tests/boundary/providers/GdbCommandQueue.test.ts": [
+    "bounds active and queued GDB commands, including cancelled placeholders"
+  ],
+  "tests/boundary/providers/GdbSessionManagerCoverage.test.ts": [
+    "cancels immediately after the startup prompt before sending configuration commands",
+    "cancels startup when aborted during the final readiness drain",
+    "caps the number of MI records retained for a single command",
+    "closes with unknown target state when MI cannot confirm thread groups",
+    "confirms no inferior before the shared stop helper signals GDB",
+    "converts non-Error queue cancellation failures into a tagged error",
+    "correlates command output records and reports invalid or cancelled requests",
+    "detaches a live inferior before the shared stop helper signals GDB",
+    "does not detach a live inferior when no durable TTY was selected",
+    "drains active GDB commands and rejects new commands before closeAll cleanup",
+    "enforces the per-session queue capacity while a GDB command is active",
+    "handles a provider with no MI stdout stream as a startup timeout",
+    "marks retained exit output as truncated when command records exceed the byte cap",
+    "preserves a command timeout when stopping the owned process rejects",
+    "preserves a timeout while startup waits for the automatic-loading response",
+    "refuses to close a session while GDB reports a live target",
+    "rejects a partial MI line that exceeds the protocol limit",
+    "rejects a truncated inferior TTY readback before publishing the session",
+    "rejects an inferior TTY when GDB does not confirm the setting command",
+    "rejects inferior TTY configuration when GDB reports a different terminal",
+    "reports an MI stream failure when the child has no stdin pipe",
+    "reports none observed when the inferior disappears before detach",
+    "retains GDB ownership when MI does not confirm target detachment",
+    "retains a session when closing cannot confirm the debugger process stopped",
+    "retains an exited GDB session when no inferior identity was captured",
+    "retains ownership and sends no signal when MI state is saturated or unknown",
+    "retains ownership when GDB startup fails before its prompt and stop is incomplete",
+    "retains ownership when recursive MI cannot establish one safe inventory: duplicate inventory with a live PID after an empty list groups=[],groups=[{id=\"i1\",pid=\"123\"}]",
+    "retains ownership when recursive MI cannot establish one safe inventory: malformed leading result extra=},groups=[]",
+    "retains ownership when recursive MI cannot establish one safe inventory: malformed recursive list groups=[}]",
+    "retains ownership when recursive MI cannot establish one safe inventory: malformed result suffix groups=[],extra=}",
+    "retains ownership without signaling when recursive MI reports multiple inferiors",
+    "retains split MI records while bounding recent and command output",
+    "retains startup timeout without partial evidence when cleanup is uncertain",
+    "retains unknown inferior ownership after GDB exits during a command",
+    "retries MI2 after an MI3 process exits before its startup prompt",
+    "returns cancellation when GDB startup is aborted after spawn",
+    "returns startup timeout when the MI prompt never arrives",
+    "stops the GDB session when a complete MI record exceeds the protocol limit",
+    "truncates retained MI records on UTF-8 code point boundaries"
+  ],
+  "tests/boundary/providers/GdbSessionManagers.test.ts": [
+    "does not start GDB when it rejects the required auto-load setting",
+    "runs a correlated GDB MI command, reports status, and closes its owned process"
+  ],
+  "tests/boundary/providers/adb/adbBugreportPublication.test.ts": [
+    "keeps a bugreport error unresolved until digest and staging owners recover",
+    "preserves the primary protocol failure when staging cleanup also fails",
+    "provider close resolves the exact bugreport digest cleanup error",
+    "refuses an archive reported outside the owned staging directory",
+    "returns staging allocation failures without invoking device collection"
+  ],
+  "tests/boundary/providers/adb/adbInputSnapshotOwnership.test.ts": [
+    "cancels after the input snapshot copy and before contacting the device",
+    "closes retained snapshot handles before removing their runtime root",
+    "package pull retains digests through close or cancellation (false)",
+    "package pull retains digests through close or cancellation (true)",
+    "preserves cancellation and push receipt during final snapshot cleanup (cleanup failure: false)",
+    "preserves cancellation and push receipt during final snapshot cleanup (cleanup failure: true)",
+    "preserves the cancellation chain when immediate snapshot cleanup recovers",
+    "preserves the read failure chain when immediate snapshot cleanup recovers",
+    "pull preserves the digest outcome through descriptor finalization (0)",
+    "pull preserves the digest outcome through descriptor finalization (1)",
+    "pull preserves the digest outcome through descriptor finalization (2)",
+    "pull preserves the digest outcome through descriptor finalization (3)",
+    "reports input snapshot capacity failures before contacting the device",
+    "resolves package-directory cleanup on the originating pull error",
+    "retains failed snapshot cleanup ownership and retries it on close",
+    "retries the same retained snapshot owner before removing its root"
+  ],
+  "tests/boundary/providers/adb/adbScreenPublicationCancellation.test.ts": [
+    "cancellation after a failed hard link but before exclusive creation does not publish",
+    "closes and retains ownership when exclusive output stat fails",
+    "does not replace a destination created after the initial existence check",
+    "keeps a sticky publication close failure until provider close retries its owner",
+    "preserves the completed receipt after handle recovery with root failure false",
+    "preserves the completed receipt after handle recovery with root failure true",
+    "publishes screen captures when the output filesystem does not support hard links",
+    "resolves a staged screen error after 1 close faults",
+    "resolves a staged screen error after 2 close faults",
+    "resolves an admission cleanup error when the retained runtime-root lease closes",
+    "resolves the provider close aggregate after its failed root owner recovers",
+    "retains a receipt when cancellation arrives after exclusive output creation",
+    "retains incomplete cleanup on a cancelled capture while keeping cancellation typed",
+    "retains the committed receipt and cleanup observation when cancellation races with root cleanup",
+    "waits for descriptor close before rolling back an incomplete exclusive output"
+  ],
+  "tests/boundary/providers/android/androidLateCompletion.test.ts": [
+    "retains inspect_android_class Evidence when cancellation follows provider completion",
+    "retains inspect_android_method Evidence when cancellation follows provider completion",
+    "retains inspect_android_package Evidence when cancellation follows provider completion",
+    "retains search_android_classes Evidence when cancellation follows provider completion",
+    "retains trace_android_references Evidence when cancellation follows provider completion"
+  ],
+  "tests/boundary/providers/artifactReadCleanupRetry.test.ts": [
+    "go provider retains a failed descriptor close and retries that owner before the next read",
+    "pe provider retains a failed descriptor close and retries that owner before the next read"
+  ],
+  "tests/boundary/providers/cutterBridgeProducer.test.ts": [
+    "authenticates bridge peers before payloads and permits status recovery after a poisoned UI timeout",
+    "preserves caller A service cleanup proof after caller B acknowledges A",
+    "recovers orphan receipts across more than 64 fresh CLI clients",
+    "retains a receipt when an ACK reply omits its acknowledgement field",
+    "retains failed receipt acknowledgements and retries before another command",
+    "round-trips authenticated status and command bytes across the Python producer boundary"
+  ],
+  "tests/boundary/providers/ghidra/ghidraClient.test.ts": [
+    "accepts an owned-socket result above the former 64 MiB ceiling",
+    "applies one startup deadline and removes the private runtime",
+    "bounds long-lived launcher diagnostics without interrupting the session",
+    "cancels queued work and stops active provider work on cancellation",
+    "cancels startup waiter 0 without interrupting its peer",
+    "cancels startup waiter 1 without interrupting its peer",
+    "cleans up when the final waiter cancels during lineage observation",
+    "completes an exact, fragmented post-analysis handshake",
+    "completes the same authenticated handshake over loopback TCP",
+    "correlates an admitted inventory request after startup",
+    "does not start cold and preserves the normal result once ready",
+    "exposes the immutable import snapshot only during the live session",
+    "fails an established function request when the provider process exits",
+    "hashes complete private snapshots with bounded chunks and abortable reads",
+    "keeps cleanup best effort for invalid_shutdown_ack",
+    "keeps cleanup best effort for shutdown_error",
+    "keeps earlier successful-operation OOME in history but out of later failure evidence",
+    "keeps one shared startup despite a failed progress sink and stops reports after readiness",
+    "logs an unexpected shutdown rejection and still removes its process and runtime",
+    "makes double close idempotent and releases its process runtime",
+    "preserves an authenticated operation failure code and diagnostics",
+    "preserves an expired ping deadline through the request queue",
+    "preserves failed startup and retained Ghidra cleanup capabilities until a verified retry",
+    "projects analysis_timeout startup as analysis_timeout",
+    "projects contradictory startup as protocol",
+    "projects future_id startup as protocol",
+    "projects malformed startup as protocol",
+    "projects wrong_identity startup as protocol",
+    "reconnects a dropped preauthentication loopback socket within the original startup deadline",
+    "redacts authentication after failed startup cleanup and retry",
+    "reports owner closure to live startup callers without cancelling their signals",
+    "reports unknown startup work and stops notifications when cancellation releases the process",
+    "retains a snapshot descriptor whose close failed until session cleanup succeeds",
+    "retains actionable runtime coordinates after successful cleanup",
+    "retains an unexpected wire rejection and continues serial requests",
+    "retains startup failure and cleans up when lineage observation rejects"
+  ],
+  "tests/boundary/providers/ghidra/ghidraLauncher.test.ts": [
+    "keeps authority in a private descriptor and isolates Ghidra state through the batch launcher"
+  ],
+  "tests/boundary/providers/hopper/bridgeLauncher.test.ts": [
+    "rejects launcher bytes changed since publisher verification before executing them"
+  ],
+  "tests/boundary/providers/hopper/hopperBridgeFacade.test.ts": [
+    "imports without Hopper globals and gates exhaustive work during analysis"
+  ],
+  "tests/boundary/providers/hopper/hopperClient.cleanup.test.ts": [
+    "exits an IPC-backed fixture cleanly after cancelling active work",
+    "kills only its owned Hopper group and emits sanitized shutdown coordinates"
+  ],
+  "tests/boundary/providers/hopper/hopperClient.cleanupRetry.test.ts": [
+    "checks document closure for a external-application provider with a cancelled request",
+    "checks document closure for a external-application provider with a waiting request",
+    "keeps an unconfirmed external document across closes when helper ownership is false",
+    "keeps an unconfirmed external document across closes when helper ownership is true"
+  ],
+  "tests/boundary/providers/hopper/hopperClient.handshakeRecovery.test.ts": [
+    "preserves launcher diagnostics after a health deadline and reauthenticates for cleanup",
+    "recovers an application exit after the first valid handshake occurs during cleanup"
+  ],
+  "tests/boundary/providers/hopper/hopperClient.helperFailure.test.ts": [
+    "does not equate an owned native helper exit with an external GUI exit",
+    "reports a failed non-owning launcher signal without waiting for bridge timeout or inventing a GUI exit"
+  ],
+  "tests/boundary/providers/hopper/hopperClient.protocol.test.ts": [
+    "projects malformed as HopperProtocolError",
+    "projects malformed_event as HopperProtocolError",
+    "projects wrong_event_id as HopperProtocolError",
+    "projects wrong_id as HopperProtocolError"
+  ],
+  "tests/boundary/providers/hopper/hopperClient.startupFailures.test.ts": [
+    "retries after cancellation before the launcher starts"
+  ],
+  "tests/boundary/providers/hopper/linuxPrivateDisplay.test.ts": [
+    "kills the owned probe group when its absolute deadline expires",
+    "reports missing helper dependencies without exposing raw stderr"
+  ],
+  "tests/boundary/providers/ida/verifierObservations.test.ts": [
+    "checks real-verifier values for [ \"find_regex\", \"xrefs_to\" ] / omitted more=false / oracles=false",
+    "checks real-verifier values for [] / omitted more=false / oracles=true"
+  ],
+  "tests/boundary/providers/jebMcpCatalog.test.ts": [
+    "reads every JEB catalog page and refreshes the connected engine catalog"
+  ],
+  "tests/boundary/providers/kuna/kunaReferenceFiles.test.ts": [
+    "admits the edge index while edges stream and refuses it under low headroom"
+  ],
+  "tests/boundary/providers/kuna/kunaStringInventory.test.ts": [
+    "drops ignored strings unassembled, without sampling headroom",
+    "refuses a kept string while it is assembled, before Kuna finishes it",
+    "refuses retention beyond live heap headroom and stops the scan"
+  ],
+  "tests/boundary/providers/native/artifactProvider.cleanupRetry.test.ts": [
+    "retains a tree whose setup failed after root identity was captured"
+  ],
+  "tests/boundary/providers/native/nativeProvider.test.ts": [
+    "projects captured diagnostics from a failed native provider command",
+    "retains output written before cancellation and reaps the stalled command",
+    "retries discovery and resamples the executable after its tool path is replaced"
+  ],
+  "tests/boundary/providers/native/nativeSignatureTargetBinding.test.ts": [
+    "preserves permission denial during final version lookup",
+    "preserves read permission denial before commands"
+  ],
+  "tests/boundary/signals/recordingProvider.test.ts": [
+    "preserves malformed-copy failure and releases the process and snapshot AnalysisArtifactChangedError"
+  ],
+  "tests/boundary/sqlite/sqliteDatabaseBusy.test.ts": [
+    "names the WAL when another process holds that member of the file set",
+    "reports a database that another Windows process holds without sharing as retryable",
+    "reports a selected database held by another process as retryable and unavailable"
+  ],
+  "tests/boundary/sqlite/sqliteDatabaseCleanup.test.ts": [
+    "awaits shared shutdown cleanup and retains failures for a later close",
+    "keeps a retained worker owner when the worker fails and its cleanup is unresolved",
+    "retains failed snapshot owners and blocks new acquisition until retry succeeds",
+    "retains the snapshot until a failed worker cleanup owner can be stopped",
+    "waits for concurrent acquisitions and releases only owners whose cleanup succeeds"
+  ],
+  "tests/boundary/sqlite/sqliteDatabaseDescriptorCleanup.test.ts": [
+    "keeps an invalidated descriptor close failure unconfirmed across retries",
+    "preserves EACCES read diagnostics alongside a failed descriptor close",
+    "preserves EPERM read diagnostics alongside a failed descriptor close",
+    "preserves caller cancellation alongside a failed WAL descriptor close",
+    "preserves caller cancellation alongside a failed database descriptor close",
+    "preserves caller cancellation alongside a failed journal descriptor close",
+    "retains a failed WAL descriptor and retries it at shutdown",
+    "retains a failed database descriptor and retries it at shutdown",
+    "retains a failed journal descriptor and retries it at shutdown",
+    "retains cancellation diagnostics and the interrupt exit code through CLI shutdown",
+    "retains reply-read cancellation and retries the failed reply descriptor close",
+    "retains the original EACCES inspection diagnostics through CLI shutdown",
+    "retains the original EPERM inspection diagnostics through CLI shutdown",
+    "retries source cleanup before admitting another snapshot"
+  ],
+  "tests/boundary/sqlite/sqliteDatabaseInspection.test.ts": [
+    "accounts for JSON escape expansion of a stored declaration in the reply limit",
+    "attributes triggers declared with another ASCII case to the stored table name",
+    "counts schema names once when enforcing the complete reply budget",
+    "inspects a large schema identifier without expanding a native sort record",
+    "inspects columns when a table shadows the table-valued PRAGMA name",
+    "inspects columns when a view shadows the table-valued PRAGMA name",
+    "preserves a 6 MiB schema statement without expanding its native record",
+    "preserves a 9 MiB schema statement without expanding its native record",
+    "preserves exact UTF-16be schema text when decoding native bytes",
+    "preserves exact UTF-16le schema text when decoding native bytes",
+    "preserves exact UTF-8 schema text when decoding native bytes",
+    "preserves negative-zero REAL values through JSON separately from positive and integer zero",
+    "refuses a differently cased table before expanding declarations under another spelling",
+    "refuses an exact view before expanding declarations under another spelling",
+    "refuses possible shadow tables when their virtual module is unavailable",
+    "rejects an oversized generated cell through SQLite's native value limit",
+    "rejects malformed schema bytes instead of returning replacement text",
+    "rejects the combined representation of individually small generated cells",
+    "reports additional rows without expanding an unselected generated cell",
+    "samples above 1000 rows and safe integer limits within the byte budget"
+  ],
+  "tests/boundary/sqlite/sqliteDatabaseProvider.test.ts": [
+    "cancels an acquired SQLite worker and removes its private snapshot",
+    "does not execute views when selecting rows",
+    "honors a cancelled caller before opening the database",
+    "inspects committed WAL schema and rows while preserving every source artifact",
+    "preserves SQLite integer, binary, nonfinite, null, and text byte values",
+    "preserves UTF-16le text, a leading BOM and empty table selection",
+    "preserves UTF-8 text, a leading BOM and empty table selection",
+    "preserves completed native-worker observations across cleanup-failure",
+    "preserves completed native-worker observations across late-cancellation",
+    "preserves the primary result for a malformed reply while retaining unconfirmed cleanup ownership",
+    "rejects an actual open rollback transaction without changing its journal",
+    "removes an acquired private root when cancelled before snapshot creation",
+    "selects an exact quoted table and refuses to execute table input as SQL"
+  ],
+  "tests/boundary/sqlite/sqliteDatabaseSnapshot.test.ts": [
+    "inspects a committed PERSIST journal without modifying the source file set",
+    "inspects a committed TRUNCATE journal without modifying the source file set",
+    "refuses an activated journal even when filesystem metadata cannot distinguish the write",
+    "refuses an active journal even before SQLite writes its magic header",
+    "refuses an incomplete zeroed journal header",
+    "rejects a cold journal changed during database acquisition: activate",
+    "rejects a cold journal changed during database acquisition: remove",
+    "rejects a cold journal changed during database acquisition: replace",
+    "rejects a database changed after its copy but before WAL acquisition",
+    "rejects a previously absent -journal created during database acquisition",
+    "rejects a previously absent -wal created during database acquisition",
+    "retains changed-evidence semantics when a sidecar path failure follows database removal",
+    "treats ELOOP during file acquisition as changed evidence, not an invalid input path",
+    "treats ENAMETOOLONG during file acquisition as changed evidence, not an invalid input path"
+  ],
+  "tests/composition/reverseEngineering.test.ts": [
+    "runs Rizin with user scripts suppressed while retaining plugins and preserves nonzero output",
+    "uses compatible local DWARF link flags and disables debuginfod through the environment",
+    "uses one selected environment snapshot for provider selection and execution"
+  ],
+  "tests/conformance/providers/ghidra/realGhidraWindowsWorkflow.test.ts": [
+    "runs only default-branch code on the fixed self-hosted environment"
+  ],
+  "tests/evaluation/package/nativeAotDiagnostics.test.ts": [
+    "redacts authenticated feed URLs from the uncaught restore diagnostic"
+  ],
+  "tests/process-global/browserScenarioCleanup.test.ts": [
+    "retries a late Playwright open after cancellation before accepting another capture"
+  ],
+  "tests/process-global/runnerCancellation.test.ts": [
+    "keeps the lock after leader exit and cancels a surviving grandchild by message or disconnect"
+  ],
+  "tests/process-global/setupConfigurationRollback.test.ts": [
+    "preserves the first backup and reports a verified backup of the current original",
+    "reports a failed config rollback and retains its backup path",
+    "reports first-run rollback removal failure without a backup",
+    "retains readback cleanup ownership when rollback also fails"
+  ],
+  "tests/process-global/windowsOwnedCommand.test.ts": [
+    "keeps native Job Object ownership after the leader exits",
+    "retries thrown and false cleanup results, then preserves the first error"
+  ]
+}
