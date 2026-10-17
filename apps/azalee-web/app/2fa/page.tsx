@@ -10,7 +10,8 @@
  */
 import { Skeleton, TwoFactorChallenge } from "@rosegriffon/ui";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useCallback } from "react";
+import { safeReturnUrl } from "@rosegriffon/auth/redirect";
 
 import { authClient } from "@/lib/auth-client";
 
@@ -24,16 +25,17 @@ function Verification() {
   // est exactement ce qu'on utilise pour faire atterrir quelqu'un sur un faux
   // site juste après qu'il a prouvé son identité.
   const demande = parametres.get("callbackURL");
-  const destination = demande && demande.startsWith("/") && !demande.startsWith("//") ? demande : "/";
+  const destination = safeReturnUrl(demande, "/");
+  const onSucces = useCallback(() => {
+    router.push(destination);
+    router.refresh();
+  }, [router, destination]);
 
   return (
     <main className="flex min-h-[70vh] items-center justify-center px-4 py-12">
       <TwoFactorChallenge
         hrefAide="/contact"
-        onSucces={() => {
-          router.push(destination);
-          router.refresh();
-        }}
+        onSucces={onSucces}
         verifierCode={async (code, appareilDeConfiance) => {
           const { error } = await authClient.twoFactor.verifyTotp({
             code,
@@ -43,8 +45,10 @@ function Verification() {
             throw new Error(error.message ?? "Code refusé.");
           }
         }}
-        verifierCodeDeSecours={async code => {
-          const { error } = await authClient.twoFactor.verifyBackupCode({ code });
+        verifierCodeDeSecours={async (code) => {
+          const { error } = await authClient.twoFactor.verifyBackupCode({
+            code,
+          });
           if (error) {
             throw new Error(error.message ?? "Code de secours refusé.");
           }
