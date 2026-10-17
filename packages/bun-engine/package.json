@@ -5,13 +5,19 @@
   "license": "MIT",
   "bin": {
     "bep": "./src/bep.ts",
-    "bun-engine": "./src/cli.ts"
+    "bun-engine": "./src/cli.ts",
+    "bun-engine-formats": "./src/formats/main.ts"
+  },
+  "exports": {
+    ".": "./src/plugins/index.ts",
+    "./formats": "./src/formats/index.ts"
   },
   "type": "module",
   "scripts": {
     "build": "bun run ./src/cli.ts build",
     "compile": "bun run ./src/cli.ts compile",
     "bep:compile": "bun run ./src/bep-build.ts",
+    "formats:compile": "bun run ./src/formats/main.ts compile",
     "test": "bun test ./test",
     "workspace:test": "bun run ./src/cli.ts test",
     "references": "bun run ./src/cli.ts references",

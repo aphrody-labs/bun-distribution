@@ -1,0 +1,2954 @@
+{
+  "schemaVersion": 1,
+  "generated": "2026-10-17",
+  "policy": {
+    "payloads": "Metadata only. No firmware, BIOS, key or ROM bytes and no links to proprietary payloads. Hashes identify user-supplied dumps imported with `bep firmware:import`.",
+    "need": {
+      "required": "emulator refuses to boot without it",
+      "optional": "boot or feature works without it (HLE or skip)",
+      "lle-only": "only needed by a low-level emulation path",
+      "not-used": "documented for identification; emulators HLE it",
+      "required-for-encrypted-media": "only needed to decrypt retail containers",
+      "required-for-addon": "only needed by the add-on hardware named in the role"
+    },
+    "vendoredStates": {
+      "in-tree": "bytes or source are present in this checkout",
+      "pinned-submodule-not-checked-out": "the gitlink is pinned but not initialized in this checkout",
+      "not-vendored": "upstream reference only"
+    }
+  },
+  "hashSources": [
+    {
+      "id": "libretro-system-dat",
+      "url": "https://github.com/libretro/libretro-database/blob/f206bf65f05a783a2108d1be96ca237d21d68dcf/dat/System.dat",
+      "note": "names, sizes, CRC32, MD5, SHA-1"
+    },
+    {
+      "id": "mame-mdconsole",
+      "url": "https://github.com/mamedev/mame/blob/master/src/mame/sega/mdconsole.cpp",
+      "note": "32X BIOS CRC32/SHA-1"
+    },
+    {
+      "id": "xemu-required-files",
+      "url": "https://xemu.app/docs/required-files/",
+      "note": "MCPX MD5"
+    }
+  ],
+  "builtOn": [
+    "docs/bun-engine/CONSOLE-PROVENANCE.md (payload policy, selected owners)",
+    "docs/bun-engine/CONSOLE-PLUGINS.md (firmwarePolicy values)",
+    "docs/bun-engine/RUST-EMULATORS.md (pinned Rust owners)",
+    "docs/bun-engine/PACKAGE-MANAGER.md (bep firmware store)",
+    "packages/iecode-docs/emulation/MULTICONSOLE-RUST-MIGRATION.md (3DS user-supplied inputs, IECODE_GC_IPL_HLE)",
+    "packages/iecode-docs/architecture/EMULATION-PLATFORM-DECISION.md",
+    "packages/iecode-docs/.agents/skills/dust-cli/SKILL.md (Dust direct boot without BIOS)",
+    "packages/iecode-docs/ruzu/quickstart.md (Switch keys/firmware)",
+    "packages/bun-engine/src/firmware/{catalog,import}.ts, packages/bun-engine/src/nds/loader.ts"
+  ],
+  "consoles": [
+    {
+      "id": "nintendo-nes",
+      "name": "Nintendo Entertainment System / Famicom (+ Famicom Disk System)",
+      "manifestConsole": "nintendo-nes",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "tetanes",
+          "path": "vendor/tetanes",
+          "firmware": "none for cartridges; FDS mapper 20 is only named in tetanes-core/src/cart.rs"
+        },
+        {
+          "id": "bun-engine-core::machine::nes",
+          "path": "crates/bun-engine-core/src/machine/nes.rs",
+          "firmware": "none"
+        },
+        {
+          "id": "jgenesis nes-core",
+          "path": "vendor/jgenesis/backend/nes-core",
+          "firmware": "none"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "disksys.rom",
+          "size": 8192,
+          "crc32": "5e607dcf",
+          "sha1": "57fe1bdee955bb48d357e463ccbf129496930b62",
+          "md5": "ca30b50f880eb660a320674ed365ef7a",
+          "region": "NTSC-J",
+          "role": "FDS RAM-adapter BIOS (8 KiB PRG): disk I/O, VRAM/joypad helpers, boot animation",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "opendisksysrom",
+          "name": "OpenDiskSysROM (continues FreeDiskSysROM)",
+          "replaces": ["disksys.rom"],
+          "kind": "open-rom",
+          "license": "LGPL-3.0",
+          "source": "https://github.com/RetrolariumLab/OpenDiskSysROM",
+          "coverage": "Adds disk I/O and boot loader to FreeDiskSysROM; aims to run all published FDS software (young project, verify per title)",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        },
+        {
+          "id": "freedisksysrom",
+          "name": "FreeDiskSysROM",
+          "replaces": ["disksys.rom"],
+          "kind": "partial-open-rom",
+          "license": "LGPL-3.0",
+          "source": "https://github.com/jamesathey/FreeDiskSysROM",
+          "coverage": "Incomplete upstream (no changes since 2020)",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        }
+      ],
+      "notes": [
+        "Cartridge NES has no boot ROM. NstDatabase.xml in System.dat is a Nestopia game database, not firmware."
+      ]
+    },
+    {
+      "id": "nintendo-snes",
+      "name": "Super Nintendo / Super Famicom",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "jgenesis snes-core",
+          "path": "vendor/jgenesis/backend/snes-core",
+          "firmware": "SPC700 64-byte IPL embedded from fullsnes documentation; coprocessor program ROMs per game"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "spc700 IPL (internal)",
+          "size": 64,
+          "role": "SPC700 audio CPU boot ROM; transcribed from fullsnes and embedded by every emulator",
+          "need": "not-used",
+          "hashSource": "vendor/jgenesis/backend/snes-core/src/apu/bootrom.rs (from problemkaputt fullsnes)"
+        },
+        {
+          "file": "cx4.data.rom",
+          "size": 3072,
+          "crc32": "b6e76a6a",
+          "sha1": "a002f4efba42775a31185d443f3ed1790b0e949a",
+          "md5": "037ac4296b6b6a5c47c440188d3c72e3",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "dsp1.data.rom",
+          "size": 2048,
+          "crc32": "c8347cbd",
+          "sha1": "589c158685fe3cf88c7ca77cb6083f0e4de9c7c3",
+          "md5": "3d81b45fa0c2aa8b852dfb1ece7c0971",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "dsp1.program.rom",
+          "size": 6144,
+          "crc32": "db9a4c92",
+          "sha1": "c5d283604beebb3d832f15a0b3fc60d10dd4bddc",
+          "md5": "ae209fbe789fbf11a48aea5ab1197321",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "dsp1b.data.rom",
+          "size": 2048,
+          "crc32": "37a252c6",
+          "sha1": "19d5e822fe15ee6942e9921c3d8275a761a969df",
+          "md5": "1e3f568634a7d8284020dddc0ae905bc",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "dsp1b.program.rom",
+          "size": 6144,
+          "crc32": "66a73998",
+          "sha1": "03c6c0bdb40846c42aeff6b716e1ea0e001c3ae3",
+          "md5": "d10f446888e097cbf500f3f663cf4f6d",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "dsp2.data.rom",
+          "size": 2048,
+          "crc32": "b3893c70",
+          "sha1": "aed9167cc2897cd8d0432f0b8f713fabbc48f5c4",
+          "md5": "e9417e29223b139c3c4b635a2a3b8744",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "dsp2.program.rom",
+          "size": 6144,
+          "crc32": "0c1cf838",
+          "sha1": "51a274955ef493cfcf2efad7e2ee54738c81eb15",
+          "md5": "aa6e5922a3ed5ded54f24247c11143c5",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "dsp3.data.rom",
+          "size": 2048,
+          "crc32": "8b41a2bd",
+          "sha1": "e7ec3da203a4edba2b17c06d9384787304a025a0",
+          "md5": "0a81210c0a940b997dd9843281008ee6",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "dsp3.program.rom",
+          "size": 6144,
+          "crc32": "f29be51c",
+          "sha1": "11b7ba3501a8542af4cdfdbd1c9702ae0a0e3fae",
+          "md5": "d99ca4562818d49cee1f242705bba6f8",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "dsp4.data.rom",
+          "size": 2048,
+          "crc32": "efa8b9b2",
+          "sha1": "8f2ffb9c1702aa2f76191e98f3fef43f73e5aab7",
+          "md5": "ee4990879eb68e3cbca239c5bc20303d",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "dsp4.program.rom",
+          "size": 6144,
+          "crc32": "14b77ae3",
+          "sha1": "1abee528a59238fd5668fdcffd598d079cb056c2",
+          "md5": "a151023b948b90ffc23a5b594bb6fef2",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "st010.data.rom",
+          "size": 4096,
+          "crc32": "216081b2",
+          "sha1": "bd116501ec41c438fff210fd03233c6c9d15a514",
+          "md5": "254d70762b6f59f99c27c395aba7d07d",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "st010.program.rom",
+          "size": 49152,
+          "crc32": "691cbb4f",
+          "sha1": "2d0f34074ed3c6dfd61f767ee8b18e699b9769ac",
+          "md5": "1d70019179a59a566a0bb5d3f2845544",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "st011.data.rom",
+          "size": 4096,
+          "crc32": "803256a7",
+          "sha1": "798ab84110ca93a6e73a540f4146d21f8d9e1442",
+          "md5": "10bd3f4aa949737ab9836512c35bcc29",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "st011.program.rom",
+          "size": 49152,
+          "crc32": "a741e9fb",
+          "sha1": "375eca92592621e83881f3a9d7fd5ea3e5b306dc",
+          "md5": "95222ebf1c0c2990bcf25db43743f032",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "st018.data.rom",
+          "size": 32768,
+          "crc32": "b5255459",
+          "sha1": "b19c0f8f207d62fdabf4bf71442826063bccc626",
+          "md5": "49c898b60d0f15e90d0ba780dd12f366",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "st018.program.rom",
+          "size": 131072,
+          "crc32": "f73d5e10",
+          "sha1": "388e3721b94cd074d6ba0eca8616523d2118a6c3",
+          "md5": "dda40ccd57390c96e49d30a041f9a9e7",
+          "region": "all",
+          "role": "Enhancement-chip internal ROM (NEC uPD7725 DSP-n / Seta ST01x / Capcom CX4) needed by LLE coprocessor emulation for the few carts using it",
+          "need": "lle-only",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "SGB1.sfc",
+          "size": 262144,
+          "crc32": "8a4a174f",
+          "sha1": "973e10840db683cf3faf61bd443090786b3a9f04",
+          "md5": "b15ddb15721c657d82c5bab6db982ee9",
+          "region": "all",
+          "role": "Super Game Boy SNES-side program ROM",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["sgb1.program.rom", "SGB1.sfc/program.rom"]
+        },
+        {
+          "file": "SGB2.sfc",
+          "size": 524288,
+          "crc32": "cb176e45",
+          "sha1": "e5b2922ca137051059e4269b236d07a22c07bc84",
+          "md5": "8ecd73eb4edf7ed7e81aef1be80031d5",
+          "region": "all",
+          "role": "Super Game Boy SNES-side program ROM",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["sgb2.program.rom", "SGB2.sfc/program.rom"]
+        },
+        {
+          "file": "BS-X.bin",
+          "size": 1048576,
+          "crc32": "f51f07a0",
+          "sha1": "604556b2e62860af18db5a77f2956ebc75450020",
+          "md5": "fed4d8242cfbed61343d53d48432aced",
+          "region": "NTSC-J",
+          "role": "BS-X Satellaview cartridge BIOS",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "STBIOS.bin",
+          "size": 262144,
+          "crc32": "9b4ca911",
+          "sha1": "ef86ea192eed03d5c413fdbbfd46043be1d7a127",
+          "md5": "d3a44ba7d42a74d3ac58cb9c14c6a5ca",
+          "region": "NTSC-J",
+          "role": "Sufami Turbo base cartridge BIOS",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "snes-coprocessor-hle",
+          "name": "High-level DSP-1/2/3/4, ST010/011, CX4 implementations (snes9x, older bsnes)",
+          "replaces": [
+            "dsp1*.rom",
+            "dsp2*.rom",
+            "dsp3*.rom",
+            "dsp4*.rom",
+            "st010*.rom",
+            "st011*.rom",
+            "cx4.data.rom"
+          ],
+          "kind": "hle",
+          "license": "snes9x non-commercial license / GPL-3.0 (bsnes historic) - check per implementation",
+          "source": "https://github.com/snes9xgit/snes9x",
+          "coverage": "Most enhancement-chip titles; ST018 has no HLE",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        }
+      ]
+    },
+    {
+      "id": "nintendo-game-boy",
+      "name": "Game Boy / Game Boy Color / Super Game Boy",
+      "manifestConsole": "nintendo-game-boy",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "retroboy",
+          "path": "vendor/retroboy",
+          "firmware": "embeds Bootix (DMG) and a customized SameBoy CGB boot ROM in src/bios.rs"
+        },
+        {
+          "id": "jgenesis gb-core",
+          "path": "vendor/jgenesis/backend/gb-core",
+          "firmware": "optional boot ROM"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "dmg_boot.bin",
+          "size": 256,
+          "crc32": "59c8598e",
+          "sha1": "4ed31ec6b0b175bb109c0eb5fd3d193da823339f",
+          "md5": "32fbbd84168d3482956eb3c5051637f5",
+          "region": "all",
+          "role": "DMG boot ROM: logo scroll, Nintendo-logo check, hands off at 0x100",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["gb_bios.bin", "dmg_rom.bin"]
+        },
+        {
+          "file": "cgb_boot.bin",
+          "size": 2304,
+          "crc32": "41884e46",
+          "sha1": "1293d68bf9643bc4f36954c1e80e38f39864528d",
+          "md5": "dbfce9db9deaa2567f6a84fde55f9680",
+          "region": "all",
+          "role": "CGB boot ROM: logo, palette selection for DMG games, header checks",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["gbc_bios.bin", "cgb_bios.bin"]
+        },
+        {
+          "file": "sgb2_bios.bin",
+          "size": 256,
+          "crc32": "53d0dd63",
+          "sha1": "93407ea10d2f30ab96a314d8eca44fe160aea734",
+          "md5": "e0430bca9925fb9882148fd2dc2418c1",
+          "region": "all",
+          "role": "SGB/SGB2 Game Boy-side boot ROM",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["SGB2.sfc/sgb2.boot.rom", "sgb2_boot.bin"]
+        },
+        {
+          "file": "sgb_bios.bin",
+          "size": 256,
+          "crc32": "ec8a83b9",
+          "sha1": "aa2f50a77dfb4823da96ba99309085a3c6278515",
+          "md5": "d574d4f9c12f305074798f54c091a8b4",
+          "region": "all",
+          "role": "SGB/SGB2 Game Boy-side boot ROM",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["SGB1.sfc/sgb1.boot.rom", "sgb_boot.bin", "sgb.boot.rom"]
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "sameboy-bootroms",
+          "name": "SameBoy boot ROMs (dmg, mgb, cgb, cgb0, cgb_fast, agb, sgb, sgb2)",
+          "replaces": [
+            "dmg_boot.bin",
+            "cgb_boot.bin",
+            "sgb_boot.bin",
+            "sgb2_boot.bin"
+          ],
+          "kind": "open-rom",
+          "license": "MIT (Expat, SameBoy LICENSE)",
+          "source": "https://github.com/LIJI32/SameBoy/tree/master/BootROMs",
+          "coverage": "Full replacements built from source with rgbds",
+          "vendored": {
+            "state": "in-tree",
+            "path": "vendor/retroboy/src/bios.rs (CGB_BOOT, customized SameBoy CGB ROM)",
+            "consumer": "retroboy"
+          }
+        },
+        {
+          "id": "bootix",
+          "name": "Bootix DMG boot ROM",
+          "replaces": ["dmg_boot.bin"],
+          "kind": "open-rom",
+          "license": "CC0-1.0",
+          "source": "https://github.com/Hacktix/Bootix",
+          "coverage": "Full DMG replacement",
+          "vendored": {
+            "state": "in-tree",
+            "path": "vendor/retroboy/src/bios.rs (DMG_BOOTIX)",
+            "consumer": "retroboy"
+          }
+        }
+      ]
+    },
+    {
+      "id": "nintendo-game-boy-advance",
+      "name": "Game Boy Advance",
+      "manifestConsole": "nintendo-game-boy-advance",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "rustboyadvance-ng",
+          "path": "vendor/rustboyadvance-ng",
+          "firmware": "BIOS image required; free Normmatt BIOS bundled under core/benches/roms"
+        },
+        {
+          "id": "bun-engine-core::machine::gba",
+          "path": "crates/bun-engine-core/src/machine/gba.rs",
+          "firmware": "defaults to the vendored Normmatt BIOS, accepts a caller BIOS"
+        },
+        {
+          "id": "jgenesis gba-core",
+          "path": "vendor/jgenesis/backend/gba-core",
+          "firmware": "bios_path in jgenesis-native-config/src/gba.rs"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "gba_bios.bin",
+          "size": 16384,
+          "crc32": "81977335",
+          "sha1": "300c20df6731a33952ded8c436f7f186d25d3492",
+          "md5": "a860e8c0b6d573d191e4ec7db1b1e4f6",
+          "region": "all",
+          "role": "16 KiB ARM7TDMI BIOS: reset, SWI services (division, decompression, sound driver), boot logo, open-bus protection",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "normmatt-gba-bios",
+          "name": "Normmatt open GBA BIOS (ReGBA/TempGBA)",
+          "replaces": ["gba_bios.bin"],
+          "kind": "open-rom",
+          "license": "GPL-2.0-or-later lineage (based on VBA-M HLE BIOS per ReGBA README; no SPDX file upstream)",
+          "source": "https://github.com/Nebuleon/ReGBA/tree/master/bios",
+          "coverage": "Good game compatibility; BIOS-read and timing tests differ from retail",
+          "vendored": {
+            "state": "in-tree",
+            "path": "vendor/rustboyadvance-ng/core/benches/roms/normatt_gba_bios.bin (sha1 598c0b2c6c5d15bbba218773574c9e7856d141f3)",
+            "consumer": "crates/bun-engine-core/src/machine/gba.rs FREE_BIOS"
+          }
+        },
+        {
+          "id": "cult-of-gba-bios",
+          "name": "Cult-of-GBA BIOS",
+          "replaces": ["gba_bios.bin"],
+          "kind": "open-rom",
+          "license": "MIT",
+          "source": "https://github.com/Cult-of-GBA/BIOS",
+          "coverage": "From-scratch ARM assembly; sound SWIs still TODO upstream",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        },
+        {
+          "id": "mgba-hle-bios",
+          "name": "mGBA hle-bios",
+          "replaces": ["gba_bios.bin"],
+          "kind": "open-rom",
+          "license": "MPL-2.0",
+          "source": "https://github.com/mgba-emu/mgba/blob/master/src/gba/hle-bios.s",
+          "coverage": "Small ROM stub plus HLE SWIs inside mGBA",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        }
+      ]
+    },
+    {
+      "id": "nintendo-3ds-gba",
+      "name": "GBA mode on 3DS hardware (open_agb_firm)",
+      "manifestConsole": "nintendo-3ds-gba",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "open-agb-firm",
+          "path": "vendor/open-agb-firm",
+          "firmware": "runs on real 3DS; uses the console's own built-in GBA hardware/BIOS"
+        }
+      ],
+      "firmware": [],
+      "freeReplacements": [
+        {
+          "id": "open-agb-firm",
+          "name": "open_agb_firm",
+          "replaces": ["AGB_FIRM (3DS native GBA firmware)"],
+          "kind": "open-firmware-source",
+          "license": "GPL-3.0",
+          "source": "https://github.com/profi200/open_agb_firm",
+          "coverage": "Bare-metal 3DS firmware that runs GBA ROMs natively; not an emulator BIOS",
+          "vendored": {
+            "state": "pinned-submodule-not-checked-out",
+            "path": "vendor/open-agb-firm"
+          }
+        }
+      ]
+    },
+    {
+      "id": "nintendo-ds",
+      "name": "Nintendo DS / DS Lite",
+      "manifestConsole": "nintendo-ds",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "aphrody-dust-core",
+          "path": "crates/aphrody-dust-core",
+          "firmware": "HLE BIOS + generated default firmware; direct boot"
+        },
+        {
+          "id": "bun-engine-core::machine::nds",
+          "path": "crates/bun-engine-core/src/machine/nds.rs",
+          "firmware": "none (firmware::default(Model::Ds))"
+        },
+        {
+          "id": "dust",
+          "path": "vendor/dust",
+          "firmware": "optional --arm7-bios/--arm9-bios/--firmware"
+        },
+        {
+          "id": "melonds",
+          "path": "vendor/melonds",
+          "firmware": "FreeBIOS + generated firmware for DS mode; real dumps for firmware boot"
+        },
+        {
+          "id": "packages/bun-engine/src/nds/loader.ts",
+          "firmware": "validates owner-supplied BIOS/firmware sizes and hashes (bep ds:load)"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "bios7.bin",
+          "size": 16384,
+          "crc32": "1280f0d5",
+          "sha1": "24f67bdea115a2c847c8813a262502ee1607b7df",
+          "md5": "df692a80a5b1bc90728bc3dfc76cd948",
+          "region": "all",
+          "role": "ARM7 BIOS (16 KiB): SWIs, decompression, cart Blowfish key table used for KEY1 cart encryption",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["nds7.bin"]
+        },
+        {
+          "file": "bios9.bin",
+          "size": 4096,
+          "crc32": "2ab23573",
+          "sha1": "bfaac75f101c135e32e2aaf541de6b1be4c8c62d",
+          "md5": "a392174eb3e572fed6447e956bde4b25",
+          "region": "all",
+          "role": "ARM9 BIOS (4 KiB): SWIs, exception vectors at 0xFFFF0000",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["nds9.bin"]
+        },
+        {
+          "file": "firmware.bin",
+          "size": 262144,
+          "crc32": "945f9dc9",
+          "sha1": "cfe072921ee3fb93f688743f8beef89043c3e9ad",
+          "md5": "e45033d9b0fa6b0de071292bba7c9d13",
+          "region": "all",
+          "role": "SPI flash firmware: boot menu, Wi-Fi calibration, user settings (256 KiB on DS/DS Lite, 512 KiB iQue)",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "dust-hle-bios",
+          "name": "Dust HLE BIOS + default firmware",
+          "replaces": ["bios7.bin", "bios9.bin", "firmware.bin"],
+          "kind": "hle",
+          "license": "GPL-3.0",
+          "source": "https://github.com/kelpsyberry/dust",
+          "coverage": "Direct boot of commercial and homebrew ROMs; no firmware menu",
+          "vendored": {
+            "state": "in-tree",
+            "path": "crates/aphrody-dust-core/src/cpu/hle_bios/{arm7,arm9}.rs, crates/aphrody-dust-core/src/spi/firmware",
+            "consumer": "crates/bun-engine-core/src/machine/nds.rs"
+          }
+        },
+        {
+          "id": "melonds-freebios",
+          "name": "melonDS FreeBIOS (DraStic custom ARM7/ARM9 BIOS)",
+          "replaces": ["bios7.bin", "bios9.bin"],
+          "kind": "open-rom",
+          "license": "BSD-2-Clause (Copyright 2013 Gilead Kutnick, src/FreeBIOS.h)",
+          "source": "https://github.com/melonDS-emu/melonDS/blob/master/src/FreeBIOS.cpp",
+          "coverage": "DS-mode direct boot; not usable for DSi mode",
+          "vendored": {
+            "state": "pinned-submodule-not-checked-out",
+            "path": "vendor/melonds/src/FreeBIOS.cpp"
+          }
+        }
+      ]
+    },
+    {
+      "id": "nintendo-ds-dsi",
+      "name": "Nintendo DSi",
+      "manifestConsole": "nintendo-ds-dsi",
+      "bootsWithoutFirmware": false,
+      "emulators": [
+        {
+          "id": "melonds",
+          "path": "vendor/melonds",
+          "firmware": "DSi mode requires real DSi BIOS7/BIOS9, firmware and NAND"
+        },
+        {
+          "id": "calico",
+          "path": "vendor/calico",
+          "firmware": "homebrew runtime, no firmware"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "dsi_bios7.bin",
+          "size": 65536,
+          "crc32": "9f1840d9",
+          "sha1": "a3aa751eb6bdaaf8a827ba9e03576a6f1ab0f547",
+          "md5": "559dae4ea78eb9d67702c56c1d791e81",
+          "region": "all",
+          "role": "DSi ARM7 BIOS (64 KiB) incl. AES/key data",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "dsi_bios9.bin",
+          "size": 65536,
+          "crc32": "3d64d498",
+          "sha1": "7bf549b8be9e48ab0cdc9b0fdadd49a5131f97eb",
+          "md5": "87b665fce118f76251271c3732532777",
+          "region": "all",
+          "role": "DSi ARM9 BIOS (64 KiB)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "dsi_firmware.bin",
+          "size": 131072,
+          "region": "per console",
+          "role": "DSi SPI firmware (128 KiB)",
+          "need": "required"
+        },
+        {
+          "file": "dsi_nand.bin",
+          "region": "per console",
+          "role": "Per-console eMMC NAND image (system menu, TWL titles, nocash footer with CID/ConsoleID)",
+          "need": "required"
+        }
+      ],
+      "freeReplacements": [],
+      "notes": [
+        "No free DSi BIOS or NAND replacement exists; DSi-enhanced carts still boot in DS mode with FreeBIOS/Dust HLE."
+      ]
+    },
+    {
+      "id": "nintendo-3ds",
+      "name": "Nintendo 3DS",
+      "manifestConsole": "nintendo-3ds",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "azahar",
+          "path": "vendor/azahar",
+          "firmware": "HLE Horizon; decrypted titles and homebrew boot without system files"
+        },
+        {
+          "id": "zakuro",
+          "path": "vendor/zakuro",
+          "firmware": "research owner"
+        },
+        {
+          "id": "aphrody-ctr",
+          "path": "crates/aphrody-ctr",
+          "firmware": "PICA200 primitives only"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "boot9.bin",
+          "size": 65536,
+          "region": "all",
+          "role": "ARM9 boot ROM; holds key-scrambler inputs for encrypted NCCH/CIA",
+          "need": "required-for-encrypted-media"
+        },
+        {
+          "file": "boot11.bin",
+          "size": 65536,
+          "region": "all",
+          "role": "ARM11 boot ROM",
+          "need": "optional"
+        },
+        {
+          "file": "aes_keys.txt",
+          "region": "all",
+          "role": "Text key file accepted by Citra/Azahar in place of boot9",
+          "need": "required-for-encrypted-media"
+        },
+        {
+          "file": "seeddb.bin",
+          "region": "all",
+          "role": "Title seeds for seed-encrypted (9.6+) titles",
+          "need": "required-for-encrypted-media"
+        },
+        {
+          "file": "dspfirm.cdc",
+          "region": "all",
+          "role": "DSP firmware for LLE audio (HLE audio does not need it)",
+          "need": "lle-only"
+        },
+        {
+          "file": "sysdata/otp.bin, secret_sector.bin, movable.sed",
+          "region": "per console",
+          "role": "Console-unique data for online/system-title use",
+          "need": "optional"
+        },
+        {
+          "file": "NAND system titles (shared font, Mii data, bad-word list, region data)",
+          "region": "per region",
+          "role": "System archives read by many games",
+          "need": "optional"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "citra-open-source-archives",
+          "name": "citra_system_archives (open shared font + NG bad-word list)",
+          "replaces": [
+            "shared_font.bin / shared font system archive",
+            "NG bad word list archive"
+          ],
+          "kind": "open-system-archive",
+          "license": "GPL-3.0 (Azahar tree); generator https://github.com/B3n30/citra_system_archives",
+          "source": "https://github.com/azahar-emu/azahar/tree/master/externals/open_source_archives",
+          "coverage": "JPN/EUR/USA system font and NG word list; Mii and country-list headers also present",
+          "vendored": {
+            "state": "pinned-submodule-not-checked-out",
+            "path": "vendor/azahar/externals/open_source_archives"
+          }
+        }
+      ],
+      "notes": [
+        "MULTICONSOLE-RUST-MIGRATION.md already records aes_keys.txt, seeddb.bin, CJK font, boot ROMs and dspfirm.cdc as user-supplied inputs."
+      ]
+    },
+    {
+      "id": "nintendo-64",
+      "name": "Nintendo 64 (+ 64DD)",
+      "manifestConsole": "nintendo-64",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "gopher64",
+          "path": "vendor/gopher64",
+          "firmware": "PIF boot emulated (HLE); no files"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "pifdata.bin",
+          "size": 1984,
+          "region": "NTSC/PAL variants",
+          "role": "PIF-NUS boot ROM (copies IPL3, CIC handshake); every emulator HLEs it",
+          "need": "not-used"
+        },
+        {
+          "file": "64DD_IPL.bin",
+          "size": 4194304,
+          "crc32": "7f933ce2",
+          "sha1": "bf861922dcb78c316360e3e742f4f70ff63c9bc3",
+          "md5": "8d3d9f294b6e174bc7b1d2fd1c727530",
+          "region": "NTSC-J",
+          "role": "64DD IPL (4 MiB) for disk titles",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["Mupen64plus/IPL.n64"]
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "pif-hle",
+          "name": "PIF/CIC HLE (CIC seed + IPL3 checksum tables)",
+          "replaces": ["pifdata.bin"],
+          "kind": "hle",
+          "license": "GPL-3.0 (gopher64)",
+          "source": "https://github.com/gopher64/gopher64",
+          "coverage": "All cartridge titles",
+          "vendored": {
+            "state": "in-tree",
+            "path": "vendor/gopher64/src/device",
+            "consumer": "gopher64"
+          }
+        }
+      ],
+      "notes": [
+        "No free 64DD IPL exists. pif-sm5-rom (Unlicense) is a disassembly study, not a usable boot ROM: https://github.com/GenericHeroGuy/pif-sm5-rom"
+      ]
+    },
+    {
+      "id": "nintendo-wii-gamecube",
+      "name": "GameCube / Wii",
+      "manifestConsole": "nintendo-wii-gamecube",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "aphrody-wii-runtime",
+          "path": "crates/aphrody-wii-runtime",
+          "firmware": "DOL/ELF boot; HLE IPL only from IECODE_GC_IPL_HLE; DSP IROM/COEF buffers zero-filled"
+        },
+        {
+          "id": "aphrody-wii",
+          "path": "crates/aphrody-wii",
+          "firmware": "none"
+        },
+        {
+          "id": "dolphin",
+          "path": "vendor/dolphin",
+          "firmware": "HLE BS2/IOS; ships free DSP ROM and IPL fonts"
+        },
+        {
+          "id": "gecko",
+          "path": "vendor/gecko",
+          "firmware": "none"
+        },
+        {
+          "id": "libogc",
+          "path": "vendor/libogc",
+          "firmware": "homebrew SDK"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "gc-dvd-20010608.bin",
+          "size": 131072,
+          "crc32": "c047465a",
+          "sha1": "27872c201e87b06a19bf85d36c796ef383f8d52d",
+          "md5": "561532ad496f644897952d2cef5bb431",
+          "region": "all",
+          "role": "DVD drive controller firmware dump",
+          "need": "not-used",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "gc-dvd-20010831.bin",
+          "size": 131072,
+          "crc32": "54c7d10e",
+          "sha1": "ae7233cae8f94749796e0b740d6021e3b00a8926",
+          "md5": "b953eb1a8fc9922b3f7051c1cdc451f1",
+          "region": "all",
+          "role": "DVD drive controller firmware dump",
+          "need": "not-used",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "gc-dvd-20020402.bin",
+          "size": 131072,
+          "crc32": "8bbef508",
+          "sha1": "691e46213d8428befdf568157e670b971ab94e1d",
+          "md5": "413154dd0e2c824c9b18b807fd03ec4e",
+          "region": "all",
+          "role": "DVD drive controller firmware dump",
+          "need": "not-used",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "gc-dvd-20020823.bin",
+          "size": 131072,
+          "crc32": "5205222b",
+          "sha1": "2faaf92bcaffe675f54f7249d30f3791507e22ab",
+          "md5": "c03f6bbaf644eb9b3ee261dbe199eb42",
+          "region": "all",
+          "role": "DVD drive controller firmware dump",
+          "need": "not-used",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "gc-ntsc-10.bin",
+          "size": 2097152,
+          "crc32": "6dac1f2a",
+          "sha1": "a1837968288253ed541f2b11440b68f5a9b33875",
+          "md5": "fc924a7c879b661abc37cec4f018fdf3",
+          "region": "NTSC",
+          "role": "GameCube IPL (BS1/BS2 boot menu, ROM fonts, 2 MiB, scrambled)",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "gc-ntsc-11.bin",
+          "size": 2097152,
+          "crc32": "d5e6feea",
+          "sha1": "239eacd86527ff9a75aeb7282da65797baeef010",
+          "md5": "019e39822a9ca3029124f74dd4d55ac4",
+          "region": "NTSC",
+          "role": "GameCube IPL (BS1/BS2 boot menu, ROM fonts, 2 MiB, scrambled)",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "gc-ntsc-12.bin",
+          "size": 2097152,
+          "crc32": "86573808",
+          "sha1": "ef9194ab4804aa0aa8540d846caf291b28331165",
+          "md5": "b17148254a5799684c7d783206504926",
+          "region": "NTSC",
+          "role": "GameCube IPL (BS1/BS2 boot menu, ROM fonts, 2 MiB, scrambled)",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": [
+            "dolphin-emu/Sys/GC/JAP/IPL.bin",
+            "dolphin-emu/Sys/GC/USA/IPL.bin"
+          ]
+        },
+        {
+          "file": "gc-pal-10.bin",
+          "size": 2097152,
+          "crc32": "4f319f43",
+          "sha1": "f27c63e5394e2fd1606f70df004c4fc2d6027700",
+          "md5": "0cdda509e2da83c85bfe423dd87346cc",
+          "region": "PAL",
+          "role": "GameCube IPL (BS1/BS2 boot menu, ROM fonts, 2 MiB, scrambled)",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "gc-pal-11.bin",
+          "size": 2097152,
+          "crc32": "667d0b64",
+          "sha1": "f3cd0c7c61cbcefa85e7de3aff4cfa50bc508714",
+          "md5": "339848a0b7c2124cf155276c1e79cbd0",
+          "region": "PAL",
+          "role": "GameCube IPL (BS1/BS2 boot menu, ROM fonts, 2 MiB, scrambled)",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "gc-pal-12.bin",
+          "size": 2097152,
+          "crc32": "ad1b7f16",
+          "sha1": "80b8744ff5e43585392f55546bd03a673d11ef5f",
+          "md5": "db92574caab77a7ec99d4605fd6f2450",
+          "region": "PAL",
+          "role": "GameCube IPL (BS1/BS2 boot menu, ROM fonts, 2 MiB, scrambled)",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["dolphin-emu/Sys/GC/EUR/IPL.bin"]
+        },
+        {
+          "file": "dsp_rom.bin",
+          "size": 8192,
+          "region": "all",
+          "role": "GC/Wii DSP IROM (needed by DSP LLE)",
+          "need": "lle-only"
+        },
+        {
+          "file": "dsp_coef.bin",
+          "size": 4096,
+          "region": "all",
+          "role": "DSP coefficient ROM (needed by DSP LLE)",
+          "need": "lle-only"
+        },
+        {
+          "file": "font_western.bin / font_japanese.bin",
+          "region": "all",
+          "role": "IPL ROM fonts some games read through the BIOS",
+          "need": "optional"
+        },
+        {
+          "file": "Wii NAND (nand.bin) + keys.bin/OTP+SEEPROM",
+          "region": "per console",
+          "role": "System menu, IOS, setting.txt, SYSCONF, console keys",
+          "need": "optional"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "dolphin-free-dsp-rom",
+          "name": "Dolphin legal DSP IROM/COEF replacement",
+          "replaces": ["dsp_rom.bin", "dsp_coef.bin"],
+          "kind": "open-rom",
+          "license": "GPL-2.0-or-later (Dolphin)",
+          "source": "https://github.com/dolphin-emu/dolphin/tree/master/docs/DSP/free_dsp_rom",
+          "coverage": "v0.4: AX/Zelda/GBA ucodes; built into Data/Sys/GC/dsp_rom.bin and dsp_coef.bin",
+          "vendored": {
+            "state": "pinned-submodule-not-checked-out",
+            "path": "vendor/dolphin/Data/Sys/GC/dsp_{rom,coef}.bin"
+          }
+        },
+        {
+          "id": "dolphin-ipl-fonts",
+          "name": "Dolphin IPL fonts (Droid Sans based)",
+          "replaces": ["font_western.bin", "font_japanese.bin"],
+          "kind": "open-rom",
+          "license": "Apache-2.0 (Data/Sys/GC/font-licenses.txt)",
+          "source": "https://github.com/dolphin-emu/dolphin/tree/master/Data/Sys/GC",
+          "coverage": "Generated with gc-font-tool",
+          "vendored": {
+            "state": "pinned-submodule-not-checked-out",
+            "path": "vendor/dolphin/Data/Sys/GC/font_*.bin"
+          }
+        },
+        {
+          "id": "dolphin-hle-bs2-ios",
+          "name": "Dolphin HLE BS2 + HLE IOS",
+          "replaces": ["IPL.bin", "Wii NAND IOS"],
+          "kind": "hle",
+          "license": "GPL-2.0-or-later",
+          "source": "https://github.com/dolphin-emu/dolphin/tree/master/Source/Core/Core",
+          "coverage": "Boots discs and DOL/ELF without IPL or NAND",
+          "vendored": {
+            "state": "pinned-submodule-not-checked-out",
+            "path": "vendor/dolphin"
+          }
+        },
+        {
+          "id": "iplboot",
+          "name": "iplboot",
+          "replaces": ["IPL boot path on hardware"],
+          "kind": "open-firmware-source",
+          "license": "GPL-2.0",
+          "source": "https://github.com/redolution/iplboot",
+          "coverage": "Hardware IPL replacement bootloader (PicoBoot), boots DOLs; not an emulator BIOS",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        }
+      ],
+      "notes": [
+        "aphrody-wii-runtime DSP IROM/COEF buffers are zero-filled (crates/aphrody-wii-runtime/src/flipper/dsp.rs): wiring the Dolphin free DSP ROM removes that gap.",
+        "Dolphin codehandler.bin (System.dat) is Gecko cheat code, not firmware."
+      ]
+    },
+    {
+      "id": "nintendo-wii-u",
+      "name": "Wii U",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "cemu (external, factory emulation image)",
+          "firmware": "HLE Cafe OS; decrypted RPX/WUA/WUHB need nothing"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "keys.txt",
+          "region": "all",
+          "role": "Common/title keys for encrypted WUD/WUX and NUS content",
+          "need": "required-for-encrypted-media"
+        },
+        {
+          "file": "otp.bin (1 KiB), seeprom.bin (512 B)",
+          "region": "per console",
+          "role": "Console-unique data, only for online services",
+          "need": "optional"
+        },
+        {
+          "file": "MLC system titles (fonts, Mii, applets)",
+          "region": "per region",
+          "role": "Optional system content",
+          "need": "optional"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "cemu-hle-cafeos",
+          "name": "Cemu HLE Cafe OS (coreinit, gx2, nn_* reimplementations)",
+          "replaces": ["Cafe OS system titles"],
+          "kind": "hle",
+          "license": "MPL-2.0",
+          "source": "https://github.com/cemu-project/Cemu",
+          "coverage": "Most retail titles once decrypted; shared fonts ship under bin/resources/sharedFonts (provenance not verified here)",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        }
+      ]
+    },
+    {
+      "id": "nintendo-switch",
+      "name": "Nintendo Switch",
+      "manifestConsole": "nintendo-switch",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "ruzu",
+          "path": "crates/ruzu, crates/ruzu-core",
+          "firmware": "prod.keys for NCA/NSP/XCI; homebrew NRO needs none; system archives synthesized"
+        },
+        {
+          "id": "rdynarmic / aphrody-switch",
+          "path": "crates/rdynarmic, crates/aphrody-switch",
+          "firmware": "none (CPU/texture primitives)"
+        },
+        {
+          "id": "nexium",
+          "path": "vendor/nexium",
+          "firmware": "homebrew"
+        },
+        {
+          "id": "oboromi",
+          "path": "vendor/oboromi",
+          "firmware": "research (Switch 2)"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "prod.keys",
+          "region": "all",
+          "role": "Console-derived master/title KEK set to decrypt NCA headers and content",
+          "need": "required-for-encrypted-media"
+        },
+        {
+          "file": "title.keys",
+          "region": "all",
+          "role": "Per-title keys for titlekey-crypto NCAs",
+          "need": "required-for-encrypted-media"
+        },
+        {
+          "file": "firmware NCAs (system titles 0100000000000800-...)",
+          "region": "all",
+          "role": "Shared fonts, Mii, applets (swkbd, error), time zones, system version",
+          "need": "optional"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "ruzu-system-archive",
+          "name": "ruzu/yuzu synthesized system archives",
+          "replaces": [
+            "shared font titles",
+            "Mii model",
+            "NG word list",
+            "time zone binary",
+            "system version"
+          ],
+          "kind": "open-system-archive",
+          "license": "GPL-2.0-or-later / GPL-3.0-or-later (per-file SPDX)",
+          "source": "crates/ruzu-core/src/file_sys/system_archive (ported from yuzu core/file_sys/system_archive)",
+          "coverage": "Fonts are open substitutes embedded as Rust arrays; font upstream provenance should be recorded before publication",
+          "vendored": {
+            "state": "in-tree",
+            "path": "crates/ruzu-core/src/file_sys/system_archive",
+            "consumer": "ruzu-core"
+          }
+        }
+      ],
+      "notes": [
+        "packages/iecode-docs/ruzu/quickstart.md documents prod.keys/title.keys/firmware installation; ruzu-frontend-common/src/firmware_manager.rs verifies installed firmware."
+      ]
+    },
+    {
+      "id": "sony-playstation",
+      "name": "PlayStation",
+      "manifestConsole": "sony-playstation",
+      "bootsWithoutFirmware": false,
+      "emulators": [
+        {
+          "id": "starpsx",
+          "path": "vendor/starpsx",
+          "firmware": "requires a real BIOS (SCPH-1001 recommended, README)"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "scph1000.bin",
+          "size": 524288,
+          "crc32": "3b601fc8",
+          "sha1": "343883a7b555646da8cee54aadd2795b6e7dd070",
+          "md5": "239665b1a3dade1b5a52c06338011044",
+          "region": "NTSC-J",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "scph1001.bin",
+          "size": 524288,
+          "crc32": "37157331",
+          "sha1": "10155d8d6e6e832d6ea66db9bc098321fb5e8ebf",
+          "md5": "924e392ed05558ffdb115408c263dccf",
+          "region": "NTSC-U",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "scph1002.bin",
+          "size": 524288,
+          "crc32": "9bb87c4b",
+          "sha1": "20b98f3d80f11cbf5a7bfd0779b0e63760ecc62c",
+          "md5": "54847e693405ffeb0359c6287434cbef",
+          "region": "PAL",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "scph100.bin",
+          "size": 524288,
+          "crc32": "f2af798b",
+          "sha1": "339a48f4fcf63e10b5b867b8c93cfd40945faf6c",
+          "md5": "8abc1b549a4a80954addc48ef02c4521",
+          "region": "NTSC-J (PSone)",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "scph101.bin",
+          "size": 524288,
+          "crc32": "171bdcec",
+          "sha1": "dcffe16bd90a723499ad46c641424981338d8378",
+          "md5": "6e3735ff4c7dc899ee98981385f6f3d0",
+          "region": "NTSC-U (PSone)",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "scph102A.bin",
+          "size": 524288,
+          "crc32": "0bad7ea9",
+          "sha1": "beb0ac693c0dc26daf5665b3314db81480fa5c7c",
+          "md5": "b10f5e0e3d9eb60e5159690680b1e774",
+          "region": "PAL (PSone)",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "scph102B.bin",
+          "size": 524288,
+          "crc32": "76b880e5",
+          "sha1": "dbc7339e5d85827c095764fc077b41f78fd2ecae",
+          "md5": "de93caec13d1a141a40a79f5c86168d6",
+          "region": "PAL (PSone)",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["scph102C.bin"]
+        },
+        {
+          "file": "scph3000.bin",
+          "size": 524288,
+          "crc32": "3539def6",
+          "sha1": "b06f4a861f74270be819aa2a07db8d0563a7cc4e",
+          "md5": "849515939161e62f6b866f6853006780",
+          "region": "NTSC-J",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "scph3500.bin",
+          "size": 524288,
+          "crc32": "bc190209",
+          "sha1": "e38466a4ba8005fba7e9e3c7b9efeba7205bee3f",
+          "md5": "cba733ceeff5aef5c32254f1d617fa62",
+          "region": "NTSC-J",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "scph5000.bin",
+          "size": 524288,
+          "crc32": "8c93a399",
+          "sha1": "e340db2696274dda5fdc25e434a914db71e8b02b",
+          "md5": "eb201d2d98251a598af467d4347bb62f",
+          "region": "NTSC-J",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "scph5500.bin",
+          "size": 524288,
+          "crc32": "ff3eeb8c",
+          "sha1": "b05def971d8ec59f346f2d9ac21fb742e3eb6917",
+          "md5": "8dd7d5296a650fac7319bce665a6a53c",
+          "region": "NTSC-J",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "scph5501.bin",
+          "size": 524288,
+          "crc32": "8d8cb7e4",
+          "sha1": "0555c6fae8906f3f09baf5988f00e55f88e9f30b",
+          "md5": "490f666e1afb15b7362b406ed1cea246",
+          "region": "NTSC-U",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["scph7003.bin"]
+        },
+        {
+          "file": "scph5502.bin",
+          "size": 524288,
+          "crc32": "d786f0b9",
+          "sha1": "f6bc2d1f5eb6593de7d089c425ac681d6fffd3f0",
+          "md5": "32736f17079d0b2b7024407c39bd3050",
+          "region": "PAL",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["scph5552.bin"]
+        },
+        {
+          "file": "scph7001.bin",
+          "size": 524288,
+          "crc32": "502224b6",
+          "sha1": "14df4f6c1e367ce097c11deae21566b4fe5647a9",
+          "md5": "1e68c231d0896b7eadcad1d7d8e76129",
+          "region": "NTSC-U",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "scph7002.bin",
+          "size": 524288,
+          "crc32": "318178bf",
+          "sha1": "8d5de56a79954f29e9006929ba3fed9b6a418c1d",
+          "md5": "b9d9a0286c33dc6b7237bb13cd46fdee",
+          "region": "PAL",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["scph7502.bin", "scph9002(7502).bin"]
+        },
+        {
+          "file": "psxonpsp660.bin",
+          "size": 524288,
+          "crc32": "5660f34f",
+          "sha1": "96880d1ca92a016ff054be5159bb06fe03cb4e14",
+          "md5": "c53ca5908936d412331790f4426c6c33",
+          "region": "PSP PS1 emulator",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "ps1_rom.bin",
+          "size": 524288,
+          "crc32": "2f53b852",
+          "sha1": "c40146361eb8cf670b19fdc9759190257803cab7",
+          "md5": "81bbe60ba7a3d1cea1d48c14cbcc647b",
+          "region": "PS3 PS1 emulator",
+          "role": "512 KiB kernel + shell (memory card manager, CD player), SYSTEM.CNF boot",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "pcsx-redux-openbios",
+          "name": "PCSX-Redux OpenBIOS",
+          "replaces": ["scph*.bin"],
+          "kind": "open-rom",
+          "license": "MIT (pcsx-redux/nugget)",
+          "source": "https://github.com/pcsx-redux/nugget/tree/main/openbios",
+          "coverage": "Boots most games; see openbios/COMPATIBILITY.md; no shell UI",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        },
+        {
+          "id": "pcsx-rearmed-hle-bios",
+          "name": "PCSX-ReARMed HLE BIOS (psxbios.c)",
+          "replaces": ["scph*.bin"],
+          "kind": "hle",
+          "license": "GPL-2.0",
+          "source": "https://github.com/notaz/pcsx_rearmed/blob/master/libpcsxcore/psxbios.c",
+          "coverage": "Many titles; lower accuracy than real/OpenBIOS",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sony-playstation-2",
+      "name": "PlayStation 2",
+      "manifestConsole": "sony-playstation-2",
+      "bootsWithoutFirmware": false,
+      "emulators": [
+        {
+          "id": "pcsx2",
+          "path": "vendor/pcsx2",
+          "firmware": "BIOS required (ROM0 4 MiB; ROM1/ROM2/EROM/NVM/MEC optional)"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "pcsx2/bios/ps2-0100jd-20000117.bin",
+          "size": 4194304,
+          "crc32": "5a04500c",
+          "sha1": "5b33170323ed6344e2363fed8115dc3918bb96a4",
+          "md5": "32f2e4d5ff5ee11072a6bc45530f5765",
+          "region": "NTSC-J (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0100j-20000117.bin",
+          "size": 4194304,
+          "crc32": "b7ef81a9",
+          "sha1": "aea061e6e263fdcc1c4fdbd68553ef78dae74263",
+          "md5": "acf4730ceb38ac9d8c7d8e21f2614600",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0101jd-20000217.bin",
+          "size": 4194304,
+          "crc32": "4f8b4205",
+          "sha1": "16f4a284d0e760ee13a2aff2f7dda928255e3080",
+          "md5": "acf9968c8f596d2b15f42272082513d1",
+          "region": "NTSC-J (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0101j-20000217.bin",
+          "size": 4194304,
+          "crc32": "211dfb6a",
+          "sha1": "916e02431bcd73140504da3355c9598143b77e11",
+          "md5": "b1459d7446c69e3e97e6ace3ae23dd1c",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0101xd-20000224.bin",
+          "size": 4194304,
+          "crc32": "2fef9faf",
+          "sha1": "4440b246bfde7bb31002c584a76c6ef384908e84",
+          "md5": "d3f1853a16c2ec18f3cd1ae655213308",
+          "region": "other (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0110ad-20000727.bin",
+          "size": 4194304,
+          "crc32": "795578c1",
+          "sha1": "339c646cf0699268552df5b05f18f0a03a9f55ff",
+          "md5": "63e6fd9b3c72e0d7b920e80cf76645cd",
+          "region": "NTSC-U (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0110a-20000727.bin",
+          "size": 4194304,
+          "crc32": "9678ad6a",
+          "sha1": "20f6ce6693cf97e9494f8f0227f2b7988ffaf961",
+          "md5": "a20c97c02210f16678ca3010127caf36",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0120a-20000902.bin",
+          "size": 4194304,
+          "crc32": "1ae71e5d",
+          "sha1": "dbc2318a1029347b5af3a0c74b0bdf88d19efee6",
+          "md5": "8db2fbbac7413bf3e7154c1e0715e565",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0120ed-20000902.bin",
+          "size": 4194304,
+          "crc32": "25495aa7",
+          "sha1": "3bb1eecd618ab5c973c7bc53671a4475a02e1d5b",
+          "md5": "91c87cb2f2eb6ce529a2360f80ce2457",
+          "region": "PAL (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0120ed-20000902-20030110.bin",
+          "size": 4194304,
+          "crc32": "e2f78425",
+          "sha1": "1b73dec999fcc2b92fa958110ff6bfe4d0af276e",
+          "md5": "3016b3dd42148a67e2c048595ca4d7ce",
+          "region": "PAL (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0120e-20000902.bin",
+          "size": 4194304,
+          "crc32": "7b08c33b",
+          "sha1": "274c05fec654913a3f698d4b0d592085866a2cbd",
+          "md5": "b7fa11e87d51752a98b38e3e691cbf17",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0120j-20001027-185015.bin",
+          "size": 4194304,
+          "crc32": "9b096622",
+          "sha1": "e481079eca752225555f0c26d14c9d0f94d9a8e9",
+          "md5": "f63bc530bd7ad7c026fcd6f7bd0d9525",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0120j-20001027-191435.bin",
+          "size": 4194304,
+          "crc32": "c1ccf3f6",
+          "sha1": "a9f5d8ed56cfff18add1b599010493461fa02448",
+          "md5": "cee06bd68c333fc5768244eae77e4495",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0150ad-20001228-20030520.bin",
+          "size": 4194304,
+          "crc32": "0380c2ce",
+          "sha1": "7284b9d16df9935afc384318e024c87ef0574fe5",
+          "md5": "0bf988e9c7aaa4c051805b0fa6eb3387",
+          "region": "NTSC-U (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0150a-20001228.bin",
+          "size": 4194304,
+          "crc32": "bce74746",
+          "sha1": "5af5b5077d84a9c037ebe12bfab8a38b31d8a543",
+          "md5": "8accc3c49ac45f5ae2c5db0adc854633",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0150ed-20001228-20030520.bin",
+          "size": 4194304,
+          "crc32": "60bc0031",
+          "sha1": "d004326c9d8060812b4433c3f07646b04854d6c4",
+          "md5": "6f9a6feb749f0533aaae2cc45090b0ed",
+          "region": "PAL (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0150e-20001228.bin",
+          "size": 4194304,
+          "crc32": "1559fd43",
+          "sha1": "e22ef231faf3661edd92f2ee449a71297c82a092",
+          "md5": "838544f12de9b0abc90811279ee223c8",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0150jd-20010118.bin",
+          "size": 4194304,
+          "crc32": "0b3ec2bc",
+          "sha1": "334e029fc7fd50222a399c50384ff42732652259",
+          "md5": "bb6bbc850458fff08af30e969ffd0175",
+          "region": "NTSC-J (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0150j-20010118.bin",
+          "size": 4194304,
+          "crc32": "4fc3b495",
+          "sha1": "d6f365a0f07cd04ed28108e6ec5076e2f81e5f72",
+          "md5": "815ac991d8bc3b364696bead3457de7d",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0160a-20010427.bin",
+          "size": 4194304,
+          "crc32": "4008ac18",
+          "sha1": "7331a40b4b4feb1b3f0f77b013b6d38483577baa",
+          "md5": "b107b5710042abe887c0f6175f6e94bb",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0160j-20010427.bin",
+          "size": 4194304,
+          "crc32": "c268ef47",
+          "sha1": "e525a0c900e37acf0ae5a655d82a0abcb07c6f1f",
+          "md5": "ab55cceea548303c22c72570cfd4dd71",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0160a-20010704.bin",
+          "size": 4194304,
+          "crc32": "c506c693",
+          "sha1": "ce92e8e8c88665f2f645a9522e337823d47a914a",
+          "md5": "18bcaadb9ff74ed3add26cdf709fff2e",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0160e-20010704.bin",
+          "size": 4194304,
+          "crc32": "f1ac735f",
+          "sha1": "3cbd048e437c785b5a05a0feced00117a8a42545",
+          "md5": "491209dd815ceee9de02dbbc408c06d6",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0160a-20011004.bin",
+          "size": 4194304,
+          "crc32": "a01ec625",
+          "sha1": "d257bce6ecaf3bafb704c75a1b4741b910bd2d49",
+          "md5": "7200a03d51cacc4c14fcdfdbc4898431",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0160e-20011004.bin",
+          "size": 4194304,
+          "crc32": "82aa5055",
+          "sha1": "ee34c3a87c53c75ca2a37d77b0042ca24d07831f",
+          "md5": "8359638e857c8bc18c3c18ac17d9cc3c",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0160h-20010730.bin",
+          "size": 4194304,
+          "crc32": "75f83c67",
+          "sha1": "ba15dcf7aac13864c08222037e9321d7468c87d1",
+          "md5": "352d2ff9b3f68be7e6fa7e6dd8389346",
+          "region": "Asia",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0160a-20020207.bin",
+          "size": 4194304,
+          "crc32": "a19e0bf5",
+          "sha1": "f9a5d629a036b99128f7cb530c6e3ca016e9c8b7",
+          "md5": "d5ce2c7d119f563ce04bc04dbc3a323e",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0160e-20020319.bin",
+          "size": 4194304,
+          "crc32": "2fe21e4d",
+          "sha1": "bff2902bd0ce9729a060581132541e9fd1a9fab6",
+          "md5": "0d2228e6fd4fb639c9c39d077a9ec10c",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0160j-20020426.bin",
+          "size": 4194304,
+          "crc32": "c9363baf",
+          "sha1": "003628c137dae577ff3b04b93ca1787b0c944702",
+          "md5": "72da56fccb8fcd77bba16d1b6f479914",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0160e-20020426.bin",
+          "size": 4194304,
+          "crc32": "dad0baec",
+          "sha1": "d106b757ae2544dfe63f7e1924e59d5ad44c0c29",
+          "md5": "5b1f47fbeb277c6be2fccdd6344ff2fd",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0160h-20020426.bin",
+          "size": 4194304,
+          "crc32": "3355623e",
+          "sha1": "e3a74125c426bcacabca00b513fab928665c8846",
+          "md5": "315a4003535dfda689752cb25f24785c",
+          "region": "Asia",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0170j-20030206.bin",
+          "size": 4194304,
+          "crc32": "9457f64e",
+          "sha1": "d812ac65c357d392396ca9edee812dc41bed8bde",
+          "md5": "312ad4816c232a9606e56f946bc0678a",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0170ed-20030227.bin",
+          "size": 4194304,
+          "crc32": "970a9c56",
+          "sha1": "e220bb282378c1f48ea1b585b3675e51a6dca572",
+          "md5": "666018ffec65c5c7e04796081295c6c7",
+          "region": "PAL (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0170e-20030227.bin",
+          "size": 4194304,
+          "crc32": "51b5fb8b",
+          "sha1": "ad15bd7eabd5bd81ba011516a5be44947d6641aa",
+          "md5": "6e69920fa6eef8522a1d688a11e41bc6",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0170ad-20030325.bin",
+          "size": 4194304,
+          "crc32": "0e1ece79",
+          "sha1": "c5bc6e893b4c43d528142e56c96073024de64157",
+          "md5": "eb960de68f0c0f7f9fa083e9f79d0360",
+          "region": "NTSC-U (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0170a-20030325.bin",
+          "size": 4194304,
+          "crc32": "9a99e3f4",
+          "sha1": "d269d1ed513227f3ef7133c76cf1b3a64f97b15d",
+          "md5": "8aa12ce243210128c5074552d3b86251",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0180cd-20030224.bin",
+          "size": 4194304,
+          "crc32": "8c1a04cf",
+          "sha1": "2de87767008fc4a303af64a46251156e965d9065",
+          "md5": "240d4c5ddd4b54069bdc4a3cd2faf99d",
+          "region": "China (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0180j-20031028.bin",
+          "size": 4194304,
+          "crc32": "585fd27c",
+          "sha1": "aa4a35c14ee342cf7a03b1dde294ca10e64889e1",
+          "md5": "1c6cd089e6c83da618fbf2a081eb4888",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0190j-20030623.bin",
+          "size": 4194304,
+          "crc32": "7c10a967",
+          "sha1": "6a6ecfe6c10e42eff1ca056349def799b5629067",
+          "md5": "463d87789c555a4a7604e97d7db545d1",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0190a-20030623.bin",
+          "size": 4194304,
+          "crc32": "b3e87709",
+          "sha1": "c74d92a2952a2912b6698cbcf7742adac8f784d3",
+          "md5": "35461cecaa51712b300b2d6798825048",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0190e-20030623.bin",
+          "size": 4194304,
+          "crc32": "1752a52e",
+          "sha1": "18b9ba833c469c4683676cc20da5124080d980bb",
+          "md5": "bd6415094e1ce9e05daabe85de807666",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0190h-20030623.bin",
+          "size": 4194304,
+          "crc32": "41391dd3",
+          "sha1": "caa18ed04854a91e68f2d61a782560edd6373bbf",
+          "md5": "2e70ad008d4ec8549aada8002fdf42fb",
+          "region": "Asia",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0190r-20030623.bin",
+          "size": 4194304,
+          "crc32": "25f6212a",
+          "sha1": "34a81db03ab617fbfdd7f9b861692dd2ecd57b82",
+          "md5": "b53d51edc7fc086685e31b811dc32aad",
+          "region": "Russia",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0190c-20030623.bin",
+          "size": 4194304,
+          "crc32": "d2347ee7",
+          "sha1": "92d9eb4b11cef97bb69a275b2851b72f7b0023d6",
+          "md5": "1b6e631b536247756287b916f9396872",
+          "region": "China",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0190j-20030822.bin",
+          "size": 4194304,
+          "crc32": "79d60546",
+          "sha1": "0ea98a25a32145dda514de2f0d4bfbbd806bd00c",
+          "md5": "00da1b177096cfd2532c8fa22b43e667",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0190e-20030822.bin",
+          "size": 4194304,
+          "crc32": "3afd1d1e",
+          "sha1": "6e1f0eb4aec51a6288b3d802d3bcdb477cf52104",
+          "md5": "afde410bd026c16be605a1ae4bd651fd",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0190a-20040329.bin",
+          "size": 4194304,
+          "crc32": "9ba4c32f",
+          "sha1": "b68c05f5cd86bf03cb38a643a723b7a97b759531",
+          "md5": "81f4336c1de607dd0865011c0447052e",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0200j-20040614.bin",
+          "size": 4194304,
+          "crc32": "2f314730",
+          "sha1": "224ab5704ab719edeb05ca1d835812252c97c1b3",
+          "md5": "0eee5d1c779aa50e94edd168b4ebf42e",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0200a-20040614.bin",
+          "size": 4194304,
+          "crc32": "7ebd68de",
+          "sha1": "7a62e5f48603582707e9898eb055ea3eaee50d4c",
+          "md5": "d333558cc14561c1fdc334c75d5f37b7",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0200e-20040614.bin",
+          "size": 4194304,
+          "crc32": "6f8e3c29",
+          "sha1": "434bc0b4eb4827da0773ec0795aadc5162569a07",
+          "md5": "dc752f160044f2ed5fc1f4964db2a095",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0200ed-20040614.bin",
+          "size": 4194304,
+          "crc32": "881c9aa9",
+          "sha1": "902f4680b258abd40c0922f6b0d581cbd8f8a73e",
+          "md5": "63ead1d74893bf7f36880af81f68a82d",
+          "region": "PAL (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0200h-20040614.bin",
+          "size": 4194304,
+          "crc32": "b57201bf",
+          "sha1": "7f8e812cab7c7393c85eac6c42661e1fd0a642df",
+          "md5": "3e3e030c0f600442fa05b94f87a1e238",
+          "region": "Asia",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0210j-20040917.bin",
+          "size": 4194304,
+          "crc32": "55710d11",
+          "sha1": "bbb1af3085e77599691ec430d147810157da934f",
+          "md5": "1ad977bb539fc9448a08ab276a836bbc",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0220j-20050620.bin",
+          "size": 4194304,
+          "crc32": "d27fc41d",
+          "sha1": "7ffa75d142cb8eeea6c777dbcf263143655275d5",
+          "md5": "eb4f40fcf4911ede39c1bbfe91e7a89a",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0220ad-20050620.bin",
+          "size": 4194304,
+          "crc32": "181f1bda",
+          "sha1": "7c7efdfcec7705f4e84bb47f45322104e39eed09",
+          "md5": "9959ad7a8685cad66206e7752ca23f8b",
+          "region": "NTSC-U (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0220a-20050620.bin",
+          "size": 4194304,
+          "crc32": "d305a97a",
+          "sha1": "48d0445dffd1e879c7ae752c5166ec3101921555",
+          "md5": "929a14baca1776b00869f983aa6e14d2",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0220e-20050620.bin",
+          "size": 4194304,
+          "crc32": "e2862e39",
+          "sha1": "929a85e974faf4b40d0a7785023b758402c43bd9",
+          "md5": "573f7d4a430c32b3cc0fd0c41e104bbd",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0220h-20050620.bin",
+          "size": 4194304,
+          "crc32": "e27c4a6c",
+          "sha1": "0a071d1b46607a7694770407606d8599f62a372b",
+          "md5": "df63a604e8bff5b0599bd1a6c2721bd0",
+          "region": "Asia",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0220j-20060210.bin",
+          "size": 4194304,
+          "crc32": "1303918e",
+          "sha1": "0edf1fbb772a8e6a79ae00e977450e3ade25c4f3",
+          "md5": "5b1ba4bb914406fae75ab8e38901684d",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0220a-20060210.bin",
+          "size": 4194304,
+          "crc32": "1279fce9",
+          "sha1": "92e488d5b2705e4cca83d4d1efbc421012faf83e",
+          "md5": "cb801b7920a7d536ba07b6534d2433ca",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0220e-20060210.bin",
+          "size": 4194304,
+          "crc32": "23fa7baa",
+          "sha1": "28ad756d0cfd1e7b2e2de3de5d9e14207ee89761",
+          "md5": "af60e6d1a939019d55e5b330d24b1c25",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0220h-20060210.bin",
+          "size": 4194304,
+          "crc32": "23001fff",
+          "sha1": "fce2a24e5e0400cc6d98c08f426405d19173813e",
+          "md5": "549a66d0c698635ca9fa3ab012da7129",
+          "region": "Asia",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0220j-20060905.bin",
+          "size": 4194304,
+          "crc32": "1d6d879b",
+          "sha1": "3baf847c1c217aa71ac6d298389c88edb3db32e2",
+          "md5": "5de9d0d730ff1e7ad122806335332524",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0220ad-20060905.bin",
+          "size": 4194304,
+          "crc32": "431d9b7f",
+          "sha1": "4191b5842f31a9985b5428bc9d2b733ce3abb583",
+          "md5": "21fe4cad111f7dc0f9af29477057f88d",
+          "region": "NTSC-U (DTL/devkit)",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0220a-20060905.bin",
+          "size": 4194304,
+          "crc32": "1c17eafc",
+          "sha1": "8361d615cc895962e0f0838489337574dbdc9173",
+          "md5": "40c11c063b3b9409aa5e4058e984e30c",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0220e-20060905.bin",
+          "size": 4194304,
+          "crc32": "2d946dbf",
+          "sha1": "da5aacead2fb55807d6d4e70b1f10f4fdcfd3281",
+          "md5": "80bbb237a6af9c611df43b16b930b683",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0220h-20060905.bin",
+          "size": 4194304,
+          "crc32": "2d6e09ea",
+          "sha1": "a5a2ee0dd9a86ca35b94e97ca92476a584f755bf",
+          "md5": "c37bce95d32b2be480f87dd32704e664",
+          "region": "Asia",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0230j-20080220.bin",
+          "size": 4194304,
+          "crc32": "2912faa5",
+          "sha1": "fbd54bfc020af34008b317dcb80b812dd29b3759",
+          "md5": "80ac46fa7e77b8ab4366e86948e54f83",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0230a-20080220.bin",
+          "size": 4194304,
+          "crc32": "286897c2",
+          "sha1": "f9229fe159d0353b9f0632f3fdc66819c9030458",
+          "md5": "21038400dc633070a78ad53090c53017",
+          "region": "NTSC-U",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0230e-20080220.bin",
+          "size": 4194304,
+          "crc32": "19eb1081",
+          "sha1": "9915b5ba56798f4027ac1bd8d10abe0c1c9c326a",
+          "md5": "dc69f0643a3030aaa4797501b483d6c4",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0230h-20080220.bin",
+          "size": 4194304,
+          "crc32": "191174d4",
+          "sha1": "a277b456849697abec11285c6b35bc734598c220",
+          "md5": "30d56e79d89fbddf10938fa67fe3f34e",
+          "region": "Asia",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0250e-20100415.bin",
+          "size": 4194304,
+          "crc32": "7e75fc28",
+          "sha1": "b9cb5775af29cd4d1ec5521e8231f8b6636e2e44",
+          "md5": "93ea3bcee4252627919175ff1b16a1d9",
+          "region": "PAL",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "pcsx2/bios/ps2-0250j-20100415.bin",
+          "size": 4194304,
+          "crc32": "4e8c160c",
+          "sha1": "4b5ef16b67e3b523d28ed2406106cb80470a06d0",
+          "md5": "d3e81e95db25f5a86a7b7474550a2155",
+          "region": "NTSC-J",
+          "role": "ROM0: EE/IOP kernels, OSDSYS browser, IOP modules (ROMDIR starts with RESET, ROMDIR, EXTINFO)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "*.rom1 / *.rom2 / *.erom",
+          "region": "per model",
+          "role": "DVD player and Chinese font ROMs (DVD video only)",
+          "need": "optional"
+        },
+        {
+          "file": "*.nvm / *.mec",
+          "region": "per console",
+          "role": "NVRAM config / MechaCon version, regenerated by PCSX2",
+          "need": "optional"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "play-hle-bios",
+          "name": "Play! built-in HLE BIOS",
+          "replaces": ["ps2 ROM0"],
+          "kind": "hle",
+          "license": "BSD-2-Clause (Play! License.txt)",
+          "source": "https://github.com/jpd002/Play-",
+          "coverage": "Boots many retail titles without a BIOS; external BIOS unsupported",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        },
+        {
+          "id": "fps2bios",
+          "name": "fps2bios",
+          "replaces": ["ps2 ROM0"],
+          "kind": "partial-open-rom",
+          "license": "none (README: open source but unlicensed)",
+          "source": "https://github.com/AKuHAK/fps2bios",
+          "coverage": "Incomplete; does not replace the boot ROM",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        }
+      ],
+      "notes": [
+        "PCSX2 GameIndex.yaml in System.dat is a compatibility database, not firmware."
+      ]
+    },
+    {
+      "id": "sony-playstation-3",
+      "name": "PlayStation 3",
+      "bootsWithoutFirmware": false,
+      "emulators": [
+        {
+          "id": "rpcs3 (external)",
+          "firmware": "PS3UPDAT.PUP installed into dev_flash; LLE system PRX modules"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "PS3UPDAT.PUP",
+          "region": "all",
+          "role": "System software update; provides dev_flash (LV2 modules, fonts, sysutils)",
+          "need": "required"
+        },
+        {
+          "file": "*.rap / act.dat + idps",
+          "region": "per account/console",
+          "role": "PSN licenses for NPDRM content",
+          "need": "required-for-encrypted-media"
+        }
+      ],
+      "freeReplacements": [],
+      "notes": [
+        "RPCS3 HLE covers some libraries, but firmware installation is mandatory. User obtains the PUP from Sony; no URL recorded here."
+      ]
+    },
+    {
+      "id": "sony-psp",
+      "name": "PlayStation Portable",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "ppsspp (external)",
+          "firmware": "HLE kernel; no firmware"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "flash0 (font/*.pgf, kd/*.prx, vsh/*)",
+          "region": "all",
+          "role": "System fonts and modules; only optional LLE module loading uses them",
+          "need": "optional"
+        },
+        {
+          "file": "PPSSPP/ppge_atlas.zim",
+          "size": 666530,
+          "crc32": "7b57fa78",
+          "sha1": "30a33f3651f8e1b0967a5dfe6ff714baebcce41a",
+          "md5": "866855cc330b9b95cc69135fb7b41d38",
+          "region": "all",
+          "role": "PPSSPP UI atlas (emulator asset, not firmware)",
+          "need": "not-used",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "ppsspp-hle",
+          "name": "PPSSPP HLE kernel + bundled flash0 fonts",
+          "replaces": ["flash0 modules", "flash0/font/*.pgf"],
+          "kind": "hle",
+          "license": "GPL-2.0-or-later (PPSSPP); bundled assets/flash0/font license not verified here",
+          "source": "https://github.com/hrydgard/ppsspp",
+          "coverage": "Essentially complete for retail software",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sony-ps-vita",
+      "name": "PlayStation Vita",
+      "bootsWithoutFirmware": false,
+      "emulators": [
+        {
+          "id": "vita3k (external)",
+          "firmware": "firmware PUP + font package PUP installed into vs0/sa0"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "PSVUPDAT.PUP",
+          "region": "all",
+          "role": "System firmware: LLE system modules loaded by Vita3K",
+          "need": "required"
+        },
+        {
+          "file": "PSP2UPDAT/font package PUP",
+          "region": "all",
+          "role": "System font package",
+          "need": "required"
+        },
+        {
+          "file": "work.bin / *.rif, NoNpDrm license",
+          "region": "per title",
+          "role": "Content license for encrypted titles",
+          "need": "required-for-encrypted-media"
+        }
+      ],
+      "freeReplacements": [],
+      "notes": [
+        "Vita3K HLE covers part of the libraries; no free firmware replacement."
+      ]
+    },
+    {
+      "id": "sony-playstation-4",
+      "name": "PlayStation 4",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "shadps4 (external)",
+          "firmware": "HLE libraries; optional LLE sys_modules from the user's console"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "sys_modules/*.sprx (libSceNgs2, libSceFiber, libSceUlt, libSceJson, libSceLibcInternal ...)",
+          "region": "all",
+          "role": "LLE fallbacks for libraries not yet reimplemented",
+          "need": "optional"
+        },
+        {
+          "file": "font/*.otf/*.ttf (system fonts)",
+          "region": "all",
+          "role": "System fonts for some titles",
+          "need": "optional"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "shadps4-hle",
+          "name": "shadPS4 HLE libraries",
+          "replaces": ["system libraries"],
+          "kind": "hle",
+          "license": "GPL-2.0",
+          "source": "https://github.com/shadps4-emu/shadPS4",
+          "coverage": "Growing; decrypted dumps only",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        }
+      ]
+    },
+    {
+      "id": "microsoft-xbox",
+      "name": "Xbox (original)",
+      "bootsWithoutFirmware": false,
+      "emulators": [
+        {
+          "id": "xemu (external)",
+          "firmware": "MCPX boot ROM + flash BIOS + HDD image"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "mcpx_1.0.bin",
+          "size": 512,
+          "md5": "d49c52a4102f6df7bcf8d0617ac475ed",
+          "region": "all",
+          "role": "MCPX southbridge secret boot ROM (decrypts 2BL)",
+          "need": "required",
+          "hashSource": "https://xemu.app/docs/required-files/"
+        },
+        {
+          "file": "flash BIOS (1 MiB, e.g. Complex 4627 debug/modified)",
+          "size": 1048576,
+          "region": "all",
+          "role": "Kernel + 2BL; retail unmodified BIOS does not boot in xemu",
+          "need": "required"
+        },
+        {
+          "file": "xbox_hdd.qcow2",
+          "region": "all",
+          "role": "FATX hard disk with dashboard",
+          "need": "required"
+        },
+        {
+          "file": "eeprom.bin",
+          "size": 256,
+          "region": "per console",
+          "role": "Serial, HDD key, region; created by xemu when absent",
+          "need": "optional"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "xemu-hdd-image",
+          "name": "xemu pre-built HDD image (unsigned dashboard only)",
+          "replaces": ["xbox_hdd.qcow2"],
+          "kind": "generated-default",
+          "license": "xemu project distribution (dashboard is open homebrew)",
+          "source": "https://xemu.app/docs/required-files/",
+          "coverage": "Satisfies the HDD requirement",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        },
+        {
+          "id": "cromwell",
+          "name": "Cromwell",
+          "replaces": ["flash BIOS"],
+          "kind": "open-firmware-source",
+          "license": "GPL-2.0",
+          "source": "https://github.com/XboxDev/cromwell",
+          "coverage": "Boots Linux only; cannot run retail games (no Xbox kernel)",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        }
+      ],
+      "notes": ["No free MCPX ROM or game-capable kernel exists."]
+    },
+    {
+      "id": "sega-genesis",
+      "name": "Sega Genesis / Mega Drive (+ Sega CD, 32X, Master System, Game Gear)",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "jgenesis",
+          "path": "vendor/jgenesis",
+          "firmware": "Genesis: none; Sega CD: BIOS per region; 32X: embedded boot ROMs; SMS/GG: optional BIOS"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "bios_MD.bin",
+          "size": 2048,
+          "crc32": "3f888cf4",
+          "sha1": "3f50b76b0529db7f79c396b5e808cc0786ffc311",
+          "md5": "d3293ebaaa7f4eb2a6766b68a0fb4609",
+          "region": "all",
+          "role": "TMSS boot ROM (\"PRODUCED BY OR UNDER LICENSE...\")",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "bios_CD_E.bin",
+          "size": 131072,
+          "crc32": "529ac15a",
+          "sha1": "f891e0ea651e2232af0c5c4cb46a0cae2ee8f356",
+          "md5": "e66fa1dc5820d254611fdcdba0662372",
+          "region": "PAL",
+          "role": "128 KiB Sega CD BIOS: boot ROM and CD drive control routines",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "bios_CD_J.bin",
+          "size": 131072,
+          "crc32": "9d2da8f2",
+          "sha1": "4846f448160059a7da0215a5df12ca160f26dd69",
+          "md5": "278a9397d192149e84e820ac621a8edd",
+          "region": "NTSC-J",
+          "role": "128 KiB Sega CD BIOS: boot ROM and CD drive control routines",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "bios_CD_U.bin",
+          "size": 131072,
+          "crc32": "c6d10268",
+          "sha1": "f4f315adcef9b8feb0364c21ab7f0eaf5457f3ed",
+          "md5": "2efd74e3232ff260e371b99f84024f7f",
+          "region": "NTSC-U",
+          "role": "128 KiB Sega CD BIOS: boot ROM and CD drive control routines",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "32x_m_bios.bin",
+          "size": 2048,
+          "crc32": "dd9c46b8",
+          "sha1": "1e5b0b2441a4979b6966d942b20cc76c413b8c5e",
+          "region": "all",
+          "role": "32X master SH-2 boot ROM (holds the cartridge security program at 0x36C)",
+          "need": "required-for-addon",
+          "hashSource": "mamedev/mame src/mame/sega/mdconsole.cpp"
+        },
+        {
+          "file": "32x_s_bios.bin",
+          "size": 1024,
+          "crc32": "bfda1fe5",
+          "sha1": "4103668c1bbd66c5e24558e73d4f3f92061a109a",
+          "region": "all",
+          "role": "32X slave SH-2 boot ROM",
+          "need": "required-for-addon",
+          "hashSource": "mamedev/mame src/mame/sega/mdconsole.cpp"
+        },
+        {
+          "file": "32x_g_bios.bin",
+          "size": 256,
+          "crc32": "5c12eae8",
+          "sha1": "dbebd76a448447cb6e524ac3cb0fd19fc065d944",
+          "region": "all",
+          "role": "32X 68000 vector ROM",
+          "need": "required-for-addon",
+          "hashSource": "mamedev/mame src/mame/sega/mdconsole.cpp"
+        },
+        {
+          "file": "bios.sms",
+          "size": 8192,
+          "crc32": "0072ed54",
+          "sha1": "c315672807d8ddb8d91443729405c766dd95cae7",
+          "md5": "840481177270d5642a14ca71ee72844c",
+          "region": "see file",
+          "role": "SMS BIOS (boot logo, cart/card select)",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["bios_E.sms", "bios_U.sms"]
+        },
+        {
+          "file": "bios_J.sms",
+          "size": 8192,
+          "crc32": "48d44a13",
+          "sha1": "a8c1b39a2e41137835eda6a5de6d46dd9fadbaf2",
+          "md5": "24a519c53f67b00640d0048ef7089105",
+          "region": "see file",
+          "role": "SMS BIOS (boot logo, cart/card select)",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "bios.gg",
+          "size": 1024,
+          "crc32": "0ebea9d4",
+          "sha1": "914aa165e3d879f060be77870d345b60cfeb4ede",
+          "md5": "672e104c3be3a238301aceffc3b23fd6",
+          "region": "all",
+          "role": "Game Gear BIOS (license screen)",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        }
+      ],
+      "freeReplacements": [],
+      "notes": [
+        "COMPLIANCE: vendor/jgenesis/backend/s32x-core/src/{sh2_master_boot_rom.bin,sh2_slave_boot_rom.bin,m68k_vectors.bin} have SHA-1 1e5b0b24.../4103668c.../dbebd76a..., identical to MAME's retail 32X BIOS entries. They are proprietary Sega bytes included by upstream jgenesis (include_bytes! in bootrom.rs); this conflicts with CONSOLE-PROVENANCE/UNIVERSAL-PORTING non-redistribution rules and must be resolved before any publication gate.",
+        "No free Sega CD BIOS exists; Genesis cartridges need nothing."
+      ]
+    },
+    {
+      "id": "sega-saturn",
+      "name": "Sega Saturn",
+      "bootsWithoutFirmware": false,
+      "emulators": [
+        {
+          "id": "ares/mame (pinned, not checked out); mednafen/kronos external",
+          "firmware": "BIOS required except Yabause/Kronos HLE"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "hisaturn.bin",
+          "size": 524288,
+          "crc32": "721e1b60",
+          "sha1": "49d8493008fa715ca0c94d99817a5439d6f2c796",
+          "md5": "3ea3202e2634cb47cb90f3a05c015010",
+          "region": "see file",
+          "role": "512 KiB IPL: boot, CD block auth, backup RAM manager, CD player (2 MiB ic1 files are ST-V/arcade variants)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "mpr-17933.bin",
+          "size": 524288,
+          "crc32": "4afcf0fa",
+          "sha1": "faa8ea183a6d7bbe5d4e03bb1332519800d3fbc3",
+          "md5": "3240872c70984b6cbfda1586cab68dbe",
+          "region": "NTSC-J/U per DAT naming",
+          "role": "512 KiB IPL: boot, CD block auth, backup RAM manager, CD player (2 MiB ic1 files are ST-V/arcade variants)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "mpr-18100.bin",
+          "size": 524288,
+          "crc32": "3408dbf4",
+          "sha1": "8a22710e09ce75f39625894366cafe503ed1942d",
+          "md5": "cb2cebc1b6e573b7c44523d037edcd45",
+          "region": "see file",
+          "role": "512 KiB IPL: boot, CD block auth, backup RAM manager, CD player (2 MiB ic1 files are ST-V/arcade variants)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "mpr-18811-mx.ic1",
+          "size": 2097152,
+          "crc32": "90412e10",
+          "sha1": "a67cd4f550751f8b91de2b8b74528ab4e0c11c77",
+          "md5": "255113ba943c92a54facd25a10fd780c",
+          "region": "see file",
+          "role": "512 KiB IPL: boot, CD block auth, backup RAM manager, CD player (2 MiB ic1 files are ST-V/arcade variants)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "mpr-19367-mx.ic1",
+          "size": 2097152,
+          "crc32": "b9644b52",
+          "sha1": "56c1b93da6b660bf393fbf48ca47569000ef4047",
+          "md5": "1cd19988d1d72a3e7caa0b73234c96b4",
+          "region": "see file",
+          "role": "512 KiB IPL: boot, CD block auth, backup RAM manager, CD player (2 MiB ic1 files are ST-V/arcade variants)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "saturn_bios.bin",
+          "size": 524288,
+          "crc32": "2aba43c2",
+          "sha1": "2b8cb4f87580683eb4d760e4ed210813d667f0a2",
+          "md5": "af5828fdff51384f99b3c4926be27762",
+          "region": "see file",
+          "role": "512 KiB IPL: boot, CD block auth, backup RAM manager, CD player (2 MiB ic1 files are ST-V/arcade variants)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["sega_100.bin", "kronos/saturn_bios.bin"]
+        },
+        {
+          "file": "sega1003.bin",
+          "size": 524288,
+          "crc32": "b3c63c25",
+          "sha1": "7b23b53d62de0f29a23e423d0fe751dfb469c2fa",
+          "md5": "74570fed4d44b2682b560c8cd44b8b6a",
+          "region": "see file",
+          "role": "512 KiB IPL: boot, CD block auth, backup RAM manager, CD player (2 MiB ic1 files are ST-V/arcade variants)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "sega_100a.bin",
+          "size": 524288,
+          "crc32": "f90f0089",
+          "sha1": "3bb41feb82838ab9a35601ac666de5aacfd17a58",
+          "md5": "f273555d7d91e8a5a6bfd9bcf066331c",
+          "region": "see file",
+          "role": "512 KiB IPL: boot, CD block auth, backup RAM manager, CD player (2 MiB ic1 files are ST-V/arcade variants)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "sega_101.bin",
+          "size": 524288,
+          "crc32": "224b752c",
+          "sha1": "df94c5b4d47eb3cc404d88b33a8fda237eaf4720",
+          "md5": "85ec9ca47d8f6807718151cbcca8b964",
+          "region": "NTSC-J/U per DAT naming",
+          "role": "512 KiB IPL: boot, CD block auth, backup RAM manager, CD player (2 MiB ic1 files are ST-V/arcade variants)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "vsaturn.bin",
+          "size": 524288,
+          "crc32": "e4d61811",
+          "sha1": "4154e11959f3d5639b11d7902b3a393a99fb5776",
+          "md5": "ac4e4b6522e200c0d23d371a8cecbfd3",
+          "region": "see file",
+          "role": "512 KiB IPL: boot, CD block auth, backup RAM manager, CD player (2 MiB ic1 files are ST-V/arcade variants)",
+          "need": "required",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "yabause-hle-bios",
+          "name": "Yabause/Kronos emulated BIOS (bios.c)",
+          "replaces": ["sega_101.bin", "mpr-17933.bin"],
+          "kind": "hle",
+          "license": "GPL-2.0-or-later",
+          "source": "https://github.com/Yabause/yabause/blob/master/yabause/src/bios.c",
+          "coverage": "Partial; many games fail without a real BIOS",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sega-dreamcast",
+      "name": "Sega Dreamcast",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "flycast (external)",
+          "firmware": "real BIOS preferred; reios HLE fallback"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "dc/dc_boot.bin",
+          "size": 2097152,
+          "crc32": "89f2b1a1",
+          "sha1": "8951d1bb219ab2ff8583033d2119c899cc81f18c",
+          "md5": "e10c53c2f8b90bab96ead2d368858623",
+          "region": "all",
+          "role": "2 MiB boot ROM (Katana BIOS: boot animation, GD-ROM syscalls, VMU manager)",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["dc/boot.bin"]
+        },
+        {
+          "file": "dc/flash.bin",
+          "size": 131072,
+          "crc32": "c611b498",
+          "sha1": "94d44d7f9529ec1642ba3771ed3c5f756d5bc872",
+          "md5": "0a93f7940c455905bea6e392dfde92a4",
+          "region": "per console",
+          "role": "128 KiB flash: region, language, settings, ISP",
+          "need": "optional",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        }
+      ],
+      "freeReplacements": [
+        {
+          "id": "flycast-reios",
+          "name": "Flycast reios (HLE BIOS + GD-ROM HLE)",
+          "replaces": ["dc_boot.bin", "dc_flash.bin"],
+          "kind": "hle",
+          "license": "GPL-2.0",
+          "source": "https://github.com/flyinghead/flycast/tree/master/core/reios",
+          "coverage": "Boots most GDI/CDI/CHD titles; no BIOS menu",
+          "vendored": {
+            "state": "not-vendored"
+          }
+        }
+      ]
+    },
+    {
+      "id": "nec-pc-engine",
+      "name": "PC Engine / TurboGrafx-16 (+ CD-ROM2)",
+      "bootsWithoutFirmware": true,
+      "emulators": [
+        {
+          "id": "jgenesis pce-core",
+          "path": "vendor/jgenesis/backend/pce-core",
+          "firmware": "cd_bios_path for CD titles"
+        }
+      ],
+      "firmware": [
+        {
+          "file": "gecard.pce",
+          "size": 32768,
+          "crc32": "51a12d90",
+          "sha1": "014881a959e045e00f4db8f52955200865d40280",
+          "md5": "6d2cb14fc3e1f65ceb135633d1694122",
+          "region": "see file (u = TurboGrafx)",
+          "role": "CD-ROM2 / Super System Card HuCard BIOS",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf",
+          "aliases": ["gexpress.pce"]
+        },
+        {
+          "file": "syscard1.pce",
+          "size": 262144,
+          "crc32": "3f9f95a4",
+          "sha1": "a39a66da7de6ba94ab84d04eef7afeec7d4ee66a",
+          "md5": "2b7ccb3d86baa18f6402c176f3065082",
+          "region": "see file (u = TurboGrafx)",
+          "role": "CD-ROM2 / Super System Card HuCard BIOS",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "syscard2.pce",
+          "size": 262144,
+          "crc32": "283b74e0",
+          "sha1": "88da02e2503f7c32810f5d93a34849d470742b6d",
+          "md5": "3cdd6614a918616bfc41c862e889dd79",
+          "region": "see file (u = TurboGrafx)",
+          "role": "CD-ROM2 / Super System Card HuCard BIOS",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "syscard2u.pce",
+          "size": 262144,
+          "crc32": "ff2a5ec3",
+          "sha1": "2bea3dac98f84b2f2f469fa77ea720b8770d598d",
+          "md5": "94279f315e8b52904f65ab3108542afe",
+          "region": "see file (u = TurboGrafx)",
+          "role": "CD-ROM2 / Super System Card HuCard BIOS",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "syscard3.pce",
+          "size": 262144,
+          "crc32": "6d9a73ef",
+          "sha1": "79f5ff55dd10187c7fd7b8daab0b3ffbd1f56a2c",
+          "md5": "38179df8f4ac870017db21ebcbf53114",
+          "region": "see file (u = TurboGrafx)",
+          "role": "CD-ROM2 / Super System Card HuCard BIOS",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        },
+        {
+          "file": "syscard3u.pce",
+          "size": 262144,
+          "crc32": "2b5b75fe",
+          "sha1": "d02611d99921986147c753df14c7349b31d71950",
+          "md5": "0754f903b52e3b3342202bdafb13efa5",
+          "region": "see file (u = TurboGrafx)",
+          "role": "CD-ROM2 / Super System Card HuCard BIOS",
+          "need": "required-for-addon",
+          "hashSource": "libretro-database dat/System.dat@f206bf65f05a783a2108d1be96ca237d21d68dcf"
+        }
+      ],
+      "freeReplacements": []
+    }
+  ]
+}

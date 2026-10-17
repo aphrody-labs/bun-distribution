@@ -5,7 +5,7 @@ import { csharpExports } from "./dotnet.ts";
 import { inspectMedia } from "./media.ts";
 import { parsePe } from "./pe.ts";
 import { powershellExports } from "./pwsh.ts";
-import { inspectRom } from "./rom.ts";
+import { setupRomLoader } from "./rom.ts";
 import { inspectScene } from "./scene.ts";
 
 type Exports = Record<string, unknown>;
@@ -16,7 +16,11 @@ const metadata = (value: object): Exports => ({
   metadata: value,
 });
 
-/** Ordered (extension filter, exports factory) table; `import x from "./file.ext"` yields its inspection. */
+/**
+ * Ordered (extension filter, exports factory) table; `import x from "./file.ext"` yields its
+ * inspection. Console binaries (ROM, disc, executable, BIOS) are registered first by
+ * setupRomLoader so `.3ds` and `.bin` resolve to the console parser.
+ */
 const LOADERS: [RegExp, (path: string) => Promise<Exports>][] = [
   [/\.cs$/i, csharpExports],
   [/\.ps1$/i, powershellExports],
@@ -27,10 +31,6 @@ const LOADERS: [RegExp, (path: string) => Promise<Exports>][] = [
   [
     /\.(apk|apks|aab)$/i,
     async (path) => metadata(parseApk(await Bun.file(path).bytes(), path)),
-  ],
-  [
-    /\.(nds|dsi|bin|gba|gb|gbc|nes|n64|z64|v64|smd|gcm|3ds|cci)$/i,
-    async (path) => metadata(await inspectRom(path)),
   ],
   [
     /\.(gltf|glb|obj|fbx|dae|abc|usd[acz]?|ply|stl|x3d|3ds|blend)$/i,
@@ -45,6 +45,7 @@ const LOADERS: [RegExp, (path: string) => Promise<Exports>][] = [
 export const loadersPlugin: BunPlugin = {
   name: "bun-loaders",
   setup(build) {
+    setupRomLoader(build);
     for (const [filter, load] of LOADERS) {
       build.onLoad({ filter, namespace: "file" }, async ({ path }) => ({
         exports: await load(path),

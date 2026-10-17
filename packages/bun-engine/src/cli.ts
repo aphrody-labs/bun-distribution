@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { policyFor } from "./catalog";
 import { loadConsoleReferences, validateConsoleReferences } from "./console/references";
+import { runFormats } from "./formats/cli";
 import { launch, trace } from "./launcher";
 import { runNative } from "./nds/cli";
 import { probeHost } from "./probe";
@@ -17,6 +18,7 @@ async function main(): Promise<void> {
     if (errors.length > 0) throw new Error(errors.join("\n"));
     console.log(JSON.stringify(references, null, 2));
   }
+  else if (command === "formats") process.exitCode = await runFormats(process.argv.slice(3));
   else if (command === "nds:info" && appId)
     process.exitCode = await runNative(["info", appId, ...(target ? [target] : [])]);
   else if (command === "run" && appId) process.exitCode = await runNative(process.argv.slice(2));
@@ -35,7 +37,7 @@ async function main(): Promise<void> {
   else if (command === "trace" && appId) process.exitCode = await trace(appId);
   else {
     throw new Error(
-      "reverse engineering (Replica, Ghidra, Magika, pipeline) lives in `re`.\nusage: bun-engine build [--release] | compile [bun-<os>-<arch>] [outfile] [bytecode-order] | test | web | probe | references | nds:info <rom.nds> [--json] | run <nds|arm|x86|linux> <image> [--headless] [--frames N] [--out DIR] | qualify <appid> | launch <appid> | trace <appid>",
+      "reverse engineering (Replica, Ghidra, Magika, pipeline) lives in `re`.\nusage: bun-engine build [--release] | compile [bun-<os>-<arch>] [outfile] [bytecode-order] | test | web | probe | references | formats <identify|header|sections|files|disasm|stream|compile> ... | nds:info <rom.nds> [--json] | run <nds|arm|x86|linux> <image> [--headless] [--frames N] [--out DIR] | qualify <appid> | launch <appid> | trace <appid>",
     );
   }
 }

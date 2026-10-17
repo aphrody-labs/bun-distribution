@@ -1,0 +1,2741 @@
+{
+  "schemaVersion": 1,
+  "generated": "2026-10-17",
+  "policy": "Format metadata only. freeRoms lists freely redistributable test/homebrew suites; bep never fetches commercial games (see roms.json).",
+  "statusLegend": {
+    "parsed": "an in-repo owner parses or executes the format",
+    "identified": "in-repo code only sniffs magic or registers the extension",
+    "external-only": "handled by external tools listed in packages/iecode-docs/nie/CONSOLE-PIPELINE.md (ctrtool, 3dstool, ninfs, Wiimms ISO Tools)",
+    "none": "no parser in this repository"
+  },
+  "builtOn": [
+    "packages/iecode-docs/nie/CONSOLE-PIPELINE.md (external container tools)",
+    "packages/iecode-docs/nie/FORMATS.md, packages/iecode-docs/formats/VFS-FORMAT-SPECIFICATIONS.md (Level-5/CRI)",
+    "packages/re/plugin/skills/{ds-reverse,3ds-reverse,switch-reverse}/SKILL.md",
+    "packages/bun-engine/plugins/consoles/roms.json"
+  ],
+  "formats": [
+    {
+      "id": "ines",
+      "consoles": ["nintendo-nes"],
+      "extensions": [".nes"],
+      "kind": "rom",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "NES\u001a",
+          "hex": "4e 45 53 1a"
+        }
+      ],
+      "header": "16-byte header: PRG 16K units @4, CHR 8K units @5, flags6 (mirroring, battery, trainer, mapper low), flags7 (mapper high, NES 2.0 when (b7 & 0x0C) == 0x08); 512-byte trainer if flags6 bit 2",
+      "parsers": [
+        {
+          "path": "packages/bun-loaders/src/rom.ts",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "vendor/tetanes/tetanes-core/src/cart.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "crates/bun-engine-core/src/machine/nes.rs",
+          "scope": "execute"
+        },
+        {
+          "path": "vendor/jgenesis/backend/nes-core",
+          "scope": "execute"
+        }
+      ],
+      "status": "parsed",
+      "spec": [
+        "https://www.nesdev.org/wiki/INES",
+        "https://www.nesdev.org/wiki/NES_2.0"
+      ]
+    },
+    {
+      "id": "unif",
+      "consoles": ["nintendo-nes"],
+      "extensions": [".unf", ".unif"],
+      "kind": "rom",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "UNIF",
+          "hex": "55 4e 49 46"
+        }
+      ],
+      "header": "32-byte header then chunked blocks (MAPR, PRG0..F, CHR0..F, MIRR, BATR)",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://www.nesdev.org/wiki/UNIF"]
+    },
+    {
+      "id": "fds",
+      "consoles": ["nintendo-nes"],
+      "extensions": [".fds", ".qd"],
+      "kind": "disc",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "FDS\u001a",
+          "hex": "46 44 53 1a",
+          "note": "optional fwNES 16-byte header; byte 4 = side count"
+        },
+        {
+          "offset": "0x0 or 0x10",
+          "hex": "01 2a 4e 49 4e 54 45 4e 44 4f 2d 48 56 43 2a",
+          "note": "disk info block: 0x01 then *NINTENDO-HVC*"
+        }
+      ],
+      "header": "65500-byte sides of blocks 1 (disk info), 2 (file count), 3 (file header), 4 (file data); .qd keeps CRCs and 65536-byte sides",
+      "parsers": [
+        {
+          "path": "packages/bun-engine/src/plugins/formats.ts (.fds)",
+          "scope": "identify"
+        }
+      ],
+      "status": "identified",
+      "spec": [
+        "https://www.nesdev.org/wiki/FDS_disk_format",
+        "https://www.nesdev.org/wiki/FDS_file_format"
+      ]
+    },
+    {
+      "id": "nsf",
+      "consoles": ["nintendo-nes"],
+      "extensions": [".nsf", ".nsfe"],
+      "kind": "audio",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "NESM\u001a",
+          "hex": "4e 45 53 4d 1a"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "NSFE",
+          "hex": "4e 53 46 45",
+          "note": ".nsfe"
+        }
+      ],
+      "header": "0x80-byte header: version @5, song count @6, load/init/play addresses @8/@0xA/@0xC",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://www.nesdev.org/wiki/NSF"]
+    },
+    {
+      "id": "snes-rom",
+      "consoles": ["nintendo-snes"],
+      "extensions": [".sfc", ".smc", ".swc", ".fig"],
+      "kind": "rom",
+      "magic": [
+        {
+          "offset": "none",
+          "note": "no magic; locate internal header at 0x7FC0 (LoROM), 0xFFC0 (HiROM) or 0x40FFC0 (ExHiROM), +0x200 when size % 1024 == 512 (copier header)"
+        }
+      ],
+      "header": "Internal header: title 21 bytes, map mode +0x15, chip type +0x16, ROM/RAM size +0x17/+0x18, region +0x19, checksum complement +0x1C and checksum +0x1E sum to 0xFFFF; vectors at +0x20",
+      "parsers": [
+        {
+          "path": "vendor/jgenesis/backend/snes-core",
+          "scope": "execute"
+        }
+      ],
+      "status": "parsed",
+      "spec": [
+        "https://problemkaputt.de/fullsnes.htm#snescartridgeromheader",
+        "https://snes.nesdev.org/wiki/ROM_header"
+      ]
+    },
+    {
+      "id": "spc",
+      "consoles": ["nintendo-snes"],
+      "extensions": [".spc"],
+      "kind": "audio",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "SNES-SPC700 Sound File Data v0.30",
+          "hex": "53 4e 45 53 2d 53 50 43 37 30 30 20 53 6f 75 6e 64 20 46 69 6c 65 20 44 61 74 61 20 76 30 2e 33 30"
+        }
+      ],
+      "header": "SPC700 registers @0x25, ID666 tag @0x2E, 64 KiB ARAM @0x100, DSP registers @0x10100",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://wiki.superfamicom.org/spc-and-rsn-file-format"]
+    },
+    {
+      "id": "gb",
+      "consoles": ["nintendo-game-boy"],
+      "extensions": [".gb", ".gbc", ".sgb", ".cgb"],
+      "kind": "rom",
+      "magic": [
+        {
+          "offset": "0x104",
+          "hex": "ce ed 66 66 cc 0d 00 0b",
+          "note": "first 8 bytes of the 48-byte Nintendo logo"
+        }
+      ],
+      "header": "Entry 0x100, title 0x134, CGB flag 0x143 (0x80/0xC0), SGB flag 0x146, cartridge type 0x147, ROM size 0x148 (32 KiB << n), RAM size 0x149, header checksum 0x14D, global checksum 0x14E",
+      "parsers": [
+        {
+          "path": "packages/bun-loaders/src/rom.ts",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "vendor/retroboy",
+          "scope": "execute"
+        },
+        {
+          "path": "vendor/jgenesis/backend/gb-core",
+          "scope": "execute"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://gbdev.io/pandocs/The_Cartridge_Header.html"]
+    },
+    {
+      "id": "gbs",
+      "consoles": ["nintendo-game-boy"],
+      "extensions": [".gbs"],
+      "kind": "audio",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "GBS",
+          "hex": "47 42 53"
+        }
+      ],
+      "header": "0x70-byte header with load/init/play addresses",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://gbdev.gg8.se/wiki/articles/Gameboy_sound_system"]
+    },
+    {
+      "id": "gba",
+      "consoles": ["nintendo-game-boy-advance"],
+      "extensions": [".gba", ".agb", ".mb"],
+      "kind": "rom",
+      "magic": [
+        {
+          "offset": "0x4",
+          "hex": "24 ff ae 51 69 9a a2 21",
+          "note": "compressed logo start"
+        },
+        {
+          "offset": "0xB2",
+          "hex": "96",
+          "note": "fixed value"
+        }
+      ],
+      "header": "ARM branch @0, logo 0x04..0x9F, title 0xA0 (12), game code 0xAC (4), maker 0xB0 (2), unit 0xB3, version 0xBC, complement check 0xBD; multiboot images (.mb) load at 0x02000000",
+      "parsers": [
+        {
+          "path": "packages/bun-loaders/src/rom.ts",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/bun-engine-core/src/machine/gba.rs",
+          "scope": "execute"
+        },
+        {
+          "path": "vendor/rustboyadvance-ng/core/src/cartridge",
+          "scope": "parse"
+        },
+        {
+          "path": "vendor/jgenesis/backend/gba-core",
+          "scope": "execute"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://problemkaputt.de/gbatek.htm#gbacartridgeheader"]
+    },
+    {
+      "id": "nds",
+      "consoles": ["nintendo-ds"],
+      "extensions": [".nds", ".srl"],
+      "kind": "rom",
+      "magic": [
+        {
+          "offset": "0xC0",
+          "hex": "24 ff ae 51 69 9a a2 21 3d 84 82 0a",
+          "note": "Nintendo logo; logo CRC16 at 0x15C = 0xCF56, header CRC16 at 0x15E"
+        }
+      ],
+      "header": "0x200 header (0x1000 on DSi): title 0x00, game code 0x0C, maker 0x10, unit code 0x12, ARM9 rom offset/entry/load/size 0x20..0x2F, ARM7 0x30..0x3F, FNT 0x40/0x44, FAT 0x48/0x4C, ARM9/ARM7 overlay tables 0x50/0x58, banner offset 0x68, secure-area CRC 0x6C",
+      "parsers": [
+        {
+          "path": "crates/bun-engine-core/src/binary.rs#inspect_binary",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/bun-engine-core/src/cartridge.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "crates/aphrody-dust-core/src/rom",
+          "scope": "parse"
+        },
+        {
+          "path": "packages/bun-engine/src/nds/tinke.ts",
+          "scope": "decode"
+        },
+        {
+          "path": "crates/bun-engine-core/src/machine/nds.rs",
+          "scope": "execute"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://problemkaputt.de/gbatek.htm#dscartridgeheader"]
+    },
+    {
+      "id": "dsi",
+      "consoles": ["nintendo-ds-dsi"],
+      "extensions": [".dsi", ".nds", ".srl"],
+      "kind": "rom",
+      "magic": [
+        {
+          "offset": "0xC0",
+          "hex": "24 ff ae 51 69 9a a2 21"
+        },
+        {
+          "offset": "0x12",
+          "hex": "02 or 03",
+          "note": "unit code 2 = DS+DSi, 3 = DSi only"
+        }
+      ],
+      "header": "Extended header 0x180..0xFFF: region flags, ARM9i/ARM7i offsets 0x1C0/0x1D0, modcrypt areas 0x220..0x22F, SHA-1 HMACs, RSA signature at 0xF80",
+      "parsers": [
+        {
+          "path": "crates/bun-engine-core/src/binary.rs#inspect_binary",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/aphrody-dust-core/src/rom/header.rs",
+          "scope": "parse"
+        }
+      ],
+      "status": "identified",
+      "spec": ["https://problemkaputt.de/gbatek.htm#dsicartridgeheader"]
+    },
+    {
+      "id": "nitro-archives",
+      "consoles": ["nintendo-ds", "nintendo-ds-dsi"],
+      "extensions": [
+        ".narc",
+        ".carc",
+        ".sdat",
+        ".ncgr",
+        ".nclr",
+        ".nscr",
+        ".ncer",
+        ".nanr",
+        ".nsbmd",
+        ".nsbtx",
+        ".nsbca"
+      ],
+      "kind": "archive",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "NARC",
+          "hex": "4e 41 52 43"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "SDAT",
+          "hex": "53 44 41 54"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "RGCN",
+          "hex": "52 47 43 4e",
+          "note": ".ncgr"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "RLCN",
+          "hex": "52 4c 43 4e",
+          "note": ".nclr"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "RCSN",
+          "hex": "52 43 53 4e",
+          "note": ".nscr"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "BMD0",
+          "hex": "42 4d 44 30",
+          "note": ".nsbmd"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "BTX0",
+          "hex": "42 54 58 30",
+          "note": ".nsbtx"
+        },
+        {
+          "offset": "0x4",
+          "hex": "ff fe or fe ff",
+          "note": "BOM"
+        }
+      ],
+      "header": "Nitro generic header: magic, BOM, version, file size, header size, block count; NARC = BTAF/BTNF/GMIF blocks",
+      "parsers": [],
+      "status": "external-only",
+      "spec": [
+        "https://problemkaputt.de/gbatek.htm#dscartridgenitrofilesystem",
+        "https://www.romhacking.net/documents/469/"
+      ]
+    },
+    {
+      "id": "nitro-bios-compression",
+      "consoles": ["nintendo-game-boy-advance", "nintendo-ds"],
+      "extensions": [".lz", ".lz77", ".cmp"],
+      "kind": "compression",
+      "magic": [
+        {
+          "offset": "0x0",
+          "hex": "10",
+          "note": "LZ77"
+        },
+        {
+          "offset": "0x0",
+          "hex": "11",
+          "note": "LZ11 (DS)"
+        },
+        {
+          "offset": "0x0",
+          "hex": "2x",
+          "note": "Huffman 4/8-bit"
+        },
+        {
+          "offset": "0x0",
+          "hex": "30",
+          "note": "RLE"
+        },
+        {
+          "offset": "0x0",
+          "hex": "8x",
+          "note": "diff filter"
+        }
+      ],
+      "header": "u32 header: type in low byte, decompressed size in upper 24 bits (BIOS SWI 0x11-0x18 formats)",
+      "parsers": [
+        {
+          "path": "crates/aphrody-dust-core/src/compress/{lz77,huffman}.rs",
+          "scope": "decode"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://problemkaputt.de/gbatek.htm#biosdecompressionfunctions"]
+    },
+    {
+      "id": "ncsd",
+      "consoles": ["nintendo-3ds"],
+      "extensions": [".3ds", ".cci"],
+      "kind": "rom",
+      "magic": [
+        {
+          "offset": "0x100",
+          "ascii": "NCSD",
+          "hex": "4e 43 53 44"
+        }
+      ],
+      "header": "RSA-2048 signature 0x000, media size 0x104 (0x200-byte media units), media ID 0x108, partition FS types 0x110, crypt types 0x118, partition table 0x120 (8 x offset/length), card info 0x200",
+      "parsers": [
+        {
+          "path": "packages/bun-loaders/src/rom.ts",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        }
+      ],
+      "status": "identified",
+      "spec": ["https://www.3dbrew.org/wiki/NCSD"]
+    },
+    {
+      "id": "ncch",
+      "consoles": ["nintendo-3ds"],
+      "extensions": [".cxi", ".cfa", ".app"],
+      "kind": "container",
+      "magic": [
+        {
+          "offset": "0x100",
+          "ascii": "NCCH",
+          "hex": "4e 43 43 48"
+        }
+      ],
+      "header": "Partition ID 0x108, program ID 0x118, flags 0x188 (crypto, content type), ExHeader at 0x200 (size 0x180), plain region 0x190, logo 0x198, ExeFS offset/size 0x1A0/0x1A4, RomFS 0x1B0/0x1B4 (media units)",
+      "parsers": [
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        }
+      ],
+      "status": "identified",
+      "spec": [
+        "https://www.3dbrew.org/wiki/NCCH",
+        "https://www.3dbrew.org/wiki/NCCH/Extended_Header"
+      ]
+    },
+    {
+      "id": "cia",
+      "consoles": ["nintendo-3ds"],
+      "extensions": [".cia"],
+      "kind": "container",
+      "magic": [
+        {
+          "offset": "0x0",
+          "hex": "20 20 00 00",
+          "note": "archive header size 0x2020 (u32 LE), type 0, version 0"
+        }
+      ],
+      "header": "Cert chain size 0x08, ticket size 0x0C, TMD size 0x10, meta size 0x14, content size 0x18 (u64), content index bitmap 0x20; sections 64-byte aligned",
+      "parsers": [],
+      "status": "external-only",
+      "spec": ["https://www.3dbrew.org/wiki/CIA"]
+    },
+    {
+      "id": "exefs-romfs",
+      "consoles": ["nintendo-3ds"],
+      "extensions": [".exefs", ".romfs", ".bin"],
+      "kind": "container",
+      "magic": [
+        {
+          "offset": "0x0",
+          "note": "ExeFS: 10 x (name[8], offset, size) then SHA-256 hashes; no magic"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "IVFC",
+          "hex": "49 56 46 43",
+          "note": "RomFS level-3 hash tree, version 0x10000 at 0x4"
+        }
+      ],
+      "header": "ExeFS holds .code (LZ-reverse compressed when ExHeader flag set), icon, banner, logo",
+      "parsers": [],
+      "status": "external-only",
+      "spec": [
+        "https://www.3dbrew.org/wiki/ExeFS",
+        "https://www.3dbrew.org/wiki/RomFS"
+      ]
+    },
+    {
+      "id": "3dsx",
+      "consoles": ["nintendo-3ds"],
+      "extensions": [".3dsx"],
+      "kind": "executable",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "3DSX",
+          "hex": "33 44 53 58"
+        }
+      ],
+      "header": "Header size 0x20 (0x2C with extended SMDH/RomFS offsets), relocation header size, code/rodata/data/bss sizes",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://www.3dbrew.org/wiki/3DSX_Format"]
+    },
+    {
+      "id": "smdh",
+      "consoles": ["nintendo-3ds"],
+      "extensions": [".smdh", ".icn"],
+      "kind": "metadata",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "SMDH",
+          "hex": "53 4d 44 48"
+        }
+      ],
+      "header": "16 x 0x200 application titles, settings 0x2008, 24x24 and 48x48 RGB565 tiled icons",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://www.3dbrew.org/wiki/SMDH"]
+    },
+    {
+      "id": "ctr-assets",
+      "consoles": ["nintendo-3ds"],
+      "extensions": [
+        ".bcstm",
+        ".bcwav",
+        ".bclim",
+        ".bch",
+        ".bcfnt",
+        ".cro",
+        ".crs"
+      ],
+      "kind": "archive",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "CSTM",
+          "hex": "43 53 54 4d"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "CWAV",
+          "hex": "43 57 41 56"
+        },
+        {
+          "offset": "end-0x28",
+          "ascii": "CLIM",
+          "hex": "43 4c 49 4d",
+          "note": "footer"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "BCH",
+          "hex": "42 43 48"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "CFNT",
+          "hex": "43 46 4e 54"
+        },
+        {
+          "offset": "0x80",
+          "ascii": "CRO0",
+          "hex": "43 52 4f 30"
+        }
+      ],
+      "header": "NW4C/CTR SDK containers",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://www.3dbrew.org/wiki/BCSTM",
+        "https://www.3dbrew.org/wiki/CRO0"
+      ]
+    },
+    {
+      "id": "n64-rom",
+      "consoles": ["nintendo-64"],
+      "extensions": [".z64", ".v64", ".n64"],
+      "kind": "rom",
+      "magic": [
+        {
+          "offset": "0x0",
+          "hex": "80 37 12 40",
+          "note": ".z64 big-endian (native)"
+        },
+        {
+          "offset": "0x0",
+          "hex": "37 80 40 12",
+          "note": ".v64 16-bit byteswapped"
+        },
+        {
+          "offset": "0x0",
+          "hex": "40 12 37 80",
+          "note": ".n64 32-bit little-endian"
+        }
+      ],
+      "header": "PI config 0x00, clock 0x04, entry point 0x08, libultra version 0x0C, CRC1/CRC2 0x10/0x14, title 0x20 (20 bytes), game code 0x3B (category, ID, region), version 0x3F, IPL3 boot code 0x40..0xFFF (CIC-specific)",
+      "parsers": [
+        {
+          "path": "packages/bun-loaders/src/rom.ts",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "vendor/gopher64/src/device.rs",
+          "scope": "execute"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://n64brew.dev/wiki/ROM_Header"]
+    },
+    {
+      "id": "n64dd-disk",
+      "consoles": ["nintendo-64"],
+      "extensions": [".ndd", ".d64"],
+      "kind": "disc",
+      "magic": [
+        {
+          "offset": "none",
+          "note": "no magic; system area in first blocks"
+        }
+      ],
+      "header": "Retail .ndd = 64DD disk image (SA + user blocks)",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://n64brew.dev/wiki/64DD"]
+    },
+    {
+      "id": "gcm",
+      "consoles": ["nintendo-wii-gamecube"],
+      "extensions": [".iso", ".gcm"],
+      "kind": "disc",
+      "magic": [
+        {
+          "offset": "0x1C",
+          "hex": "c2 33 9f 3d",
+          "note": "GameCube disc magic"
+        }
+      ],
+      "header": "Game ID 0x00 (6), disc number 0x06, version 0x07, name 0x20, DOL offset 0x420, FST offset/size 0x424/0x428; bi2.bin at 0x440, apploader at 0x2440",
+      "parsers": [
+        {
+          "path": "packages/bun-loaders/src/rom.ts",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/aphrody-wii-image/src/{dvd,iso}.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "crates/aphrody-wii-runtime/src/dvd",
+          "scope": "execute"
+        }
+      ],
+      "status": "parsed",
+      "spec": [
+        "https://wiibrew.org/wiki/Wii_disc",
+        "https://www.gc-forever.com/yagcd/chap13.html"
+      ]
+    },
+    {
+      "id": "wii-disc",
+      "consoles": ["nintendo-wii-gamecube"],
+      "extensions": [".iso", ".wii"],
+      "kind": "disc",
+      "magic": [
+        {
+          "offset": "0x18",
+          "hex": "5d 1c 9e a3",
+          "note": "Wii disc magic"
+        }
+      ],
+      "header": "Partition info table at 0x40000, region settings 0x4E000; partitions hold ticket, TMD (size 0x2A4, offset>>2 0x2A8), H3, AES-128-CBC data in 0x8000 clusters (0x400 hashes + 0x7C00 data)",
+      "parsers": [
+        {
+          "path": "packages/bun-loaders/src/rom.ts",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/aphrody-wii-image/src/dvd.rs",
+          "scope": "parse"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://wiibrew.org/wiki/Wii_disc"]
+    },
+    {
+      "id": "rvz-wia",
+      "consoles": ["nintendo-wii-gamecube"],
+      "extensions": [".rvz", ".wia"],
+      "kind": "compression",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "RVZ\u0001",
+          "hex": "52 56 5a 01"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "WIA\u0001",
+          "hex": "57 49 41 01"
+        }
+      ],
+      "header": "Header1 0x48 (ISO size 0x24), Header2: disc type, compression (zstd/lzma/bzip2), chunk size, disc header copy, partition and group tables",
+      "parsers": [
+        {
+          "path": "crates/aphrody-wii-image/src/rvz.rs",
+          "scope": "parse"
+        }
+      ],
+      "status": "parsed",
+      "spec": [
+        "https://github.com/dolphin-emu/dolphin/blob/master/docs/WiaAndRvz.md"
+      ]
+    },
+    {
+      "id": "wbfs",
+      "consoles": ["nintendo-wii-gamecube"],
+      "extensions": [".wbfs"],
+      "kind": "container",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "WBFS",
+          "hex": "57 42 46 53"
+        }
+      ],
+      "header": "Sector counts, hd/wbfs sector shift, disc table; per-disc wlba table",
+      "parsers": [
+        {
+          "path": "packages/bun-engine/src/plugins/formats.ts (.wbfs)",
+          "scope": "identify"
+        }
+      ],
+      "status": "identified",
+      "spec": [
+        "https://github.com/Wiimm/wiimms-iso-tools",
+        "https://wiki.gbatemp.net/wiki/WBFS"
+      ]
+    },
+    {
+      "id": "ciso-gc",
+      "consoles": ["nintendo-wii-gamecube"],
+      "extensions": [".ciso"],
+      "kind": "compression",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "CISO",
+          "hex": "43 49 53 4f",
+          "note": "block size u32 LE at 0x4, 0x7FF8-byte block map"
+        }
+      ],
+      "header": "Sparse block image",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/DiscIO/CISOBlob.h"
+      ]
+    },
+    {
+      "id": "gcz",
+      "consoles": ["nintendo-wii-gamecube"],
+      "extensions": [".gcz"],
+      "kind": "compression",
+      "magic": [
+        {
+          "offset": "0x0",
+          "hex": "01 c0 0b b1",
+          "note": "0xB10BC001 LE"
+        }
+      ],
+      "header": "Compressed size, data size, block size, block count, block pointer and hash tables",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/DiscIO/CompressedBlob.h"
+      ]
+    },
+    {
+      "id": "tgc",
+      "consoles": ["nintendo-wii-gamecube"],
+      "extensions": [".tgc"],
+      "kind": "container",
+      "magic": [
+        {
+          "offset": "0x0",
+          "hex": "ae 0f 38 a2",
+          "note": "BE"
+        }
+      ],
+      "header": "Embedded GC image with FST/DOL offsets",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/DiscIO/TGCBlob.h"
+      ]
+    },
+    {
+      "id": "wad",
+      "consoles": ["nintendo-wii-gamecube"],
+      "extensions": [".wad"],
+      "kind": "container",
+      "magic": [
+        {
+          "offset": "0x0",
+          "hex": "00 00 00 20",
+          "note": "header size"
+        },
+        {
+          "offset": "0x4",
+          "ascii": "Is\u0000\u0000",
+          "hex": "49 73 00 00",
+          "note": "or ib\\0\\0 (boot2), Bk\\0\\0 (backup)"
+        }
+      ],
+      "header": "Cert chain size 0x08, ticket 0x10, TMD 0x14, data 0x18, footer 0x1C; sections 64-byte aligned, contents AES-encrypted with title key",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://wiibrew.org/wiki/WAD_files"]
+    },
+    {
+      "id": "dol",
+      "consoles": ["nintendo-wii-gamecube"],
+      "extensions": [".dol"],
+      "kind": "executable",
+      "magic": [
+        {
+          "offset": "none",
+          "note": "no magic; 0x100-byte header"
+        }
+      ],
+      "header": "7 text + 11 data section file offsets (0x00), load addresses (0x48), sizes (0x90); BSS address/size 0xD8/0xDC; entry 0xE0",
+      "parsers": [
+        {
+          "path": "crates/aphrody-wii-image/src/dol.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "crates/aphrody-wii/src/dol.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "crates/bun-engine-core/src/machine/wii.rs",
+          "scope": "execute"
+        },
+        {
+          "path": "packages/bun-engine/src/plugins/formats.ts (.dol)",
+          "scope": "identify"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://wiibrew.org/wiki/DOL"]
+    },
+    {
+      "id": "elf",
+      "consoles": [
+        "nintendo-wii-gamecube",
+        "sony-playstation-2",
+        "sony-psp",
+        "nintendo-3ds",
+        "microsoft-xbox"
+      ],
+      "extensions": [".elf", ".irx", ".prx", ".rpx", ".rpl", ".axf"],
+      "kind": "executable",
+      "magic": [
+        {
+          "offset": "0x0",
+          "hex": "7f 45 4c 46"
+        },
+        {
+          "offset": "0x7",
+          "hex": "ca fe",
+          "note": "Wii U RPX/RPL: EI_OSABI 0xCA, EI_ABIVERSION 0xFE"
+        },
+        {
+          "offset": "0x10",
+          "hex": "80 ff",
+          "note": "PS2 IRX: e_type 0xFF80"
+        }
+      ],
+      "header": "Machine 0x12: PowerPC (20) for GC/Wii/Wii U, MIPS (8) for PS1/PS2/PSP (PSP Allegrex flags 0x00A2xxxx), ARM (40) for DS/3DS",
+      "parsers": [
+        {
+          "path": "crates/bun-engine-core/src/binary.rs#inspect_binary",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/aphrody-wii-image/src/elf.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "packages/re/src/ghidra/GhidraPspProfile.ts",
+          "scope": "identify"
+        }
+      ],
+      "status": "parsed",
+      "spec": [
+        "https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.eheader.html",
+        "https://wiiubrew.org/wiki/RPX"
+      ]
+    },
+    {
+      "id": "u8-yaz0",
+      "consoles": [
+        "nintendo-wii-gamecube",
+        "nintendo-wii-u",
+        "nintendo-switch"
+      ],
+      "extensions": [".arc", ".szs", ".bnr", ".app", ".carc"],
+      "kind": "archive",
+      "magic": [
+        {
+          "offset": "0x0",
+          "hex": "55 aa 38 2d",
+          "note": "U8"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "Yaz0",
+          "hex": "59 61 7a 30",
+          "note": "Yaz0 RLE wrapper; decompressed size at 0x4"
+        },
+        {
+          "offset": "0x40",
+          "ascii": "IMET",
+          "hex": "49 4d 45 54",
+          "note": "opening.bnr / channel banner"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "SARC",
+          "hex": "53 41 52 43",
+          "note": "Wii U/3DS/Switch archive"
+        }
+      ],
+      "header": "U8: root node offset 0x4, node table size 0x8, data offset 0xC; 12-byte nodes",
+      "parsers": [
+        {
+          "path": "crates/aphrody-wii-image/src/banner.rs (U8, IMET, IMD5, LZ77 banner)",
+          "scope": "parse"
+        }
+      ],
+      "status": "parsed",
+      "spec": [
+        "https://wiibrew.org/wiki/U8_archive",
+        "http://wiki.tockdom.com/wiki/YAZ0_(File_Format)"
+      ]
+    },
+    {
+      "id": "gc-wii-textures",
+      "consoles": ["nintendo-wii-gamecube"],
+      "extensions": [".tpl", ".bti", ".brres", ".tex0"],
+      "kind": "texture",
+      "magic": [
+        {
+          "offset": "0x0",
+          "hex": "00 20 af 30",
+          "note": "TPL"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "bres",
+          "hex": "62 72 65 73",
+          "note": "BRRES"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "TEX0",
+          "hex": "54 45 58 30"
+        }
+      ],
+      "header": "TPL: image count 0x4, image table offset 0x8; GX tiled formats I4/I8/IA4/IA8/RGB565/RGB5A3/RGBA8/CI4/CI8/CI14x2/CMPR",
+      "parsers": [
+        {
+          "path": "crates/aphrody-wii-image/src/banner.rs#decode_first_tpl_texture",
+          "scope": "decode"
+        }
+      ],
+      "status": "parsed",
+      "spec": [
+        "https://wiki.tockdom.com/wiki/TPL_(File_Format)",
+        "https://wiki.tockdom.com/wiki/Image_Formats"
+      ]
+    },
+    {
+      "id": "gc-saves",
+      "consoles": ["nintendo-wii-gamecube"],
+      "extensions": [".gci", ".gcs", ".sav", ".raw", ".bin"],
+      "kind": "save",
+      "magic": [
+        {
+          "offset": "0x0",
+          "note": "GCI: 0x40-byte directory entry starting with game code; Wii data.bin is AES-encrypted with the SD key"
+        }
+      ],
+      "header": "GC memory card: 5 system blocks (header, directory x2, BAT x2) of 0x2000",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://www.gc-forever.com/yagcd/chap12.html",
+        "https://wiibrew.org/wiki/Savegame_Files"
+      ]
+    },
+    {
+      "id": "wud-wux",
+      "consoles": ["nintendo-wii-u"],
+      "extensions": [".wud", ".wux"],
+      "kind": "disc",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "WUP-",
+          "hex": "57 55 50 2d",
+          "note": ".wud starts with product code"
+        },
+        {
+          "offset": "0x0",
+          "hex": "57 55 58 30 2e d0 99 10",
+          "note": ".wux: WUX0 + 0x1099D02E"
+        }
+      ],
+      "header": "WUX: sector size, uncompressed size, sector index table (deduplicated)",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://wiiubrew.org/wiki/Wii_U_Optical_Disc",
+        "https://github.com/cemu-project/Cemu/tree/main/src/Cafe/Filesystem/WUD"
+      ]
+    },
+    {
+      "id": "wua-wuhb",
+      "consoles": ["nintendo-wii-u"],
+      "extensions": [".wua", ".wuhb"],
+      "kind": "archive",
+      "magic": [
+        {
+          "offset": "end",
+          "hex": "zarchive footer (magic 0x169F52D6)",
+          "note": ".wua = ZArchive, footer at end of file"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "WUHB",
+          "hex": "57 55 48 42",
+          "note": ".wuhb homebrew bundle (verify against wuhbtool)"
+        }
+      ],
+      "header": "ZArchive: zstd-compressed blocks, name table, footer with section offsets",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://github.com/Exzap/ZArchive",
+        "https://github.com/wiiu-env/wuhbtool"
+      ]
+    },
+    {
+      "id": "wiiu-nus",
+      "consoles": ["nintendo-wii-u"],
+      "extensions": ["title.tmd", "title.tik", "title.cert", ".app", ".h3"],
+      "kind": "container",
+      "magic": [
+        {
+          "offset": "0x0",
+          "note": "TMD/ticket: signature type (0x00010004 RSA-2048 SHA-256)"
+        }
+      ],
+      "header": "NUS content: FST in content 0, AES-128-CBC with title key",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://wiiubrew.org/wiki/Title_metadata"]
+    },
+    {
+      "id": "wiiu-textures",
+      "consoles": ["nintendo-wii-u"],
+      "extensions": [".gtx", ".bflim", ".bfres"],
+      "kind": "texture",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "Gfx2",
+          "hex": "47 66 78 32"
+        },
+        {
+          "offset": "end-0x28",
+          "ascii": "FLIM",
+          "hex": "46 4c 49 4d",
+          "note": "footer"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "FRES",
+          "hex": "46 52 45 53"
+        }
+      ],
+      "header": "GX2 surface headers; tiled by addrlib",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://wiki.tockdom.com/wiki/GTX_(File_Format)"]
+    },
+    {
+      "id": "nsp",
+      "consoles": ["nintendo-switch"],
+      "extensions": [".nsp", ".nsz"],
+      "kind": "container",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "PFS0",
+          "hex": "50 46 53 30"
+        }
+      ],
+      "header": "File count 0x4, string table size 0x8, 0x18-byte entries; .nsz carries NCZ files (NCZSECTN at 0x4000)",
+      "parsers": [
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/ruzu-core/src/loader/nsp.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "crates/ruzu-core/src/file_sys/{partition_filesystem,submission_package}.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "packages/bun-engine/src/plugins/formats.ts (.nsp)",
+          "scope": "identify"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://switchbrew.org/wiki/NCA#PFS0"]
+    },
+    {
+      "id": "xci",
+      "consoles": ["nintendo-switch"],
+      "extensions": [".xci", ".xcz"],
+      "kind": "rom",
+      "magic": [
+        {
+          "offset": "0x100",
+          "ascii": "HEAD",
+          "hex": "48 45 41 44"
+        }
+      ],
+      "header": "RSA signature 0x0, secure area start 0x104, cart type 0x10D, HFS0 header offset 0x130/size 0x138; root HFS0 (update/normal/secure)",
+      "parsers": [
+        {
+          "path": "crates/ruzu-core/src/loader/xci.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "crates/ruzu-core/src/file_sys/card_image.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "packages/bun-engine/src/plugins/formats.ts (.xci)",
+          "scope": "identify"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://switchbrew.org/wiki/XCI"]
+    },
+    {
+      "id": "nca",
+      "consoles": ["nintendo-switch"],
+      "extensions": [".nca", ".ncz"],
+      "kind": "container",
+      "magic": [
+        {
+          "offset": "0x200",
+          "ascii": "NCA3",
+          "hex": "4e 43 41 33",
+          "note": "after AES-XTS header decryption (also NCA2/NCA0)"
+        }
+      ],
+      "header": "0xC00 encrypted header: distribution, content type, key generation, title ID, 4 FS entries, key area; sections PFS0 or RomFS (IVFC/BKTR)",
+      "parsers": [
+        {
+          "path": "crates/ruzu-core/src/loader/nca.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "crates/ruzu-core/src/file_sys/{content_archive,fssystem/nca_header}.rs",
+          "scope": "parse"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://switchbrew.org/wiki/NCA"]
+    },
+    {
+      "id": "nso",
+      "consoles": ["nintendo-switch"],
+      "extensions": [".nso"],
+      "kind": "executable",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "NSO0",
+          "hex": "4e 53 4f 30"
+        }
+      ],
+      "header": "Flags 0xC (LZ4 per segment), text/rodata/data segment headers 0x10..0x3C, module ID 0x40, compressed sizes 0x60; MOD0 inside text",
+      "parsers": [
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/ruzu-core/src/loader/nso.rs",
+          "scope": "parse"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://switchbrew.org/wiki/NSO"]
+    },
+    {
+      "id": "nro",
+      "consoles": ["nintendo-switch"],
+      "extensions": [".nro"],
+      "kind": "executable",
+      "magic": [
+        {
+          "offset": "0x10",
+          "ascii": "NRO0",
+          "hex": "4e 52 4f 30"
+        },
+        {
+          "offset": "after image",
+          "ascii": "ASET",
+          "hex": "41 53 45 54",
+          "note": "optional icon/NACP/RomFS asset section"
+        }
+      ],
+      "header": "Size 0x18, segment table 0x20, BSS 0x38, module ID 0x40",
+      "parsers": [
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/ruzu-core/src/loader/nro.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "packages/bun-engine/src/plugins/formats.ts (.nro)",
+          "scope": "identify"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://switchbrew.org/wiki/NRO"]
+    },
+    {
+      "id": "kip-npdm-nacp",
+      "consoles": ["nintendo-switch"],
+      "extensions": [".kip", ".kip1", ".npdm", ".nacp"],
+      "kind": "metadata",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "KIP1",
+          "hex": "4b 49 50 31"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "META",
+          "hex": "4d 45 54 41",
+          "note": ".npdm (ACI0/ACID inside)"
+        },
+        {
+          "offset": "0x0",
+          "note": ".nacp: fixed 0x4000 bytes, no magic"
+        }
+      ],
+      "header": "Kernel initial process, program metadata, application control property",
+      "parsers": [
+        {
+          "path": "crates/ruzu-core/src/loader/kip.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "crates/ruzu-core/src/file_sys/{program_metadata,control_metadata,kernel_executable}.rs",
+          "scope": "parse"
+        }
+      ],
+      "status": "parsed",
+      "spec": [
+        "https://switchbrew.org/wiki/KIP",
+        "https://switchbrew.org/wiki/NPDM",
+        "https://switchbrew.org/wiki/NACP"
+      ]
+    },
+    {
+      "id": "nax0",
+      "consoles": ["nintendo-switch"],
+      "extensions": [".nax0"],
+      "kind": "container",
+      "magic": [
+        {
+          "offset": "0x20",
+          "ascii": "NAX0",
+          "hex": "4e 41 58 30"
+        }
+      ],
+      "header": "SD-card AES-XTS container",
+      "parsers": [
+        {
+          "path": "crates/ruzu-core/src/loader/nax.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "crates/ruzu-core/src/file_sys/xts_archive.rs",
+          "scope": "parse"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://switchbrew.org/wiki/NAX0"]
+    },
+    {
+      "id": "switch-textures",
+      "consoles": ["nintendo-switch"],
+      "extensions": [".bntx", ".bfres"],
+      "kind": "texture",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "BNTX",
+          "hex": "42 4e 54 58"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "FRES",
+          "hex": "46 52 45 53"
+        }
+      ],
+      "header": "BNTX NX: BRTI texture info, Tegra block-linear swizzled BCn/ASTC",
+      "parsers": [
+        {
+          "path": "crates/aphrody-switch/src/texture.rs (block-linear swizzle only)",
+          "scope": "decode"
+        }
+      ],
+      "status": "identified",
+      "spec": ["https://github.com/KillzXGaming/Switch-Toolbox"]
+    },
+    {
+      "id": "level5-cri",
+      "consoles": ["nintendo-3ds", "nintendo-switch", "nintendo-ds"],
+      "extensions": [
+        ".cpk",
+        ".xpck",
+        ".g4tx",
+        ".g4md",
+        ".usm",
+        ".acb",
+        ".awb",
+        ".hca",
+        ".cfg.bin"
+      ],
+      "kind": "archive",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "CPK ",
+          "hex": "43 50 4b 20"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "XPCK",
+          "hex": "58 50 43 4b"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "G4TX",
+          "hex": "47 34 54 58"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "CRID",
+          "hex": "43 52 49 44",
+          "note": "USM"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "AFS2",
+          "hex": "41 46 53 32",
+          "note": "AWB"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "@UTF",
+          "hex": "40 55 54 46",
+          "note": "ACB/CPK tables"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "HCA\u0000",
+          "hex": "48 43 41 00"
+        }
+      ],
+      "header": "Full list with descriptors in crates/aphrody-nie-formats/src/lib.rs (FormatDescriptor); see packages/iecode-docs/nie/FORMATS.md and formats/VFS-FORMAT-SPECIFICATIONS.md",
+      "parsers": [
+        {
+          "path": "crates/aphrody-nie-formats",
+          "scope": "decode"
+        },
+        {
+          "path": "crates/re/src/game/fs/{cpk,crilayla}.rs",
+          "scope": "decode"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["packages/iecode-docs/formats/VFS-FORMAT-SPECIFICATIONS.md"]
+    },
+    {
+      "id": "cd-bin-cue",
+      "consoles": [
+        "sony-playstation",
+        "sony-playstation-2",
+        "sega-saturn",
+        "sega-genesis",
+        "nec-pc-engine",
+        "sega-dreamcast"
+      ],
+      "extensions": [
+        ".bin",
+        ".cue",
+        ".img",
+        ".ccd",
+        ".sub",
+        ".mds",
+        ".mdf",
+        ".m3u"
+      ],
+      "kind": "disc",
+      "magic": [
+        {
+          "offset": "0x0",
+          "hex": "00 ff ff ff ff ff ff ff ff ff ff 00",
+          "note": "raw 2352-byte sector sync"
+        },
+        {
+          "offset": "0x8001",
+          "ascii": "CD001",
+          "hex": "43 44 30 30 31",
+          "note": "ISO 9660 PVD in 2048-byte images"
+        },
+        {
+          "offset": "0x9319",
+          "ascii": "CD001",
+          "hex": "43 44 30 30 31",
+          "note": "PVD in raw MODE2/2352 (16*2352+0x18+1); 0x9311 for MODE1/2352"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "FILE ",
+          "hex": "46 49 4c 45 20",
+          "note": ".cue text sheet"
+        }
+      ],
+      "header": "CUE: FILE/TRACK MODE1|MODE2/2352|AUDIO/INDEX lines; PS1/PS2 boot from SYSTEM.CNF (BOOT=cdrom:\\SLUS_xxx.xx;1 or BOOT2=cdrom0:...)",
+      "parsers": [
+        {
+          "path": "crates/bun-engine-core/src/binary.rs#inspect_binary",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "vendor/starpsx/cue",
+          "scope": "parse"
+        },
+        {
+          "path": "vendor/jgenesis/common/cdrom/src/reader/cuebin.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "packages/bun-engine/src/plugins/formats.ts (.cue)",
+          "scope": "identify"
+        }
+      ],
+      "status": "parsed",
+      "spec": [
+        "https://psx-spx.consoledev.net/cdromformat/",
+        "https://ecma-international.org/publications-and-standards/standards/ecma-119/"
+      ]
+    },
+    {
+      "id": "chd",
+      "consoles": [
+        "sony-playstation",
+        "sony-playstation-2",
+        "sega-saturn",
+        "sega-genesis",
+        "sega-dreamcast",
+        "nec-pc-engine",
+        "sony-psp"
+      ],
+      "extensions": [".chd"],
+      "kind": "compression",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "MComprHD",
+          "hex": "4d 43 6f 6d 70 72 48 44"
+        },
+        {
+          "offset": "0x0C",
+          "hex": "00 00 00 05",
+          "note": "version (v5 header 124 bytes)"
+        }
+      ],
+      "header": "v5: compressors[4] 0x10, logical size 0x20, map offset 0x28, metadata offset 0x30, hunk bytes 0x38, unit bytes 0x3C, SHA-1s 0x40/0x54/0x68; CD tracks in CHT2 metadata",
+      "parsers": [
+        {
+          "path": "vendor/jgenesis/common/cdrom/src/reader/chd.rs",
+          "scope": "parse"
+        },
+        {
+          "path": "packages/bun-engine/src/plugins/formats.ts (.chd)",
+          "scope": "identify"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://github.com/mamedev/mame/blob/master/src/lib/util/chd.h"]
+    },
+    {
+      "id": "ecm",
+      "consoles": ["sony-playstation", "sega-saturn"],
+      "extensions": [".ecm"],
+      "kind": "compression",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "ECM\u0000",
+          "hex": "45 43 4d 00"
+        }
+      ],
+      "header": "Error-code-stripped raw CD sectors",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://github.com/alucryd/ecm-tools"]
+    },
+    {
+      "id": "psx-exe",
+      "consoles": ["sony-playstation"],
+      "extensions": [".exe", ".psx", ".psexe"],
+      "kind": "executable",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "PS-X EXE",
+          "hex": "50 53 2d 58 20 45 58 45"
+        }
+      ],
+      "header": "0x800 header: PC 0x10, GP 0x14, load address 0x18, size 0x1C, stack 0x30/0x34, region marker 0x4C",
+      "parsers": [
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "vendor/starpsx/core",
+          "scope": "execute"
+        }
+      ],
+      "status": "parsed",
+      "spec": [
+        "https://psx-spx.consoledev.net/cdromdrive/#cdrom-file-playstation-exe-and-system-cnf"
+      ]
+    },
+    {
+      "id": "psx-saves-assets",
+      "consoles": ["sony-playstation"],
+      "extensions": [
+        ".mcr",
+        ".mcd",
+        ".srm",
+        ".gme",
+        ".tim",
+        ".vag",
+        ".str",
+        ".xa"
+      ],
+      "kind": "save",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "MC",
+          "hex": "4d 43",
+          "note": ".mcr 128 KiB raw card (16 blocks of 8 KiB)"
+        },
+        {
+          "offset": "0x0",
+          "hex": "10 00 00 00",
+          "note": "TIM"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "VAGp",
+          "hex": "56 41 47 70"
+        }
+      ],
+      "header": "Memory card directory frames 1..15; TIM: flags 0x4 (bpp, CLUT)",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://psx-spx.consoledev.net/memorycarddataformat/",
+        "https://psx-spx.consoledev.net/cdromfileformats/"
+      ]
+    },
+    {
+      "id": "psf",
+      "consoles": [
+        "sony-playstation",
+        "sony-playstation-2",
+        "sega-saturn",
+        "sega-dreamcast",
+        "nintendo-64",
+        "nintendo-game-boy-advance",
+        "nintendo-snes"
+      ],
+      "extensions": [
+        ".psf",
+        ".minipsf",
+        ".psf2",
+        ".ssf",
+        ".dsf",
+        ".usf",
+        ".gsf",
+        ".snsf"
+      ],
+      "kind": "audio",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "PSF",
+          "hex": "50 53 46"
+        },
+        {
+          "offset": "0x3",
+          "hex": "01|02|11|12|21|22|23",
+          "note": "version: 01 PS1, 02 PS2, 11 Saturn, 12 Dreamcast, 21 N64, 22 GBA, 23 SNES"
+        }
+      ],
+      "header": "Reserved size 0x4, compressed program size 0x8, CRC32 0xC, zlib program, [TAG] block",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://gist.github.com/SaxxonPike/a0b47f8579aad703b842001b24d40c00"
+      ]
+    },
+    {
+      "id": "ps2-disc-exec",
+      "consoles": ["sony-playstation-2"],
+      "extensions": [".iso", ".bin", ".elf", ".irx"],
+      "kind": "disc",
+      "magic": [
+        {
+          "offset": "0x8001",
+          "ascii": "CD001",
+          "hex": "43 44 30 30 31"
+        },
+        {
+          "offset": "SYSTEM.CNF",
+          "note": "BOOT2 = cdrom0:\\SLUS_xxx.xx;1, VER, VMODE"
+        }
+      ],
+      "header": "DVD ISO 9660 (+UDF bridge); dual-layer second layer start in PVD",
+      "parsers": [
+        {
+          "path": "crates/bun-engine-core/src/binary.rs#inspect_binary",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        }
+      ],
+      "status": "identified",
+      "spec": ["https://psi-rockin.github.io/ps2tek/"]
+    },
+    {
+      "id": "ps2-compressed",
+      "consoles": ["sony-playstation-2", "sony-psp"],
+      "extensions": [".cso", ".zso", ".gz"],
+      "kind": "compression",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "CISO",
+          "hex": "43 49 53 4f",
+          "note": "header size 0x18 @4, total size u64 @8, block size @0x10, version @0x14, align @0x15, then u32 index"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "ZISO",
+          "hex": "5a 49 53 4f",
+          "note": "LZ4 variant"
+        }
+      ],
+      "header": "Block index with high-bit 'uncompressed' flag; .gz = PCSX2 indexed gzip",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://github.com/unknownbrackets/maxcso/blob/master/README_CSO.md"
+      ]
+    },
+    {
+      "id": "ps2-memcard",
+      "consoles": ["sony-playstation-2"],
+      "extensions": [".ps2", ".mcd", ".vmc", ".psu", ".max", ".cbs"],
+      "kind": "save",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "Sony PS2 Memory Card Format ",
+          "hex": "53 6f 6e 79 20 50 53 32 20 4d 65 6d 6f 72 79 20 43 61 72 64 20 46 6f 72 6d 61 74 20"
+        }
+      ],
+      "header": "8 MiB card, 512+16-byte pages, FAT-like cluster table",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://babyno.top/en/posts/2023/09/parsing-ps2-memcard-file-system/"
+      ]
+    },
+    {
+      "id": "ps2-bios-romdir",
+      "consoles": ["sony-playstation-2"],
+      "extensions": [".bin", ".rom0"],
+      "kind": "firmware",
+      "magic": [
+        {
+          "offset": "ROMDIR",
+          "ascii": "RESET",
+          "hex": "52 45 53 45 54",
+          "note": "ROMDIR entry table (16-byte entries: name[10], extinfo size, file size) begins with RESET, ROMDIR, EXTINFO"
+        }
+      ],
+      "header": "ROM0 = kernel + IOP modules indexed by ROMDIR; ROMVER holds version/region/date",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://psi-rockin.github.io/ps2tek/#bios"]
+    },
+    {
+      "id": "pbp",
+      "consoles": ["sony-psp", "sony-playstation"],
+      "extensions": [".pbp"],
+      "kind": "container",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "\u0000PBP",
+          "hex": "00 50 42 50"
+        }
+      ],
+      "header": "Version 0x4 then 8 offsets: PARAM.SFO, ICON0.PNG, ICON1.PMF, PIC0.PNG, PIC1.PNG, SND0.AT3, DATA.PSP, DATA.PSAR (PS1 classics: PSISOIMG/PSTITLEIMG)",
+      "parsers": [
+        {
+          "path": "packages/bun-engine/src/plugins/formats.ts (.pbp)",
+          "scope": "identify"
+        }
+      ],
+      "status": "identified",
+      "spec": ["https://www.psdevwiki.com/psp/EBOOT.PBP"]
+    },
+    {
+      "id": "psp-umd",
+      "consoles": ["sony-psp"],
+      "extensions": [".iso", ".dax", ".jso"],
+      "kind": "disc",
+      "magic": [
+        {
+          "offset": "0x8001",
+          "ascii": "CD001",
+          "hex": "43 44 30 30 31"
+        },
+        {
+          "offset": "0x8008",
+          "ascii": "PSP GAME",
+          "hex": "50 53 50 20 47 41 4d 45",
+          "note": "PVD system identifier"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "DAX\u0000",
+          "hex": "44 41 58 00",
+          "note": ".dax"
+        }
+      ],
+      "header": "PSP_GAME/SYSDIR/EBOOT.BIN, PSP_GAME/PARAM.SFO, UMD_DATA.BIN",
+      "parsers": [
+        {
+          "path": "crates/bun-engine-core/src/binary.rs#inspect_binary",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        }
+      ],
+      "status": "identified",
+      "spec": ["https://www.psdevwiki.com/psp/UMD"]
+    },
+    {
+      "id": "psp-prx",
+      "consoles": ["sony-psp"],
+      "extensions": [".prx", ".bin"],
+      "kind": "executable",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "~PSP",
+          "hex": "7e 50 53 50",
+          "note": "encrypted PRX/EBOOT"
+        },
+        {
+          "offset": "0x0",
+          "hex": "7f 45 4c 46",
+          "note": "decrypted ELF (Allegrex)"
+        }
+      ],
+      "header": "~PSP header: attributes, compressed size, elf size, tag 0xD0",
+      "parsers": [
+        {
+          "path": "packages/re/src/ghidra/GhidraPspProfile.ts",
+          "scope": "identify"
+        }
+      ],
+      "status": "identified",
+      "spec": ["https://www.psdevwiki.com/psp/PRX"]
+    },
+    {
+      "id": "sfo",
+      "consoles": [
+        "sony-psp",
+        "sony-playstation-3",
+        "sony-ps-vita",
+        "sony-playstation-4"
+      ],
+      "extensions": [".sfo"],
+      "kind": "metadata",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "\u0000PSF",
+          "hex": "00 50 53 46"
+        }
+      ],
+      "header": "Version 0x4, key table 0x8, data table 0xC, entry count 0x10; keys TITLE, TITLE_ID, CATEGORY, APP_VER",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://www.psdevwiki.com/ps3/PARAM.SFO"]
+    },
+    {
+      "id": "sony-pkg",
+      "consoles": ["sony-playstation-3", "sony-psp", "sony-ps-vita"],
+      "extensions": [".pkg"],
+      "kind": "container",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "PKG",
+          "hex": "7f 50 4b 47"
+        }
+      ],
+      "header": "PKG revision 0x4, type 0x6 (1 PS3, 2 PSP/Vita), metadata offset 0x8, item count 0x14, data offset/size 0x20/0x28, content ID 0x30, digest/IV 0x60/0x70",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://www.psdevwiki.com/ps3/PKG_files"]
+    },
+    {
+      "id": "sce-self",
+      "consoles": ["sony-playstation-3", "sony-ps-vita"],
+      "extensions": [".self", ".sprx", ".bin", ".suprx", ".skprx"],
+      "kind": "executable",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "SCE\u0000",
+          "hex": "53 43 45 00"
+        }
+      ],
+      "header": "SCE header: version, key revision, header type, metadata offset; ELF + program/section headers follow",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://www.psdevwiki.com/ps3/SELF_-_SPRX",
+        "https://www.psdevwiki.com/vita/SELF_File_Format"
+      ]
+    },
+    {
+      "id": "ps3-disc-npd",
+      "consoles": ["sony-playstation-3"],
+      "extensions": [".iso", ".sfb", ".edat", ".sdat", ".pup", ".rap"],
+      "kind": "disc",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": ".SFB",
+          "hex": "2e 53 46 42",
+          "note": "PS3_DISC.SFB"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "NPD\u0000",
+          "hex": "4e 50 44 00",
+          "note": "EDAT/SDAT"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "SCEUF\u0000\u0000\u0000",
+          "hex": "53 43 45 55 46 00 00 00",
+          "note": "PUP"
+        }
+      ],
+      "header": "Blu-ray ISO 9660/UDF with PS3_GAME/PARAM.SFO and USRDIR/EBOOT.BIN",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://www.psdevwiki.com/ps3/PS3_DISC.SFB",
+        "https://www.psdevwiki.com/ps3/EDAT_files"
+      ]
+    },
+    {
+      "id": "vita-vpk",
+      "consoles": ["sony-ps-vita"],
+      "extensions": [".vpk", ".psvimg", ".gxt"],
+      "kind": "archive",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "PK\u0003\u0004",
+          "hex": "50 4b 03 04",
+          "note": ".vpk = ZIP with eboot.bin + sce_sys/param.sfo"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "GXT\u0000",
+          "hex": "47 58 54 00",
+          "note": "texture"
+        }
+      ],
+      "header": "Homebrew install package",
+      "parsers": [
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/bun-engine-core/src/binary.rs#inspect_binary",
+          "scope": "identify"
+        }
+      ],
+      "status": "identified",
+      "spec": [
+        "https://www.psdevwiki.com/vita/VPK",
+        "https://www.psdevwiki.com/vita/GXT"
+      ]
+    },
+    {
+      "id": "ps4-pkg-self",
+      "consoles": ["sony-playstation-4"],
+      "extensions": [".pkg", ".bin", ".sprx", ".gnf"],
+      "kind": "container",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "CNT",
+          "hex": "7f 43 4e 54",
+          "note": ".pkg"
+        },
+        {
+          "offset": "0x0",
+          "hex": "4f 15 3d 1d",
+          "note": "PS4 SELF (eboot.bin)"
+        },
+        {
+          "offset": "0x0",
+          "ascii": "GNF ",
+          "hex": "47 4e 46 20",
+          "note": "texture"
+        }
+      ],
+      "header": "PKG: entry table, PFS image (pfs_image.dat), content ID 0x40",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://www.psdevwiki.com/ps4/PKG_files",
+        "https://www.psdevwiki.com/ps4/SELF_File_Format"
+      ]
+    },
+    {
+      "id": "xiso",
+      "consoles": ["microsoft-xbox"],
+      "extensions": [".iso", ".xiso"],
+      "kind": "disc",
+      "magic": [
+        {
+          "offset": "0x10000",
+          "ascii": "MICROSOFT*XBOX*MEDIA",
+          "hex": "4d 49 43 52 4f 53 4f 46 54 2a 58 42 4f 58 2a 4d 45 44 49 41",
+          "note": "relative to the game partition; repeated at 0x107EC"
+        }
+      ],
+      "header": "Root dir sector 0x10014, root size 0x10018; Redump images prefix a video partition (game partition at 0x18300000 XGD1, 0xFD90000 XGD2, 0x2080000 XGD3)",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://xboxdevwiki.net/Xbox_Game_Disc"]
+    },
+    {
+      "id": "xbe",
+      "consoles": ["microsoft-xbox"],
+      "extensions": [".xbe"],
+      "kind": "executable",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "XBEH",
+          "hex": "58 42 45 48"
+        }
+      ],
+      "header": "Base address 0x104 (0x10000), certificate 0x118, section count/headers 0x11C/0x120, entry point 0x128 (XOR-encoded), kernel thunk 0x158 (XOR-encoded)",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://xboxdevwiki.net/Xbe"]
+    },
+    {
+      "id": "xex",
+      "consoles": ["microsoft-xbox-360"],
+      "extensions": [".xex"],
+      "kind": "executable",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "XEX2",
+          "hex": "58 45 58 32"
+        }
+      ],
+      "header": "Xbox 360 executable: module flags, PE data offset, security info, optional headers (not an original-Xbox format)",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://free60.org/System-Software/Formats/XEX/"]
+    },
+    {
+      "id": "xpr",
+      "consoles": ["microsoft-xbox"],
+      "extensions": [".xpr"],
+      "kind": "texture",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "XPR0",
+          "hex": "58 50 52 30"
+        }
+      ],
+      "header": "Xbox packed resource (swizzled NV2A textures)",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://xboxdevwiki.net/XPR"]
+    },
+    {
+      "id": "genesis-rom",
+      "consoles": ["sega-genesis"],
+      "extensions": [".md", ".gen", ".bin", ".smd", ".32x"],
+      "kind": "rom",
+      "magic": [
+        {
+          "offset": "0x100",
+          "ascii": "SEGA",
+          "hex": "53 45 47 41",
+          "note": "\"SEGA MEGA DRIVE \" / \"SEGA GENESIS    \" / \"SEGA 32X\""
+        },
+        {
+          "offset": "0x8",
+          "hex": "aa bb",
+          "note": ".smd: 512-byte header, 16 KiB interleaved blocks"
+        }
+      ],
+      "header": "Domestic title 0x120, overseas title 0x150, serial 0x180, checksum 0x18E, I/O 0x190, ROM range 0x1A0, RAM range 0x1A8, SRAM 0x1B0, region 0x1F0; 32X security program at ROM 0x400..0x7FF",
+      "parsers": [
+        {
+          "path": "packages/bun-loaders/src/rom.ts",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "vendor/jgenesis/backend/genesis-core",
+          "scope": "execute"
+        },
+        {
+          "path": "vendor/jgenesis/backend/s32x-core",
+          "scope": "execute"
+        }
+      ],
+      "status": "parsed",
+      "spec": [
+        "https://plutiedev.com/rom-header",
+        "https://segaretro.org/ROM_header"
+      ]
+    },
+    {
+      "id": "sms-gg",
+      "consoles": ["sega-genesis"],
+      "extensions": [".sms", ".gg", ".sg"],
+      "kind": "rom",
+      "magic": [
+        {
+          "offset": "0x7FF0",
+          "ascii": "TMR SEGA",
+          "hex": "54 4d 52 20 53 45 47 41",
+          "note": "also 0x1FF0 / 0x3FF0"
+        }
+      ],
+      "header": "Checksum 0x7FFA, product code 0x7FFC, region/size 0x7FFF",
+      "parsers": [
+        {
+          "path": "vendor/jgenesis/backend/smsgg-core",
+          "scope": "execute"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://www.smspower.org/Development/ROMHeader"]
+    },
+    {
+      "id": "sega-cd",
+      "consoles": ["sega-genesis"],
+      "extensions": [".cue", ".bin", ".iso", ".chd"],
+      "kind": "disc",
+      "magic": [
+        {
+          "offset": "0x0 (user data of sector 0)",
+          "ascii": "SEGADISCSYSTEM  ",
+          "hex": "53 45 47 41 44 49 53 43 53 59 53 54 45 4d 20 20"
+        }
+      ],
+      "header": "Volume header, system header (IP/SP), region-specific security code",
+      "parsers": [
+        {
+          "path": "vendor/jgenesis/backend/segacd-core",
+          "scope": "execute"
+        },
+        {
+          "path": "vendor/jgenesis/common/cdrom",
+          "scope": "parse"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://segaretro.org/Sega_CD_official_documentation"]
+    },
+    {
+      "id": "saturn-disc",
+      "consoles": ["sega-saturn"],
+      "extensions": [".cue", ".bin", ".iso", ".chd", ".mds", ".ccd"],
+      "kind": "disc",
+      "magic": [
+        {
+          "offset": "0x0 (user data of sector 0)",
+          "ascii": "SEGA SEGASATURN ",
+          "hex": "53 45 47 41 20 53 45 47 41 53 41 54 55 52 4e 20"
+        }
+      ],
+      "header": "IP.BIN: maker 0x10, product 0x20, version 0x2A, date 0x30, device 0x38, area 0x40, peripherals 0x50, title 0x60, IP size 0xE0, 1st read address 0xF0",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://segaretro.org/Saturn_official_documentation"]
+    },
+    {
+      "id": "dreamcast-disc",
+      "consoles": ["sega-dreamcast"],
+      "extensions": [".gdi", ".cdi", ".chd", ".cue"],
+      "kind": "disc",
+      "magic": [
+        {
+          "offset": "0x0",
+          "note": ".gdi text: track count line then 'n lba type sectorsize file offset'"
+        },
+        {
+          "offset": "end-0x8",
+          "note": ".cdi: u32 version (0x80000004/5/6) then u32 header offset at end of file"
+        },
+        {
+          "offset": "IP.BIN 0x0",
+          "ascii": "SEGA SEGAKATANA ",
+          "hex": "53 45 47 41 20 53 45 47 41 4b 41 54 41 4e 41 20",
+          "note": "high-density area LBA 45000 (GD-ROM)"
+        }
+      ],
+      "header": "IP.BIN: hardware ID, maker 0x10, device info 0x20, area 0x30, product 0x40, version 0x4A, date 0x50, boot file 0x60 (1ST_READ.BIN), title 0x80",
+      "parsers": [],
+      "status": "none",
+      "spec": [
+        "https://segaretro.org/Dreamcast_official_documentation",
+        "https://github.com/flyinghead/flycast/tree/master/core/imgread"
+      ]
+    },
+    {
+      "id": "dreamcast-vmu",
+      "consoles": ["sega-dreamcast"],
+      "extensions": [".vms", ".vmi", ".dci", ".bin"],
+      "kind": "save",
+      "magic": [
+        {
+          "offset": "0x0",
+          "note": "VMS header: description 0x00, long description 0x10, creator 0x30, icon count 0x40"
+        }
+      ],
+      "header": "128 KiB VMU flash, 512-byte blocks, FAT at block 254",
+      "parsers": [],
+      "status": "none",
+      "spec": ["https://mc.pp.se/dc/vms/fileheader.html"]
+    },
+    {
+      "id": "pce-hucard",
+      "consoles": ["nec-pc-engine"],
+      "extensions": [".pce", ".sgx"],
+      "kind": "rom",
+      "magic": [
+        {
+          "offset": "none",
+          "note": "no magic; strip 512-byte header when size % 8192 == 512"
+        }
+      ],
+      "header": "Banked 8 KiB HuCard image",
+      "parsers": [
+        {
+          "path": "vendor/jgenesis/backend/pce-core",
+          "scope": "execute"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://www.pcengine.co.uk/"]
+    },
+    {
+      "id": "rom-archives",
+      "consoles": ["multi-system"],
+      "extensions": [".zip", ".7z", ".gz", ".xz", ".zst"],
+      "kind": "archive",
+      "magic": [
+        {
+          "offset": "0x0",
+          "ascii": "PK\u0003\u0004",
+          "hex": "50 4b 03 04"
+        },
+        {
+          "offset": "0x0",
+          "hex": "37 7a bc af 27 1c",
+          "note": "7z"
+        },
+        {
+          "offset": "0x0",
+          "hex": "1f 8b",
+          "note": "gzip"
+        },
+        {
+          "offset": "0x0",
+          "hex": "fd 37 7a 58 5a 00",
+          "note": "xz"
+        },
+        {
+          "offset": "0x0",
+          "hex": "28 b5 2f fd",
+          "note": "zstd"
+        }
+      ],
+      "header": "No-Intro/Redump distribution containers",
+      "parsers": [
+        {
+          "path": "crates/bun-engine-core/src/binary.rs#inspect_binary",
+          "scope": "identify"
+        },
+        {
+          "path": "crates/re/src/pipeline/stages.rs#identify",
+          "scope": "identify"
+        },
+        {
+          "path": "vendor/jgenesis/frontend (zip/7z ROM loading)",
+          "scope": "parse"
+        }
+      ],
+      "status": "parsed",
+      "spec": ["https://datomatic.no-intro.org/", "http://redump.org/"]
+    }
+  ],
+  "freeRoms": [
+    {
+      "id": "tetanes-test-roms",
+      "consoles": ["nintendo-nes"],
+      "name": "blargg + community NES test ROMs bundled by TetaNES",
+      "kind": "test",
+      "license": "freely distributable test ROMs (per-ROM readmes)",
+      "url": "https://github.com/lukexor/tetanes/tree/main/tetanes-core/test_roms",
+      "vendored": "vendor/tetanes/tetanes-core/test_roms (roms.json pack tetanes-test-roms)"
+    },
+    {
+      "id": "tetanes-homebrew",
+      "consoles": ["nintendo-nes"],
+      "name": "TetaNES bundled homebrew",
+      "kind": "homebrew",
+      "license": "freeware homebrew, per-game .txt",
+      "url": "https://github.com/lukexor/tetanes/tree/main/tetanes/assets/roms",
+      "vendored": "vendor/tetanes/tetanes/assets/roms (roms.json pack tetanes-homebrew)"
+    },
+    {
+      "id": "nes-test-roms",
+      "consoles": ["nintendo-nes"],
+      "name": "nes-test-roms collection (blargg, kevtris, bisqwit...)",
+      "kind": "test",
+      "license": "no repository license; individual ROMs freely distributed by authors",
+      "url": "https://github.com/christopherpow/nes-test-roms"
+    },
+    {
+      "id": "240p-test-suite",
+      "consoles": [
+        "nintendo-nes",
+        "nintendo-snes",
+        "sega-genesis",
+        "nec-pc-engine",
+        "sega-dreamcast",
+        "nintendo-wii-gamecube",
+        "nintendo-game-boy-advance",
+        "nintendo-64",
+        "sega-saturn"
+      ],
+      "name": "240p Test Suite",
+      "kind": "test",
+      "license": "GPL-2.0 (most platforms; repo NOASSERTION)",
+      "url": "https://github.com/ArtemioUrbina/240pTestSuite"
+    },
+    {
+      "id": "snes-test-roms",
+      "consoles": ["nintendo-snes"],
+      "name": "undisbeliever snes-test-roms",
+      "kind": "test",
+      "license": "Zlib",
+      "url": "https://github.com/undisbeliever/snes-test-roms"
+    },
+    {
+      "id": "snes-tests-gilyon",
+      "consoles": ["nintendo-snes"],
+      "name": "gilyon snes-tests (CPU/SPC700 instruction tests)",
+      "kind": "test",
+      "license": "MIT",
+      "url": "https://github.com/gilyon/snes-tests"
+    },
+    {
+      "id": "peterlemon-snes",
+      "consoles": ["nintendo-snes"],
+      "name": "PeterLemon SNES tests and demos",
+      "kind": "test",
+      "license": "no license file",
+      "url": "https://github.com/PeterLemon/SNES"
+    },
+    {
+      "id": "game-boy-test-roms",
+      "consoles": ["nintendo-game-boy"],
+      "name": "c-sp game-boy-test-roms (blargg, mooneye, acid2, mealybug, SameSuite...)",
+      "kind": "test",
+      "license": "MIT (collection); per-suite licenses inside",
+      "url": "https://github.com/c-sp/game-boy-test-roms"
+    },
+    {
+      "id": "mooneye",
+      "consoles": ["nintendo-game-boy"],
+      "name": "Mooneye Test Suite",
+      "kind": "test",
+      "license": "MIT",
+      "url": "https://github.com/Gekkio/mooneye-test-suite"
+    },
+    {
+      "id": "dmg-acid2",
+      "consoles": ["nintendo-game-boy"],
+      "name": "dmg-acid2 / cgb-acid2",
+      "kind": "test",
+      "license": "MIT",
+      "url": "https://github.com/mattcurrie/dmg-acid2"
+    },
+    {
+      "id": "mealybug",
+      "consoles": ["nintendo-game-boy"],
+      "name": "Mealybug Tearoom tests (PPU)",
+      "kind": "test",
+      "license": "MIT",
+      "url": "https://github.com/mattcurrie/mealybug-tearoom-tests"
+    },
+    {
+      "id": "jsmolka-gba-tests",
+      "consoles": ["nintendo-game-boy-advance"],
+      "name": "jsmolka gba-tests (arm, thumb, memory, bios, save, ppu)",
+      "kind": "test",
+      "license": "MIT",
+      "url": "https://github.com/jsmolka/gba-tests",
+      "vendored": "vendor/rustboyadvance-ng/external/gba-tests"
+    },
+    {
+      "id": "mgba-suite",
+      "consoles": ["nintendo-game-boy-advance"],
+      "name": "mGBA test suite",
+      "kind": "test",
+      "license": "MIT",
+      "url": "https://github.com/mgba-emu/suite"
+    },
+    {
+      "id": "armwrestler-gba",
+      "consoles": ["nintendo-game-boy-advance"],
+      "name": "ARMWrestler (fixed GBA build)",
+      "kind": "test",
+      "license": "no license file",
+      "url": "https://github.com/destoer/armwrestler-gba-fixed"
+    },
+    {
+      "id": "fuzzarm",
+      "consoles": ["nintendo-game-boy-advance"],
+      "name": "FuzzARM",
+      "kind": "test",
+      "license": "GPL-3.0",
+      "url": "https://github.com/DenSinH/FuzzARM"
+    },
+    {
+      "id": "gba-tests-destoer",
+      "consoles": ["nintendo-game-boy-advance"],
+      "name": "destoer gba_tests",
+      "kind": "test",
+      "license": "MIT",
+      "url": "https://github.com/destoer/gba_tests"
+    },
+    {
+      "id": "peterlemon-gba",
+      "consoles": ["nintendo-game-boy-advance"],
+      "name": "PeterLemon GBA",
+      "kind": "test",
+      "license": "no license file",
+      "url": "https://github.com/PeterLemon/GBA"
+    },
+    {
+      "id": "tonc-bigmap",
+      "consoles": ["nintendo-game-boy-advance"],
+      "name": "TONC bigmap demo",
+      "kind": "homebrew",
+      "license": "TONC demo (see coranac.com)",
+      "url": "https://www.coranac.com/tonc/text/",
+      "vendored": "vendor/rustboyadvance-ng/core/benches/roms/bigmap.gba"
+    },
+    {
+      "id": "arm7wrestler-nds",
+      "consoles": ["nintendo-ds"],
+      "name": "arm7wrestler (Arisotura)",
+      "kind": "test",
+      "license": "no license file",
+      "url": "https://github.com/Arisotura/arm7wrestler"
+    },
+    {
+      "id": "armwrestler-nds",
+      "consoles": ["nintendo-ds", "nintendo-game-boy-advance"],
+      "name": "ARMWrestler (mic-)",
+      "kind": "test",
+      "license": "no license file",
+      "url": "https://github.com/mic-/armwrestler"
+    },
+    {
+      "id": "rockwrestler",
+      "consoles": ["nintendo-ds"],
+      "name": "rockwrestler (DS ARM9/ARM7 + hardware tests)",
+      "kind": "test",
+      "license": "no license file",
+      "url": "https://github.com/RockPolish/rockwrestler"
+    },
+    {
+      "id": "nds-examples",
+      "consoles": ["nintendo-ds"],
+      "name": "devkitPro nds-examples",
+      "kind": "sdk-examples",
+      "license": "no license file (devkitPro examples)",
+      "url": "https://github.com/devkitPro/nds-examples"
+    },
+    {
+      "id": "3ds-examples",
+      "consoles": ["nintendo-3ds"],
+      "name": "devkitPro 3ds-examples",
+      "kind": "sdk-examples",
+      "license": "no license file (devkitPro examples)",
+      "url": "https://github.com/devkitPro/3ds-examples"
+    },
+    {
+      "id": "ctrhwtest",
+      "consoles": ["nintendo-3ds"],
+      "name": "wwylele ctrhwtest",
+      "kind": "test",
+      "license": "no license file",
+      "url": "https://github.com/wwylele/ctrhwtest"
+    },
+    {
+      "id": "mikage-hwtests",
+      "consoles": ["nintendo-3ds"],
+      "name": "mikage hwtests",
+      "kind": "test",
+      "license": "no license file",
+      "url": "https://github.com/mikage-emu/hwtests"
+    },
+    {
+      "id": "ctru-rs-tests",
+      "consoles": ["nintendo-3ds"],
+      "name": "ctru-rs test runner",
+      "kind": "test",
+      "license": "Zlib",
+      "url": "https://github.com/rust3ds/ctru-rs",
+      "vendored": "vendor/ctru-rs (references.json)"
+    },
+    {
+      "id": "n64-systemtest",
+      "consoles": ["nintendo-64"],
+      "name": "n64-systemtest",
+      "kind": "test",
+      "license": "MIT",
+      "url": "https://github.com/lemmy-64/n64-systemtest"
+    },
+    {
+      "id": "peterlemon-n64",
+      "consoles": ["nintendo-64"],
+      "name": "PeterLemon N64 (CPU/RSP/RDP tests)",
+      "kind": "test",
+      "license": "Unlicense",
+      "url": "https://github.com/PeterLemon/N64"
+    },
+    {
+      "id": "dillonb-n64-tests",
+      "consoles": ["nintendo-64"],
+      "name": "Dillonb n64-tests",
+      "kind": "test",
+      "license": "no license file",
+      "url": "https://github.com/Dillonb/n64-tests"
+    },
+    {
+      "id": "mimi",
+      "consoles": ["nintendo-64"],
+      "name": "mimi (N64 controller test)",
+      "kind": "test",
+      "license": "MIT",
+      "url": "https://github.com/wermipls/mimi"
+    },
+    {
+      "id": "dolphin-hwtests",
+      "consoles": ["nintendo-wii-gamecube"],
+      "name": "dolphin-emu hwtests",
+      "kind": "test",
+      "license": "GPL-2.0",
+      "url": "https://github.com/dolphin-emu/hwtests"
+    },
+    {
+      "id": "gamecube-examples",
+      "consoles": ["nintendo-wii-gamecube"],
+      "name": "devkitPro gamecube-examples / wii-examples",
+      "kind": "sdk-examples",
+      "license": "no license file (devkitPro examples)",
+      "url": "https://github.com/devkitPro/wii-examples"
+    },
+    {
+      "id": "switch-examples",
+      "consoles": ["nintendo-switch"],
+      "name": "switchbrew switch-examples",
+      "kind": "sdk-examples",
+      "license": "no license file (switchbrew examples)",
+      "url": "https://github.com/switchbrew/switch-examples"
+    },
+    {
+      "id": "ps1-tests",
+      "consoles": ["sony-playstation"],
+      "name": "JaCzekanski ps1-tests",
+      "kind": "test",
+      "license": "MIT",
+      "url": "https://github.com/JaCzekanski/ps1-tests"
+    },
+    {
+      "id": "peterlemon-psx",
+      "consoles": ["sony-playstation"],
+      "name": "PeterLemon PSX",
+      "kind": "test",
+      "license": "no license file",
+      "url": "https://github.com/PeterLemon/PSX"
+    },
+    {
+      "id": "ps2autotests",
+      "consoles": ["sony-playstation-2"],
+      "name": "ps2autotests",
+      "kind": "test",
+      "license": "ISC",
+      "url": "https://github.com/jpd002/ps2autotests"
+    },
+    {
+      "id": "pspautotests",
+      "consoles": ["sony-psp"],
+      "name": "pspautotests",
+      "kind": "test",
+      "license": "repository NOASSERTION (per-file)",
+      "url": "https://github.com/hrydgard/pspautotests"
+    },
+    {
+      "id": "ps3autotests",
+      "consoles": ["sony-playstation-3"],
+      "name": "ps3autotests",
+      "kind": "test",
+      "license": "GPL-2.0",
+      "url": "https://github.com/AlexAltea/ps3autotests"
+    },
+    {
+      "id": "vitasdk-samples",
+      "consoles": ["sony-ps-vita"],
+      "name": "vitasdk samples",
+      "kind": "sdk-examples",
+      "license": "no license file",
+      "url": "https://github.com/vitasdk/samples"
+    },
+    {
+      "id": "openorbis",
+      "consoles": ["sony-playstation-4"],
+      "name": "OpenOrbis PS4 toolchain samples",
+      "kind": "sdk-examples",
+      "license": "GPL-3.0",
+      "url": "https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain"
+    },
+    {
+      "id": "nxdk-pgraph-tests",
+      "consoles": ["microsoft-xbox"],
+      "name": "nxdk_pgraph_tests",
+      "kind": "test",
+      "license": "repository NOASSERTION",
+      "url": "https://github.com/abaire/nxdk_pgraph_tests"
+    },
+    {
+      "id": "nxdk",
+      "consoles": ["microsoft-xbox"],
+      "name": "nxdk samples",
+      "kind": "sdk-examples",
+      "license": "per-file (repository has no SPDX)",
+      "url": "https://github.com/XboxDev/nxdk"
+    },
+    {
+      "id": "kallistios",
+      "consoles": ["sega-dreamcast"],
+      "name": "KallistiOS examples",
+      "kind": "sdk-examples",
+      "license": "KOS license (BSD-style)",
+      "url": "https://github.com/KallistiOS/KallistiOS"
+    },
+    {
+      "id": "saturn-tests",
+      "consoles": ["sega-saturn"],
+      "name": "StrikerX3 saturn-tests",
+      "kind": "test",
+      "license": "MIT",
+      "url": "https://github.com/StrikerX3/saturn-tests"
+    },
+    {
+      "id": "singlesteptests",
+      "consoles": ["multi-system"],
+      "name": "SingleStepTests JSON CPU vectors (sm83, 65x02, 65816, z80, m68000, spc700, ARM7TDMI, r3000, sh4, huc6280, 8086-80386)",
+      "kind": "cpu-test-vectors",
+      "license": "MIT (per repository; 680x0/ProcessorTests unlicensed, 80386 NOASSERTION)",
+      "url": "https://github.com/SingleStepTests"
+    }
+  ]
+}
