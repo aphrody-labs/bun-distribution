@@ -5,10 +5,15 @@
 //! parsers (BAC/BDM/CMS/CUS/EMB/EMD/EMM/ESK/MSG/PUP/SAV), the Dragon Ball game
 //! catalog, Steam install inspection, text extraction and the unified state.
 pub mod catalog;
+pub mod convert;
 pub mod error;
 pub mod formats;
 pub mod fs;
+pub mod gameplay;
+#[cfg(feature = "dbxv2")]
+pub mod index;
 pub mod inventory;
+pub mod reverse;
 pub mod live;
 pub mod steam;
 pub mod text;

@@ -453,7 +453,7 @@ pub const EXTERNALS: &[ExternalAdapter] = &[
     ext!("ntr-ghidra", Analyze, Vendor, "vendor/ntr-ghidra", ["nds", "3ds"], Probe::Path("vendor/ntr-ghidra"), None),
     ext!("wii-disasm", Analyze, Crate, "crates/aphrody-wii-disasm", ["wii", "gamecube"], Probe::Path("crates/aphrody-wii-disasm"), None),
     ext!("bun-engine-nds", Analyze, Crate, "crates/bun-engine-nds", ["nds"], Probe::Path("crates/bun-engine-nds"), None),
-    ext!("aarch64-lift", Lift, Crate, "crates/aphrody-aarch64", ["arm64", "aarch64"], Probe::Path("crates/aphrody-aarch64"), None),
+    ext!("aarch64-lift", Lift, Crate, "crates/rdynarmic", ["arm64", "aarch64"], Probe::Path("crates/rdynarmic"), None),
     ext!("ghidra-decompiler", Decompile, Vendor, "vendor/ghidra-decompiler", ["*"], Probe::Path("vendor/ghidra-decompiler"), None),
     // rebuild
     ext!("factory-linux", Rebuild, Vendor, "bun src/cli.ts factory (factory/native-targets.json)", ["elf", "linux"], Probe::Path("factory/native-targets.json"), None),
