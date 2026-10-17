@@ -747,19 +747,25 @@ async function importDrops(service: any, db: DataAdapter) {
     await db.upsert("inagle_drops_battles", records, "battle_group_id");
   }
 
-  const treasures = service.drops.getAllTreasures();
-  await db.deleteAllExcept("inagle_drops_treasures", "map_id", "xx");
+  // La source VFS ne décode que les tables d'esprits : sans trésors à écrire, on garde
+  // ceux déjà en base au lieu de les effacer.
+  if (typeof service.drops.getAllTreasures === "function") {
+    const treasures = service.drops.getAllTreasures();
+    await db.deleteAllExcept("inagle_drops_treasures", "map_id", "xx");
 
-  for (let i = 0; i < treasures.length; i += BATCH_SIZE) {
-    const batch = treasures.slice(i, i + BATCH_SIZE);
-    const records = batch.map((t: any) => ({
-      map_id: t.mapId,
-      pos: t.pos,
-      items: t.items,
-      data: t,
-      updated_at: new Date().toISOString(),
-    }));
-    await db.insert("inagle_drops_treasures", records);
+    for (let i = 0; i < treasures.length; i += BATCH_SIZE) {
+      const batch = treasures.slice(i, i + BATCH_SIZE);
+      const records = batch.map((t: any) => ({
+        map_id: t.mapId,
+        pos: t.pos,
+        items: t.items,
+        data: t,
+        updated_at: new Date().toISOString(),
+      }));
+      await db.insert("inagle_drops_treasures", records);
+    }
+  } else {
+    console.log("⏭️  Drops: pas de trésors dans cette source, table conservée.");
   }
   console.log("✅ Drops imported.");
 }
