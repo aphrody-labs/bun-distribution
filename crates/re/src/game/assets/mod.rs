@@ -56,7 +56,9 @@ pub enum AssetError {
         details: String,
     },
     /// The content is encrypted and no user-provided key was supplied.
-    #[error("{0} is encrypted: supply the key yourself (--aes-key / BUNRE_GAME_AES_KEY, --hca-key)")]
+    #[error(
+        "{0} is encrypted: supply the key yourself (--aes-key / BUNRE_GAME_AES_KEY, --hca-key)"
+    )]
     KeyRequired(String),
     /// A known but unsupported variant (proprietary codec, legacy layout).
     #[error("unsupported: {0}")]
@@ -70,7 +72,10 @@ pub enum AssetError {
 pub type AssetResult<T> = Result<T, AssetError>;
 
 pub(crate) fn format_err(format: &'static str, details: impl Into<String>) -> AssetError {
-    AssetError::Format { format, details: details.into() }
+    AssetError::Format {
+        format,
+        details: details.into(),
+    }
 }
 
 /// User-provided decryption material for one run. Never persisted, never printed.
@@ -98,9 +103,14 @@ impl Keys {
     /// # Errors
     /// Returns a message when the text is not exactly 32 bytes of hexadecimal.
     pub fn parse_aes(text: &str) -> Result<[u8; 32], String> {
-        let clean = text.trim().trim_start_matches("0x").trim_start_matches("0X");
+        let clean = text
+            .trim()
+            .trim_start_matches("0x")
+            .trim_start_matches("0X");
         let bytes = hex::decode(clean).map_err(|_| "AES key must be hexadecimal".to_string())?;
-        bytes.try_into().map_err(|_| "AES key must be 32 bytes (64 hex digits)".to_string())
+        bytes
+            .try_into()
+            .map_err(|_| "AES key must be 32 bytes (64 hex digits)".to_string())
     }
 
     /// Parse an HCA key given in decimal or `0x` hexadecimal.
@@ -143,10 +153,10 @@ pub fn normalize_path(path: &str) -> String {
     let mut parts: Vec<&str> = Vec::new();
     for part in unified.split('/') {
         match part {
-            "" | "." => {},
+            "" | "." => {}
             ".." => {
                 parts.pop();
-            },
+            }
             other => parts.push(other),
         }
     }
@@ -159,8 +169,14 @@ mod tests {
 
     #[test]
     fn normalizes_mount_points_and_separators() {
-        assert_eq!(normalize_path("../../../Game/Content/a.uasset"), "Game/Content/a.uasset");
-        assert_eq!(normalize_path(".\\data\\common/x.g4tx"), "data/common/x.g4tx");
+        assert_eq!(
+            normalize_path("../../../Game/Content/a.uasset"),
+            "Game/Content/a.uasset"
+        );
+        assert_eq!(
+            normalize_path(".\\data\\common/x.g4tx"),
+            "data/common/x.g4tx"
+        );
     }
 
     #[test]
@@ -169,6 +185,15 @@ mod tests {
         assert!(Keys::parse_aes("abcd").is_err());
         assert_eq!(Keys::parse_hca("0x10").unwrap(), 16);
         assert_eq!(Keys::parse_hca("42").unwrap(), 42);
-        assert!(!format!("{:?}", Keys { aes: Some([1; 32]), hca: None }).contains('1'));
+        assert!(
+            !format!(
+                "{:?}",
+                Keys {
+                    aes: Some([1; 32]),
+                    hca: None
+                }
+            )
+            .contains('1')
+        );
     }
 }

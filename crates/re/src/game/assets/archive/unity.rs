@@ -80,8 +80,10 @@ impl UnityFsArchive {
             "none" => raw_info,
             "lz4" | "lz4hc" => decompress("lz4", &raw_info, uncompressed_info)?,
             other => {
-                return Err(AssetError::Unsupported(format!("{label}: {other} blocks info")));
-            },
+                return Err(AssetError::Unsupported(format!(
+                    "{label}: {other} blocks info"
+                )));
+            }
         };
         let mut data_offset = if flags & BLOCKS_INFO_AT_END != 0 {
             header_end
@@ -136,7 +138,15 @@ impl UnityFsArchive {
             });
             nodes.push((offset, size));
         }
-        Ok(Self { label, source, version, unity_version, blocks, nodes, entries })
+        Ok(Self {
+            label,
+            source,
+            version,
+            unity_version,
+            blocks,
+            nodes,
+            entries,
+        })
     }
 }
 
@@ -162,7 +172,9 @@ impl Archive for UnityFsArchive {
             if block_end <= offset || block.stream_offset >= end {
                 continue;
             }
-            let raw = self.source.read_at(block.file_offset, u64::from(block.compressed))?;
+            let raw = self
+                .source
+                .read_at(block.file_offset, u64::from(block.compressed))?;
             let data = match method(u32::from(block.flags)) {
                 "none" => raw,
                 "lz4" | "lz4hc" => decompress("lz4", &raw, block.uncompressed as usize)?,

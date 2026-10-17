@@ -43,7 +43,14 @@ pub struct PakFooter {
 pub fn probe(source: &FileSource) -> AssetResult<Option<PakFooter>> {
     let tail = source.tail(256)?;
     // (footer size, magic offset inside the footer).
-    for (size, magic_at) in [(222usize, 17usize), (221, 17), (189, 17), (61, 17), (45, 1), (44, 0)] {
+    for (size, magic_at) in [
+        (222usize, 17usize),
+        (221, 17),
+        (189, 17),
+        (61, 17),
+        (45, 1),
+        (44, 0),
+    ] {
         if tail.len() < size {
             continue;
         }
@@ -63,7 +70,7 @@ pub fn probe(source: &FileSource) -> AssetResult<Option<PakFooter>> {
                 } else {
                     221
                 }
-            },
+            }
             9 => 222,
             10.. => 221,
             _ => 0,
@@ -130,7 +137,12 @@ fn legacy_header_size(version: u32, method_byte: bool, method: u32, blocks: usiz
     let method_field = if version == 8 && method_byte { 1 } else { 4 };
     let timestamp = if version <= 1 { 8 } else { 0 };
     let tail = if version >= 3 {
-        (if method == 0 { 0 } else { 4 + 16 * blocks as u64 }) + 1 + 4
+        (if method == 0 {
+            0
+        } else {
+            4 + 16 * blocks as u64
+        }) + 1
+            + 4
     } else {
         0
     };
@@ -180,26 +192,55 @@ fn read_legacy_entry(cursor: &mut Cursor<'_>, footer: &PakFooter) -> AssetResult
         block_size = cursor.u32()?;
     }
     let header = legacy_header_size(footer.version, footer.method_byte, method, blocks.len());
-    Ok(PakRecord { offset, size, uncompressed, method, blocks, block_size, encrypted, header })
+    Ok(PakRecord {
+        offset,
+        size,
+        uncompressed,
+        method,
+        blocks,
+        block_size,
+        encrypted,
+        header,
+    })
 }
 
 /// Decode one v10+ encoded entry (`FPakFile::DecodePakEntry`).
 fn decode_entry(encoded: &[u8], at: usize) -> AssetResult<PakRecord> {
     let mut cursor = Cursor::at(encoded, at, FORMAT);
     let value = cursor.u32()?;
-    let block_size = if value & 0x3f == 0x3f { cursor.u32()? } else { (value & 0x3f) << 11 };
+    let block_size = if value & 0x3f == 0x3f {
+        cursor.u32()?
+    } else {
+        (value & 0x3f) << 11
+    };
     let count = ((value >> 6) & 0xffff) as usize;
     let encrypted = value & (1 << 22) != 0;
     let method = (value >> 23) & 0x3f;
-    let offset = if value & (1 << 31) != 0 { u64::from(cursor.u32()?) } else { cursor.u64()? };
-    let uncompressed =
-        if value & (1 << 30) != 0 { u64::from(cursor.u32()?) } else { cursor.u64()? };
+    let offset = if value & (1 << 31) != 0 {
+        u64::from(cursor.u32()?)
+    } else {
+        cursor.u64()?
+    };
+    let uncompressed = if value & (1 << 30) != 0 {
+        u64::from(cursor.u32()?)
+    } else {
+        cursor.u64()?
+    };
     let size = if method != 0 {
-        if value & (1 << 29) != 0 { u64::from(cursor.u32()?) } else { cursor.u64()? }
+        if value & (1 << 29) != 0 {
+            u64::from(cursor.u32()?)
+        } else {
+            cursor.u64()?
+        }
     } else {
         uncompressed
     };
-    let header = 53 + if method != 0 { 4 + 16 * count as u64 } else { 0 };
+    let header = 53
+        + if method != 0 {
+            4 + 16 * count as u64
+        } else {
+            0
+        };
     let mut blocks = Vec::with_capacity(count);
     if count > 0 {
         if count == 1 && !encrypted {
@@ -213,7 +254,16 @@ fn decode_entry(encoded: &[u8], at: usize) -> AssetResult<PakRecord> {
             }
         }
     }
-    Ok(PakRecord { offset, size, uncompressed, method, blocks, block_size, encrypted, header })
+    Ok(PakRecord {
+        offset,
+        size,
+        uncompressed,
+        method,
+        blocks,
+        block_size,
+        encrypted,
+        header,
+    })
 }
 
 impl PakArchive {
@@ -223,10 +273,12 @@ impl PakArchive {
     /// Not a pak, encrypted index without key, malformed index.
     pub fn open(path: &Path, label: String, keys: &Keys) -> AssetResult<Self> {
         let source = FileSource::open(path)?;
-        let footer = probe(&source)?
-            .ok_or_else(|| format_err(FORMAT, format!("{label}: no pak footer")))?;
+        let footer =
+            probe(&source)?.ok_or_else(|| format_err(FORMAT, format!("{label}: no pak footer")))?;
         if footer.encrypted_index && keys.aes.is_none() {
-            return Err(AssetError::KeyRequired(format!("{label} (encrypted pak index)")));
+            return Err(AssetError::KeyRequired(format!(
+                "{label} (encrypted pak index)"
+            )));
         }
         let mut index = source.read_at(footer.index_offset, footer.index_size)?;
         if footer.encrypted_index
@@ -287,7 +339,10 @@ impl PakArchive {
         self.mount_point = cursor.fstring()?;
         let count = cursor.i32()?;
         if !(0..=5_000_000).contains(&count) {
-            return Err(format_err(FORMAT, format!("implausible entry count {count}")));
+            return Err(format_err(
+                FORMAT,
+                format!("implausible entry count {count}"),
+            ));
         }
         for _ in 0..count {
             let name = cursor.fstring()?;
@@ -382,7 +437,11 @@ impl Archive for PakArchive {
         let method = self.method_name(record.method);
         if record.method == 0 {
             let start = record.offset + record.header;
-            let stored = if record.encrypted { align_up(record.size, 16) } else { record.size };
+            let stored = if record.encrypted {
+                align_up(record.size, 16)
+            } else {
+                record.size
+            };
             let mut data = self.source.read_at(start, stored)?;
             if record.encrypted {
                 self.decrypt(&mut data)?;
@@ -399,7 +458,11 @@ impl Archive for PakArchive {
                 (*start, *end)
             };
             let len = end.saturating_sub(start);
-            let stored = if record.encrypted { align_up(len, 16) } else { len };
+            let stored = if record.encrypted {
+                align_up(len, 16)
+            } else {
+                len
+            };
             let mut block = self.source.read_at(start, stored)?;
             if record.encrypted {
                 self.decrypt(&mut block)?;

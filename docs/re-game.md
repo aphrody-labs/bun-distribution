@@ -121,6 +121,12 @@ Generic = title-independent capability; Level-5 = specific to Level-5 formats or
   plain headers only), `tests/dbxv2_inventory_cli.rs` (canonical `cpk_encode`).
 - `game::convert::decode_audio_subsongs` (DBXV2) no longer decodes HCA with the IEVR key; it uses
   the keyless `game::assets::export::hca_to_wav`.
+- `game::formats::emd::EmdFile::parse` read only its own mock layout and produced empty meshes
+  for real files; it now reads the Xenoverse 2 layout (port of `packages/dbxv2/dbxv2/emd.py`).
+- `aphrody-nie-formats::cri_audio::Awb::parse` read 4-byte cue ids and ignored the bank
+  alignment; real AFS2 headers (IEVR and DBXV2 alike) declare 2-byte ids at `[6:8]` and align
+  entry starts, so multi-entry banks were mis-indexed. It now honours both (no-op where the old
+  assumptions held).
 - The CRI readers were not physically moved out of `aphrody-nie-formats`: they are `no_std`
   and `wasm32` code used by 26 crates, and `bun-re` already depends on them; moving them into
   `bun-re` would invert that dependency (cycle) and drop `no_std`. A dedicated CRI crate is the
@@ -128,8 +134,21 @@ Generic = title-independent capability; Level-5 = specific to Level-5 formats or
 
 ## Proof runs
 
-See the session report for counts, timings and exported paths; outputs live under
+Run 2026-10-17 from the workstation, read-only. VPS installs were read through a read-only
+SFTP mount (`rclone mount vps:/games/SteamLibrary/steamapps R: --read-only --vfs-cache-mode off`),
+so only container headers, indexes and the sampled entries crossed the network; the Steam app id
+was resolved from the library's `appmanifest_*.acf` through `bun-steam`. Outputs live under
 `target/tmp/re-game/` (build output, not tracked).
+
+| Game | Profile | Detect / mount | Entries | Exports |
+|---|---|---|---|---|
+| IEVR (2799860) | `ievr`, owner `aphrody-nie-formats::vfs` | mount 17.5 s | 255,498 = 255,308 owner + 190 loose; owner `assetCount` 255,308, `cpkCount` 936, `extraCount` 0, `looseCount` 5 — identical to the running NIE server's `/vfs/stats` | `cfg.bin`→JSON and ACB→WAV byte-identical to NIE `/export`; G4TX→PNG pixel-identical to NIE `/tex/` (PNG encoder settings differ); keshin G4MD→glTF through the generic G4MD+G4MG assembly (NIE `/model-full` adds its keshin texturing, 683 KB vs 611 KB) |
+| DBXV2 (454650) | `dbxv2`, plain CPK | detect 9.4 s, mount 199 s (26 CPK TOCs over SFTP) | 139,036 (983 shadowed) | 5 EMB→PNG, 5 tables→JSON, 5 animations→JSON; EMD→glTF (after the EMD fix, `HUM_000_Pants` 3 submeshes, 67.7 KB); ACB/AWB→WAV keyless (`PV_01`) |
+| Hogwarts Legacy mod files (Unreal 4.27 IoStore + pak v11, `%LOCALAPPDATA%`) | `unreal` | 0.07 s | 895 (893 shadowed duplicates in `UserData/`), real paths from the IoStore directory index; pak v11 font entry decodes to a TTF | raw packages, fonts and tables; `re game index` (bun:sqlite + FTS5) and `re game serve` routes verified |
+| Synthetic Unity install (no Unity title installed on the PC or the VPS) | `unity` | instant | 5 | bundle nodes PNG and OGG exported |
+
+No Unreal or Unity game is installed in the PC or VPS Steam libraries; the Unreal proof uses the
+owner's mod files, the Unity proof a generated bundle.
 
 ## Limits
 

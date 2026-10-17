@@ -109,19 +109,21 @@ pub fn by_extension(ext: &str) -> Kind {
         | "tex" => Kind::Texture,
         "glb" | "gltf" | "fbx" | "obj" | "dae" | "3ds" | "ply" | "stl" | "g4md" | "g4mg"
         | "g4pkm" | "emd" | "emo" | "nsk" | "nif" | "mdl" | "smd" | "dmx" | "mesh" => Kind::Model,
-        "g4sk" | "esk" | "ean" | "ema" | "anim" | "g4ra" | "g4mt" | "bvh" | "skel" => Kind::Animation,
+        "g4sk" | "esk" | "ean" | "ema" | "anim" | "g4ra" | "g4mt" | "bvh" | "skel" => {
+            Kind::Animation
+        }
         "wav" | "ogg" | "opus" | "flac" | "mp3" | "m4a" | "aac" | "hca" | "adx" | "acb" | "awb"
         | "wem" | "bnk" | "fsb" | "bank" | "xwb" | "xsb" | "at9" | "vag" => Kind::Audio,
         "usm" | "bik" | "bk2" | "mp4" | "webm" | "wmv" | "avi" | "mkv" | "mov" | "m2v" | "ivf" => {
             Kind::Video
-        },
+        }
         "cfg.bin" | "csv" | "tsv" | "json" | "xml" | "yaml" | "yml" | "toml" | "ini" | "msg"
         | "bdm" | "cms" | "cus" | "pup" | "bcs" | "bsa" | "bac" | "bcm" | "emm" | "objbin"
         | "obj.bin" | "mevbin" | "db" | "sqlite" | "tbl" | "dat" | "cfg" | "acf" | "vdf"
         | "csb" | "qed" | "qbt" | "qml" | "qsl" | "qxd" | "idb" | "bev" => Kind::Table,
         "txt" | "srt" | "ass" | "vtt" | "md" | "html" | "htm" | "log" => Kind::Text,
-        "lua" | "luac" | "lua.bin" | "rpy" | "rpyc" | "gd" | "gdc" | "py" | "pyc" | "js"
-        | "cs" | "nut" | "as" | "mevs" => Kind::Script,
+        "lua" | "luac" | "lua.bin" | "rpy" | "rpyc" | "gd" | "gdc" | "py" | "pyc" | "js" | "cs"
+        | "nut" | "as" | "mevs" => Kind::Script,
         "hlsl" | "glsl" | "spv" | "cso" | "fxo" | "vfxo" | "pfxo" | "gfxo" | "cfxo" | "dxbc"
         | "shader" | "metal" | "wgsl" => Kind::Shader,
         "ttf" | "otf" | "fnt" | "woff" | "woff2" | "fontdef" | "ufont" => Kind::Font,
@@ -198,7 +200,10 @@ pub fn sniff(head: &[u8]) -> Option<(&'static str, Kind)> {
     if head.len() >= 8 && &head[4..8] == b"ftyp" {
         return Some(("mp4", Kind::Video));
     }
-    TABLE.iter().find(|(magic, _, _)| head.starts_with(magic)).map(|(_, id, kind)| (*id, *kind))
+    TABLE
+        .iter()
+        .find(|(magic, _, _)| head.starts_with(magic))
+        .map(|(_, id, kind)| (*id, *kind))
 }
 
 /// Classify a path, using `head` (first bytes) when the extension is unknown or generic.
@@ -226,8 +231,14 @@ mod tests {
         assert_eq!(classify("a/b.g4tx", None).0, Kind::Texture);
         assert_eq!(classify("chara/GOK/GOK_000.emd", None).0, Kind::Model);
         assert_eq!(classify("noext", Some(b"OggS\0")).0, Kind::Audio);
-        assert_eq!(classify("x.bin", Some(b"DDS |")), (Kind::Texture, "dds".to_string()));
-        assert_eq!(classify("y.bin", Some(b"RIFF\0\0\0\0WAVEfmt ")).0, Kind::Audio);
+        assert_eq!(
+            classify("x.bin", Some(b"DDS |")),
+            (Kind::Texture, "dds".to_string())
+        );
+        assert_eq!(
+            classify("y.bin", Some(b"RIFF\0\0\0\0WAVEfmt ")).0,
+            Kind::Audio
+        );
         assert_eq!(classify("z.unknownext", Some(b"zzzz")).0, Kind::Unknown);
     }
 }

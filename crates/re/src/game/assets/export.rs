@@ -64,23 +64,40 @@ fn head(data: &[u8], magic: &[u8]) -> bool {
 #[must_use]
 pub fn formats_for(vfs: &GameVfs, entry: &VfsEntry) -> Vec<ExportFormat> {
     let ext = entry.format.as_str();
-    let raw_ext = if ext.is_empty() { "bin".to_string() } else { ext.to_string() };
-    let mut out = vec![ExportFormat { id: "raw", ext: raw_ext, raw: true }];
-    let mut push = |id: &'static str, ext: &str| out.push(ExportFormat { id, ext: ext.into(), raw: false });
+    let raw_ext = if ext.is_empty() {
+        "bin".to_string()
+    } else {
+        ext.to_string()
+    };
+    let mut out = vec![ExportFormat {
+        id: "raw",
+        ext: raw_ext,
+        raw: true,
+    }];
+    let mut push = |id: &'static str, ext: &str| {
+        out.push(ExportFormat {
+            id,
+            ext: ext.into(),
+            raw: false,
+        })
+    };
     match ext {
         "dds" | "g4tx" | "emb" => push("png", "png"),
         "hca" | "adx" | "awb" | "acb" => push("wav", "wav"),
         "usm" => {
             push("mp4", "mp4");
             push("webm", "webm");
-        },
+        }
         "emd" | "g4md" => push("glb", "glb"),
-        "cfg.bin" | "objbin" | "obj.bin" | "mevbin" | "g4sk" | "g4mt" | "g4pk" | "g4pkm" | "msg"
-        | "bac" | "bcm" | "bcs" | "bdm" | "bsa" | "ean" | "emm" | "esk" | "cms" | "cus" | "pup"
-        | "cri-utf" => push("json", "json"),
-        _ => {},
+        "cfg.bin" | "objbin" | "obj.bin" | "mevbin" | "g4sk" | "g4mt" | "g4pk" | "g4pkm"
+        | "msg" | "bac" | "bcm" | "bcs" | "bdm" | "bsa" | "ean" | "emm" | "esk" | "cms" | "cus"
+        | "pup" | "cri-utf" | "json" => push("json", "json"),
+        _ => {}
     }
-    if vfs.profile().mode == MountMode::Level5Ievr && ext == "g4md" && vfs.sibling(&entry.path, "g4mg").is_none() {
+    if vfs.profile().mode == MountMode::Level5Ievr
+        && ext == "g4md"
+        && vfs.sibling(&entry.path, "g4mg").is_none()
+    {
         out.retain(|format| format.id != "glb");
     }
     out
@@ -95,7 +112,9 @@ pub fn preferred(entry: &VfsEntry) -> &'static str {
         "usm" => "mp4",
         "emd" | "g4md" => "glb",
         "cfg.bin" | "objbin" | "obj.bin" | "mevbin" | "msg" | "bac" | "bcm" | "bcs" | "bdm"
-        | "bsa" | "ean" | "emm" | "esk" | "cms" | "cus" | "pup" | "cri-utf" | "g4sk" | "g4mt" => "json",
+        | "bsa" | "ean" | "emm" | "esk" | "cms" | "cus" | "pup" | "cri-utf" | "g4sk" | "g4mt" => {
+            "json"
+        }
         _ => "raw",
     }
 }
@@ -152,7 +171,7 @@ pub fn hca_to_wav(raw: &[u8], key: Option<u64>, subkey: u16) -> AssetResult<Vec<
     let mut pcm = Vec::with_capacity(info.block_count as usize * frame.len());
     loop {
         match decoder.decode_frame_i16(&mut frame) {
-            Ok(0) => {},
+            Ok(0) => {}
             Ok(n) => pcm.extend_from_slice(&frame[..n * channels as usize]),
             Err(HcaDecoderError::Eof) => break,
             Err(e) => return Err(format_err("hca", e.to_string())),
@@ -166,7 +185,9 @@ pub fn hca_to_wav(raw: &[u8], key: Option<u64>, subkey: u16) -> AssetResult<Vec<
 /// # Errors
 /// Encrypted streams without key, malformed banks, streamed ACB without its AWB.
 pub fn cri_audio_to_wav(data: &[u8], hca_key: Option<u64>) -> AssetResult<Vec<u8>> {
-    use aphrody_nie_formats::cri_audio::{Awb, acb_parse, adx_decode, encode_pcm16_wav, is_adx, is_hca};
+    use aphrody_nie_formats::cri_audio::{
+        Awb, acb_parse, adx_decode, encode_pcm16_wav, is_adx, is_hca,
+    };
 
     fn one(raw: &[u8], key: Option<u64>, subkey: u16) -> AssetResult<Vec<u8>> {
         if is_hca(raw) {
@@ -174,18 +195,23 @@ pub fn cri_audio_to_wav(data: &[u8], hca_key: Option<u64>) -> AssetResult<Vec<u8
         }
         if is_adx(raw) {
             let pcm = adx_decode(raw).map_err(|e| format_err("adx", e.to_string()))?;
-            return Ok(encode_pcm16_wav(&pcm.samples, pcm.channels, pcm.sample_rate));
+            return Ok(encode_pcm16_wav(
+                &pcm.samples,
+                pcm.channels,
+                pcm.sample_rate,
+            ));
         }
         Err(format_err("cri-audio", "neither HCA nor ADX"))
     }
     fn bank(raw: &[u8], key: Option<u64>) -> AssetResult<Vec<u8>> {
         let awb = Awb::parse(raw).map_err(|e| format_err("awb", e.to_string()))?;
+        // Streamed cue banks embed placeholder entries: fall back to the sibling `.awb`.
         let first = awb
             .entries
             .iter()
             .map(|entry| awb.entry_bytes(raw, entry))
-            .find(|bytes| !bytes.is_empty())
-            .ok_or_else(|| format_err("awb", "empty bank"))?;
+            .find(|bytes| is_hca(bytes) || is_adx(bytes))
+            .ok_or_else(|| AssetError::NotFound("no HCA/ADX waveform in this bank".into()))?;
         one(first, key, awb.subkey)
     }
     if head(data, b"AFS2") {
@@ -194,7 +220,9 @@ pub fn cri_audio_to_wav(data: &[u8], hca_key: Option<u64>) -> AssetResult<Vec<u8
     if head(data, b"@UTF") {
         let acb = acb_parse(data).map_err(|e| format_err("acb", e.to_string()))?;
         if acb.embedded_awb.is_empty() {
-            return Err(AssetError::NotFound("streamed ACB: export its sibling .awb".into()));
+            return Err(AssetError::NotFound(
+                "streamed ACB: export its sibling .awb".into(),
+            ));
         }
         return bank(&acb.embedded_awb, hca_key);
     }
@@ -226,10 +254,11 @@ fn table_json(entry: &VfsEntry, data: &[u8]) -> AssetResult<Vec<u8>> {
         "cms" => return to_json(&CmsFile::parse(data).map_err(dimps)?),
         "cus" => return to_json(&CusFile::parse(data).map_err(dimps)?),
         "pup" => return to_json(&PupFile::parse(data).map_err(dimps)?),
-        _ => {},
+        _ => {}
     }
     if head(data, b"@UTF") {
-        let table = aphrody_nie_formats::cpk::parse_utf(data).map_err(|e| format_err("cri-utf", e.to_string()))?;
+        let table = aphrody_nie_formats::cpk::parse_utf(data)
+            .map_err(|e| format_err("cri-utf", e.to_string()))?;
         return to_json(&table);
     }
     aphrody_nie_formats::decode::to_json(data)
@@ -246,23 +275,38 @@ fn model_glb(vfs: &GameVfs, entry: &VfsEntry, data: &[u8]) -> AssetResult<Vec<u8
         };
         let dimps = |e: crate::game::ReError| format_err("emd", e.to_string());
         let emd = EmdFile::parse(data).map_err(dimps)?;
-        let stem = entry.path.rsplit_once('.').map_or(entry.path.as_str(), |(s, _)| s);
+        let stem = entry
+            .path
+            .rsplit_once('.')
+            .map_or(entry.path.as_str(), |(s, _)| s);
         let emb = ["dyt.emb", "emb"]
             .iter()
             .find_map(|ext| vfs.read(&format!("{stem}.{ext}")).ok())
             .and_then(|bytes| EmbFile::parse(&bytes).ok());
-        let esk = vfs.sibling(&entry.path, "esk").and_then(|e| vfs.read_entry(e).ok()).and_then(|b| EskFile::parse(&b).ok());
+        let esk = vfs
+            .sibling(&entry.path, "esk")
+            .and_then(|e| vfs.read_entry(e).ok())
+            .and_then(|b| EskFile::parse(&b).ok());
         let name = stem.rsplit('/').next().unwrap_or(stem);
         let model = AssembledCharacterModel::assemble(name, &emd, emb.as_ref(), esk.as_ref(), None);
         return model.to_glb().map_err(dimps);
     }
     if head(data, b"G4MD") {
-        use aphrody_nie_formats::assemble::{GenericModelInput, MeshComponent, assemble_generic_model};
+        use aphrody_nie_formats::assemble::{
+            GenericModelInput, MeshComponent, assemble_generic_model,
+        };
         let g4mg = vfs
             .sibling(&entry.path, "g4mg")
             .ok_or_else(|| AssetError::NotFound(format!("{}: sibling .g4mg", entry.path)))?;
         let g4mg = vfs.read_entry(g4mg)?;
-        let code = entry.path.rsplit('/').next().unwrap_or_default().split('.').next().unwrap_or_default();
+        let code = entry
+            .path
+            .rsplit('/')
+            .next()
+            .unwrap_or_default()
+            .split('.')
+            .next()
+            .unwrap_or_default();
         let model = assemble_generic_model(GenericModelInput {
             code: code.to_string(),
             g4md: data.to_vec(),
@@ -272,7 +316,10 @@ fn model_glb(vfs: &GameVfs, entry: &VfsEntry, data: &[u8]) -> AssetResult<Vec<u8
         .map_err(|e| format_err("g4md", e.to_string()))?;
         return Ok(model.to_glb());
     }
-    Err(AssetError::Unsupported(format!("{}: no model converter", entry.path)))
+    Err(AssetError::Unsupported(format!(
+        "{}: no model converter",
+        entry.path
+    )))
 }
 
 fn texture_png(entry: &VfsEntry, data: &[u8]) -> AssetResult<Vec<u8>> {
@@ -291,50 +338,69 @@ fn texture_png(entry: &VfsEntry, data: &[u8]) -> AssetResult<Vec<u8>> {
         let archive = crate::game::formats::emb_archive::EmbArchive::parse(data)
             .map_err(|e| format_err("emb", e.to_string()))?;
         for index in 0..archive.entries.len() {
-            let bytes = archive.entry_bytes(data, index).map_err(|e| format_err("emb", e.to_string()))?;
+            let bytes = archive
+                .entry_bytes(data, index)
+                .map_err(|e| format_err("emb", e.to_string()))?;
             if head(bytes, b"DDS ") {
                 return dds_to_png(bytes);
             }
         }
         return Err(format_err("emb", "no DDS entry"));
     }
-    Err(AssetError::Unsupported(format!("{}: no texture converter", entry.path)))
+    Err(AssetError::Unsupported(format!(
+        "{}: no texture converter",
+        entry.path
+    )))
 }
 
 /// Convert `data` (the bytes of `entry`) to `format`.
 ///
 /// # Errors
 /// Unknown format for this file, decoder failure, missing user key.
-pub fn convert(vfs: &GameVfs, entry: &VfsEntry, data: Vec<u8>, format: &str, keys: &Keys) -> AssetResult<Exported> {
+pub fn convert(
+    vfs: &GameVfs,
+    entry: &VfsEntry,
+    data: Vec<u8>,
+    format: &str,
+    keys: &Keys,
+) -> AssetResult<Exported> {
     let ievr = vfs.profile().mode == MountMode::Level5Ievr;
     let (bytes, ext) = match format {
         "raw" => {
-            let ext = if entry.format.is_empty() { "bin".to_string() } else { entry.format.clone() };
+            let ext = if entry.format.is_empty() {
+                "bin".to_string()
+            } else {
+                entry.format.clone()
+            };
             (data, ext)
-        },
+        }
         "png" => (texture_png(entry, &data)?, "png".into()),
         "wav" => {
             if head(&data, b"RIFF") {
                 (data, "wav".into())
             } else if ievr {
                 // IEVR audio through its owner: same decoder as the NIE `/export?format=wav`.
-                let decoded = aphrody_nie_formats::cri_audio::decode_to_wav(&data).or_else(|first| {
-                    let awb = vfs.sibling(&entry.path, "awb").ok_or(first)?;
-                    let bank = vfs.read_entry(awb).map_err(|e| e.to_string())?;
-                    aphrody_nie_formats::cri_audio::decode_awb_entry(&bank, None)
-                });
-                (decoded.map_err(|e| format_err("cri-audio", e))?, "wav".into())
+                let decoded =
+                    aphrody_nie_formats::cri_audio::decode_to_wav(&data).or_else(|first| {
+                        let awb = vfs.sibling(&entry.path, "awb").ok_or(first)?;
+                        let bank = vfs.read_entry(awb).map_err(|e| e.to_string())?;
+                        aphrody_nie_formats::cri_audio::decode_awb_entry(&bank, None)
+                    });
+                (
+                    decoded.map_err(|e| format_err("cri-audio", e))?,
+                    "wav".into(),
+                )
             } else {
                 let decoded = cri_audio_to_wav(&data, keys.hca).or_else(|error| match error {
                     AssetError::NotFound(_) => {
                         let awb = vfs.sibling(&entry.path, "awb").ok_or(error)?;
                         cri_audio_to_wav(&vfs.read_entry(awb)?, keys.hca)
-                    },
+                    }
                     other => Err(other),
                 })?;
                 (decoded, "wav".into())
             }
-        },
+        }
         "mp4" | "webm" => {
             use aphrody_nie_formats::usm;
             let demuxed = if ievr {
@@ -343,9 +409,16 @@ pub fn convert(vfs: &GameVfs, entry: &VfsEntry, data: Vec<u8>, format: &str, key
                 usm::demuxer(&data)
             }
             .map_err(|e| format_err("usm", e.to_string()))?;
-            let out = if format == "mp4" { demuxed.en_mp4().map(|(o, _)| o) } else { demuxed.en_webm().map(|(o, _)| o) };
-            (out.map_err(|e| format_err("usm", e.to_string()))?, format.to_string())
-        },
+            let out = if format == "mp4" {
+                demuxed.en_mp4().map(|(o, _)| o)
+            } else {
+                demuxed.en_webm().map(|(o, _)| o)
+            };
+            (
+                out.map_err(|e| format_err("usm", e.to_string()))?,
+                format.to_string(),
+            )
+        }
         "glb" => (model_glb(vfs, entry, &data)?, "glb".into()),
         "json" => {
             if entry.format == "json" {
@@ -353,10 +426,14 @@ pub fn convert(vfs: &GameVfs, entry: &VfsEntry, data: Vec<u8>, format: &str, key
             } else {
                 (table_json(entry, &data)?, "json".into())
             }
-        },
+        }
         other => return Err(AssetError::Unsupported(format!("export format `{other}`"))),
     };
-    Ok(Exported { mime: mime(&ext), bytes, ext })
+    Ok(Exported {
+        mime: mime(&ext),
+        bytes,
+        ext,
+    })
 }
 
 /// Batch export plan.
@@ -434,7 +511,12 @@ pub struct ExportSummary {
 fn safe_relative(path: &str) -> PathBuf {
     path.split('/')
         .filter(|part| !part.is_empty() && *part != "." && *part != "..")
-        .map(|part| part.replace(|c: char| matches!(c, ':' | '*' | '?' | '"' | '<' | '>' | '|'), "_"))
+        .map(|part| {
+            part.replace(
+                |c: char| matches!(c, ':' | '*' | '?' | '"' | '<' | '>' | '|'),
+                "_",
+            )
+        })
         .collect()
 }
 
@@ -443,7 +525,12 @@ fn safe_relative(path: &str) -> PathBuf {
 ///
 /// # Errors
 /// Output directory errors (conversion errors are recorded per file).
-pub fn export_batch(vfs: &GameVfs, out: &Path, plan: &ExportPlan, keys: &Keys) -> AssetResult<ExportSummary> {
+pub fn export_batch(
+    vfs: &GameVfs,
+    out: &Path,
+    plan: &ExportPlan,
+    keys: &Keys,
+) -> AssetResult<ExportSummary> {
     let started = Instant::now();
     let io = |path: &Path| {
         let path = path.display().to_string();
@@ -465,20 +552,37 @@ pub fn export_batch(vfs: &GameVfs, out: &Path, plan: &ExportPlan, keys: &Keys) -
             .iter()
             .filter(|entry| entry.kind == *kind)
             .filter(|entry| entry.size <= plan.max_bytes)
-            .filter(|entry| filter.as_ref().is_none_or(|f| entry.path.to_ascii_lowercase().contains(f)))
+            .filter(|entry| {
+                filter
+                    .as_ref()
+                    .is_none_or(|f| entry.path.to_ascii_lowercase().contains(f))
+            })
             .filter(|entry| !plan.converted_only || preferred(entry) != "raw")
             .collect();
         // Models need their companions: prefer the descriptor that converts.
         if *kind == Kind::Model {
-            candidates.retain(|entry| matches!(entry.format.as_str(), "emd" | "g4md" | "glb" | "gltf" | "fbx" | "obj"));
+            candidates.retain(|entry| {
+                matches!(
+                    entry.format.as_str(),
+                    "emd" | "g4md" | "glb" | "gltf" | "fbx" | "obj"
+                )
+            });
         }
         candidates.sort_by(|a, b| a.path.cmp(&b.path));
-        summary.candidates.insert(kind.as_str().into(), candidates.len());
+        summary
+            .candidates
+            .insert(kind.as_str().into(), candidates.len());
         let stride = (candidates.len() / plan.per_kind.max(1)).max(1);
         for entry in candidates.iter().step_by(stride).take(plan.per_kind) {
             let begun = Instant::now();
-            let format = if plan.convert { preferred(entry) } else { "raw" };
-            let result = vfs.read_entry(entry).and_then(|data| convert(vfs, entry, data, format, keys));
+            let format = if plan.convert {
+                preferred(entry)
+            } else {
+                "raw"
+            };
+            let result = vfs
+                .read_entry(entry)
+                .and_then(|data| convert(vfs, entry, data, format, keys));
             let mut record = ExportRecord {
                 source: entry.path.clone(),
                 container: entry.container.clone(),
@@ -507,11 +611,11 @@ pub fn export_batch(vfs: &GameVfs, out: &Path, plan: &ExportPlan, keys: &Keys) -
                     record.bytes = exported.bytes.len() as u64;
                     record.sha256 = Some(hex::encode(Sha256::digest(&exported.bytes)));
                     *summary.ok.entry(kind.as_str().into()).or_default() += 1;
-                },
+                }
                 Err(error) => {
                     record.error = Some(error.to_string());
                     *summary.failed.entry(kind.as_str().into()).or_default() += 1;
-                },
+                }
             }
             record.millis = begun.elapsed().as_millis();
             summary.files.push(record);
@@ -519,7 +623,11 @@ pub fn export_batch(vfs: &GameVfs, out: &Path, plan: &ExportPlan, keys: &Keys) -
     }
     summary.millis = started.elapsed().as_millis();
     let manifest = out.join("export_manifest.json");
-    std::fs::write(&manifest, serde_json::to_vec_pretty(&summary).unwrap_or_default()).map_err(io(&manifest))?;
+    std::fs::write(
+        &manifest,
+        serde_json::to_vec_pretty(&summary).unwrap_or_default(),
+    )
+    .map_err(io(&manifest))?;
     Ok(summary)
 }
 

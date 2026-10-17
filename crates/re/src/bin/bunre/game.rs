@@ -60,10 +60,16 @@ impl Args {
                 options.entry(arg).or_default().push(value);
             }
         }
-        Some(Self { positional, options })
+        Some(Self {
+            positional,
+            options,
+        })
     }
     fn get(&self, name: &str) -> Option<&str> {
-        self.options.get(name).and_then(|values| values.last()).map(String::as_str)
+        self.options
+            .get(name)
+            .and_then(|values| values.last())
+            .map(String::as_str)
     }
     fn all(&self, name: &str) -> Vec<String> {
         self.options.get(name).cloned().unwrap_or_default()
@@ -72,21 +78,32 @@ impl Args {
         self.options.contains_key(name)
     }
     fn number(&self, name: &str, default: u64) -> Result<u64, String> {
-        self.get(name).map_or(Ok(default), |value| value.parse().map_err(|_| format!("{name}: not a number")))
+        self.get(name).map_or(Ok(default), |value| {
+            value.parse().map_err(|_| format!("{name}: not a number"))
+        })
     }
 }
 
 /// Resolve `<appid|path>`: a number is looked up in the local Steam libraries (`bun-steam`).
 fn resolve(target: &str) -> Result<PathBuf, String> {
     if !target.is_empty() && target.bytes().all(|b| b.is_ascii_digit()) {
-        let app_id: u32 = target.parse().map_err(|_| "app id out of range".to_string())?;
+        let app_id: u32 = target
+            .parse()
+            .map_err(|_| "app id out of range".to_string())?;
         for installation in bun_steam::find_steam_installations() {
-            let Ok(games) = bun_steam::list_installed_games(&installation.root_path) else { continue };
-            if let Some(game) = games.into_iter().find(|game| game.manifest.app_id == app_id) {
+            let Ok(games) = bun_steam::list_installed_games(&installation.root_path) else {
+                continue;
+            };
+            if let Some(game) = games
+                .into_iter()
+                .find(|game| game.manifest.app_id == app_id)
+            {
                 return Ok(game.install_path);
             }
         }
-        return Err(format!("Steam app {app_id} is not installed in a local Steam library"));
+        return Err(format!(
+            "Steam app {app_id} is not installed in a local Steam library"
+        ));
     }
     let path = PathBuf::from(target);
     if path.is_dir() {
@@ -109,7 +126,8 @@ fn keys(args: &Args) -> Result<Keys, String> {
 
 fn limits(args: &Args) -> Result<DetectLimits, String> {
     let mut limits = DetectLimits::default();
-    limits.max_files = usize::try_from(args.number("--max-files", limits.max_files as u64)?).unwrap_or(usize::MAX);
+    limits.max_files =
+        usize::try_from(args.number("--max-files", limits.max_files as u64)?).unwrap_or(usize::MAX);
     Ok(limits)
 }
 
@@ -129,7 +147,10 @@ fn mount(args: &Args, target: &Path) -> Result<GameVfs, String> {
 }
 
 fn print_json(value: &serde_json::Value) {
-    println!("{}", serde_json::to_string_pretty(value).unwrap_or_default());
+    println!(
+        "{}",
+        serde_json::to_string_pretty(value).unwrap_or_default()
+    );
 }
 
 fn write_new(path: &str, bytes: &[u8]) -> Result<(), String> {
@@ -138,7 +159,8 @@ fn write_new(path: &str, bytes: &[u8]) -> Result<(), String> {
         .create_new(true)
         .open(path)
         .map_err(|error| format!("{path}: {error}"))?;
-    file.write_all(bytes).map_err(|error| format!("{path}: {error}"))
+    file.write_all(bytes)
+        .map_err(|error| format!("{path}: {error}"))
 }
 
 pub fn main(args: impl Iterator<Item = OsString>) -> ExitCode {
@@ -151,18 +173,24 @@ pub fn main(args: impl Iterator<Item = OsString>) -> ExitCode {
         Err(message) => {
             eprintln!("bunre game: {message}");
             ExitCode::FAILURE
-        },
+        }
     }
 }
 
 #[allow(clippy::too_many_lines)]
 fn run(args: &Args) -> Result<(), String> {
-    let command = args.positional.first().map(String::as_str).unwrap_or_default();
+    let command = args
+        .positional
+        .first()
+        .map(String::as_str)
+        .unwrap_or_default();
     if command == "profiles" {
         print_json(&serde_json::to_value(profile::PROFILES).unwrap_or_default());
         return Ok(());
     }
-    let Some(target) = args.positional.get(1) else { return Err(USAGE.to_string()) };
+    let Some(target) = args.positional.get(1) else {
+        return Err(USAGE.to_string());
+    };
     let root = resolve(target)?;
     match command {
         "detect" => {
@@ -172,16 +200,19 @@ fn run(args: &Args) -> Result<(), String> {
             value["profile"] = json!(profile::select(&report).id);
             value["millis"] = json!(started.elapsed().as_millis());
             print_json(&value);
-        },
+        }
         "mount" => {
             let vfs = mount(args, &root)?;
             let mut value = serde_json::to_value(vfs.report()).unwrap_or_default();
             value["stats"] = vfs.stats();
             print_json(&value);
-        },
+        }
         "ls" => {
             let vfs = mount(args, &root)?;
-            let prefix = args.get("--prefix").unwrap_or_default().to_ascii_lowercase();
+            let prefix = args
+                .get("--prefix")
+                .unwrap_or_default()
+                .to_ascii_lowercase();
             let limit = usize::try_from(args.number("--limit", u64::MAX)?).unwrap_or(usize::MAX);
             let mut sniff_budget = args.number("--sniff-unknown", 0)?;
             let stdout = std::io::stdout();
@@ -205,13 +236,17 @@ fn run(args: &Args) -> Result<(), String> {
                     break;
                 }
             }
-        },
+        }
         "cat" | "convert" | "formats" => {
             let path = args.positional.get(2).ok_or("missing <path>")?;
             let vfs = mount(args, &root)?;
-            let entry = vfs.find(path).ok_or_else(|| format!("{path}: not in the mounted view"))?;
+            let entry = vfs
+                .find(path)
+                .ok_or_else(|| format!("{path}: not in the mounted view"))?;
             if command == "formats" {
-                print_json(&serde_json::to_value(export::formats_for(&vfs, entry)).unwrap_or_default());
+                print_json(
+                    &serde_json::to_value(export::formats_for(&vfs, entry)).unwrap_or_default(),
+                );
                 return Ok(());
             }
             let data = vfs.read_entry(entry).map_err(|e| e.to_string())?;
@@ -219,31 +254,38 @@ fn run(args: &Args) -> Result<(), String> {
                 data
             } else {
                 let format = args.get("--format").ok_or("missing --format")?;
-                export::convert(&vfs, entry, data, format, &keys(args)?).map_err(|e| e.to_string())?.bytes
+                export::convert(&vfs, entry, data, format, &keys(args)?)
+                    .map_err(|e| e.to_string())?
+                    .bytes
             };
             match args.get("--output") {
                 Some(output) => write_new(output, &bytes)?,
                 None => match std::io::stdout().write_all(&bytes) {
                     Err(error) if error.kind() != std::io::ErrorKind::BrokenPipe => {
                         return Err(error.to_string());
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 },
             }
-        },
+        }
         "export" => {
             let out = args.get("--out").ok_or("missing --out <new-dir>")?;
             if Path::new(out).exists() {
-                return Err(format!("{out}: already exists (exports go to a new directory)"));
+                return Err(format!(
+                    "{out}: already exists (exports go to a new directory)"
+                ));
             }
             let mut plan = ExportPlan::default();
             if let Some(kinds) = args.get("--kinds") {
                 plan.kinds = kinds
                     .split(',')
-                    .map(|kind| Kind::parse(kind.trim()).ok_or_else(|| format!("unknown kind `{kind}`")))
+                    .map(|kind| {
+                        Kind::parse(kind.trim()).ok_or_else(|| format!("unknown kind `{kind}`"))
+                    })
                     .collect::<Result<_, _>>()?;
             }
-            plan.per_kind = usize::try_from(args.number("--per-kind", plan.per_kind as u64)?).unwrap_or(8);
+            plan.per_kind =
+                usize::try_from(args.number("--per-kind", plan.per_kind as u64)?).unwrap_or(8);
             plan.filter = args.get("--filter").map(str::to_string);
             plan.max_bytes = args.number("--max-mb", plan.max_bytes >> 20)? << 20;
             plan.convert = !args.flag("--raw");
@@ -251,7 +293,8 @@ fn run(args: &Args) -> Result<(), String> {
             let started = Instant::now();
             let vfs = mount(args, &root)?;
             let mount_millis = started.elapsed().as_millis();
-            let summary = export::export_batch(&vfs, Path::new(out), &plan, &keys(args)?).map_err(|e| e.to_string())?;
+            let summary = export::export_batch(&vfs, Path::new(out), &plan, &keys(args)?)
+                .map_err(|e| e.to_string())?;
             print_json(&json!({
                 "profile": summary.profile,
                 "mountMillis": mount_millis,
@@ -262,7 +305,7 @@ fn run(args: &Args) -> Result<(), String> {
                 "failed": summary.failed,
                 "manifest": Path::new(out).join("export_manifest.json"),
             }));
-        },
+        }
         "worker" => worker(&mount(args, &root)?, &keys(args)?)?,
         other => return Err(format!("unknown command `{other}`\n{USAGE}")),
     }
@@ -277,7 +320,9 @@ fn worker(vfs: &GameVfs, keys: &Keys) -> Result<(), String> {
     let stdout = std::io::stdout();
     let mut out = stdout.lock();
     let ready = json!({ "id": 0, "ok": true, "len": 0, "ready": true, "entries": vfs.entries().len(), "profile": vfs.profile().id });
-    writeln!(out, "{ready}").and_then(|()| out.flush()).map_err(|e| e.to_string())?;
+    writeln!(out, "{ready}")
+        .and_then(|()| out.flush())
+        .map_err(|e| e.to_string())?;
     for line in stdin.lock().lines() {
         let Ok(line) = line else { break };
         if line.trim().is_empty() {
@@ -285,13 +330,29 @@ fn worker(vfs: &GameVfs, keys: &Keys) -> Result<(), String> {
         }
         let request: serde_json::Value = serde_json::from_str(&line).unwrap_or_default();
         let id = request.get("id").cloned().unwrap_or(json!(null));
-        let op = request.get("op").and_then(|v| v.as_str()).unwrap_or_default();
-        let path = request.get("path").and_then(|v| v.as_str()).unwrap_or_default();
+        let op = request
+            .get("op")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
+        let path = request
+            .get("path")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
         let result: Result<(Vec<u8>, &str, String), AssetError> = (|| match op {
-            "stats" => Ok((vfs.stats().to_string().into_bytes(), "application/json", "json".into())),
-            "report" => Ok((serde_json::to_vec(vfs.report()).unwrap_or_default(), "application/json", "json".into())),
+            "stats" => Ok((
+                vfs.stats().to_string().into_bytes(),
+                "application/json",
+                "json".into(),
+            )),
+            "report" => Ok((
+                serde_json::to_vec(vfs.report()).unwrap_or_default(),
+                "application/json",
+                "json".into(),
+            )),
             _ => {
-                let entry = vfs.find(path).ok_or_else(|| AssetError::NotFound(path.to_string()))?;
+                let entry = vfs
+                    .find(path)
+                    .ok_or_else(|| AssetError::NotFound(path.to_string()))?;
                 match op {
                     "formats" => Ok((
                         serde_json::to_vec(&export::formats_for(vfs, entry)).unwrap_or_default(),
@@ -302,27 +363,35 @@ fn worker(vfs: &GameVfs, keys: &Keys) -> Result<(), String> {
                         let mut data = vfs.read_entry(entry)?;
                         data.truncate(64 * 1024);
                         Ok((data, "application/octet-stream", entry.format.clone()))
-                    },
-                    "read" => Ok((vfs.read_entry(entry)?, "application/octet-stream", entry.format.clone())),
+                    }
+                    "read" => Ok((
+                        vfs.read_entry(entry)?,
+                        "application/octet-stream",
+                        entry.format.clone(),
+                    )),
                     "convert" => {
-                        let format = request.get("format").and_then(|v| v.as_str()).unwrap_or("raw");
+                        let format = request
+                            .get("format")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("raw");
                         let data = vfs.read_entry(entry)?;
                         let exported = export::convert(vfs, entry, data, format, keys)?;
                         Ok((exported.bytes, exported.mime, exported.ext))
-                    },
+                    }
                     other => Err(AssetError::Unsupported(format!("worker op `{other}`"))),
                 }
-            },
+            }
         })();
         let written = match result {
             Ok((bytes, mime, ext)) => {
-                let header = json!({ "id": id, "ok": true, "len": bytes.len(), "mime": mime, "ext": ext });
+                let header =
+                    json!({ "id": id, "ok": true, "len": bytes.len(), "mime": mime, "ext": ext });
                 writeln!(out, "{header}").and_then(|()| out.write_all(&bytes))
-            },
+            }
             Err(error) => {
                 let header = json!({ "id": id, "ok": false, "len": 0, "error": error.to_string() });
                 writeln!(out, "{header}")
-            },
+            }
         };
         if written.and_then(|()| out.flush()).is_err() {
             break;

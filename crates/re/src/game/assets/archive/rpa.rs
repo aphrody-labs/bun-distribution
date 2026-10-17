@@ -62,28 +62,42 @@ fn err(details: impl Into<String>) -> AssetError {
 #[allow(clippy::too_many_lines)]
 pub fn unpickle(data: &[u8]) -> AssetResult<Value> {
     fn take<'a>(data: &'a [u8], pos: &mut usize, len: usize) -> AssetResult<&'a [u8]> {
-        let end = pos.checked_add(len).filter(|end| *end <= data.len()).ok_or_else(|| err("truncated pickle"))?;
+        let end = pos
+            .checked_add(len)
+            .filter(|end| *end <= data.len())
+            .ok_or_else(|| err("truncated pickle"))?;
         let slice = &data[*pos..end];
         *pos = end;
         Ok(slice)
     }
     fn uint(data: &[u8], pos: &mut usize, len: usize) -> AssetResult<u64> {
-        Ok(take(data, pos, len)?.iter().rev().fold(0u64, |acc, b| (acc << 8) | u64::from(*b)))
+        Ok(take(data, pos, len)?
+            .iter()
+            .rev()
+            .fold(0u64, |acc, b| (acc << 8) | u64::from(*b)))
     }
     fn line<'a>(data: &'a [u8], pos: &mut usize) -> AssetResult<&'a [u8]> {
         let rest = &data[*pos..];
-        let len = rest.iter().position(|b| *b == b'\n').ok_or_else(|| err("unterminated line"))?;
+        let len = rest
+            .iter()
+            .position(|b| *b == b'\n')
+            .ok_or_else(|| err("unterminated line"))?;
         *pos += len + 1;
         Ok(&rest[..len])
     }
     fn pop_mark(stack: &mut Vec<Value>) -> AssetResult<Vec<Value>> {
-        let at = stack.iter().rposition(|v| *v == Value::Mark).ok_or_else(|| err("no mark"))?;
+        let at = stack
+            .iter()
+            .rposition(|v| *v == Value::Mark)
+            .ok_or_else(|| err("no mark"))?;
         let items = stack.split_off(at + 1);
         stack.pop();
         Ok(items)
     }
     fn set_items(target: &mut Value, items: Vec<Value>) -> AssetResult<()> {
-        let Value::Dict(dict) = target else { return Err(err("SETITEMS on a non-dict")) };
+        let Value::Dict(dict) = target else {
+            return Err(err("SETITEMS on a non-dict"));
+        };
         let mut iter = items.into_iter();
         while let (Some(key), Some(value)) = (iter.next(), iter.next()) {
             dict.push((key, value));
@@ -91,7 +105,9 @@ pub fn unpickle(data: &[u8]) -> AssetResult<Value> {
         Ok(())
     }
     fn append(target: &mut Value, items: Vec<Value>) -> AssetResult<()> {
-        let Value::List(list) = target else { return Err(err("APPEND on a non-list")) };
+        let Value::List(list) = target else {
+            return Err(err("APPEND on a non-list"));
+        };
         list.extend(items);
         Ok(())
     }
@@ -111,10 +127,10 @@ pub fn unpickle(data: &[u8]) -> AssetResult<Value> {
         match op {
             0x80 => {
                 take(data, &mut pos, 1)?;
-            },
+            }
             0x95 => {
                 take(data, &mut pos, 8)?;
-            },
+            }
             b'.' => return stack.pop().ok_or_else(|| err("empty stack at STOP")),
             b'(' => stack.push(Value::Mark),
             b'}' => stack.push(Value::Dict(Vec::new())),
@@ -124,12 +140,18 @@ pub fn unpickle(data: &[u8]) -> AssetResult<Value> {
             0x89 => stack.push(Value::Bool(false)),
             b'J' => {
                 let value = take(data, &mut pos, 4)?;
-                stack.push(Value::Int(i128::from(i32::from_le_bytes(value.try_into().unwrap_or_default()))));
-            },
+                stack.push(Value::Int(i128::from(i32::from_le_bytes(
+                    value.try_into().unwrap_or_default(),
+                ))));
+            }
             b'K' => stack.push(Value::Int(i128::from(uint(data, &mut pos, 1)?))),
             b'M' => stack.push(Value::Int(i128::from(uint(data, &mut pos, 2)?))),
             0x8a | 0x8b => {
-                let len = if op == 0x8a { uint(data, &mut pos, 1)? } else { uint(data, &mut pos, 4)? };
+                let len = if op == 0x8a {
+                    uint(data, &mut pos, 1)?
+                } else {
+                    uint(data, &mut pos, 4)?
+                };
                 let raw = take(data, &mut pos, usize::try_from(len).unwrap_or(usize::MAX))?;
                 if raw.len() > 16 {
                     return Err(err("integer wider than 128 bits"));
@@ -142,15 +164,17 @@ pub fn unpickle(data: &[u8]) -> AssetResult<Value> {
                     value -= 1i128 << (8 * raw.len());
                 }
                 stack.push(Value::Int(value));
-            },
+            }
             b'I' | b'L' => {
-                let text = String::from_utf8_lossy(line(data, &mut pos)?).trim_end_matches('L').to_string();
+                let text = String::from_utf8_lossy(line(data, &mut pos)?)
+                    .trim_end_matches('L')
+                    .to_string();
                 match text.as_str() {
                     "00" => stack.push(Value::Bool(false)),
                     "01" => stack.push(Value::Bool(true)),
                     other => stack.push(Value::Int(other.parse().map_err(|_| err("bad INT"))?)),
                 }
-            },
+            }
             b'X' | 0x8c | 0x8d => {
                 let len = match op {
                     b'X' => uint(data, &mut pos, 4)?,
@@ -159,7 +183,7 @@ pub fn unpickle(data: &[u8]) -> AssetResult<Value> {
                 };
                 let raw = take(data, &mut pos, usize::try_from(len).unwrap_or(usize::MAX))?;
                 stack.push(Value::Str(String::from_utf8_lossy(raw).into_owned()));
-            },
+            }
             b'T' | b'U' | b'B' | b'C' | 0x8e => {
                 let len = match op {
                     b'U' | b'C' => uint(data, &mut pos, 1)?,
@@ -168,11 +192,11 @@ pub fn unpickle(data: &[u8]) -> AssetResult<Value> {
                 };
                 let raw = take(data, &mut pos, usize::try_from(len).unwrap_or(usize::MAX))?;
                 stack.push(Value::Bytes(raw.to_vec()));
-            },
+            }
             b'V' => {
                 let raw = line(data, &mut pos)?;
                 stack.push(Value::Str(String::from_utf8_lossy(raw).into_owned()));
-            },
+            }
             b'S' => {
                 let raw = line(data, &mut pos)?;
                 let trimmed = raw
@@ -181,17 +205,17 @@ pub fn unpickle(data: &[u8]) -> AssetResult<Value> {
                     .or_else(|| raw.strip_prefix(b"\"").and_then(|r| r.strip_suffix(b"\"")))
                     .unwrap_or(raw);
                 stack.push(Value::Bytes(trimmed.to_vec()));
-            },
+            }
             b't' | b'l' => {
                 let items = pop_mark(&mut stack)?;
                 stack.push(Value::List(items));
-            },
+            }
             b'd' => {
                 let items = pop_mark(&mut stack)?;
                 let mut dict = Value::Dict(Vec::new());
                 set_items(&mut dict, items)?;
                 stack.push(dict);
-            },
+            }
             0x85..=0x87 => {
                 let count = usize::from(op - 0x84);
                 if stack.len() < count {
@@ -199,52 +223,63 @@ pub fn unpickle(data: &[u8]) -> AssetResult<Value> {
                 }
                 let items = stack.split_off(stack.len() - count);
                 stack.push(Value::List(items));
-            },
+            }
             b's' => {
                 let value = stack.pop().ok_or_else(|| err("SETITEM underflow"))?;
                 let key = stack.pop().ok_or_else(|| err("SETITEM underflow"))?;
                 let target = stack.last_mut().ok_or_else(|| err("SETITEM underflow"))?;
                 set_items(target, vec![key, value])?;
-            },
+            }
             b'u' => {
                 let items = pop_mark(&mut stack)?;
                 let target = stack.last_mut().ok_or_else(|| err("SETITEMS underflow"))?;
                 set_items(target, items)?;
-            },
+            }
             b'a' => {
                 let value = stack.pop().ok_or_else(|| err("APPEND underflow"))?;
                 let target = stack.last_mut().ok_or_else(|| err("APPEND underflow"))?;
                 append(target, vec![value])?;
-            },
+            }
             b'e' => {
                 let items = pop_mark(&mut stack)?;
                 let target = stack.last_mut().ok_or_else(|| err("APPENDS underflow"))?;
                 append(target, items)?;
-            },
+            }
             0x94 => {
-                let top = stack.last().cloned().ok_or_else(|| err("MEMOIZE underflow"))?;
+                let top = stack
+                    .last()
+                    .cloned()
+                    .ok_or_else(|| err("MEMOIZE underflow"))?;
                 memo.insert(memo.len() as u64, top);
-            },
+            }
             b'q' | b'r' | b'p' => {
                 let key = match op {
                     b'q' => uint(data, &mut pos, 1)?,
                     b'r' => uint(data, &mut pos, 4)?,
-                    _ => String::from_utf8_lossy(line(data, &mut pos)?).parse().map_err(|_| err("bad PUT"))?,
+                    _ => String::from_utf8_lossy(line(data, &mut pos)?)
+                        .parse()
+                        .map_err(|_| err("bad PUT"))?,
                 };
                 let top = stack.last().cloned().ok_or_else(|| err("PUT underflow"))?;
                 memo.insert(key, top);
-            },
+            }
             b'h' | b'j' | b'g' => {
                 let key = match op {
                     b'h' => uint(data, &mut pos, 1)?,
                     b'j' => uint(data, &mut pos, 4)?,
-                    _ => String::from_utf8_lossy(line(data, &mut pos)?).parse().map_err(|_| err("bad GET"))?,
+                    _ => String::from_utf8_lossy(line(data, &mut pos)?)
+                        .parse()
+                        .map_err(|_| err("bad GET"))?,
                 };
-                stack.push(memo.get(&key).cloned().ok_or_else(|| err("GET of an unknown memo"))?);
-            },
+                stack.push(
+                    memo.get(&key)
+                        .cloned()
+                        .ok_or_else(|| err("GET of an unknown memo"))?,
+                );
+            }
             0x30 => {
                 stack.pop();
-            },
+            }
             other => return Err(err(format!("unsupported pickle opcode 0x{other:02x}"))),
         }
     }
@@ -269,9 +304,16 @@ impl RpaArchive {
         let source = FileSource::open(path)?;
         let head = source.read_clamped(0, 64)?;
         let line = head.split(|b| *b == b'\n').next().unwrap_or_default();
-        let fields: Vec<&str> = std::str::from_utf8(line).unwrap_or_default().split(' ').collect();
+        let fields: Vec<&str> = std::str::from_utf8(line)
+            .unwrap_or_default()
+            .split(' ')
+            .collect();
         let (version, offset, key) = match fields.as_slice() {
-            ["RPA-3.0", offset, key, ..] => ("3.0", *offset, i128::from(u32::from_str_radix(key, 16).map_err(|_| err("bad key field"))?)),
+            ["RPA-3.0", offset, key, ..] => (
+                "3.0",
+                *offset,
+                i128::from(u32::from_str_radix(key, 16).map_err(|_| err("bad key field"))?),
+            ),
             ["RPA-2.0", offset, ..] => ("2.0", *offset, 0),
             _ => return Err(err("unsupported RPA header")),
         };
@@ -282,15 +324,27 @@ impl RpaArchive {
             .take(64 << 20)
             .read_to_end(&mut index)
             .map_err(|e| err(format!("index zlib: {e}")))?;
-        let Value::Dict(dict) = unpickle(&index)? else { return Err(err("index is not a dict")) };
+        let Value::Dict(dict) = unpickle(&index)? else {
+            return Err(err("index is not a dict"));
+        };
         let mut records = Vec::with_capacity(dict.len());
         let mut entries = Vec::with_capacity(dict.len());
         for (name, value) in dict {
             let name = String::from_utf8_lossy(&name.as_bytes()).into_owned();
             let Value::List(parts) = value else { continue };
-            let Some(Value::List(first)) = parts.first() else { continue };
-            let start = first.first().and_then(Value::as_int).ok_or_else(|| err("missing offset"))? ^ key;
-            let length = first.get(1).and_then(Value::as_int).ok_or_else(|| err("missing length"))? ^ key;
+            let Some(Value::List(first)) = parts.first() else {
+                continue;
+            };
+            let start = first
+                .first()
+                .and_then(Value::as_int)
+                .ok_or_else(|| err("missing offset"))?
+                ^ key;
+            let length = first
+                .get(1)
+                .and_then(Value::as_int)
+                .ok_or_else(|| err("missing length"))?
+                ^ key;
             let prefix = first.get(2).map(Value::as_bytes).unwrap_or_default();
             let start = u64::try_from(start).map_err(|_| err("negative offset"))?;
             let length = u64::try_from(length).map_err(|_| err("negative length"))?;
@@ -304,7 +358,13 @@ impl RpaArchive {
             });
             records.push((start, payload, prefix));
         }
-        Ok(Self { label, source, version, records, entries })
+        Ok(Self {
+            label,
+            source,
+            version,
+            records,
+            entries,
+        })
     }
 }
 

@@ -121,9 +121,18 @@ impl ZipArchive {
                 compression: method_name(method),
                 encrypted: flags & 1 != 0,
             });
-            records.push(Record { method, compressed, local_offset });
+            records.push(Record {
+                method,
+                compressed,
+                local_offset,
+            });
         }
-        Ok(Self { label, source, records, entries })
+        Ok(Self {
+            label,
+            source,
+            records,
+            entries,
+        })
     }
 }
 
@@ -144,7 +153,10 @@ impl Archive for ZipArchive {
             .ok_or_else(|| AssetError::NotFound(format!("{}#{index}", self.label)))?;
         let entry = &self.entries[index];
         if entry.encrypted {
-            return Err(AssetError::KeyRequired(format!("{} ({})", self.label, entry.path)));
+            return Err(AssetError::KeyRequired(format!(
+                "{} ({})",
+                self.label, entry.path
+            )));
         }
         let local = self.source.read_at(record.local_offset, 30)?;
         if &local[..4] != b"PK\x03\x04" {
@@ -152,14 +164,18 @@ impl Archive for ZipArchive {
         }
         let name_len = u64::from(u16::from_le_bytes([local[26], local[27]]));
         let extra_len = u64::from(u16::from_le_bytes([local[28], local[29]]));
-        let data = self
-            .source
-            .read_at(record.local_offset + 30 + name_len + extra_len, record.compressed)?;
+        let data = self.source.read_at(
+            record.local_offset + 30 + name_len + extra_len,
+            record.compressed,
+        )?;
         let size = usize::try_from(entry.size).unwrap_or(usize::MAX);
         match record.method {
             0 => Ok(data),
             8 => decompress("deflate", &data, size),
-            _ => Err(AssetError::Unsupported(format!("{} compression", entry.compression))),
+            _ => Err(AssetError::Unsupported(format!(
+                "{} compression",
+                entry.compression
+            ))),
         }
     }
 }

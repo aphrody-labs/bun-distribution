@@ -46,11 +46,17 @@ pub struct IoStoreArchive {
 }
 
 fn u40_be(bytes: &[u8]) -> u64 {
-    bytes.iter().take(5).fold(0u64, |acc, byte| (acc << 8) | u64::from(*byte))
+    bytes
+        .iter()
+        .take(5)
+        .fold(0u64, |acc, byte| (acc << 8) | u64::from(*byte))
 }
 
 fn le(bytes: &[u8]) -> u64 {
-    bytes.iter().rev().fold(0u64, |acc, byte| (acc << 8) | u64::from(*byte))
+    bytes
+        .iter()
+        .rev()
+        .fold(0u64, |acc, byte| (acc << 8) | u64::from(*byte))
 }
 
 fn partition_paths(utoc: &Path, count: usize) -> Vec<PathBuf> {
@@ -74,8 +80,10 @@ impl IoStoreArchive {
     /// # Errors
     /// Malformed TOC, missing partitions, encrypted directory index without key.
     pub fn open(path: &Path, label: String, keys: &Keys) -> AssetResult<Self> {
-        let toc = std::fs::read(path)
-            .map_err(|source| AssetError::Io { path: path.display().to_string(), source })?;
+        let toc = std::fs::read(path).map_err(|source| AssetError::Io {
+            path: path.display().to_string(),
+            source,
+        })?;
         let mut cursor = Cursor::new(&toc, FORMAT);
         if cursor.bytes(16)? != TOC_MAGIC {
             return Err(format_err(FORMAT, "bad .utoc magic"));
@@ -156,7 +164,10 @@ impl IoStoreArchive {
             .map(|candidate| FileSource::open(candidate))
             .collect::<AssetResult<Vec<_>>>()?;
         if partitions.is_empty() {
-            return Err(format_err(FORMAT, format!("{label}: no .ucas partition next to the TOC")));
+            return Err(format_err(
+                FORMAT,
+                format!("{label}: no .ucas partition next to the TOC"),
+            ));
         }
 
         let mut archive = Self {
@@ -189,7 +200,7 @@ impl IoStoreArchive {
                         .trim_end_matches(".utoc")
                         .to_string();
                     format!(".chunks/{stem}/{id}")
-                },
+                }
             };
             let compression = archive.first_method(offset, length);
             archive.entries.push(ArchiveEntry {
@@ -238,7 +249,10 @@ impl IoStoreArchive {
     fn read_block(&self, block: &Block) -> AssetResult<Vec<u8>> {
         let partition = usize::try_from(block.offset / self.partition_size).unwrap_or(usize::MAX);
         let source = self.partitions.get(partition).ok_or_else(|| {
-            format_err(FORMAT, format!("{}: missing .ucas partition {partition}", self.label))
+            format_err(
+                FORMAT,
+                format!("{}: missing .ucas partition {partition}", self.label),
+            )
         })?;
         let at = block.offset % self.partition_size;
         let encrypted = self.flags & FLAG_ENCRYPTED != 0;
@@ -291,11 +305,15 @@ fn read_directory(data: &[u8], names: &mut [Option<String>]) -> AssetResult<Stri
         if guard > dirs.len() + 1 {
             return Err(format_err(FORMAT, "cyclic directory index"));
         }
-        let Some(&(_, first_child, _, first_file)) = dirs.get(dir as usize) else { continue };
+        let Some(&(_, first_child, _, first_file)) = dirs.get(dir as usize) else {
+            continue;
+        };
         let mut file = first_file;
         let mut seen = 0usize;
         while file != NONE {
-            let Some(&(file_name, next, user_data)) = files.get(file as usize) else { break };
+            let Some(&(file_name, next, user_data)) = files.get(file as usize) else {
+                break;
+            };
             if let Some(slot) = names.get_mut(user_data as usize) {
                 *slot = Some(format!("{prefix}{}", name(file_name)));
             }
@@ -308,7 +326,9 @@ fn read_directory(data: &[u8], names: &mut [Option<String>]) -> AssetResult<Stri
         let mut child = first_child;
         let mut seen = 0usize;
         while child != NONE {
-            let Some(&(child_name, _, next_sibling, _)) = dirs.get(child as usize) else { break };
+            let Some(&(child_name, _, next_sibling, _)) = dirs.get(child as usize) else {
+                break;
+            };
             stack.push((child, format!("{prefix}{}/", name(child_name))));
             child = next_sibling;
             seen += 1;
@@ -352,7 +372,8 @@ impl Archive for IoStoreArchive {
             let data = self.read_block(block)?;
             let block_start = block_index * self.block_size;
             let from = offset.saturating_sub(block_start) as usize;
-            let to = ((offset + length).min(block_start + data.len() as u64) - block_start) as usize;
+            let to =
+                ((offset + length).min(block_start + data.len() as u64) - block_start) as usize;
             out.extend_from_slice(data.get(from..to).unwrap_or_default());
         }
         Ok(out)
@@ -450,9 +471,12 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join("mod.utoc"), &toc).unwrap();
         std::fs::write(dir.path().join("mod.ucas"), &ucas).unwrap();
-        let archive =
-            IoStoreArchive::open(&dir.path().join("mod.utoc"), "mod.utoc".into(), &Keys::default())
-                .unwrap();
+        let archive = IoStoreArchive::open(
+            &dir.path().join("mod.utoc"),
+            "mod.utoc".into(),
+            &Keys::default(),
+        )
+        .unwrap();
         let paths: Vec<&str> = archive.entries().iter().map(|e| e.path.as_str()).collect();
         assert_eq!(paths, ["Game/Content/a.uasset", "Game/Content/b.ubulk"]);
         assert_eq!(archive.read(0).unwrap(), payload_a);

@@ -28,10 +28,17 @@ impl FileSource {
     /// # Errors
     /// I/O errors of `open` and `metadata`.
     pub fn open(path: &Path) -> AssetResult<Self> {
-        let io = |source| AssetError::Io { path: path.display().to_string(), source };
+        let io = |source| AssetError::Io {
+            path: path.display().to_string(),
+            source,
+        };
         let file = File::open(path).map_err(io)?;
         let len = file.metadata().map_err(io)?.len();
-        Ok(Self { path: path.to_path_buf(), len, file: Mutex::new(file) })
+        Ok(Self {
+            path: path.to_path_buf(),
+            len,
+            file: Mutex::new(file),
+        })
     }
 
     /// File size in bytes.
@@ -73,9 +80,15 @@ impl FileSource {
                 self.path.display()
             )));
         }
-        let io = |source| AssetError::Io { path: self.path.display().to_string(), source };
+        let io = |source| AssetError::Io {
+            path: self.path.display().to_string(),
+            source,
+        };
         let mut buffer = vec![0u8; usize::try_from(len).unwrap_or(usize::MAX)];
-        let mut file = self.file.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut file = self
+            .file
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         file.seek(SeekFrom::Start(offset)).map_err(io)?;
         file.read_exact(&mut buffer).map_err(io)?;
         Ok(buffer)
@@ -111,7 +124,11 @@ pub(crate) struct Cursor<'a> {
 
 impl<'a> Cursor<'a> {
     pub(crate) fn new(data: &'a [u8], format: &'static str) -> Self {
-        Self { data, pos: 0, format }
+        Self {
+            data,
+            pos: 0,
+            format,
+        }
     }
 
     pub(crate) fn at(data: &'a [u8], pos: usize, format: &'static str) -> Self {
@@ -123,9 +140,13 @@ impl<'a> Cursor<'a> {
     }
 
     pub(crate) fn bytes(&mut self, len: usize) -> AssetResult<&'a [u8]> {
-        let end = self.pos.checked_add(len).filter(|end| *end <= self.data.len()).ok_or_else(
-            || super::format_err(self.format, format!("truncated at {} (+{len})", self.pos)),
-        )?;
+        let end = self
+            .pos
+            .checked_add(len)
+            .filter(|end| *end <= self.data.len())
+            .ok_or_else(|| {
+                super::format_err(self.format, format!("truncated at {} (+{len})", self.pos))
+            })?;
         let slice = &self.data[self.pos..end];
         self.pos = end;
         Ok(slice)
@@ -197,8 +218,10 @@ impl<'a> Cursor<'a> {
             return Err(super::format_err(self.format, "FString longer than 1 MiB"));
         }
         let raw = self.bytes(units * 2)?;
-        let mut wide: Vec<u16> =
-            raw.chunks_exact(2).map(|pair| u16::from_le_bytes([pair[0], pair[1]])).collect();
+        let mut wide: Vec<u16> = raw
+            .chunks_exact(2)
+            .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
+            .collect();
         if wide.last() == Some(&0) {
             wide.pop();
         }

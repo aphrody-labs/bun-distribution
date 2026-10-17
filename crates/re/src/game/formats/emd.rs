@@ -108,6 +108,11 @@ impl EmdFile {
             });
         }
 
+        // Real Xenoverse 2 layout (`0xFFFE` endian mark, 0x1C-byte header).
+        if buffer.len() >= 28 && buffer[4..8] == [0xFE, 0xFF, 0x1C, 0x00] {
+            return parse_xv2(buffer);
+        }
+
         let model_count = u16::from_le_bytes(buffer[8..10].try_into().unwrap()) as usize;
         let model_table_offset = u32::from_le_bytes(buffer[12..16].try_into().unwrap()) as usize;
 
@@ -228,6 +233,163 @@ impl EmdFile {
 
         buf
     }
+}
+
+// --- Xenoverse 2 on-disk layout -----------------------------------------------------------
+//
+// Port of the repository's dbxv2 reader (`packages/dbxv2/dbxv2/emd.py`, layout of Xv2CoreLib
+// `EMD/Parser.cs`): header -> model table -> meshes -> submeshes -> vertices + triangle lists.
+// Offsets of meshes are relative to their model, submeshes to their mesh, vertex and triangle
+// data to their submesh.
+
+const FLAG_POS: u32 = 0x1;
+const FLAG_NORMAL: u32 = 0x2;
+const FLAG_TEXUV: u32 = 0x4;
+const FLAG_COMPRESSED: u32 = 0x8000;
+
+fn corrupt(details: impl Into<String>) -> ReError {
+    ReError::ParseError { context: "emd", details: details.into() }
+}
+
+fn at<const N: usize>(b: &[u8], offset: usize) -> Result<[u8; N]> {
+    b.get(offset..offset.checked_add(N).ok_or_else(|| corrupt("offset overflow"))?)
+        .and_then(|slice| slice.try_into().ok())
+        .ok_or_else(|| corrupt(format!("read of {N} bytes at {offset} out of range")))
+}
+fn u16_at(b: &[u8], o: usize) -> Result<u16> {
+    at::<2>(b, o).map(u16::from_le_bytes)
+}
+fn i32_at(b: &[u8], o: usize) -> Result<i32> {
+    at::<4>(b, o).map(i32::from_le_bytes)
+}
+fn f32_at(b: &[u8], o: usize) -> Result<f32> {
+    at::<4>(b, o).map(f32::from_le_bytes)
+}
+fn f16_at(b: &[u8], o: usize) -> Result<f32> {
+    let h = u16_at(b, o)?;
+    let sign = if h & 0x8000 != 0 { -1.0f32 } else { 1.0 };
+    let exponent = i32::from((h >> 10) & 0x1f);
+    let mantissa = f32::from(h & 0x3ff);
+    Ok(sign
+        * match exponent {
+            0 => mantissa * 2f32.powi(-24),
+            31 => {
+                if mantissa == 0.0 {
+                    f32::INFINITY
+                } else {
+                    f32::NAN
+                }
+            },
+            e => (1.0 + mantissa / 1024.0) * 2f32.powi(e - 15),
+        })
+}
+fn rel(base: usize, offset: i32) -> Result<usize> {
+    usize::try_from(i64::try_from(base).unwrap_or(i64::MAX) + i64::from(offset))
+        .map_err(|_| corrupt("negative relative offset"))
+}
+
+fn xv2_vertices(b: &[u8], flags: u32, mut base: usize, count: usize, size: usize) -> Result<Vec<EmdVertex>> {
+    let compressed = flags & FLAG_COMPRESSED != 0;
+    let mut out = Vec::with_capacity(count.min(1 << 20));
+    for _ in 0..count {
+        let mut vertex = EmdVertex::default();
+        let mut cursor = base;
+        if flags & FLAG_POS != 0 {
+            vertex.position = [f32_at(b, cursor)?, f32_at(b, cursor + 4)?, f32_at(b, cursor + 8)?];
+            cursor += 12;
+        }
+        if flags & FLAG_NORMAL != 0 {
+            if compressed {
+                vertex.normal = [f16_at(b, cursor)?, f16_at(b, cursor + 2)?, f16_at(b, cursor + 4)?];
+                cursor += 8;
+            } else {
+                vertex.normal = [f32_at(b, cursor)?, f32_at(b, cursor + 4)?, f32_at(b, cursor + 8)?];
+                cursor += 12;
+            }
+        }
+        if flags & FLAG_TEXUV != 0 {
+            vertex.uv = if compressed {
+                [f16_at(b, cursor)?, f16_at(b, cursor + 2)?]
+            } else {
+                [f32_at(b, cursor)?, f32_at(b, cursor + 4)?]
+            };
+        }
+        out.push(vertex);
+        base += size;
+    }
+    Ok(out)
+}
+
+fn xv2_indices(b: &[u8], submesh: usize) -> Result<Vec<u32>> {
+    let lists = usize::from(u16_at(b, submesh + 70)?);
+    let table = rel(submesh, i32_at(b, submesh + 76)?)?;
+    let mut indices = Vec::new();
+    for z in 0..lists {
+        let list = rel(submesh, i32_at(b, table + z * 4)?)?;
+        let faces = usize::try_from(i32_at(b, list)?.max(0)).unwrap_or(0);
+        let pointer = i32_at(b, list + 8)?;
+        let faces_at = if pointer != 0 { rel(list, pointer)? } else { list + 16 };
+        if faces > 0xFFFF {
+            for h in 0..faces {
+                indices.push(u32::try_from(i32_at(b, faces_at + h * 4)?).unwrap_or(0));
+            }
+        } else {
+            for h in 0..faces {
+                indices.push(u32::from(u16_at(b, faces_at + h * 2)?));
+            }
+        }
+    }
+    Ok(indices)
+}
+
+fn parse_xv2(b: &[u8]) -> Result<EmdFile> {
+    let model_count = usize::from(u16_at(b, 18)?);
+    let model_table = usize::try_from(i32_at(b, 20)?).map_err(|_| corrupt("model table"))?;
+    let name_table = usize::try_from(i32_at(b, 24)?).map_err(|_| corrupt("name table"))?;
+    let mut parts = Vec::with_capacity(model_count);
+    for i in 0..model_count {
+        let model = usize::try_from(i32_at(b, model_table + i * 4)?).unwrap_or(0);
+        if model == 0 {
+            continue;
+        }
+        let name_at = if name_table != 0 { usize::try_from(i32_at(b, name_table + i * 4)?).unwrap_or(0) } else { 0 };
+        let name = if name_at != 0 { read_c_string(b, name_at) } else { format!("Part_{i}") };
+        let mesh_count = usize::from(u16_at(b, model + 2)?);
+        let mesh_table = rel(model, i32_at(b, model + 4)?)?;
+        let mut meshes = Vec::with_capacity(mesh_count);
+        for m in 0..mesh_count {
+            let mesh = rel(model, i32_at(b, mesh_table + m * 4)?)?;
+            let mesh_name_at = i32_at(b, mesh + 48)?;
+            let mesh_name = if mesh_name_at != 0 { read_c_string(b, rel(mesh, mesh_name_at)?) } else { String::new() };
+            let submesh_count = usize::from(u16_at(b, mesh + 54)?);
+            let submesh_table = rel(mesh, i32_at(b, mesh + 56)?)?;
+            let mut submeshes = Vec::with_capacity(submesh_count);
+            for s in 0..submesh_count {
+                let sm = rel(mesh, i32_at(b, submesh_table + s * 4)?)?;
+                let flags = u32::try_from(i32_at(b, sm + 48)?).unwrap_or(0);
+                let size = usize::try_from(i32_at(b, sm + 52)?).map_err(|_| corrupt("vertex size"))?;
+                let count = usize::try_from(i32_at(b, sm + 56)?).map_err(|_| corrupt("vertex count"))?;
+                let vertices_at = rel(sm, i32_at(b, sm + 60)?)?;
+                let name_at = i32_at(b, sm + 64)?;
+                let sm_name = if name_at != 0 { read_c_string(b, rel(sm, name_at)?) } else { String::new() };
+                let aabb = |o: usize| -> Result<[f32; 3]> { Ok([f32_at(b, sm + o)?, f32_at(b, sm + o + 4)?, f32_at(b, sm + o + 8)?]) };
+                submeshes.push(EmdSubmesh {
+                    name: sm_name.clone(),
+                    material_name: sm_name,
+                    vertices: xv2_vertices(b, flags, vertices_at, count, size)?,
+                    indices: xv2_indices(b, sm)?,
+                    aabb_min: aabb(16)?,
+                    aabb_max: aabb(32)?,
+                });
+            }
+            meshes.push(EmdMesh { name: mesh_name, submeshes, aabb_min: [0.0; 3], aabb_max: [0.0; 3] });
+        }
+        parts.push(EmdModelPart { name, meshes });
+    }
+    if parts.is_empty() {
+        return Err(corrupt("no model in the model table"));
+    }
+    Ok(EmdFile { name: "DBXV2_Model".into(), parts })
 }
 
 fn write_vertex(buf: &mut Vec<u8>, pos: [f32; 3], normal: [f32; 3], uv: [f32; 2]) {

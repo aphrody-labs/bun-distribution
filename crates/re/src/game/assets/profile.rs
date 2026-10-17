@@ -161,7 +161,9 @@ pub const PROFILES: &[Profile] = &[
 /// Profile by id.
 #[must_use]
 pub fn by_id(id: &str) -> Option<&'static Profile> {
-    PROFILES.iter().find(|profile| profile.id.eq_ignore_ascii_case(id))
+    PROFILES
+        .iter()
+        .find(|profile| profile.id.eq_ignore_ascii_case(id))
 }
 
 /// Profile for a detection report: Steam app id first, then the primary engine. Level-5 games
@@ -196,12 +198,16 @@ pub fn glob_match(pattern: &str, text: &str) -> bool {
     let mut rest = text.as_str();
     for (index, part) in parts.iter().enumerate() {
         if index == 0 {
-            let Some(after) = rest.strip_prefix(part) else { return false };
+            let Some(after) = rest.strip_prefix(part) else {
+                return false;
+            };
             rest = after;
         } else if index == parts.len() - 1 {
             return rest.ends_with(part);
         } else {
-            let Some(at) = rest.find(part) else { return false };
+            let Some(at) = rest.find(part) else {
+                return false;
+            };
             rest = &rest[at + part.len()..];
         }
     }
@@ -212,14 +218,20 @@ impl Profile {
     /// Mount rank of a container path (lower mounts first, so it wins).
     #[must_use]
     pub fn rank(&self, path: &str) -> usize {
-        self.order.iter().position(|pattern| glob_match(pattern, path)).unwrap_or(self.order.len())
+        self.order
+            .iter()
+            .position(|pattern| glob_match(pattern, path))
+            .unwrap_or(self.order.len())
     }
 
     /// True when a loose path is mounted.
     #[must_use]
     pub fn loose_allowed(&self, path: &str) -> bool {
         let lower = path.to_ascii_lowercase();
-        !self.loose_excludes.iter().any(|prefix| lower.starts_with(prefix))
+        !self
+            .loose_excludes
+            .iter()
+            .any(|prefix| lower.starts_with(prefix))
     }
 }
 

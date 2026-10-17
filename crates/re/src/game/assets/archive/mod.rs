@@ -134,8 +134,10 @@ pub fn open(
         ArchiveKind::RenPyRpa => Box::new(rpa::RpaArchive::open(path, label)?),
         ArchiveKind::Zip => Box::new(zip::ZipArchive::open(path, label)?),
         ArchiveKind::CpkEncrypted => {
-            return Err(AssetError::KeyRequired(format!("{label} (CPK header is not `CPK `)")));
-        },
+            return Err(AssetError::KeyRequired(format!(
+                "{label} (CPK header is not `CPK `)"
+            )));
+        }
         ArchiveKind::SevenZip | ArchiveKind::Vpk => return Ok(None),
     }))
 }
@@ -154,28 +156,28 @@ pub fn decompress(method: &str, data: &[u8], expected: usize) -> AssetResult<Vec
                 .take(expected as u64)
                 .read_to_end(&mut out)
                 .map_err(|error| super::format_err("zlib", error.to_string()))?;
-        },
+        }
         "gzip" => {
             flate2::read::GzDecoder::new(data)
                 .take(expected as u64)
                 .read_to_end(&mut out)
                 .map_err(|error| super::format_err("gzip", error.to_string()))?;
-        },
+        }
         "deflate" => {
             flate2::read::DeflateDecoder::new(data)
                 .take(expected as u64)
                 .read_to_end(&mut out)
                 .map_err(|error| super::format_err("deflate", error.to_string()))?;
-        },
+        }
         "lz4" | "lz4hc" => {
             out = lz4_flex::block::decompress(data, expected)
                 .map_err(|error| super::format_err("lz4", error.to_string()))?;
-        },
+        }
         other => {
             return Err(AssetError::Unsupported(format!(
                 "`{other}` compression (proprietary or not linked)"
             )));
-        },
+        }
     }
     if out.len() != expected {
         return Err(super::format_err(
@@ -196,7 +198,10 @@ pub fn aes256_ecb_decrypt(key: &[u8; 32], data: &mut [u8]) -> AssetResult<()> {
         cipher::{BlockCipherDecrypt, KeyInit},
     };
     if !data.len().is_multiple_of(16) {
-        return Err(super::format_err("aes", "encrypted length is not a multiple of 16"));
+        return Err(super::format_err(
+            "aes",
+            "encrypted length is not a multiple of 16",
+        ));
     }
     let cipher = Aes256::new_from_slice(key).map_err(|_| super::format_err("aes", "bad key"))?;
     for chunk in data.chunks_exact_mut(16) {
@@ -221,13 +226,31 @@ mod tests {
     #[test]
     fn sniffs_container_magics() {
         assert_eq!(sniff("a.cpk", b"CPK \0\0\0\0"), Some(ArchiveKind::Cpk));
-        assert_eq!(sniff("a.cpk", b"\x12\x34\x56\x78"), Some(ArchiveKind::CpkEncrypted));
-        assert_eq!(sniff("x.utoc", b"-==--==--==--==-"), Some(ArchiveKind::UnrealIoStore));
-        assert_eq!(sniff("b.bundle", b"UnityFS\0\0\0\0\x08"), Some(ArchiveKind::UnityFs));
-        assert_eq!(sniff("g.pck", b"GDPC\x02\0\0\0"), Some(ArchiveKind::GodotPck));
-        assert_eq!(sniff("a.rpa", b"RPA-3.0 00000000"), Some(ArchiveKind::RenPyRpa));
+        assert_eq!(
+            sniff("a.cpk", b"\x12\x34\x56\x78"),
+            Some(ArchiveKind::CpkEncrypted)
+        );
+        assert_eq!(
+            sniff("x.utoc", b"-==--==--==--==-"),
+            Some(ArchiveKind::UnrealIoStore)
+        );
+        assert_eq!(
+            sniff("b.bundle", b"UnityFS\0\0\0\0\x08"),
+            Some(ArchiveKind::UnityFs)
+        );
+        assert_eq!(
+            sniff("g.pck", b"GDPC\x02\0\0\0"),
+            Some(ArchiveKind::GodotPck)
+        );
+        assert_eq!(
+            sniff("a.rpa", b"RPA-3.0 00000000"),
+            Some(ArchiveKind::RenPyRpa)
+        );
         assert_eq!(sniff("a.pk3", b"PK\x03\x04"), Some(ArchiveKind::Zip));
-        assert_eq!(sniff("Game-Windows.pak", b"\0\0\0\0"), Some(ArchiveKind::UnrealPak));
+        assert_eq!(
+            sniff("Game-Windows.pak", b"\0\0\0\0"),
+            Some(ArchiveKind::UnrealPak)
+        );
         assert_eq!(sniff("readme.txt", b"hello"), None);
     }
 
@@ -237,9 +260,15 @@ mod tests {
         let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::fast());
         encoder.write_all(b"hello hello hello").unwrap();
         let packed = encoder.finish().unwrap();
-        assert_eq!(decompress("Zlib", &packed, 17).unwrap(), b"hello hello hello");
+        assert_eq!(
+            decompress("Zlib", &packed, 17).unwrap(),
+            b"hello hello hello"
+        );
         let lz4 = lz4_flex::block::compress(b"abcabcabcabc");
         assert_eq!(decompress("LZ4", &lz4, 12).unwrap(), b"abcabcabcabc");
-        assert!(matches!(decompress("Oodle", b"x", 1), Err(AssetError::Unsupported(_))));
+        assert!(matches!(
+            decompress("Oodle", b"x", 1),
+            Err(AssetError::Unsupported(_))
+        ));
     }
 }

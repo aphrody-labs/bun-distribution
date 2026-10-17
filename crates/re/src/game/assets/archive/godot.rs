@@ -64,7 +64,9 @@ impl PckArchive {
             file_base = cursor.u64()?;
         }
         if flags & DIR_ENCRYPTED != 0 {
-            return Err(AssetError::KeyRequired(format!("{label} (encrypted Godot directory)")));
+            return Err(AssetError::KeyRequired(format!(
+                "{label} (encrypted Godot directory)"
+            )));
         }
         cursor.bytes(16 * 4)?;
         let count = cursor.u32()? as usize;
@@ -88,7 +90,11 @@ impl PckArchive {
             probe.bytes(16)?;
             let file_flags = if pack_version >= 2 { probe.u32()? } else { 0 };
             let stripped = name.strip_prefix("res://").unwrap_or(&name);
-            let absolute = if pack_version >= 2 { base + file_base + offset } else { base + offset };
+            let absolute = if pack_version >= 2 {
+                base + file_base + offset
+            } else {
+                base + offset
+            };
             entries.push(ArchiveEntry {
                 path: normalize_path(stripped),
                 size,
@@ -98,7 +104,13 @@ impl PckArchive {
             });
             ranges.push((absolute, size));
         }
-        Ok(Self { label, source, version, ranges, entries })
+        Ok(Self {
+            label,
+            source,
+            version,
+            ranges,
+            entries,
+        })
     }
 }
 
@@ -118,7 +130,10 @@ impl Archive for PckArchive {
             .get(index)
             .ok_or_else(|| AssetError::NotFound(format!("{}#{index}", self.label)))?;
         if entry.encrypted {
-            return Err(AssetError::KeyRequired(format!("{} ({})", self.label, entry.path)));
+            return Err(AssetError::KeyRequired(format!(
+                "{} ({})",
+                self.label, entry.path
+            )));
         }
         let (offset, size) = self.ranges[index];
         self.source.read_at(offset, size)

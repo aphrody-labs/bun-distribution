@@ -181,30 +181,51 @@ impl GameVfs {
         } else {
             for found in vfs.report.engine.archives.clone() {
                 if !options.only.is_empty()
-                    && !options.only.iter().any(|glob| profile::glob_match(glob, &found.path))
+                    && !options
+                        .only
+                        .iter()
+                        .any(|glob| profile::glob_match(glob, &found.path))
                 {
                     continue;
                 }
-                pending.push((profile.rank(&found.path), found.path.clone(), Pending::Archive(found)));
+                pending.push((
+                    profile.rank(&found.path),
+                    found.path.clone(),
+                    Pending::Archive(found),
+                ));
             }
         }
         if !options.skip_loose {
-            let archives: std::collections::HashSet<String> =
-                vfs.report.engine.archives.iter().map(|a| key(&a.path)).collect();
+            let archives: std::collections::HashSet<String> = vfs
+                .report
+                .engine
+                .archives
+                .iter()
+                .map(|a| key(&a.path))
+                .collect();
             let mut groups: std::collections::BTreeMap<usize, Vec<(String, u64)>> =
                 std::collections::BTreeMap::new();
             engine::walk(root, limits, |event| {
                 if let WalkEvent::File { rel, size, .. } = event {
                     let lower = key(rel);
+                    let name = lower.rsplit('/').next().unwrap_or_default();
                     if archives.contains(&lower)
                         || lower.ends_with(".ucas")
+                        || engine::ANTI_CHEAT_FILES.contains(&name)
                         || !profile.loose_allowed(rel)
                     {
                         return;
                     }
                     let rank = profile.rank(rel);
-                    let rank = if rank < profile.order.len() { rank } else { usize::MAX };
-                    groups.entry(rank).or_default().push((rel.to_string(), size));
+                    let rank = if rank < profile.order.len() {
+                        rank
+                    } else {
+                        usize::MAX
+                    };
+                    groups
+                        .entry(rank)
+                        .or_default()
+                        .push((rel.to_string(), size));
                 }
             })?;
             for (rank, files) in groups {
@@ -223,7 +244,7 @@ impl GameVfs {
                             vfs.report.loose += 1;
                         }
                     }
-                },
+                }
                 Pending::Archive(found) => vfs.mount_archive(&found, &keys),
             }
         }
@@ -262,11 +283,19 @@ impl GameVfs {
             });
             return;
         }
-        match archive::open(found.kind, &self.root.join(&found.path), found.path.clone(), keys) {
+        match archive::open(
+            found.kind,
+            &self.root.join(&found.path),
+            found.path.clone(),
+            keys,
+        ) {
             Ok(Some(container)) => {
                 let unit = u32::try_from(self.units.len()).unwrap_or(u32::MAX);
-                let listed: Vec<(String, u64)> =
-                    container.entries().iter().map(|e| (e.path.clone(), e.size)).collect();
+                let listed: Vec<(String, u64)> = container
+                    .entries()
+                    .iter()
+                    .map(|e| (e.path.clone(), e.size))
+                    .collect();
                 let shadowed_before = self.report.shadowed;
                 for (index, (path, size)) in listed.iter().enumerate() {
                     self.insert(path, *size, &found.path, unit, index);
@@ -280,12 +309,12 @@ impl GameVfs {
                     millis: started.elapsed().as_millis(),
                 });
                 self.units.push(Unit::Archive(container));
-            },
-            Ok(None) => {},
-            Err(error) => self
-                .report
-                .refused
-                .push(RefusedContainer { label: found.path.clone(), reason: error.to_string() }),
+            }
+            Ok(None) => {}
+            Err(error) => self.report.refused.push(RefusedContainer {
+                label: found.path.clone(),
+                reason: error.to_string(),
+            }),
         }
     }
 
@@ -303,12 +332,19 @@ impl GameVfs {
         let mut listed: Vec<(String, u64, String)> = owner
             .iter()
             .map(|(path, entry)| {
-                let container =
-                    if entry.cpk_filename.is_empty() { "loose".into() } else { entry.cpk_filename.clone() };
+                let container = if entry.cpk_filename.is_empty() {
+                    "loose".into()
+                } else {
+                    entry.cpk_filename.clone()
+                };
                 (path.to_string(), u64::from(entry.file_size), container)
             })
             .collect();
-        listed.extend(owner.iter_extra().map(|(path, cpk)| (path.to_string(), 0, cpk.to_string())));
+        listed.extend(
+            owner
+                .iter_extra()
+                .map(|(path, cpk)| (path.to_string(), 0, cpk.to_string())),
+        );
         listed.sort_by(|a, b| a.0.cmp(&b.0));
         for (index, (path, size, container)) in listed.iter().enumerate() {
             self.insert(path, *size, container, unit, index);
@@ -359,14 +395,18 @@ impl GameVfs {
     /// Entry by path (case-insensitive).
     #[must_use]
     pub fn find(&self, path: &str) -> Option<&VfsEntry> {
-        self.by_path.get(&key(&normalize_path(path))).map(|index| &self.entries[*index])
+        self.by_path
+            .get(&key(&normalize_path(path)))
+            .map(|index| &self.entries[*index])
     }
 
     /// Entry with the same directory and stem as `path` and extension `ext`.
     #[must_use]
     pub fn sibling(&self, path: &str, ext: &str) -> Option<&VfsEntry> {
         let normalized = normalize_path(path);
-        let stem = normalized.rsplit_once('.').map_or(normalized.as_str(), |(stem, _)| stem);
+        let stem = normalized
+            .rsplit_once('.')
+            .map_or(normalized.as_str(), |(stem, _)| stem);
         self.find(&format!("{stem}.{ext}"))
     }
 
@@ -375,7 +415,9 @@ impl GameVfs {
     /// # Errors
     /// Unknown path, container errors, missing user key.
     pub fn read(&self, path: &str) -> AssetResult<Vec<u8>> {
-        let entry = self.find(path).ok_or_else(|| AssetError::NotFound(path.to_string()))?;
+        let entry = self
+            .find(path)
+            .ok_or_else(|| AssetError::NotFound(path.to_string()))?;
         self.read_entry(entry)
     }
 
@@ -389,7 +431,7 @@ impl GameVfs {
             Unit::Loose(root) => {
                 let source = FileSource::open(&root.join(&entry.path))?;
                 source.read_at(0, source.len())
-            },
+            }
             Unit::Level5(owner) => owner.read(&entry.path).map_err(|error| AssetError::Format {
                 format: "level5-ievr",
                 details: format!("{}: {error}", entry.path),
@@ -408,7 +450,7 @@ impl GameVfs {
                 let mut data = self.read_entry(entry)?;
                 data.truncate(64);
                 data
-            },
+            }
         };
         Ok(classify::classify(&entry.path, Some(&head)))
     }
@@ -468,11 +510,21 @@ mod tests {
     fn first_mounted_path_wins_in_profile_order() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(dir.path().join("cpk")).unwrap();
-        std::fs::write(dir.path().join("cpk/data.cpk"), cpk(&[("a.emd", b"base"), ("b.emb", b"only")]))
-            .unwrap();
-        std::fs::write(dir.path().join("cpk/data2.cpk"), cpk(&[("a.emd", b"patch")])).unwrap();
+        std::fs::write(
+            dir.path().join("cpk/data.cpk"),
+            cpk(&[("a.emd", b"base"), ("b.emb", b"only")]),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join("cpk/data2.cpk"),
+            cpk(&[("a.emd", b"patch")]),
+        )
+        .unwrap();
         std::fs::write(dir.path().join("readme.txt"), b"loose").unwrap();
-        let options = MountOptions { profile: profile::by_id("dbxv2"), ..MountOptions::default() };
+        let options = MountOptions {
+            profile: profile::by_id("dbxv2"),
+            ..MountOptions::default()
+        };
         let vfs = GameVfs::mount(dir.path(), &options).unwrap();
         assert_eq!(vfs.read("chara/a.emd").unwrap(), b"patch");
         assert_eq!(vfs.read("CHARA/B.EMB").unwrap(), b"only");

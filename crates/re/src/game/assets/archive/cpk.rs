@@ -24,7 +24,10 @@ pub struct CpkArchive {
 }
 
 fn convert(error: FormatError) -> AssetError {
-    AssetError::Format { format: "cpk", details: error.to_string() }
+    AssetError::Format {
+        format: "cpk",
+        details: error.to_string(),
+    }
 }
 
 impl CpkArchive {
@@ -35,9 +38,13 @@ impl CpkArchive {
     pub fn open(path: &Path, label: String) -> AssetResult<Self> {
         let source = FileSource::open(path)?;
         if source.read_clamped(0, 4)? != b"CPK " {
-            return Err(AssetError::KeyRequired(format!("{label} (CPK header is not `CPK `)")));
+            return Err(AssetError::KeyRequired(format!(
+                "{label} (CPK header is not `CPK `)"
+            )));
         }
-        let name = path.file_name().map(|name| name.to_string_lossy().into_owned());
+        let name = path
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned());
         let reader = CpkReader::from_reader(name.as_deref().unwrap_or(""), |offset, size| {
             source
                 .read_at(offset, size as u64)
@@ -52,14 +59,28 @@ impl CpkArchive {
             }
             entries.push(ArchiveEntry {
                 path: normalize_path(&join(entry)),
-                size: if entry.extract_size == 0 { entry.size } else { entry.extract_size },
+                size: if entry.extract_size == 0 {
+                    entry.size
+                } else {
+                    entry.extract_size
+                },
                 stored: entry.size,
-                compression: if entry.is_compressed { "crilayla".into() } else { String::new() },
+                compression: if entry.is_compressed {
+                    "crilayla".into()
+                } else {
+                    String::new()
+                },
                 encrypted: false,
             });
             rows.push(row);
         }
-        Ok(Self { label, source, reader, entries, rows })
+        Ok(Self {
+            label,
+            source,
+            reader,
+            entries,
+            rows,
+        })
     }
 }
 
@@ -116,7 +137,11 @@ mod tests {
                 directory: "dir".into(),
                 data: b"hello".to_vec(),
             },
-            CpkWriteEntry { filename: "b.bin".into(), directory: String::new(), data: vec![7; 9] },
+            CpkWriteEntry {
+                filename: "b.bin".into(),
+                directory: String::new(),
+                data: vec![7; 9],
+            },
         ])
         .unwrap();
         std::fs::write(&path, bytes).unwrap();

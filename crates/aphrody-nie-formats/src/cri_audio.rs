@@ -329,31 +329,33 @@ impl Awb {
             return Err(FormatError::Corrupt("AWB : offset_size invalide (2 ou 4 attendu)"));
         }
 
-        // Champ [6:8] ignoré (flags/padding selon version).
-        // entry_count = uint32 LE à l'offset [8:12].
-        // alignment = uint32 LE à l'offset [12:16] (utilisé pour aligner la table d'offsets).
+        // [6:8] = taille d'un cue-ID (u16 LE, 2 ou 4), [8:12] = nombre d'entrées,
+        // [12:14] = alignement des données, [14:16] = sous-clé HCA de la banque.
+        // Mesuré : les AWB d'IEVR comme de DBXV2 portent des IDs de 2 octets (`02 00` en [6:8]) ;
+        // lire 4 octets par ID décalait toute la table d'offsets. Une valeur hors {2, 4} garde
+        // l'ancienne lecture (4 octets).
+        let id_size = match read_u16_le(data, 6) {
+            2 => 2usize,
+            _ => 4usize,
+        };
         let entry_count = read_u32_le(data, 8) as usize;
-        let _alignment = read_u32_le(data, 12) as usize; // champ de structure, non utilisé par la table d'offsets
+        let alignment = u32::from(read_u16_le(data, 12)).max(1);
         // Sous-clé de déchiffrement HCA : u16 LE à l'offset 0x0E de l'en-tête AFS2.
-        // Situé dans le champ [12:16] (alignment/flags) ; les 2 octets de poids fort
-        // [0x0E:0x10] portent la sous-clé AWB utilisée avec la clé principale IEVR.
         let subkey = read_u16_le(data, 0x0E);
 
-        // Table des cue-IDs : uint32 LE chacun, à partir de 0x10.
-        // 4 octets par ID (observé sur AWB IEVR réels, vérifiés sur les données terrain).
         let ids_start = 0x10;
-        let ids_end = ids_start + entry_count * 4;
+        let ids_end = ids_start + entry_count * id_size;
         if ids_end > data.len() {
             return Err(FormatError::Corrupt("AWB : table cue-IDs dépasse le tampon"));
         }
-        let cue_ids: Vec<u32> =
-            (0..entry_count).map(|i| read_u32_le(data, ids_start + i * 4)).collect();
+        let cue_ids: Vec<u32> = (0..entry_count)
+            .map(|i| {
+                let p = ids_start + i * id_size;
+                if id_size == 2 { u32::from(read_u16_le(data, p)) } else { read_u32_le(data, p) }
+            })
+            .collect();
 
-        // Table des offsets : suit DIRECTEMENT les IDs, sans alignement.
-        // L'`alignment` s'applique aux données (entrées audio), pas à la table d'offsets.
-        // Vérification terrain :
-        //   - AWB 27 entrées : ids_end=0x7c, off_table=0x7c, data[0x7c:0x80]=offsets ✓
-        //   - AWB 1 entrée   : ids_end=0x14, off_table=0x14, data[0x14:0x1c]=offsets ✓
+        // Table des offsets : suit directement les IDs.
         let off_table_start = ids_end;
         let off_table_end = off_table_start + (entry_count + 1) * offset_size;
         if off_table_end > data.len() {
@@ -368,9 +370,9 @@ impl Awb {
         let mut entries = Vec::with_capacity(entry_count);
         for (i, &cue_id) in cue_ids.iter().enumerate() {
             let raw_offset = read_offset(i);
-            // Les offsets sont déjà alignés dans les AWB IEVR ; pas d'alignement supplémentaire
-            // (le block_size en [8:12] est en fait entry_count, pas un facteur d'alignement).
-            let aligned_offset = raw_offset;
+            // Le début d'une entrée est arrondi à l'alignement de la banque ; la fin est l'offset
+            // brut suivant (no-op pour les offsets déjà alignés).
+            let aligned_offset = raw_offset.div_ceil(alignment).saturating_mul(alignment);
             let end_offset = read_offset(i + 1);
             let size = end_offset.saturating_sub(aligned_offset);
 
@@ -858,6 +860,47 @@ fn is_voice_code(name: &str) -> bool {
     name.starts_with('c')
         && matches!(name.len(), 9 | 10)
         && name[1..].chars().all(|c| c.is_ascii_digit())
+}
+
+#[cfg(test)]
+mod awb_layout_tests {
+    use super::Awb;
+
+    /// AFS2 header with 2-byte cue ids, as measured on IEVR (`d00010000.awb`: 2 entries,
+    /// alignment 0x20, offsets 0x20/0x10a8a) and DBXV2 (`CAD_A17_00_VOX.awb`: 1 entry, raw
+    /// offset 0x1a aligned to 0x20).
+    fn bank(ids: &[u16], offsets: &[u32], len: usize) -> Vec<u8> {
+        let mut out = b"AFS2".to_vec();
+        out.extend([0x01, 0x04, 0x02, 0x00]);
+        out.extend(u32::try_from(ids.len()).unwrap().to_le_bytes());
+        out.extend(0x20u16.to_le_bytes());
+        out.extend(0u16.to_le_bytes());
+        for id in ids {
+            out.extend(id.to_le_bytes());
+        }
+        for offset in offsets {
+            out.extend(offset.to_le_bytes());
+        }
+        out.resize(len, 0);
+        out
+    }
+
+    #[test]
+    fn reads_two_byte_cue_ids_and_aligns_entry_starts() {
+        let mut one = bank(&[0], &[0x1a, 0x40], 0x40);
+        one[0x20..0x24].copy_from_slice(b"HCA\0");
+        let awb = Awb::parse(&one).unwrap();
+        assert_eq!(awb.entries.len(), 1);
+        assert_eq!(awb.entries[0].offset, 0x20);
+        assert!(awb.entry_bytes(&one, &awb.entries[0]).starts_with(b"HCA\0"));
+
+        let two = bank(&[0, 1], &[0x20, 0x30, 0x48], 0x48);
+        let awb = Awb::parse(&two).unwrap();
+        assert_eq!(awb.entries.iter().map(|e| (e.cue_id, e.offset, e.size)).collect::<Vec<_>>(), [
+            (0, 0x20, 0x10),
+            (1, 0x40, 0x08)
+        ]);
+    }
 }
 
 #[cfg(test)]
