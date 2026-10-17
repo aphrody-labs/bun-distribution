@@ -46,3 +46,7 @@ twitch_secrets.toml
 # Workstation diagnostic output
 /.claude-cargo-check.log
 .neon
+
+# Local deployment links and run output
+.vercel/
+/var/

@@ -1,0 +1,8 @@
+{
+  "enabledPlugins": {
+    "vercel@anthropic-plugin-directory": true,
+    "supabase@anthropic-plugin-directory": true,
+    "modern-web-guidance@claude-plugins-official": true,
+    "neon@anthropic-plugin-directory": true
+  }
+}
