@@ -1,7 +1,12 @@
 // ELF32/ELF64 executables used by homebrew SDKs (devkitARM, devkitPPC, PS2SDK, libnx) and
 // by Ghidra/bunre pipelines. Only headers and tables are read.
-import { BinaryView, hex32, type Endian } from "../stream";
-import { parsed, type Arch, type ParseContext, type Section } from "../types";
+import { BinaryView, hex32, type Endian } from "../stream.js";
+import {
+  parsed,
+  type Arch,
+  type ParseContext,
+  type Section,
+} from "../types.js";
 
 const machines: Record<number, string> = {
   2: "SPARC",

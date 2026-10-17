@@ -1,14 +1,14 @@
 # Steam community sources
 
 Pinned external owners under `vendor/steam/<name>` (shallow Git submodules, upstream URLs, upstream
-licenses intact). They are reference and porting sources for `crates/re/src/steam` (Rust) and
-`packages/re/src/steam` (Bun). They are not built by the workspace and not linked into any binary,
+licenses intact). They are reference and porting sources for the Steam owner, `crates/bun-steam`
+(Rust) and `packages/bun-steam` (Bun). They are not built by the workspace and not linked into any binary,
 so copyleft licenses stay confined to the checkout of the submodule itself.
 
 | Path                                    | Upstream                          | License    | Role in Bun OS                                                                    |
 | --------------------------------------- | --------------------------------- | ---------- | --------------------------------------------------------------------------------- |
 | `vendor/steam/steamkit`                 | SteamRE/SteamKit                  | LGPL-2.1   | Reference Steam network protocol (CM, auth, CDN, depot) behind `steamroom`        |
-| `vendor/steam/depotdownloader`          | SteamRE/DepotDownloader           | GPL-2.0    | Reference depot downloader; behavior parity for `bunre steam`                     |
+| `vendor/steam/depotdownloader`          | SteamRE/DepotDownloader           | GPL-2.0    | Reference depot downloader; behavior parity for `bun-steam-depot`                |
 | `vendor/steam/protobufs`                | SteamTracking/Protobufs           | Unlicense  | Canonical Steam protobuf definitions, field numbers for `manifest.ts` and appinfo |
 | `vendor/steam/valvekeyvalue`            | ValveResourceFormat/ValveKeyValue | MIT        | Reference text/binary KeyValues semantics for `kv.ts`                             |
 | `vendor/steam/steamappinfo`             | xPaw/SteamAppInfo                 | MIT        | Reference `appinfo.vdf` / `packageinfo.vdf` parser for `appinfo.ts`               |

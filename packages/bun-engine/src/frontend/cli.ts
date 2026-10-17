@@ -1,22 +1,24 @@
 // `bun-engine frontend` (the single entry point: server plus an app window) and
 // `bun-engine library` (the same library, routing and checks from a terminal).
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { usrRoot } from "../usr";
 import { createWorkspaceServer } from "../workspace";
 import { biosOverview } from "./api";
-import { launchGame, routesFor } from "./launch";
+import { chooseRoute, commandFor, launchGame, routesFor } from "./launch";
 import {
   addFolder,
   findGame,
   type Game,
   gamesFor,
   listSources,
+  recordPlay,
   removeSource,
   scanLibrary,
   setDefaultRoute,
   systemCounts,
 } from "./library";
+import { listProfiles, parseAssignments, setProfile } from "./profiles";
 import { loadSystems } from "./systems";
 
 function print(value: unknown): number {
@@ -113,6 +115,8 @@ export async function runFrontend(args: string[]): Promise<number> {
 const usage = `usage: bun-engine library scan | systems | games [system] | routes <system> | sources
   | add <dir> [system] | remove-source <id> | default <system> <route|-> | bios
   | launch <id|file> [--system s] [--route r] [--check] [--frames N]
+  | command <id|file> [--system s] [--route r]   (route command line for the console shell)
+  | profile [key [field=value...]]               (console shell per-game profiles)
   | check [system...] [--frames N]   (one bounded run per available route)`;
 
 function placeholder(system: string): Game {
@@ -201,6 +205,27 @@ export async function runLibrary(args: string[]): Promise<number> {
       print(result);
       return result.ok ? 0 : 1;
     }
+    case "command": {
+      if (!rest[0]) break;
+      try {
+        const game = await findGame(rest[0], option(rest, "--system"));
+        const route = await chooseRoute(game, option(rest, "--route"));
+        const command = await commandFor(route, game, false, 0);
+        recordPlay(game.id);
+        return print({
+          game: game.id,
+          route: route.id,
+          command,
+          cwd: dirname(command[0]!),
+        });
+      } catch (error) {
+        print({ error: (error as Error).message });
+        return 1;
+      }
+    }
+    case "profile":
+      if (!rest[0]) return print(listProfiles());
+      return print(setProfile(rest[0], parseAssignments(rest.slice(1))));
     case "check": {
       const frames = Number(option(rest, "--frames") ?? 120);
       const wanted = rest.filter(

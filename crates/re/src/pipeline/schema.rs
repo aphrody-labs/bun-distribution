@@ -29,14 +29,37 @@ fn obj(props: &[(&str, Value)], required: &[&str]) -> Value {
     json!({"type": "object", "properties": p, "required": required, "additionalProperties": false})
 }
 
-const STAGES: &[&str] = &["acquire", "identify", "unpack", "analyze", "lift", "decompile", "rebuild", "verify"];
+const STAGES: &[&str] = &[
+    "acquire",
+    "identify",
+    "unpack",
+    "analyze",
+    "lift",
+    "decompile",
+    "rebuild",
+    "verify",
+];
 const STATUSES: &[&str] = &["ok", "partial", "unavailable", "skipped", "failed"];
 const KINDS: &[&str] = &[
-    "pe", "elf", "macho", "apk", "zip", "iso", "uefi", "bios", "rom", "fdt", "compressed", "raw",
+    "pe",
+    "elf",
+    "macho",
+    "apk",
+    "zip",
+    "iso",
+    "uefi",
+    "bios",
+    "rom",
+    "fdt",
+    "compressed",
+    "raw",
 ];
 
 fn artifact() -> Value {
-    obj(&[("kind", s()), ("path", s()), ("bytes", u())], &["kind", "path", "bytes"])
+    obj(
+        &[("kind", s()), ("path", s()), ("bytes", u())],
+        &["kind", "path", "bytes"],
+    )
 }
 
 fn stage_report() -> Value {
@@ -47,17 +70,37 @@ fn stage_report() -> Value {
             ("status", en(STATUSES)),
             ("detail", s()),
             ("artifacts", arr(artifact())),
-            ("metrics", json!({"type": "object", "additionalProperties": u()})),
-            ("output", json!({"description": "Stage payload: AcquireOutput, IdentifyOutput, UnpackOutput, TriageReport, LiftOutput or VerifyOutput."})),
+            (
+                "metrics",
+                json!({"type": "object", "additionalProperties": u()}),
+            ),
+            (
+                "output",
+                json!({"description": "Stage payload: AcquireOutput, IdentifyOutput, UnpackOutput, TriageReport, LiftOutput or VerifyOutput."}),
+            ),
         ],
-        &["stage", "adapter", "status", "detail", "artifacts", "metrics", "output"],
+        &[
+            "stage",
+            "adapter",
+            "status",
+            "detail",
+            "artifacts",
+            "metrics",
+            "output",
+        ],
     )
 }
 
 fn with_meta(id: &str, title: &str, mut v: Value) -> Value {
     if let Some(o) = v.as_object_mut() {
-        o.insert("$schema".into(), json!("https://json-schema.org/draft/2020-12/schema"));
-        o.insert("$id".into(), json!(format!("https://aphrody.com/schema/re/{id}.json")));
+        o.insert(
+            "$schema".into(),
+            json!("https://json-schema.org/draft/2020-12/schema"),
+        );
+        o.insert(
+            "$id".into(),
+            json!(format!("https://aphrody.com/schema/re/{id}.json")),
+        );
         o.insert("title".into(), json!(title));
     }
     v
@@ -92,8 +135,9 @@ fn val() -> Value {
 /// Guest-semantics statement (see `pipeline::sem`).
 fn stmt() -> Value {
     let alu = [
-        "add", "sub", "and", "or", "xor", "mul", "mul_hi_u", "mul_hi_s", "shl", "shr", "sar", "ror", "eq", "ne", "ltu",
-        "lts", "leu", "les", "div_u", "rem_u", "div_s", "rem_s", "sext8", "sext16", "not",
+        "add", "sub", "and", "or", "xor", "mul", "mul_hi_u", "mul_hi_s", "shl", "shr", "sar",
+        "ror", "eq", "ne", "ltu", "lts", "leu", "les", "div_u", "rem_u", "div_s", "rem_s", "sext8",
+        "sext16", "not",
     ];
     let body = json!({"type": "array", "items": {"$ref": "#/$defs/stmt"}});
     json!({"oneOf": [
@@ -112,8 +156,8 @@ fn stmt() -> Value {
 
 fn insn() -> Value {
     let ops = [
-        "nop", "mov", "lea", "bin", "un", "cmp", "test", "push", "pop", "leave", "setcc", "cmovcc", "call", "jmp",
-        "jcc", "ret", "unlifted", "guest",
+        "nop", "mov", "lea", "bin", "un", "cmp", "test", "push", "pop", "leave", "setcc", "cmovcc",
+        "call", "jmp", "jcc", "ret", "unlifted", "guest",
     ];
     json!({
         "type": "object",
@@ -136,11 +180,22 @@ fn ir() -> Value {
         &[
             ("schema_version", u()),
             ("format", en(&["pe", "elf", "gba", "psx", "nes"])),
-            ("arch", en(&["x86", "x86_64", "aarch64", "armv4t", "r3000a", "6502"])),
+            (
+                "arch",
+                en(&["x86", "x86_64", "aarch64", "armv4t", "r3000a", "6502"]),
+            ),
             (
                 "abi",
                 obj(
-                    &[("regs", arr(s())), ("link", s()), ("sp", s()), ("ret", s()), ("machine", s()), ("flags", arr(s())), ("isas", arr(s()))],
+                    &[
+                        ("regs", arr(s())),
+                        ("link", s()),
+                        ("sp", s()),
+                        ("ret", s()),
+                        ("machine", s()),
+                        ("flags", arr(s())),
+                        ("isas", arr(s())),
+                    ],
                     &["regs", "link", "sp", "ret"],
                 ),
             ),
@@ -148,12 +203,34 @@ fn ir() -> Value {
             ("image_base", u()),
             ("entry", u()),
             ("image_end", u()),
-            ("imports", arr(obj(&[("name", s()), ("lib", opt(s())), ("slot", u())], &["name", "lib", "slot"]))),
+            (
+                "imports",
+                arr(obj(
+                    &[("name", s()), ("lib", opt(s())), ("slot", u())],
+                    &["name", "lib", "slot"],
+                )),
+            ),
             (
                 "sections",
                 arr(obj(
-                    &[("name", s()), ("vaddr", u()), ("vsize", u()), ("file_offset", u()), ("file_size", u()), ("exec", b()), ("write", b())],
-                    &["name", "vaddr", "vsize", "file_offset", "file_size", "exec", "write"],
+                    &[
+                        ("name", s()),
+                        ("vaddr", u()),
+                        ("vsize", u()),
+                        ("file_offset", u()),
+                        ("file_size", u()),
+                        ("exec", b()),
+                        ("write", b()),
+                    ],
+                    &[
+                        "name",
+                        "vaddr",
+                        "vsize",
+                        "file_offset",
+                        "file_size",
+                        "exec",
+                        "write",
+                    ],
                 )),
             ),
             (
@@ -164,13 +241,34 @@ fn ir() -> Value {
                         ("name", opt(s())),
                         ("truncated", b()),
                         ("isa", u()),
-                        ("blocks", arr(obj(&[("addr", u()), ("fallthrough", opt(u())), ("insns", arr(insn()))], &["addr", "fallthrough", "insns"]))),
+                        (
+                            "blocks",
+                            arr(obj(
+                                &[
+                                    ("addr", u()),
+                                    ("fallthrough", opt(u())),
+                                    ("insns", arr(insn())),
+                                ],
+                                &["addr", "fallthrough", "insns"],
+                            )),
+                        ),
                     ],
                     &["addr", "name", "blocks", "truncated"],
                 )),
             ),
         ],
-        &["schema_version", "format", "arch", "bits", "image_base", "entry", "image_end", "imports", "sections", "functions"],
+        &[
+            "schema_version",
+            "format",
+            "arch",
+            "bits",
+            "image_base",
+            "entry",
+            "image_end",
+            "imports",
+            "sections",
+            "functions",
+        ],
     );
     if let Some(o) = v.as_object_mut() {
         o.insert("$defs".into(), json!({ "stmt": stmt() }));
@@ -183,13 +281,18 @@ fn adapter() -> Value {
         &[
             ("id", s()),
             ("stage", en(STAGES)),
-            ("kind", en(&["builtin", "crate", "vendor", "command", "env"])),
+            (
+                "kind",
+                en(&["builtin", "crate", "vendor", "command", "env"]),
+            ),
             ("owner", s()),
             ("handles", arr(s())),
             ("status", en(&["ready", "registered", "unavailable"])),
             ("reason", opt(s())),
         ],
-        &["id", "stage", "kind", "owner", "handles", "status", "reason"],
+        &[
+            "id", "stage", "kind", "owner", "handles", "status", "reason",
+        ],
     )
 }
 
@@ -205,7 +308,16 @@ fn identify_output() -> Value {
             ("container", b()),
             ("notes", arr(s())),
         ],
-        &["kind", "format", "arch", "platform", "entry", "liftable", "container", "notes"],
+        &[
+            "kind",
+            "format",
+            "arch",
+            "platform",
+            "entry",
+            "liftable",
+            "container",
+            "notes",
+        ],
     )
 }
 
@@ -219,7 +331,14 @@ fn pipeline_report() -> Value {
             ("stages", arr(stage_report())),
             ("summary", en(&["ok", "partial", "failed"])),
         ],
-        &["schema_version", "input", "target", "outdir", "stages", "summary"],
+        &[
+            "schema_version",
+            "input",
+            "target",
+            "outdir",
+            "stages",
+            "summary",
+        ],
     );
     if let Some(o) = v.as_object_mut() {
         o.insert(
@@ -234,11 +353,38 @@ fn pipeline_report() -> Value {
 #[must_use]
 pub fn schemas() -> Vec<(&'static str, Value)> {
     vec![
-        ("pipeline-report.json", with_meta("pipeline-report", "Bun OS RE pipeline report", pipeline_report())),
-        ("stage-report.json", with_meta("stage-report", "Bun OS RE pipeline stage report", stage_report())),
-        ("ir.json", with_meta("ir", "Bun OS RE lifted IR module", ir())),
-        ("adapter.json", with_meta("adapter", "Bun OS RE pipeline stage adapter", adapter())),
-        ("identify-output.json", with_meta("identify-output", "Identify stage output", identify_output())),
+        (
+            "pipeline-report.json",
+            with_meta(
+                "pipeline-report",
+                "Bun OS RE pipeline report",
+                pipeline_report(),
+            ),
+        ),
+        (
+            "stage-report.json",
+            with_meta(
+                "stage-report",
+                "Bun OS RE pipeline stage report",
+                stage_report(),
+            ),
+        ),
+        (
+            "ir.json",
+            with_meta("ir", "Bun OS RE lifted IR module", ir()),
+        ),
+        (
+            "adapter.json",
+            with_meta("adapter", "Bun OS RE pipeline stage adapter", adapter()),
+        ),
+        (
+            "identify-output.json",
+            with_meta(
+                "identify-output",
+                "Identify stage output",
+                identify_output(),
+            ),
+        ),
     ]
 }
 

@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "note": "Every input of the web emulation pipeline, pinned. build.ts verifies the tool archives against these digests; the Containerfile pins the same base image, snapshot, Python tools, Qt release and source commits. `docker.images.*.id` is the local image id recorded by the last build on the workstation.",
+  "rust": {
+    "toolchain": "nightly-2026-09-15",
+    "target": "wasm32-unknown-unknown",
+    "profile": "wasm-release",
+    "targetFeatures": {
+      "base": [
+        "simd128",
+        "bulk-memory",
+        "nontrapping-fptoint",
+        "sign-ext",
+        "mutable-globals",
+        "reference-types",
+        "multivalue"
+      ],
+      "threads": [
+        "atomics"
+      ]
+    }
+  },
+  "tools": {
+    "wasm-bindgen": {
+      "version": "0.2.129",
+      "url": "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.129/wasm-bindgen-0.2.129-x86_64-pc-windows-msvc.tar.gz",
+      "sha256": "79e348c169d0c10c0b287647f1e753d0985353ca96800bc29be8f4261baf13e6"
+    },
+    "binaryen": {
+      "version": "version_133",
+      "url": "https://github.com/WebAssembly/binaryen/releases/download/version_133/binaryen-version_133-x86_64-windows.tar.gz",
+      "sha256": "17a2cbeac6b5693c5fbafab3838d3c65fd9c1eb38b05f5baec6c657e8c84995b"
+    }
+  },
+  "docker": {
+    "images": {
+      "dockerfile-frontend": {
+        "ref": "docker/dockerfile:1.7",
+        "digest": "sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e"
+      },
+      "emsdk": {
+        "ref": "emscripten/emsdk:5.0.5",
+        "digest": "sha256:cc4dcb4ca57cb35858b7fbb606c0ee857051d9f76b452f7fcfc3d8159dae670c"
+      },
+      "qt-wasm": {
+        "ref": "bun-os/qt-wasm:6.12.0-emsdk5.0.5",
+        "containerfile": "packages/bun-engine/web-emulation/qt/Containerfile",
+        "id": "sha256:6dd03f8ff476e028014cc621cf180b355036e76ffe0fee9143f896dab806743a",
+        "size": 7191626103
+      }
+    },
+    "ubuntuSnapshot": "20261015T000000Z",
+    "python": {
+      "aqtinstall": "3.3.0",
+      "ninja": "1.13.0"
+    },
+    "qt": {
+      "version": "6.12.0",
+      "kits": [
+        "wasm_singlethread",
+        "wasm_multithread"
+      ],
+      "host": "linux_gcc_64",
+      "modules": {
+        "wasm_multithread": [
+          "qtmultimedia",
+          "qtshadertools"
+        ],
+        "wasm_singlethread": [
+          "qtshadertools"
+        ],
+        "linux_gcc_64": [
+          "qtmultimedia",
+          "qtshadertools"
+        ]
+      }
+    },
+    "emscripten": "5.0.5"
+  },
+  "sources": {
+    "zstd": {
+      "url": "https://github.com/facebook/zstd",
+      "tag": "v1.5.7",
+      "commit": "f8745da6ff1ad1e7bab384bd1f9d742439278e99"
+    },
+    "libarchive": {
+      "url": "https://github.com/libarchive/libarchive",
+      "tag": "v3.8.9",
+      "commit": "27cbc7827172698143e440801fc0ba39ccb4f1f5"
+    },
+    "faad2": {
+      "url": "https://github.com/knik0/faad2",
+      "tag": "2.11.4",
+      "commit": "e8e76f0a44db45aed773a3f62fe35a63c867a738"
+    },
+    "enet": {
+      "url": "https://github.com/lsalzman/enet",
+      "tag": "v1.3.18",
+      "commit": "2662c0de09e36f2a2030ccc2c528a3e4c9e8138a"
+    },
+    "melonds": {
+      "path": "vendor/melonds",
+      "commit": "906e9ebb27da8c6a715cd7abab4abfe8a8d29427"
+    },
+    "azahar": {
+      "path": "vendor/azahar",
+      "commit": "73ed0e9106a5b69a8ef67d920f534150e82c6277"
+    },
+    "zakuro": {
+      "path": "vendor/zakuro",
+      "commit": "0ce36eeb64adf8969c5d94bc907ccb68b9e73f35"
+    },
+    "tetanes": {
+      "path": "vendor/tetanes",
+      "commit": "a0a6b17f8ba9c5ee451453fb2409753fd06e5a31"
+    },
+    "rustboyadvance-ng": {
+      "path": "vendor/rustboyadvance-ng",
+      "commit": "1d7ff23a6adb42d803ebd393c3d27d94e4fea15e"
+    },
+    "starpsx": {
+      "path": "vendor/starpsx",
+      "commit": "32907922e01b12b0e6673347132480b92ed69f28"
+    }
+  },
+  "testContent": {
+    "godmode9i": {
+      "system": "nds",
+      "file": "GodMode9i.nds",
+      "sha256": "44360cc84f1193f8a3c3fd19128d07c4b28266e246d61d07f9c0f14a4611c812",
+      "license": "GPL-3.0"
+    },
+    "fbi": {
+      "system": "3ds",
+      "file": "FBI.3dsx",
+      "sha256": "634f0bfdca5506e14b1dd706541eefff30d9d083ab1a7bfe2bf40ae73004e3fa",
+      "license": "MIT"
+    }
+  },
+  "firmware": {
+    "openbios": {
+      "sha256": "da0bf3d3e0bf75d4bea49c037f9d0639d75c3ff4a569659965e04b9809b707c5"
+    }
+  }
+}

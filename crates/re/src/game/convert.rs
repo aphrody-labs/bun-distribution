@@ -193,14 +193,14 @@ pub const AUDIO_EXTENSIONS: [&str; 7] = ["hca", "adx", "acb", "awb", "afs2", "cs
 /// Decode every subsong of one CRI audio file to PCM16 WAV images, in bank order.
 #[cfg(feature = "dbxv2")]
 pub fn decode_audio_subsongs(bytes: &[u8]) -> std::result::Result<Vec<Vec<u8>>, String> {
-    use aphrody_nie_formats::cri_audio::{
-        Awb, acb_parse, adx_decode, encode_pcm16_wav, hca_decode_to_pcm16, is_adx, is_hca,
-    };
+    use aphrody_nie_formats::cri_audio::{Awb, acb_parse, adx_decode, encode_pcm16_wav, is_adx, is_hca};
 
+    // Keyless decoder of the generic pipeline: DBXV2 ships unencrypted or statically
+    // scrambled HCA; no other title's key is ever applied.
     fn decode_one(data: &[u8], subkey: u16) -> std::result::Result<Vec<u8>, String> {
         if is_hca(data) {
-            let (samples, channels, rate) = hca_decode_to_pcm16(data, subkey)?;
-            return Ok(encode_pcm16_wav(&samples, channels, rate));
+            return crate::game::assets::export::hca_to_wav(data, None, subkey)
+                .map_err(|error| error.to_string());
         }
         if is_adx(data) {
             let pcm = adx_decode(data).map_err(|error| format!("ADX: {error}"))?;

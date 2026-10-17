@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
  * WinClean integration gate: generated Bun bindings, the frozen Rust catalog
- * (`crates/os/kernel/comps/winclean/src/tools.json`) and its migration ledger agree, then a private
+ * (`packages/bun-windows-winclean/src/tools.json`) and its migration ledger agree, then a private
  * hidden kernel (`aphrody kernel serve`) lists every catalog tool and answers a live `get_os_info`.
  *
- * Usage: bun scripts/audit/os/verify-winclean-integration.ts [--static]
+ * Usage: bun scripts/aphrody/audit/os/verify-winclean-integration.ts [--static]
  *   --static   skip the live kernel probe (catalog, ledger and bindings only)
  */
 import { createHash } from "node:crypto";
@@ -13,22 +13,24 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import {
-  repoRoot,
   sessionStamp,
   withKernel,
 } from "../../tools/os/scripts/kernel-session.ts";
 
+/** Bun OS checkout root (the catalog owners live there, not under docs/aphrody). */
+const workspaceRoot = join(import.meta.dir, "../../../..");
+
 export const rustCatalog = join(
-  repoRoot,
-  "crates/os/kernel/comps/winclean/src/tools.json",
+  workspaceRoot,
+  "packages/bun-windows-winclean/src/tools.json",
 );
 export const ledgerPath = join(
-  repoRoot,
-  "crates/os/kernel/comps/winclean/tool-migration.json",
+  workspaceRoot,
+  "packages/bun-windows-winclean/tool-migration.json",
 );
 export const bunCatalog = join(
-  repoRoot,
-  "packages/os/winclean/src/generated.ts",
+  workspaceRoot,
+  "packages/winclean/src/generated.ts",
 );
 
 export interface Ledger {
@@ -74,11 +76,11 @@ export function ledgerDrift(
 
 async function checkGeneratedBindings(): Promise<void> {
   const generator = join(
-    repoRoot,
-    "scripts/tools/os/scripts/generate-winclean-catalog.ts",
+    workspaceRoot,
+    "scripts/aphrody/tools/os/scripts/generate-winclean-catalog.ts",
   );
   const child = Bun.spawn([process.execPath, generator, "--check"], {
-    cwd: repoRoot,
+    cwd: workspaceRoot,
     windowsHide: true,
     stdin: "ignore",
     stdout: "inherit",

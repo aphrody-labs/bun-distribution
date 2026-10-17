@@ -155,7 +155,7 @@ BUN_EMU_API uint64_t bun_emu_frame_count(const bun_emu* emu);
 
 BUN_EMU_API uint32_t bun_emu_screen_count(const bun_emu* emu);
 /** CPU-readable framebuffer of screen index (0 = top/main). */
-BUN_EMU_API int32_t bun_emu_screen(const bun_emu* emu, uint32_t index, bun_emu_screen* out);
+BUN_EMU_API int32_t bun_emu_get_screen(const bun_emu* emu, uint32_t index, bun_emu_screen* out);
 
 /** Output sample rate in Hz (0 when the core produces no audio). */
 BUN_EMU_API uint32_t bun_emu_audio_rate(const bun_emu* emu);

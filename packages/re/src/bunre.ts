@@ -1,5 +1,5 @@
-// Forwards Rust-owned subcommands (`dbxv2`, Steam depot operations) to the `bunre` binary so `re`
-// stays the single reverse-engineering CLI.
+// Forwards the Rust-owned `dbxv2` subcommand to the `bunre` binary so `re` stays the single
+// reverse-engineering CLI. Steam depot operations belong to `bun-steam depot` (packages/bun-steam).
 import { findBinary } from "./pipeline/runner.js";
 
 export async function runBunre(args: string[]): Promise<number> {

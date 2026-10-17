@@ -1,14 +1,21 @@
 import { basename, join, resolve } from "node:path";
+import { checkoutRoot } from "../pipeline/runner.js";
 
-const root = join(import.meta.dir, "..", "..", "..", "..");
-const logoPrefix = Uint8Array.from([0x24, 0xff, 0xae, 0x51, 0x69, 0x9a, 0xa2, 0x21, 0x3d, 0x84, 0x82, 0x0a]);
+const root = checkoutRoot();
+const logoPrefix = Uint8Array.from([
+  0x24, 0xff, 0xae, 0x51, 0x69, 0x9a, 0xa2, 0x21, 0x3d, 0x84, 0x82, 0x0a,
+]);
 
 function text(bytes: Uint8Array): string {
   return new TextDecoder("ascii").decode(bytes).replaceAll("\0", "").trim();
 }
 
 function u32(bytes: Uint8Array, offset: number): number {
-  return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(offset, true);
+  return new DataView(
+    bytes.buffer,
+    bytes.byteOffset,
+    bytes.byteLength,
+  ).getUint32(offset, true);
 }
 
 async function sha256(path: string): Promise<string> {
@@ -51,11 +58,15 @@ export interface NdsReplicaReport {
 }
 
 /** Read-only intake for a user-owned DS image. The ROM is never copied into the workspace. */
-export async function inspectNdsReplica(input: string): Promise<NdsReplicaReport> {
+export async function inspectNdsReplica(
+  input: string,
+): Promise<NdsReplicaReport> {
   const path = resolve(input);
   const file = Bun.file(path);
-  if (!(await file.exists())) throw new Error(`Nintendo DS image not found: ${path}`);
-  if (file.size < 0x200) throw new Error(`Nintendo DS image is smaller than its header: ${path}`);
+  if (!(await file.exists()))
+    throw new Error(`Nintendo DS image not found: ${path}`);
+  if (file.size < 0x200)
+    throw new Error(`Nintendo DS image is smaller than its header: ${path}`);
   const header = new Uint8Array(await file.slice(0, 0x200).arrayBuffer());
   if (!logoPrefix.every((byte, index) => header[0xc0 + index] === byte)) {
     throw new TypeError(`Nintendo DS logo signature is missing: ${path}`);
@@ -90,7 +101,9 @@ export async function inspectNdsReplica(input: string): Promise<NdsReplicaReport
       dust: {
         source: dust,
         sourceReady: await Bun.file(join(dust, "Cargo.toml")).exists(),
-        executableReady: await Bun.file(join(root, "build", "nds", "dust-cli.exe")).exists(),
+        executableReady: await Bun.file(
+          join(root, "build", "nds", "dust-cli.exe"),
+        ).exists(),
       },
       ghidra: {
         source: ghidra,
@@ -100,20 +113,33 @@ export async function inspectNdsReplica(input: string): Promise<NdsReplicaReport
           (await Bun.file(join(ntr, "Module.manifest")).exists()),
         executableReady:
           Bun.which("java") !== null &&
-          (await Bun.file(join(root, "build", "ghidra", "support", "analyzeHeadless.bat")).exists()),
+          (await Bun.file(
+            join(root, "build", "ghidra", "support", "analyzeHeadless.bat"),
+          ).exists()),
       },
       libnds: {
         source: libnds,
         sourceReady: await Bun.file(join(libnds, "include", "nds.h")).exists(),
-        toolchainReady: Bun.which("arm-none-eabi-gcc") !== null && Bun.which("ndstool") !== null,
+        toolchainReady:
+          Bun.which("arm-none-eabi-gcc") !== null &&
+          Bun.which("ndstool") !== null,
       },
+      // The NDS crate was absorbed into bun-engine (`bun-engine info`, cartridge module).
       bunRe: {
-        owner: join(root, "crates", "nds", "src", "lib.rs"),
-        ready: await Bun.file(join(root, "crates", "nds", "src", "lib.rs")).exists(),
+        owner: join(root, "crates", "bun-engine-core", "src", "cartridge.rs"),
+        ready: await Bun.file(
+          join(root, "crates", "bun-engine-core", "src", "cartridge.rs"),
+        ).exists(),
       },
     },
     outputs: {
-      windows: join(root, "build", "replica", "windows", "bun-engine-replica.exe"),
+      windows: join(
+        root,
+        "build",
+        "replica",
+        "windows",
+        "bun-engine-replica.exe",
+      ),
       web: join(root, "build", "replica", "web"),
       recon: join(root, "var", "replica", "testt.nds.json"),
     },

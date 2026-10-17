@@ -5,6 +5,7 @@
 #include "melonds_platform.hpp"
 
 #include "Args.h"
+#include "FATStorage.h"
 #include "FreeBIOS.h"
 #include "GPU.h"
 #include "GPU_Soft.h"
@@ -172,6 +173,16 @@ class MelonCore final : public Core {
     nds_->Reset();
 
     NDSCart::NDSCartArgs cart_args{};
+    // Homebrew DLDI SD card: config "sd_dir" is synced into a FAT image
+    // ("sd_image", default <user_dir>/dldi.bin; "sd_size" bytes, 0 = auto).
+    if (auto dir = host_.config("sd_dir")) {
+      cart_args.SDCard = FATStorageArgs{
+          host_.config_or("sd_image", host_.user_dir() + "/dldi.bin"),
+          static_cast<u64>(host_.config_int("sd_size", 0)),
+          host_.config_flag("sd_readonly", false),
+          *dir,
+      };
+    }
     auto cart = NDSCart::ParseROM(rom_.data(), static_cast<u32>(rom_.size()), static_cast<void*>(this),
                                   std::move(cart_args));
     if (!cart) fail(BUN_EMU_E_CORE, "melonDS could not parse " + rom_name_);

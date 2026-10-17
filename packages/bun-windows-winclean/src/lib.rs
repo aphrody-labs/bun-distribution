@@ -11,6 +11,7 @@ mod defender;
 pub mod dispatch;
 mod eventlog;
 pub mod filesystem;
+pub mod gaming;
 pub mod gamepad;
 mod generated;
 pub mod memory;

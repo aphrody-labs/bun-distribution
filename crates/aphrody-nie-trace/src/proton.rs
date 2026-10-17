@@ -36,12 +36,7 @@ use std::time::Duration;
 
 use thiserror::Error;
 
-/// Steam application id of Inazuma Eleven: Victory Road.
-///
-/// Duplicated from `aphrody_re::steam::IEVR_STEAM_APP_ID` on purpose: this crate depends on nothing but
-/// `thiserror`, and taking the whole Steam downloader as a dependency to read one integer would
-/// make the memory reader depend on a network stack.
-pub const IEVR_STEAM_APP_ID: u32 = 2_799_860;
+use bun_steam::IEVR_STEAM_APP_ID;
 
 /// Process name the game reports to Linux once Proton has mapped it.
 ///
@@ -379,26 +374,12 @@ pub fn launch_env(layout: &Layout, runtime: &Runtime) -> Vec<(OsString, OsString
     );
 
     // ── Steam compatibility ───────────────────────────────────────────────────────────────
-    let app = IEVR_STEAM_APP_ID.to_string();
-    env.insert(
-        "STEAM_COMPAT_DATA_PATH".to_owned(),
-        layout.compat_data.to_string_lossy().into_owned(),
-    );
-    env.insert(
-        "STEAM_COMPAT_CLIENT_INSTALL_PATH".to_owned(),
-        layout.runtime_base.join("steam-client").to_string_lossy().into_owned(),
-    );
-    env.insert(
-        "STEAM_COMPAT_INSTALL_PATH".to_owned(),
-        layout.game_dir.to_string_lossy().into_owned(),
-    );
-    env.insert(
-        "STEAM_COMPAT_LIBRARY_PATHS".to_owned(),
-        layout.game_dir.to_string_lossy().into_owned(),
-    );
-    env.insert("STEAM_COMPAT_APP_ID".to_owned(), app.clone());
-    env.insert("SteamAppId".to_owned(), app.clone());
-    env.insert("SteamGameId".to_owned(), app);
+    env.extend(bun_steam::proton::steam_compat_env(
+        IEVR_STEAM_APP_ID,
+        &layout.compat_data,
+        &layout.runtime_base.join("steam-client"),
+        &layout.game_dir,
+    ));
     env.insert("PROTON_DISABLE_NVAPI".to_owned(), "1".to_owned());
     env.insert("PROTON_HIDE_NVIDIA_GPU".to_owned(), "1".to_owned());
     env.insert("PROTON_NO_EAC_RUNTIME".to_owned(), "1".to_owned());

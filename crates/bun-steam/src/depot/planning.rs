@@ -494,7 +494,7 @@ mod tests {
         ));
     }
 
-    #[cfg(feature = "steam-download")]
+    #[cfg(feature = "depot")]
     #[test]
     fn manifest_ids_serialize_without_javascript_precision_loss() {
         let id = ManifestId(7_633_204_652_048_533_395);

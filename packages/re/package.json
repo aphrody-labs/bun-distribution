@@ -2,7 +2,7 @@
   "name": "@bun-os/re",
   "version": "1.4.4",
   "private": true,
-  "description": "Bun OS reverse engineering: one re CLI and MCP server (rea toolkit, cross-OS RE pipeline, Steam indexer) and one Claude plugin with the reverse-engineer-anything, Steam, Ghidra and Replica skills.",
+  "description": "Bun OS reverse engineering: one re CLI and MCP server (rea toolkit, cross-OS RE pipeline, static recompilation of console images over Bun Engine, Steam indexer) and one Claude plugin with the reverse-engineer-anything, Steam, Ghidra, Replica, Bun Engine and static-recompile skills.",
   "license": "MIT AND Apache-2.0",
   "type": "module",
   "engines": {
@@ -33,8 +33,7 @@
     "re": "scripts/rea.mjs"
   },
   "exports": {
-    "./pipeline": "./src/pipeline/index.ts",
-    "./steam": "./src/steam/index.ts"
+    "./pipeline": "./src/pipeline/index.ts"
   },
   "scripts": {
     "release:notes": "bun scripts/release-notes.mjs",
@@ -279,6 +278,8 @@
     "ws": "8.22.0",
     "yaml": "2.9.1",
     "zod": "4.6.7",
+    "@aphrody/bun-engine": "workspace:*",
+    "@aphrody/bun-steam": "workspace:*",
     "@aphrody/paths": "workspace:*"
   },
   "devDependencies": {

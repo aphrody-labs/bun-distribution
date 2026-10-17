@@ -20,6 +20,17 @@ trait, one input model, one wgpu/winit window and one CLI. It absorbed `bun-emu`
 (`cartridge`). Consumers enable Cargo features (`window`, `nds`, `host`, `arm`, `x86`,
 `cartridge`) instead of depending on separate crates.
 
+## Static recompilation
+
+`re recompile` (also `bun-engine recompile`) lifts GBA (ARMv4T ARM/Thumb with the BIOS),
+PlayStation (MIPS R3000A BIOS and PS-EXE) and NES (6502) images through the bun-re pipeline and
+emits a Rust crate over `bun_engine::recomp`, which links the same RustBoyAdvance-NG, StarPSX and
+TetaNES device models through small runner hooks (`GameBoyAdvance::set_cpu_runner`,
+`System::set_runner`, `ControlDeck::set_cpu_runner`). The crate builds as a native executable or a
+`wasm32-unknown-unknown` module; code the static pass does not reach runs in the core interpreter.
+Verification compares frame buffers and console output with `bun-engine run`. See
+[`docs/re-pipeline.md`](../re-pipeline.md).
+
 ## Arch Linux image
 
 `factory/images/bunos-gaming` has an `emulation` target: the gaming image plus every emulator

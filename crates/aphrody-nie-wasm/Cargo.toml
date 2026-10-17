@@ -56,10 +56,12 @@ aphrody-nie-pe.workspace = true
 # reference storage stays outside the browser through the disabled `redb` feature.
 aphrody-nie-forge = { workspace = true, default-features = false }
 # Single RE core (bun-re): safe in-memory minidump parsing (the browser wrapper exposes metadata
-# only and never copies captured process memory back into JavaScript), portable `.pdata`
-# inspection and credential-free Steam depot selection/collision planning. The `nie` and
-# `steam-download` features (SQLite, network, filesystem) stay disabled.
+# only and never copies captured process memory back into JavaScript) and portable `.pdata`
+# inspection. The `nie` feature (SQLite, filesystem) stays disabled.
 aphrody-re.workspace = true
+# Credential-free Steam depot selection/collision planning; the `depot` client feature (network,
+# token cache) stays disabled.
+bun-steam = { workspace = true }
 # Portable AOB scanning only; live process memory and patching remain behind the host feature.
 aphrody-nie-trace = { workspace = true, default-features = false }
 # Pure official-encyclopedia matching; network, SQLite and CLI dependencies stay host-only.

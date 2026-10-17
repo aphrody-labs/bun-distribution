@@ -48,6 +48,8 @@ pub struct Recompile {
     pub frames: u64,
     /// Run Cargo (false stops after emitting the crate).
     pub build: bool,
+    /// Scripted input of the verification runs (`key@first[-last],...`, executables only).
+    pub input: Option<String>,
 }
 
 /// Generated crate and build products.
@@ -99,12 +101,14 @@ pub fn applies_nes(c: &Ctx) -> bool {
 
 /// Emission applicability.
 pub fn has_guest_ir(c: &Ctx) -> bool {
-    c.ir.as_ref().is_some_and(|m| m.abi.as_ref().is_some_and(|a| a.machine.is_some()))
+    c.ir.as_ref()
+        .is_some_and(|m| m.abi.as_ref().is_some_and(|a| a.machine.is_some()))
 }
 
 /// Build applicability.
 pub fn wants_build(c: &Ctx) -> bool {
-    c.guest.as_ref().is_some_and(|g| g.crate_dir.is_some()) && c.opts.recompile.as_ref().is_some_and(|r| r.build)
+    c.guest.as_ref().is_some_and(|g| g.crate_dir.is_some())
+        && c.opts.recompile.as_ref().is_some_and(|r| r.build)
 }
 
 /// Verification applicability.
@@ -113,24 +117,46 @@ pub fn built(c: &Ctx) -> bool {
 }
 
 fn root_file(ctx: &Ctx, rel: &str) -> Option<PathBuf> {
-    ctx.opts.root.as_ref().map(|r| r.join(rel)).filter(|p| p.is_file())
+    ctx.opts
+        .root
+        .as_ref()
+        .map(|r| r.join(rel))
+        .filter(|p| p.is_file())
 }
 
 /// Default free GBA BIOS (Normmatt) vendored by RustBoyAdvance-NG, the one the core embeds.
 const GBA_FREE_BIOS: &str = "vendor/rustboyadvance-ng/core/benches/roms/normatt_gba_bios.bin";
 
-fn finish_lift(ctx: &mut Ctx, id: &str, module: IrModule, image: Vec<u8>, bios: Option<(PathBuf, Vec<u8>)>, machine: &str) -> StageReport {
+fn finish_lift(
+    ctx: &mut Ctx,
+    id: &str,
+    module: IrModule,
+    image: Vec<u8>,
+    bios: Option<(PathBuf, Vec<u8>)>,
+    machine: &str,
+) -> StageReport {
     let dir = ctx.dir("lift");
     if let Err(e) = std::fs::create_dir_all(&dir) {
         return report(Stage::Lift, id, StageStatus::Failed, e.to_string());
     }
     let ir_path = dir.join("ir.json");
-    if let Err(e) = serde_json::to_vec_pretty(&module).map_err(|e| e.to_string()).and_then(|j| std::fs::write(&ir_path, j).map_err(|e| e.to_string())) {
+    if let Err(e) = serde_json::to_vec_pretty(&module)
+        .map_err(|e| e.to_string())
+        .and_then(|j| std::fs::write(&ir_path, j).map_err(|e| e.to_string()))
+    {
         return report(Stage::Lift, id, StageStatus::Failed, e);
     }
     let stats = module.stats();
-    let coverage = if stats.instructions == 0 { 0.0 } else { stats.lifted as f64 / stats.instructions as f64 };
-    let status = if stats.functions == 0 { StageStatus::Failed } else { StageStatus::Ok };
+    let coverage = if stats.instructions == 0 {
+        0.0
+    } else {
+        stats.lifted as f64 / stats.instructions as f64
+    };
+    let status = if stats.functions == 0 {
+        StageStatus::Failed
+    } else {
+        StageStatus::Ok
+    };
     let mut r = report(
         Stage::Lift,
         id,
@@ -147,17 +173,36 @@ fn finish_lift(ctx: &mut Ctx, id: &str, module: IrModule, image: Vec<u8>, bios: 
     r.metrics.insert("instructions".into(), stats.instructions);
     r.metrics.insert("fallbacks".into(), stats.unlifted);
     r.artifacts.push(artifact("ir", &ir_path));
-    r.output = serde_json::to_value(LiftOutput { ir: ir_path.display().to_string(), stats, coverage }).unwrap_or_default();
+    r.output = serde_json::to_value(LiftOutput {
+        ir: ir_path.display().to_string(),
+        stats,
+        coverage,
+    })
+    .unwrap_or_default();
     ctx.ir = Some(module);
-    ctx.guest_embed = Some(Embed { image, bios: bios.as_ref().map(|b| b.1.clone()) });
-    ctx.guest = Some(GuestBuild { machine: machine.into(), bios: bios.map(|b| b.0), ..GuestBuild::default() });
+    ctx.guest_embed = Some(Embed {
+        image,
+        bios: bios.as_ref().map(|b| b.1.clone()),
+    });
+    ctx.guest = Some(GuestBuild {
+        machine: machine.into(),
+        bios: bios.map(|b| b.0),
+        ..GuestBuild::default()
+    });
     r
 }
 
 fn read_bios(ctx: &Ctx, default: Option<&str>) -> Result<Option<(PathBuf, Vec<u8>)>, String> {
-    let path = ctx.opts.recompile.as_ref().and_then(|r| r.bios.clone()).or_else(|| default.and_then(|d| root_file(ctx, d)));
+    let path = ctx
+        .opts
+        .recompile
+        .as_ref()
+        .and_then(|r| r.bios.clone())
+        .or_else(|| default.and_then(|d| root_file(ctx, d)));
     match path {
-        Some(p) => std::fs::read(&p).map(|b| Some((p.clone(), b))).map_err(|e| format!("{}: {e}", p.display())),
+        Some(p) => std::fs::read(&p)
+            .map(|b| Some((p.clone(), b)))
+            .map_err(|e| format!("{}: {e}", p.display())),
         None => Ok(None),
     }
 }
@@ -179,14 +224,29 @@ pub fn lift_gba(ctx: &mut Ctx) -> StageReport {
     let mut regions = Vec::new();
     let mut entries = vec![(0x0800_0000, lift_armv4t::Isa::Arm)];
     if let Some((_, b)) = &bios {
-        regions.push(lift_armv4t::Region { name: "bios".into(), base: 0, data: b.clone() });
+        regions.push(lift_armv4t::Region {
+            name: "bios".into(),
+            base: 0,
+            data: b.clone(),
+        });
         // Reset, undefined, SWI, prefetch/data abort, IRQ and FIQ vectors.
         for v in [0x00, 0x04, 0x08, 0x0c, 0x10, 0x18, 0x1c] {
             entries.push((v, lift_armv4t::Isa::Arm));
         }
     }
-    regions.push(lift_armv4t::Region { name: "rom".into(), base: 0x0800_0000, data: rom.clone() });
-    let module = lift_armv4t::lift(&regions, &entries, 0x0800_0000, lift_armv4t::Limits { max_insns: ctx.opts.max_insns.max(400_000) });
+    regions.push(lift_armv4t::Region {
+        name: "rom".into(),
+        base: 0x0800_0000,
+        data: rom.clone(),
+    });
+    let module = lift_armv4t::lift(
+        &regions,
+        &entries,
+        0x0800_0000,
+        lift_armv4t::Limits {
+            max_insns: ctx.opts.max_insns.max(400_000),
+        },
+    );
     finish_lift(ctx, id, module, rom, bios, "gba")
 }
 
@@ -204,18 +264,41 @@ pub fn lift_psx(ctx: &mut Ctx) -> StageReport {
     let bios = if is_exe {
         match read_bios(ctx, None) {
             Ok(Some(b)) => Some(b),
-            Ok(None) => return report(Stage::Lift, id, StageStatus::Failed, "a PS-EXE needs --bios <512 KiB BIOS> (bep add free-firmware openbios)"),
+            Ok(None) => {
+                return report(
+                    Stage::Lift,
+                    id,
+                    StageStatus::Failed,
+                    "a PS-EXE needs --bios <512 KiB BIOS> (bep add free-firmware openbios)",
+                );
+            }
             Err(e) => return report(Stage::Lift, id, StageStatus::Failed, e),
         }
     } else {
         Some((path.clone(), input.clone()))
     };
-    let Some((bios_path, bios_bytes)) = bios else { unreachable!() };
+    let Some((bios_path, bios_bytes)) = bios else {
+        unreachable!()
+    };
     if bios_bytes.len() != 0x8_0000 {
-        return report(Stage::Lift, id, StageStatus::Failed, format!("PlayStation BIOS must be 512 KiB, got {} bytes", bios_bytes.len()));
+        return report(
+            Stage::Lift,
+            id,
+            StageStatus::Failed,
+            format!(
+                "PlayStation BIOS must be 512 KiB, got {} bytes",
+                bios_bytes.len()
+            ),
+        );
     }
     let exe = if is_exe { Some(input.as_slice()) } else { None };
-    let module = match lift_mips::lift_psx(&bios_bytes, exe, lift_mips::Limits { max_insns: ctx.opts.max_insns.max(400_000) }) {
+    let module = match lift_mips::lift_psx(
+        &bios_bytes,
+        exe,
+        lift_mips::Limits {
+            max_insns: ctx.opts.max_insns.max(400_000),
+        },
+    ) {
         Ok(m) => m,
         Err(e) => return report(Stage::Lift, id, StageStatus::Failed, e),
     };
@@ -234,7 +317,12 @@ pub fn lift_nes(ctx: &mut Ctx) -> StageReport {
         Ok(b) => b,
         Err(e) => return report(Stage::Lift, id, StageStatus::Failed, e.to_string()),
     };
-    let module = match lift_6502::lift_ines(&rom, lift_6502::Limits { max_insns: ctx.opts.max_insns.max(200_000) }) {
+    let module = match lift_6502::lift_ines(
+        &rom,
+        lift_6502::Limits {
+            max_insns: ctx.opts.max_insns.max(200_000),
+        },
+    ) {
         Ok(m) => m,
         Err(e) => return report(Stage::Lift, id, StageStatus::Failed, e),
     };
@@ -248,10 +336,16 @@ fn crate_name(ctx: &Ctx) -> String {
         .and_then(|p| p.file_stem())
         .map(|s| s.to_string_lossy().to_ascii_lowercase())
         .unwrap_or_else(|| "image".into());
-    let clean: String = stem.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '-' }).collect();
+    let clean: String = stem
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+        .collect();
     let clean = clean.trim_matches('-');
     let machine = ctx.guest.as_ref().map_or("guest", |g| g.machine.as_str());
-    format!("recomp-{machine}-{}", if clean.is_empty() { "image" } else { clean })
+    format!(
+        "recomp-{machine}-{}",
+        if clean.is_empty() { "image" } else { clean }
+    )
 }
 
 /// `emit-console-rust`: write the Cargo crate over the Bun Engine core.
@@ -261,19 +355,41 @@ pub fn emit(ctx: &mut Ctx) -> StageReport {
         return report(Stage::Decompile, id, StageStatus::Skipped, "no IR");
     };
     let Some(root) = ctx.opts.root.clone() else {
-        return report(Stage::Decompile, id, StageStatus::Unavailable, "Bun OS checkout not found (set BUN_OS_ROOT): the crate links crates/bun-engine-core");
+        return report(
+            Stage::Decompile,
+            id,
+            StageStatus::Unavailable,
+            "Bun OS checkout not found (set BUN_OS_ROOT): the crate links crates/bun-engine-core",
+        );
     };
     let engine = root.join("crates").join("bun-engine-core");
     let Some(embed) = ctx.guest_embed.clone() else {
-        return report(Stage::Decompile, id, StageStatus::Skipped, "no embedded image");
+        return report(
+            Stage::Decompile,
+            id,
+            StageStatus::Skipped,
+            "no embedded image",
+        );
     };
     let name = crate_name(ctx);
     let dir = ctx.dir("crate");
     match write_crate(m, &dir, &name, &engine, &embed) {
         Ok(files) => {
-            let mut r = report(Stage::Decompile, id, StageStatus::Ok, format!("{name}: {} files over bun_engine::recomp", files.len()));
+            let mut r = report(
+                Stage::Decompile,
+                id,
+                StageStatus::Ok,
+                format!("{name}: {} files over bun_engine::recomp", files.len()),
+            );
             for f in &files {
-                r.artifacts.push(artifact(if f.extension().is_some_and(|e| e == "rs") { "rust" } else { "file" }, f));
+                r.artifacts.push(artifact(
+                    if f.extension().is_some_and(|e| e == "rs") {
+                        "rust"
+                    } else {
+                        "file"
+                    },
+                    f,
+                ));
             }
             if let Some(g) = ctx.guest.as_mut() {
                 g.crate_dir = Some(dir);
@@ -310,14 +426,20 @@ fn cargo_prefix(root: &Path) -> Vec<String> {
     vec!["cargo".into()]
 }
 
+/// Shared target directory of recompiled crates: the checkout's `target/`, where the serialized
+/// wrapper builds, so dependencies are compiled once for every recompiled image.
 fn target_dir(root: &Path) -> PathBuf {
-    std::env::var_os("CARGO_TARGET_DIR").map_or_else(|| root.join("target"), PathBuf::from)
+    root.join("target")
 }
 
 /// `cargo-recompile`: build the crate for the requested target.
 pub fn build(ctx: &mut Ctx) -> StageReport {
     let id = "cargo-recompile";
-    let (Some(g), Some(rc), Some(root)) = (ctx.guest.clone(), ctx.opts.recompile.clone(), ctx.opts.root.clone()) else {
+    let (Some(g), Some(rc), Some(root)) = (
+        ctx.guest.clone(),
+        ctx.opts.recompile.clone(),
+        ctx.opts.root.clone(),
+    ) else {
         return report(Stage::Rebuild, id, StageStatus::Skipped, "nothing to build");
     };
     let Some(dir) = g.crate_dir.clone() else {
@@ -325,14 +447,31 @@ pub fn build(ctx: &mut Ctx) -> StageReport {
     };
     let prefix = cargo_prefix(&root);
     let Some(program) = which(&prefix[0]) else {
-        return report(Stage::Rebuild, id, StageStatus::Unavailable, format!("`{}` not on PATH", prefix[0]));
+        return report(
+            Stage::Rebuild,
+            id,
+            StageStatus::Unavailable,
+            format!("`{}` not on PATH", prefix[0]),
+        );
     };
     let manifest = dir.join("Cargo.toml");
     let mut args: Vec<String> = prefix[1..].to_vec();
-    args.extend(["build".into(), "--release".into(), "--manifest-path".into(), manifest.display().to_string()]);
+    let tdir = target_dir(&root);
+    args.extend([
+        "build".into(),
+        "--release".into(),
+        "--manifest-path".into(),
+        manifest.display().to_string(),
+        "--target-dir".into(),
+        tdir.display().to_string(),
+    ]);
     match rc.target {
         RecompTarget::Exe => args.extend(["--bin".into(), g.name.clone()]),
-        RecompTarget::Wasm => args.extend(["--lib".into(), "--target".into(), "wasm32-unknown-unknown".into()]),
+        RecompTarget::Wasm => args.extend([
+            "--lib".into(),
+            "--target".into(),
+            "wasm32-unknown-unknown".into(),
+        ]),
     }
     let timeout = Duration::from_secs(ctx.opts.timeout_secs.max(3600));
     // The serialized wrapper refuses to start while another native build owns the host: wait
@@ -340,16 +479,23 @@ pub fn build(ctx: &mut Ctx) -> StageReport {
     let started = std::time::Instant::now();
     let res = loop {
         let r = run_cmd(&program, &args, Some(&root), &[], timeout);
-        let busy = r.as_ref().is_ok_and(|x| !x.ok() && format!("{}{}", x.stdout, x.stderr).contains("build owns this Windows host"));
+        let busy = r.as_ref().is_ok_and(|x| {
+            !x.ok() && format!("{}{}", x.stdout, x.stderr).contains("build owns this Windows host")
+        });
         if !busy || started.elapsed() > timeout {
             break r;
         }
         std::thread::sleep(Duration::from_secs(60));
     };
-    let tdir = target_dir(&root);
     let built = match rc.target {
-        RecompTarget::Exe => tdir.join("release").join(format!("{}{}", g.name, std::env::consts::EXE_SUFFIX)),
-        RecompTarget::Wasm => tdir.join("wasm32-unknown-unknown").join("release").join(format!("{}.wasm", g.name.replace('-', "_"))),
+        RecompTarget::Exe => {
+            tdir.join("release")
+                .join(format!("{}{}", g.name, std::env::consts::EXE_SUFFIX))
+        }
+        RecompTarget::Wasm => tdir
+            .join("wasm32-unknown-unknown")
+            .join("release")
+            .join(format!("{}.wasm", g.name.replace('-', "_"))),
     };
     match res {
         Ok(x) if x.ok() && built.is_file() => {
@@ -357,10 +503,27 @@ pub fn build(ctx: &mut Ctx) -> StageReport {
             let _ = std::fs::create_dir_all(&bin);
             let dest = bin.join(built.file_name().unwrap_or_default());
             if let Err(e) = std::fs::copy(&built, &dest) {
-                return report(Stage::Rebuild, id, StageStatus::Failed, format!("{}: {e}", dest.display()));
+                return report(
+                    Stage::Rebuild,
+                    id,
+                    StageStatus::Failed,
+                    format!("{}: {e}", dest.display()),
+                );
             }
-            let mut r = report(Stage::Rebuild, id, StageStatus::Ok, format!("{} built for {:?}", g.name, rc.target));
-            r.artifacts.push(artifact(if rc.target == RecompTarget::Exe { "executable" } else { "wasm" }, &dest));
+            let mut r = report(
+                Stage::Rebuild,
+                id,
+                StageStatus::Ok,
+                format!("{} built for {:?}", g.name, rc.target),
+            );
+            r.artifacts.push(artifact(
+                if rc.target == RecompTarget::Exe {
+                    "executable"
+                } else {
+                    "wasm"
+                },
+                &dest,
+            ));
             if let Some(gm) = ctx.guest.as_mut() {
                 gm.artifact = Some(dest);
             }
@@ -370,7 +533,12 @@ pub fn build(ctx: &mut Ctx) -> StageReport {
             Stage::Rebuild,
             id,
             StageStatus::Failed,
-            format!("cargo failed (exit {:?}{}): {}", x.code, if x.timed_out { ", timeout" } else { "" }, tail(&format!("{}\n{}", x.stderr, x.stdout), 2400)),
+            format!(
+                "cargo failed (exit {:?}{}): {}",
+                x.code,
+                if x.timed_out { ", timeout" } else { "" },
+                tail(&format!("{}\n{}", x.stderr, x.stdout), 2400)
+            ),
         ),
         Err(e) => report(Stage::Rebuild, id, StageStatus::Failed, e),
     }
@@ -378,24 +546,49 @@ pub fn build(ctx: &mut Ctx) -> StageReport {
 
 /// Locate the Bun Engine interpreter CLI (`bun-engine run`).
 fn bun_engine_bin(root: &Path) -> Option<PathBuf> {
-    if let Some(p) = std::env::var_os("BUN_ENGINE_NATIVE").map(PathBuf::from).filter(|p| p.is_file()) {
+    if let Some(p) = std::env::var_os("BUN_ENGINE_NATIVE")
+        .map(PathBuf::from)
+        .filter(|p| p.is_file())
+    {
         return Some(p);
     }
     let exe = format!("bun-engine{}", std::env::consts::EXE_SUFFIX);
     let t = target_dir(root);
-    ["release", "debug"].iter().map(|p| t.join(p).join(&exe)).find(|p| p.is_file()).or_else(|| which("bun-engine").filter(|p| p.extension().is_some_and(|e| e == "exe") || !cfg!(windows)))
+    ["release", "debug"]
+        .iter()
+        .map(|p| t.join(p).join(&exe))
+        .find(|p| p.is_file())
+        .or_else(|| {
+            which("bun-engine")
+                .filter(|p| p.extension().is_some_and(|e| e == "exe") || !cfg!(windows))
+        })
 }
 
 fn ppm(path: &Path) -> Result<Vec<u8>, String> {
     std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))
 }
 
-fn run_json(program: &Path, args: &[String], cwd: Option<&Path>, timeout: Duration) -> Result<serde_json::Value, String> {
+fn run_json(
+    program: &Path,
+    args: &[String],
+    cwd: Option<&Path>,
+    timeout: Duration,
+) -> Result<serde_json::Value, String> {
     let x = run_cmd(program, args, cwd, &[], timeout)?;
     if !x.ok() {
-        return Err(format!("exit {:?}{}: {}", x.code, if x.timed_out { " (timeout)" } else { "" }, tail(&format!("{}\n{}", x.stderr, x.stdout), 800)));
+        return Err(format!(
+            "exit {:?}{}: {}",
+            x.code,
+            if x.timed_out { " (timeout)" } else { "" },
+            tail(&format!("{}\n{}", x.stderr, x.stdout), 800)
+        ));
     }
-    let line = x.stdout.lines().rev().find(|l| l.trim_start().starts_with('{')).ok_or_else(|| format!("no JSON on stdout: {}", tail(&x.stdout, 400)))?;
+    let line = x
+        .stdout
+        .lines()
+        .rev()
+        .find(|l| l.trim_start().starts_with('{'))
+        .ok_or_else(|| format!("no JSON on stdout: {}", tail(&x.stdout, 400)))?;
     serde_json::from_str(line).map_err(|e| e.to_string())
 }
 
@@ -437,12 +630,38 @@ pub fn verify(ctx: &mut Ctx) -> StageReport {
         let out = vdir.join(name);
         let _ = std::fs::create_dir_all(&out);
         let res = match rc.target {
-            RecompTarget::Exe => run_json(&art, &["--frames".into(), frames.clone(), "--out".into(), out.display().to_string(), "--json".into()].into_iter().chain(interp.then(|| "--interp".to_string())).collect::<Vec<_>>(), None, timeout),
+            RecompTarget::Exe => run_json(
+                &art,
+                &[
+                    "--frames".into(),
+                    frames.clone(),
+                    "--out".into(),
+                    out.display().to_string(),
+                    "--json".into(),
+                ]
+                .into_iter()
+                .chain(interp.then(|| "--interp".to_string()))
+                .chain(rc.input.iter().flat_map(|i| ["--input".to_string(), i.clone()]))
+                .collect::<Vec<_>>(),
+                None,
+                timeout,
+            ),
             RecompTarget::Wasm => {
                 let script = vdir.join("run-wasm.ts");
                 let _ = std::fs::write(&script, WASM_RUNNER);
                 match which("bun") {
-                    Some(bun) => run_json(&bun, &[script.display().to_string(), art.display().to_string(), frames.clone(), out.display().to_string(), if *interp { "1".into() } else { "0".into() }], None, timeout),
+                    Some(bun) => run_json(
+                        &bun,
+                        &[
+                            script.display().to_string(),
+                            art.display().to_string(),
+                            frames.clone(),
+                            out.display().to_string(),
+                            if *interp { "1".into() } else { "0".into() },
+                        ],
+                        None,
+                        timeout,
+                    ),
                     None => Err("bun not on PATH (needed to run the wasm module)".into()),
                 }
             }
@@ -450,21 +669,72 @@ pub fn verify(ctx: &mut Ctx) -> StageReport {
         match res {
             Ok(v) => {
                 if !interp {
-                    let native = v.get("native").and_then(serde_json::Value::as_f64).unwrap_or(0.0);
-                    let ratio = v.get("nativeRatio").and_then(serde_json::Value::as_f64).unwrap_or(0.0);
-                    checks.push(Check { name: "translated-code-ran".into(), ok: native > 0.0, detail: format!("{native} instructions executed by translated code ({:.1}% of all)", ratio * 100.0) });
+                    let native = v
+                        .get("native")
+                        .and_then(serde_json::Value::as_f64)
+                        .unwrap_or(0.0);
+                    let ratio = v
+                        .get("nativeRatio")
+                        .and_then(serde_json::Value::as_f64)
+                        .unwrap_or(0.0);
+                    checks.push(Check {
+                        name: "translated-code-ran".into(),
+                        ok: native > 0.0,
+                        detail: format!(
+                            "{native} instructions executed by translated code ({:.1}% of all)",
+                            ratio * 100.0
+                        ),
+                    });
                 }
-                checks.push(Check { name: format!("{name}-runs"), ok: true, detail: v.to_string() });
+                checks.push(Check {
+                    name: format!("{name}-runs"),
+                    ok: true,
+                    detail: v.to_string(),
+                });
                 outputs.insert((*name).into(), v);
             }
-            Err(e) => checks.push(Check { name: format!("{name}-runs"), ok: false, detail: e }),
+            Err(e) => checks.push(Check {
+                name: format!("{name}-runs"),
+                ok: false,
+                detail: e,
+            }),
         }
     }
     let rec = ppm(&vdir.join("recompiled").join("screen0.ppm"));
     let int = ppm(&vdir.join("interpreter").join("screen0.ppm"));
     match (&rec, &int) {
-        (Ok(a), Ok(b)) => checks.push(Check { name: "framebuffer-equals-interpreter-mode".into(), ok: a == b, detail: format!("{} vs {} bytes{}", a.len(), b.len(), if a == b { ", identical" } else { ", DIFFERENT" }) }),
-        _ => checks.push(Check { name: "framebuffer-equals-interpreter-mode".into(), ok: false, detail: "missing screen dump".into() }),
+        (Ok(a), Ok(b)) => checks.push(Check {
+            name: "framebuffer-equals-interpreter-mode".into(),
+            ok: a == b,
+            detail: format!(
+                "{} vs {} bytes{}",
+                a.len(),
+                b.len(),
+                if a == b { ", identical" } else { ", DIFFERENT" }
+            ),
+        }),
+        _ => checks.push(Check {
+            name: "framebuffer-equals-interpreter-mode".into(),
+            ok: false,
+            detail: "missing screen dump".into(),
+        }),
+    }
+    // Console (TTY, debug port) output of the translated run must match the interpreted run.
+    if let (Some(a), Some(b)) = (
+        outputs
+            .get("recompiled")
+            .and_then(|v| v.get("console"))
+            .and_then(serde_json::Value::as_str),
+        outputs
+            .get("interpreter")
+            .and_then(|v| v.get("console"))
+            .and_then(serde_json::Value::as_str),
+    ) {
+        checks.push(Check {
+            name: "console-equals-interpreter-mode".into(),
+            ok: a == b,
+            detail: format!("{} vs {} bytes", a.len(), b.len()),
+        });
     }
     // Reference: the Bun Engine interpreter CLI on the original input.
     let system = match g.machine.as_str() {
@@ -472,34 +742,100 @@ pub fn verify(ctx: &mut Ctx) -> StageReport {
         "psx" => "psx",
         _ => "nes",
     };
-    if let (Some(root), Some(input)) = (ctx.opts.root.clone(), ctx.payload.clone()) {
+    let mut skipped = Vec::new();
+    // `bun-engine run psx` boots media (PS-EXE or disc) on a BIOS; a recompiled BIOS alone has
+    // no media, so only the in-binary interpreter comparison applies.
+    let scripted = rc.input.is_some();
+    let bios_only = g.machine == "psx"
+        && ctx
+            .payload
+            .as_ref()
+            .and_then(|p| std::fs::read(p).ok())
+            .is_some_and(|b| !b.starts_with(b"PS-X EXE"));
+    if scripted {
+        skipped.push(
+            "framebuffer-equals-bun-engine-run: `bun-engine run` has no scripted input".to_string(),
+        );
+    } else if bios_only {
+        skipped.push(
+            "framebuffer-equals-bun-engine-run: `bun-engine run psx` needs a PS-EXE or disc image"
+                .to_string(),
+        );
+    } else if let (Some(root), Some(input)) = (ctx.opts.root.clone(), ctx.payload.clone()) {
         match bun_engine_bin(&root) {
             Some(be) => {
                 let out = vdir.join("bun-engine");
                 let _ = std::fs::create_dir_all(&out);
-                let mut args = vec!["run".to_string(), system.into(), input.display().to_string(), "--headless".into(), "--frames".into(), frames.clone(), "--out".into(), out.display().to_string()];
+                let mut args = vec![
+                    "run".to_string(),
+                    system.into(),
+                    input.display().to_string(),
+                    "--headless".into(),
+                    "--frames".into(),
+                    frames.clone(),
+                    "--out".into(),
+                    out.display().to_string(),
+                ];
                 if let Some(b) = g.bios.as_ref().filter(|b| **b != input) {
                     args.extend(["--bios".into(), b.display().to_string()]);
                 }
                 match run_cmd(&be, &args, None, &[], timeout) {
                     Ok(x) if x.ok() => match (&rec, ppm(&out.join("screen0.ppm"))) {
-                        (Ok(a), Ok(b)) => checks.push(Check { name: "framebuffer-equals-bun-engine-run".into(), ok: *a == b, detail: format!("{} `{}`: {}", be.display(), args.join(" "), if *a == b { "identical" } else { "DIFFERENT" }) }),
-                        (_, Err(e)) => checks.push(Check { name: "framebuffer-equals-bun-engine-run".into(), ok: false, detail: e }),
-                        (Err(e), _) => checks.push(Check { name: "framebuffer-equals-bun-engine-run".into(), ok: false, detail: e.clone() }),
+                        (Ok(a), Ok(b)) => checks.push(Check {
+                            name: "framebuffer-equals-bun-engine-run".into(),
+                            ok: *a == b,
+                            detail: format!(
+                                "{} `{}`: {}",
+                                be.display(),
+                                args.join(" "),
+                                if *a == b { "identical" } else { "DIFFERENT" }
+                            ),
+                        }),
+                        (_, Err(e)) => checks.push(Check {
+                            name: "framebuffer-equals-bun-engine-run".into(),
+                            ok: false,
+                            detail: e,
+                        }),
+                        (Err(e), _) => checks.push(Check {
+                            name: "framebuffer-equals-bun-engine-run".into(),
+                            ok: false,
+                            detail: e.clone(),
+                        }),
                     },
-                    Ok(x) => checks.push(Check { name: "framebuffer-equals-bun-engine-run".into(), ok: false, detail: format!("bun-engine exit {:?}: {}", x.code, tail(&x.stderr, 600)) }),
-                    Err(e) => checks.push(Check { name: "framebuffer-equals-bun-engine-run".into(), ok: false, detail: e }),
+                    Ok(x) => checks.push(Check {
+                        name: "framebuffer-equals-bun-engine-run".into(),
+                        ok: false,
+                        detail: format!("bun-engine exit {:?}: {}", x.code, tail(&x.stderr, 600)),
+                    }),
+                    Err(e) => checks.push(Check {
+                        name: "framebuffer-equals-bun-engine-run".into(),
+                        ok: false,
+                        detail: e,
+                    }),
                 }
             }
-            None => checks.push(Check { name: "framebuffer-equals-bun-engine-run".into(), ok: false, detail: "bun-engine binary not found (BUN_ENGINE_NATIVE or target/{release,debug})".into() }),
+            None => checks.push(Check {
+                name: "framebuffer-equals-bun-engine-run".into(),
+                ok: false,
+                detail: "bun-engine binary not found (BUN_ENGINE_NATIVE or target/{release,debug})"
+                    .into(),
+            }),
         }
     }
     let all = checks.iter().all(|c| c.ok);
     let mut r = report(
         Stage::Verify,
         id,
-        if all { StageStatus::Ok } else { StageStatus::Partial },
-        checks.iter().map(|c| format!("{}={}", c.name, if c.ok { "ok" } else { "FAIL" })).collect::<Vec<_>>().join(", "),
+        if all {
+            StageStatus::Ok
+        } else {
+            StageStatus::Partial
+        },
+        checks
+            .iter()
+            .map(|c| format!("{}={}", c.name, if c.ok { "ok" } else { "FAIL" }))
+            .collect::<Vec<_>>()
+            .join(", "),
     );
     for name in ["recompiled", "interpreter", "bun-engine"] {
         let p = vdir.join(name).join("screen0.ppm");
@@ -507,6 +843,6 @@ pub fn verify(ctx: &mut Ctx) -> StageReport {
             r.artifacts.push(artifact("screen", &p));
         }
     }
-    r.output = serde_json::json!({ "checks": serde_json::to_value(VerifyOutput { checks }).unwrap_or_default()["checks"].clone(), "runs": outputs });
+    r.output = serde_json::json!({ "checks": serde_json::to_value(VerifyOutput { checks }).unwrap_or_default()["checks"].clone(), "runs": outputs, "skipped": skipped });
     r
 }

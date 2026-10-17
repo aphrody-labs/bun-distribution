@@ -4,7 +4,9 @@
 //! the path for ARM/MIPS/PPC/firmware inputs the built-in x86 lifter does not cover.
 
 use super::contract::{Stage, StageReport, StageStatus};
-use super::registry::{AdapterInfo, AdapterKind, AdapterStatus, Ctx, Options, StageAdapter, list_files, report};
+use super::registry::{
+    AdapterInfo, AdapterKind, AdapterStatus, Ctx, Options, StageAdapter, list_files, report,
+};
 use super::util::{run_cmd, tail};
 use std::path::PathBuf;
 use std::time::Duration;
@@ -51,16 +53,31 @@ fn launcher() -> Result<PathBuf, String> {
     let dir = std::env::var_os("GHIDRA_INSTALL_DIR").ok_or("GHIDRA_INSTALL_DIR is not set")?;
     let dir = PathBuf::from(dir);
     if !dir.is_dir() {
-        return Err(format!("GHIDRA_INSTALL_DIR points to missing directory {}", dir.display()));
+        return Err(format!(
+            "GHIDRA_INSTALL_DIR points to missing directory {}",
+            dir.display()
+        ));
     }
-    let name = if cfg!(windows) { "analyzeHeadless.bat" } else { "analyzeHeadless" };
+    let name = if cfg!(windows) {
+        "analyzeHeadless.bat"
+    } else {
+        "analyzeHeadless"
+    };
     let p = dir.join("support").join(name);
-    if p.is_file() { Ok(p) } else { Err(format!("{} not found", p.display())) }
+    if p.is_file() {
+        Ok(p)
+    } else {
+        Err(format!("{} not found", p.display()))
+    }
 }
 
 impl StageAdapter for Ghidra {
     fn id(&self) -> &str {
-        if self.stage == Stage::Analyze { "ghidra-headless" } else { "ghidra-headless-decompile" }
+        if self.stage == Stage::Analyze {
+            "ghidra-headless"
+        } else {
+            "ghidra-headless-decompile"
+        }
     }
 
     fn stage(&self) -> Stage {
@@ -71,7 +88,10 @@ impl StageAdapter for Ghidra {
         let (status, reason) = match launcher() {
             Err(r) => (AdapterStatus::Unavailable, Some(r)),
             Ok(_) if opts.external => (AdapterStatus::Ready, None),
-            Ok(_) => (AdapterStatus::Registered, Some("installed; enable with --external".to_string())),
+            Ok(_) => (
+                AdapterStatus::Registered,
+                Some("installed; enable with --external".to_string()),
+            ),
         };
         AdapterInfo {
             id: self.id().to_string(),
@@ -93,11 +113,21 @@ impl StageAdapter for Ghidra {
         if self.stage == Stage::Decompile {
             return match &ctx.ghidra_out {
                 Some(d) if d.join("decompiled.c").is_file() => {
-                    let mut r = report(self.stage, id, StageStatus::Ok, "decompiled C exported by Ghidra");
+                    let mut r = report(
+                        self.stage,
+                        id,
+                        StageStatus::Ok,
+                        "decompiled C exported by Ghidra",
+                    );
                     r.artifacts = list_files(d, "c");
                     r
                 }
-                _ => report(self.stage, id, StageStatus::Skipped, "Ghidra analysis produced no export"),
+                _ => report(
+                    self.stage,
+                    id,
+                    StageStatus::Skipped,
+                    "Ghidra analysis produced no export",
+                ),
             };
         }
         let launcher = match launcher() {
@@ -135,11 +165,21 @@ impl StageAdapter for Ghidra {
             "-deleteProject".into(),
         ]
         .into();
-        match run_cmd(&launcher, &args, Some(&work), &[], Duration::from_secs(ctx.opts.timeout_secs)) {
+        match run_cmd(
+            &launcher,
+            &args,
+            Some(&work),
+            &[],
+            Duration::from_secs(ctx.opts.timeout_secs),
+        ) {
             Err(e) => report(self.stage, id, StageStatus::Failed, e),
             Ok(r) => {
                 let exported = out.join("decompiled.c").is_file();
-                let status = if r.ok() && exported { StageStatus::Ok } else { StageStatus::Failed };
+                let status = if r.ok() && exported {
+                    StageStatus::Ok
+                } else {
+                    StageStatus::Failed
+                };
                 if exported {
                     ctx.ghidra_out = Some(out.clone());
                 }
@@ -147,7 +187,11 @@ impl StageAdapter for Ghidra {
                     self.stage,
                     id,
                     status,
-                    if r.timed_out { "timed out".to_string() } else { format!("exit {:?}: {}", r.code, tail(&r.stdout, 300)) },
+                    if r.timed_out {
+                        "timed out".to_string()
+                    } else {
+                        format!("exit {:?}: {}", r.code, tail(&r.stdout, 300))
+                    },
                 );
                 rep.artifacts = list_files(&out, "export");
                 rep

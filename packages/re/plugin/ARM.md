@@ -44,6 +44,8 @@ once `$env:GHIDRA_INSTALL_DIR` is set and a fresh shell has been opened.
   - `ctf-solver` — small puzzle binaries
   - `ds-reverse` — Nintendo DS / DSi via NTRGhidra
   - `3ds-reverse` — Nintendo 3DS via Azahar dumps + Ghidra
+  - `bun-engine` — run GBA/NES/PlayStation/DS/Wii/AArch64/x86 images headless on the Bun Engine cores (`bun-engine run`, `bep`)
+  - `static-recompile` — `re recompile`: GBA ARMv4T, PlayStation R3000A and NES 6502 images to native/WebAssembly builds, verified against the interpreter
 
 ## ARM architecture cheatsheet
 

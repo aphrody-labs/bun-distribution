@@ -6,9 +6,9 @@ import { randomUUID } from "node:crypto";
 import { rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { llvmObjdump, mameTool, rizinAsm, runTool } from "../tools";
-import type { Arch } from "../types";
-import { disassemble6502 } from "./m6502";
+import { llvmObjdump, mameTool, rizinAsm, runTool } from "../tools.js";
+import type { Arch } from "../types.js";
+import { disassemble6502 } from "./m6502.js";
 
 export interface DisasmLine {
   address: number;
@@ -23,7 +23,7 @@ export interface DisasmOptions {
   arch: Arch;
   address: number;
   count: number;
-  backend?: Backend;
+  backend?: Backend | undefined;
 }
 
 export interface DisasmResult {
@@ -136,13 +136,13 @@ async function viaUnidasm(
   return result.stdout.split(/\r?\n/).flatMap((line) => {
     const match = /^([0-9a-f]+): (.*)$/i.exec(line);
     if (!match) return [];
-    const split = /\s{2,}/.exec(match[2]);
-    const raw = split ? match[2].slice(0, split.index) : match[2];
+    const split = /\s{2,}/.exec(match[2]!);
+    const raw = split ? match[2]!.slice(0, split.index) : match[2]!;
     const text = split
-      ? match[2].slice(split.index).trim().replace(/\s+/g, " ")
+      ? match[2]!.slice(split.index).trim().replace(/\s+/g, " ")
       : "";
     return [
-      { address: Number.parseInt(match[1], 16), bytes: raw.trim(), text },
+      { address: Number.parseInt(match[1]!, 16), bytes: raw.trim(), text },
     ];
   });
 }
@@ -244,13 +244,17 @@ async function viaLlvm(
       line,
     );
     if (!match) return [];
-    const text = match[3]
+    const text = match[3]!
       .replace(/\s+<\.text[^>]*>/, "")
       .replace(/\s*@.*$/, "")
       .replace(/\s+/g, " ")
       .trim();
     return [
-      { address: Number.parseInt(match[1], 16), bytes: match[2].trim(), text },
+      {
+        address: Number.parseInt(match[1]!, 16),
+        bytes: match[2]!.trim(),
+        text,
+      },
     ];
   });
 }
@@ -276,9 +280,9 @@ async function viaRizin(
     return match
       ? [
           {
-            address: Number.parseInt(match[1], 16),
-            bytes: match[2],
-            text: match[3].trim(),
+            address: Number.parseInt(match[1]!, 16),
+            bytes: match[2]!,
+            text: match[3]!.trim(),
           },
         ]
       : [];

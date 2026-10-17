@@ -166,7 +166,11 @@ fn ridx(name: &str) -> &'static str {
 }
 
 fn mask_lit(bits: u8) -> String {
-    if bits >= 64 { "u64::MAX".into() } else { format!("0x{:x}u64", (1u64 << bits) - 1) }
+    if bits >= 64 {
+        "u64::MAX".into()
+    } else {
+        format!("0x{:x}u64", (1u64 << bits) - 1)
+    }
 }
 
 struct Em<'a> {
@@ -177,20 +181,42 @@ struct Em<'a> {
 
 impl Em<'_> {
     fn addr(&self, op: &Operand) -> String {
-        let Operand::Mem { base, index, scale, disp, .. } = op else { return "0u64".into() };
+        let Operand::Mem {
+            base,
+            index,
+            scale,
+            disp,
+            ..
+        } = op
+        else {
+            return "0u64".into();
+        };
         let mut s = format!("0x{:x}u64", *disp as u64);
         if let Some(b) = base {
             let _ = write!(s, ".wrapping_add(c.r[{}])", ridx(b));
         }
         if let Some(i) = index {
-            let _ = write!(s, ".wrapping_add(c.r[{}].wrapping_mul({}))", ridx(i), scale.max(&1));
+            let _ = write!(
+                s,
+                ".wrapping_add(c.r[{}].wrapping_mul({}))",
+                ridx(i),
+                scale.max(&1)
+            );
         }
-        if self.abits == 32 { format!("({s} & 0xffff_ffffu64)") } else { format!("({s})") }
+        if self.abits == 32 {
+            format!("({s} & 0xffff_ffffu64)")
+        } else {
+            format!("({s})")
+        }
     }
 
     fn rd(&self, op: &Operand, bits: u8) -> String {
         match op {
-            Operand::Reg { name, bits: b, high } => format!("c.get({}, {b}, {high})", ridx(name)),
+            Operand::Reg {
+                name,
+                bits: b,
+                high,
+            } => format!("c.get({}, {b}, {high})", ridx(name)),
             Operand::Imm { value } => format!("(0x{:x}u64 & {})", *value as u64, mask_lit(bits)),
             Operand::Mem { bits: mb, .. } => format!("c.rd({}, {})", self.addr(op), mb / 8),
         }
@@ -198,7 +224,9 @@ impl Em<'_> {
 
     fn wr(&self, op: &Operand, v: &str) -> String {
         match op {
-            Operand::Reg { name, bits, high } => format!("c.set({}, {bits}, {high}, {v});", ridx(name)),
+            Operand::Reg { name, bits, high } => {
+                format!("c.set({}, {bits}, {high}, {v});", ridx(name))
+            }
             Operand::Mem { bits, .. } => format!("c.wr({}, {}, {v});", self.addr(op), bits / 8),
             Operand::Imm { .. } => "/* immediate destination */".into(),
         }
@@ -246,7 +274,12 @@ impl Em<'_> {
                     Ext::Zero => self.wr(dst, &self.rd(src, sb)),
                     Ext::Sign => self.wr(
                         dst,
-                        &format!("((({} << {}) as i64) >> {}) as u64", self.rd(src, sb), 64 - sb, 64 - sb),
+                        &format!(
+                            "((({} << {}) as i64) >> {}) as u64",
+                            self.rd(src, sb),
+                            64 - sb,
+                            64 - sb
+                        ),
                     ),
                 }
             }
@@ -258,8 +291,12 @@ impl Em<'_> {
                 match kind {
                     BinKind::Add | BinKind::Sub | BinKind::And | BinKind::Or | BinKind::Xor => {
                         let (e, fl) = match kind {
-                            BinKind::Add => ("a.wrapping_add(b)", format!("c.fl_add(a, b, r, {d});")),
-                            BinKind::Sub => ("a.wrapping_sub(b)", format!("c.fl_sub(a, b, r, {d});")),
+                            BinKind::Add => {
+                                ("a.wrapping_add(b)", format!("c.fl_add(a, b, r, {d});"))
+                            }
+                            BinKind::Sub => {
+                                ("a.wrapping_sub(b)", format!("c.fl_sub(a, b, r, {d});"))
+                            }
                             BinKind::And => ("a & b", format!("c.fl_logic(r, {d});")),
                             BinKind::Or => ("a | b", format!("c.fl_logic(r, {d});")),
                             _ => ("a ^ b", format!("c.fl_logic(r, {d});")),
@@ -271,7 +308,11 @@ impl Em<'_> {
                         )
                     }
                     BinKind::Mul => {
-                        format!("{{ let a = {av}; let b = {}; let r = a.wrapping_mul(b) & {m}; {} }}", self.rd(src, d), self.wr(dst, "r"))
+                        format!(
+                            "{{ let a = {av}; let b = {}; let r = a.wrapping_mul(b) & {m}; {} }}",
+                            self.rd(src, d),
+                            self.wr(dst, "r")
+                        )
                     }
                     _ => {
                         let cnt = if d == 64 { 63 } else { 31 };
@@ -280,10 +321,16 @@ impl Em<'_> {
                                 format!("(a << n) & {m}"),
                                 format!("c.cf = n <= {d} && (a >> ({d} - n)) & 1 == 1;"),
                             ),
-                            BinKind::Shr => ("a >> n".to_string(), "c.cf = (a >> (n - 1)) & 1 == 1;".to_string()),
+                            BinKind::Shr => (
+                                "a >> n".to_string(),
+                                "c.cf = (a >> (n - 1)) & 1 == 1;".to_string(),
+                            ),
                             _ => (
                                 format!("((((a << {0}) as i64) >> {0}) >> n) as u64 & {m}", 64 - d),
-                                format!("c.cf = ((((a << {0}) as i64) >> {0}) >> (n - 1)) & 1 == 1;", 64 - d),
+                                format!(
+                                    "c.cf = ((((a << {0}) as i64) >> {0}) >> (n - 1)) & 1 == 1;",
+                                    64 - d
+                                ),
                             ),
                         };
                         format!(
@@ -300,17 +347,36 @@ impl Em<'_> {
                 let av = self.rd(dst, d);
                 let body = match kind {
                     UnKind::Inc => {
-                        format!("let r = a.wrapping_add(1) & {m}; c.fl_logic(r, {d}); c.of = r == 1u64 << {};", d - 1)
+                        format!(
+                            "let r = a.wrapping_add(1) & {m}; c.fl_logic(r, {d}); c.of = r == 1u64 << {};",
+                            d - 1
+                        )
                     }
                     UnKind::Dec => {
-                        format!("let r = a.wrapping_sub(1) & {m}; c.fl_logic(r, {d}); c.of = a == 1u64 << {};", d - 1)
+                        format!(
+                            "let r = a.wrapping_sub(1) & {m}; c.fl_logic(r, {d}); c.of = a == 1u64 << {};",
+                            d - 1
+                        )
                     }
-                    UnKind::Neg => format!("let r = 0u64.wrapping_sub(a) & {m}; c.fl_sub(0, a, r, {d});"),
+                    UnKind::Neg => {
+                        format!("let r = 0u64.wrapping_sub(a) & {m}; c.fl_sub(0, a, r, {d});")
+                    }
                     UnKind::Not => format!("let r = !a & {m};"),
                 };
-                let cf_keep = if matches!(kind, UnKind::Inc | UnKind::Dec) { "let cf = c.cf; " } else { "" };
-                let cf_restore = if matches!(kind, UnKind::Inc | UnKind::Dec) { " c.cf = cf;" } else { "" };
-                format!("{{ let a = {av}; {cf_keep}{body}{cf_restore} {} }}", self.wr(dst, "r"))
+                let cf_keep = if matches!(kind, UnKind::Inc | UnKind::Dec) {
+                    "let cf = c.cf; "
+                } else {
+                    ""
+                };
+                let cf_restore = if matches!(kind, UnKind::Inc | UnKind::Dec) {
+                    " c.cf = cf;"
+                } else {
+                    ""
+                };
+                format!(
+                    "{{ let a = {av}; {cf_keep}{body}{cf_restore} {} }}",
+                    self.wr(dst, "r")
+                )
             }
             IrOp::Cmp { a, b } => {
                 let d = w(a);
@@ -323,22 +389,43 @@ impl Em<'_> {
             }
             IrOp::Test { a, b } => {
                 let d = w(a);
-                format!("{{ let r = {} & {}; c.fl_logic(r, {d}); }}", self.rd(a, d), self.rd(b, d))
+                format!(
+                    "{{ let r = {} & {}; c.fl_logic(r, {d}); }}",
+                    self.rd(a, d),
+                    self.rd(b, d)
+                )
             }
-            IrOp::Push { src } => format!("{{ let v = {}; c.push(v, {word}); }}", self.rd(src, self.abits)),
+            IrOp::Push { src } => format!(
+                "{{ let v = {}; c.push(v, {word}); }}",
+                self.rd(src, self.abits)
+            ),
             IrOp::Pop { dst } => format!("{{ let v = c.pop({word}); {} }}", self.wr(dst, "v")),
-            IrOp::Leave => format!("c.r[RSP] = c.r[RBP]; {{ let v = c.pop({word}); c.r[RBP] = v; }}"),
+            IrOp::Leave => {
+                format!("c.r[RSP] = c.r[RBP]; {{ let v = c.pop({word}); c.r[RBP] = v; }}")
+            }
             IrOp::Setcc { cond, dst } => self.wr(dst, &format!("u64::from({})", Self::cond(*cond))),
             IrOp::Cmovcc { cond, dst, src } => {
                 let d = w(dst);
-                self.wr(dst, &format!("if {} {{ {} }} else {{ {} }}", Self::cond(*cond), self.rd(src, d), self.rd(dst, d)))
+                self.wr(
+                    dst,
+                    &format!(
+                        "if {} {{ {} }} else {{ {} }}",
+                        Self::cond(*cond),
+                        self.rd(src, d),
+                        self.rd(dst, d)
+                    ),
+                )
             }
             IrOp::Call { target } => match target {
                 Target::Direct { addr } if self.funcs.contains(addr) => {
                     format!("{{ c.push(0x{next:x}, {word}); sub_{addr:x}(c); }}")
                 }
-                Target::Direct { addr } => format!("{{ c.push(0x{next:x}, {word}); dispatch(c, 0x{addr:x}); }}"),
-                Target::Import { index, name } => format!("c.import({index}); /* {} */", name.replace("*/", "")),
+                Target::Direct { addr } => {
+                    format!("{{ c.push(0x{next:x}, {word}); dispatch(c, 0x{addr:x}); }}")
+                }
+                Target::Import { index, name } => {
+                    format!("c.import({index}); /* {} */", name.replace("*/", ""))
+                }
                 Target::Indirect { operand } => format!(
                     "{{ let t = {}; c.push(0x{next:x}, {word}); dispatch(c, t); }}",
                     self.rd(operand, self.abits)
@@ -347,15 +434,26 @@ impl Em<'_> {
             IrOp::Jmp { target } => match target {
                 Target::Direct { addr } => self.jump(*addr),
                 Target::Import { index, name } => {
-                    format!("{{ c.import({index}); /* {} */ c.r[RSP] = c.r[RSP].wrapping_add({word}); return; }}", name.replace("*/", ""))
+                    format!(
+                        "{{ c.import({index}); /* {} */ c.r[RSP] = c.r[RSP].wrapping_add({word}); return; }}",
+                        name.replace("*/", "")
+                    )
                 }
                 Target::Indirect { operand } => {
-                    format!("{{ let t = {}; dispatch(c, t); return; }}", self.rd(operand, self.abits))
+                    format!(
+                        "{{ let t = {}; dispatch(c, t); return; }}",
+                        self.rd(operand, self.abits)
+                    )
                 }
             },
-            IrOp::Jcc { cond, target } => format!("if {} {}", Self::cond(*cond), self.jump(*target)),
+            IrOp::Jcc { cond, target } => {
+                format!("if {} {}", Self::cond(*cond), self.jump(*target))
+            }
             IrOp::Ret { pop } => {
-                format!("{{ c.r[RSP] = c.r[RSP].wrapping_add({}); return; }}", u32::from(word) + u32::from(*pop))
+                format!(
+                    "{{ c.r[RSP] = c.r[RSP].wrapping_add({}); return; }}",
+                    u32::from(word) + u32::from(*pop)
+                )
             }
             IrOp::Unlifted { .. } | IrOp::Guest(_) => format!("{{ c.trap_at(0x{a:x}); return; }}"),
         };
@@ -375,7 +473,12 @@ impl Em<'_> {
         for b in &f.blocks {
             let _ = writeln!(out, "            0x{:x} => {{", b.addr);
             for ins in &b.insns {
-                let _ = writeln!(out, "                // {:x}: {}", ins.addr, ins.text.replace(['\n', '\r'], " "));
+                let _ = writeln!(
+                    out,
+                    "                // {:x}: {}",
+                    ins.addr,
+                    ins.text.replace(['\n', '\r'], " ")
+                );
                 self.op(ins.addr, ins.addr + u64::from(ins.len), &ins.op, out);
             }
             if let Some(ft) = b.fallthrough {
@@ -383,7 +486,10 @@ impl Em<'_> {
             }
             let _ = writeln!(out, "            }}");
         }
-        let _ = writeln!(out, "            _ => {{ c.trap_at(pc); return; }}\n        }}\n    }}\n}}\n");
+        let _ = writeln!(
+            out,
+            "            _ => {{ c.trap_at(pc); return; }}\n        }}\n    }}\n}}\n"
+        );
     }
 }
 
@@ -397,23 +503,45 @@ pub fn emit_rust(m: &IrModule) -> String {
         s,
         "// Generated by bun-re pipeline (lift). Do not edit.\n#![allow(unused, unreachable_code, clippy::all, non_snake_case)]\n"
     );
-    let _ = writeln!(s, "pub const BITS: u32 = {};\npub const BASE: u64 = 0x{:x};\npub const LIMIT: u64 = 0x{:x};\npub const ENTRY: u64 = 0x{:x};", m.bits, m.image_base, limit, m.entry);
-    let _ = writeln!(s, "/// (virtual address, offset in image.bin, length)\npub const SECTIONS: &[(u64, u64, u64)] = &[");
+    let _ = writeln!(
+        s,
+        "pub const BITS: u32 = {};\npub const BASE: u64 = 0x{:x};\npub const LIMIT: u64 = 0x{:x};\npub const ENTRY: u64 = 0x{:x};",
+        m.bits, m.image_base, limit, m.entry
+    );
+    let _ = writeln!(
+        s,
+        "/// (virtual address, offset in image.bin, length)\npub const SECTIONS: &[(u64, u64, u64)] = &["
+    );
     for sec in &m.sections {
-        let _ = writeln!(s, "    (0x{:x}, 0x{:x}, 0x{:x}),", sec.vaddr, sec.file_offset, sec.file_size);
+        let _ = writeln!(
+            s,
+            "    (0x{:x}, 0x{:x}, 0x{:x}),",
+            sec.vaddr, sec.file_offset, sec.file_size
+        );
     }
     let _ = writeln!(s, "];\npub const IMPORTS: &[&str] = &[");
     for i in &m.imports {
-        let lib = i.lib.as_deref().map(|l| format!("{l}!")).unwrap_or_default();
+        let lib = i
+            .lib
+            .as_deref()
+            .map(|l| format!("{l}!"))
+            .unwrap_or_default();
         let _ = writeln!(s, "    {:?},", format!("{lib}{}", i.name));
     }
     let _ = writeln!(s, "];");
     s.push_str(RUNTIME);
-    let mut em = Em { abits: m.bits, funcs: &funcs, local: BTreeSet::new() };
+    let mut em = Em {
+        abits: m.bits,
+        funcs: &funcs,
+        local: BTreeSet::new(),
+    };
     for f in &m.functions {
         em.func(f, &mut s);
     }
-    let _ = writeln!(s, "pub fn dispatch(c: &mut Cpu, addr: u64) {{\n    match addr {{");
+    let _ = writeln!(
+        s,
+        "pub fn dispatch(c: &mut Cpu, addr: u64) {{\n    match addr {{"
+    );
     for f in &m.functions {
         let _ = writeln!(s, "        0x{0:x} => sub_{0:x}(c),", f.addr);
     }

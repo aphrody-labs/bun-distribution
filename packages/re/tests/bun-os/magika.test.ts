@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { join } from "node:path";
 import { magikaSetupCommand } from "../../src/ml/magika.js";
 
 describe("Magika ML owner", () => {
@@ -7,6 +8,6 @@ describe("Magika ML owner", () => {
     expect(command.slice(0, 3)).toEqual(["bun", "uv", "sync"]);
     expect(command).toContain("--locked");
     expect(command).toContain("--no-dev");
-    expect(command.join(" ")).toContain("crates\\magika\\python");
+    expect(command.join(" ")).toContain(join("vendor", "magika", "python"));
   });
 });

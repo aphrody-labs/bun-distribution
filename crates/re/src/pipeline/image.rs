@@ -94,7 +94,11 @@ impl Image {
     /// Highest mapped address (exclusive).
     #[must_use]
     pub fn end(&self) -> u64 {
-        self.segments.iter().map(|s| s.vaddr + s.vsize.max(s.data.len() as u64)).max().unwrap_or(0)
+        self.segments
+            .iter()
+            .map(|s| s.vaddr + s.vsize.max(s.data.len() as u64))
+            .max()
+            .unwrap_or(0)
     }
 }
 
@@ -107,7 +111,10 @@ fn load_pe(pe: &goblin::pe::PE, bytes: &[u8]) -> Result<Image, String> {
         let raw = s.size_of_raw_data as usize;
         let vsize = u64::from(s.virtual_size.max(s.size_of_raw_data));
         let take = raw.min(vsize as usize);
-        let data = bytes.get(off..off.saturating_add(take)).unwrap_or(&[]).to_vec();
+        let data = bytes
+            .get(off..off.saturating_add(take))
+            .unwrap_or(&[])
+            .to_vec();
         let ch = s.characteristics;
         segments.push(Segment {
             name,
@@ -123,7 +130,10 @@ fn load_pe(pe: &goblin::pe::PE, bytes: &[u8]) -> Result<Image, String> {
     for i in &pe.imports {
         imports.insert(
             base + i.offset as u64,
-            ImportSym { name: i.name.to_string(), lib: Some(i.dll.to_string()) },
+            ImportSym {
+                name: i.name.to_string(),
+                lib: Some(i.dll.to_string()),
+            },
         );
     }
     let mut symbols = BTreeMap::new();
@@ -163,7 +173,10 @@ fn load_elf(elf: &goblin::elf::Elf, bytes: &[u8]) -> Result<Image, String> {
             continue;
         }
         let off = ph.p_offset as usize;
-        let data = bytes.get(off..off.saturating_add(ph.p_filesz as usize)).unwrap_or(&[]).to_vec();
+        let data = bytes
+            .get(off..off.saturating_add(ph.p_filesz as usize))
+            .unwrap_or(&[])
+            .to_vec();
         segments.push(Segment {
             name: format!("load{i}"),
             vaddr: ph.p_vaddr,
@@ -179,7 +192,13 @@ fn load_elf(elf: &goblin::elf::Elf, bytes: &[u8]) -> Result<Image, String> {
     let names: Vec<String> = elf
         .pltrelocs
         .iter()
-        .map(|r| elf.dynsyms.get(r.r_sym).and_then(|s| elf.dynstrtab.get_at(s.st_name)).unwrap_or("?").to_string())
+        .map(|r| {
+            elf.dynsyms
+                .get(r.r_sym)
+                .and_then(|s| elf.dynstrtab.get_at(s.st_name))
+                .unwrap_or("?")
+                .to_string()
+        })
         .collect();
     for sh in &elf.section_headers {
         let sname = elf.shdr_strtab.get_at(sh.sh_name).unwrap_or("");
@@ -196,7 +215,13 @@ fn load_elf(elf: &goblin::elf::Elf, bytes: &[u8]) -> Result<Image, String> {
                 continue;
             }
             if let Some(name) = names.get(idx) {
-                imports.insert(sh.sh_addr + k * ent, ImportSym { name: name.clone(), lib: None });
+                imports.insert(
+                    sh.sh_addr + k * ent,
+                    ImportSym {
+                        name: name.clone(),
+                        lib: None,
+                    },
+                );
             }
         }
     }
@@ -213,7 +238,9 @@ fn load_elf(elf: &goblin::elf::Elf, bytes: &[u8]) -> Result<Image, String> {
                 .or_else(|| elf.dynstrtab.get_at(s.st_name))
                 .unwrap_or("");
             if !name.is_empty() {
-                symbols.entry(s.st_value).or_insert_with(|| name.to_string());
+                symbols
+                    .entry(s.st_value)
+                    .or_insert_with(|| name.to_string());
             }
         }
     }

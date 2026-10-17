@@ -1,6 +1,6 @@
 // Built-in MOS 6502 / Ricoh 2A03 disassembler (official opcodes); used when MAME's unidasm is
 // not installed so NES images stay disassemblable from the single-file executable.
-import type { DisasmLine } from "./index";
+import type { DisasmLine } from "./index.js";
 
 type Mode =
   | "imp"
@@ -55,7 +55,7 @@ f0 beq rel|f1 sbc izy|f5 sbc zpx|f6 inc zpx|f8 sed imp|f9 sbc aby|fd sbc abx|fe 
 const opcodes = new Map<number, [string, Mode]>();
 for (const entry of table.split(/[|\n]/)) {
   const [code, mnemonic, mode] = entry.trim().split(" ");
-  if (code) opcodes.set(Number.parseInt(code, 16), [mnemonic, mode as Mode]);
+  if (code) opcodes.set(Number.parseInt(code, 16), [mnemonic!, mode as Mode]);
 }
 
 const h2 = (value: number) => value.toString(16).padStart(2, "0");
@@ -107,12 +107,12 @@ export function disassemble6502(
   const lines: DisasmLine[] = [];
   for (let at = 0; at < bytes.byteLength && lines.length < count;) {
     const pc = (address + at) & 0xffff;
-    const known = opcodes.get(bytes[at]);
+    const known = opcodes.get(bytes[at]!);
     const length = known ? lengths[known[1]] : 1;
     if (at + length > bytes.byteLength) break;
     const text = known
       ? `${known[0]} ${operand(known[1], bytes, at, pc)}`.trim()
-      : `.db $${h2(bytes[at])}`;
+      : `.db $${h2(bytes[at]!)}`;
     lines.push({
       address: pc,
       bytes: Array.from(bytes.subarray(at, at + length), h2).join(" "),

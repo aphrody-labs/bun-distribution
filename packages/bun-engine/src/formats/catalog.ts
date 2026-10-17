@@ -2,12 +2,12 @@
 // (magic bytes, owners and specs of 79 formats) and `firmware.json` (publicly documented
 // BIOS/firmware hashes and free replacements). Both are optional at runtime.
 import { extname, join } from "node:path";
-import type { StreamDigest } from "./stream";
-import { workspaceRoot } from "./tools";
+import type { StreamDigest } from "./stream.js";
+import { workspaceRoot } from "./tools.js";
 
 interface CatalogMagic {
   offset: string;
-  hex?: string;
+  hex?: string | undefined;
 }
 
 interface CatalogFormat {
@@ -15,32 +15,32 @@ interface CatalogFormat {
   consoles: string[];
   extensions: string[];
   kind: string;
-  magic?: CatalogMagic[];
+  magic?: CatalogMagic[] | undefined;
   parsers?: Array<{ path: string; scope: string }>;
-  status?: string;
-  spec?: string[];
+  status?: string | undefined;
+  spec?: string[] | undefined;
 }
 
 interface CatalogFirmware {
   file: string;
-  size?: number;
-  crc32?: string;
-  sha1?: string;
-  md5?: string;
-  region?: string;
-  role?: string;
-  need?: string;
+  size?: number | undefined;
+  crc32?: string | undefined;
+  sha1?: string | undefined;
+  md5?: string | undefined;
+  region?: string | undefined;
+  role?: string | undefined;
+  need?: string | undefined;
 }
 
 interface CatalogConsole {
   id: string;
   name: string;
-  firmware?: CatalogFirmware[];
+  firmware?: CatalogFirmware[] | undefined;
   freeReplacements?: Array<{
     id: string;
     name: string;
-    license?: string;
-    replaces?: string[];
+    license?: string | undefined;
+    replaces?: string[] | undefined;
     vendored?: { state?: string; path?: string };
   }>;
 }
@@ -49,7 +49,7 @@ export interface CatalogMatch {
   id: string;
   kind: string;
   consoles: string[];
-  status?: string;
+  status?: string | undefined;
   owners: string[];
   spec: string[];
 }
@@ -57,11 +57,11 @@ export interface CatalogMatch {
 export interface FirmwareMatch {
   console: string;
   file: string;
-  region?: string;
-  role?: string;
-  need?: string;
-  license?: string;
-  free?: boolean;
+  region?: string | undefined;
+  role?: string | undefined;
+  need?: string | undefined;
+  license?: string | undefined;
+  free?: boolean | undefined;
 }
 
 const cache = new Map<string, Promise<unknown>>();
@@ -140,7 +140,8 @@ export async function catalogFormats(
   }));
 }
 
-/** firmware.json dumps (documented CRC-32/MD5/SHA-1) and vendored free replacements (SHA-1). */
+/** firmware.json dumps (documented CRC-32/MD5/SHA-1), vendored free replacements (SHA-1) and the
+ * free-firmware.json registry (SHA-256). */
 export async function catalogFirmware(
   digest: StreamDigest,
 ): Promise<FirmwareMatch[]> {
@@ -177,6 +178,29 @@ export async function catalogFirmware(
         });
       }
     }
+  }
+  // free-firmware.json: the open-source BIOS registry of `bep add free-firmware` (SHA-256).
+  const registry =
+    (
+      await catalog<{
+        firmware: Record<
+          string,
+          { console: string; file: string; sha256?: string; license?: string }
+        >;
+      }>("free-firmware.json")
+    )?.firmware ?? {};
+  for (const [id, entry] of Object.entries(registry)) {
+    if (
+      entry.sha256 === digest.sha256 &&
+      !known.some((match) => match.free && match.console === entry.console)
+    )
+      known.push({
+        console: entry.console,
+        file: `${id} (${entry.file})`,
+        role: "free replacement (free-firmware.json)",
+        license: entry.license,
+        free: true,
+      });
   }
   return known;
 }

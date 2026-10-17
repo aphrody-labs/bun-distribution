@@ -2201,7 +2201,7 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Opérations Steam — mêmes noms et mêmes variables d'environnement que la sous-commande `bunre steam`,
+/// Opérations Steam — mêmes noms et mêmes variables d'environnement que le binaire `bun-steam-depot`,
 /// dont c'est la façade en process.
 #[derive(Subcommand, Debug)]
 enum SteamOp {
@@ -2234,7 +2234,7 @@ enum SteamOp {
 
 /// Options partagées par les trois opérations Steam.
 ///
-/// Les noms de variables d'environnement sont ceux de `bunre steam` et de `scripts/tools/data/sync-gamedata.ts`
+/// Les noms de variables d'environnement sont ceux de `bun-steam-depot` et de `scripts/tools/data/sync-gamedata.ts`
 /// : les changer casserait les appelants existants.
 #[derive(clap::Args, Debug, Clone)]
 struct SteamCommun {
@@ -2275,11 +2275,11 @@ struct SteamCommun {
 
 /// Exécute une opération Steam.
 ///
-/// L'API de `aphrody_re::steam` est asynchrone alors que la CLI ne l'est pas : on monte un runtime le
+/// L'API de `bun_steam::depot` est asynchrone alors que la CLI ne l'est pas : on monte un runtime le
 /// temps de l'appel plutôt que de teinter tout `main` en `async` pour trois sous-commandes.
 fn steam_cmd(op: SteamOp) -> anyhow::Result<()> {
-    use aphrody_re::steam::options::SteamDownloadOptions;
-    use aphrody_re::steam::{IEVR_STEAM_APP_ID, downloader::SteamDepotDownloader};
+    use bun_steam::depot::options::SteamDownloadOptions;
+    use bun_steam::{IEVR_STEAM_APP_ID, depot::downloader::SteamDepotDownloader};
 
     let (app_id, out, c) = match &op {
         SteamOp::List { app_id, commun } => {
@@ -2306,11 +2306,11 @@ fn steam_cmd(op: SteamOp) -> anyhow::Result<()> {
         max_downloads: c.max_downloads,
         verify: !c.no_verify,
         token_store_path: Some(
-            c.token_store.clone().unwrap_or_else(aphrody_re::steam::token_store::default_path),
+            c.token_store.clone().unwrap_or_else(bun_steam::depot::token_store::default_path),
         ),
         guard_provider: None,
         // Garde anti-blocage : un depot muet est interrompu au lieu de dormir
-        // indéfiniment (cf. aphrody_re::steam::options::SteamDownloadOptions::stall_timeout).
+        // indéfiniment (cf. bun_steam::depot::options::SteamDownloadOptions::stall_timeout).
         stall_timeout: Some(std::time::Duration::from_secs(300)),
         transfer: Default::default(),
     };

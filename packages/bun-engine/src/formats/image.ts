@@ -2,13 +2,13 @@
 // lazy accessors (bytes, streams, digests, files, disassembly). Nothing beyond the header and the
 // format tables is read until an accessor asks for it.
 import { basename, resolve } from "node:path";
-import { detect } from "./detect";
+import { detect } from "./detect.js";
 import {
   disassembleBytes,
   maxInstructionBytes,
   type Backend,
   type DisasmResult,
-} from "./disasm";
+} from "./disasm/index.js";
 import {
   parsePsxExe,
   parseCdImage,
@@ -16,7 +16,7 @@ import {
   parseCue,
   parsePbp,
   cdFiles,
-} from "./parsers/playstation";
+} from "./parsers/playstation.js";
 import {
   exefsFiles,
   parseNcch,
@@ -25,9 +25,9 @@ import {
   parseNsp,
   parseXci,
   partitionFs,
-} from "./parsers/ctr-switch";
-import { parseElf } from "./parsers/elf";
-import { biosParser } from "./parsers/firmware";
+} from "./parsers/ctr-switch.js";
+import { parseElf } from "./parsers/elf.js";
+import { biosParser } from "./parsers/firmware.js";
 import {
   ndsFiles,
   parseFds,
@@ -35,8 +35,8 @@ import {
   parseGba,
   parseNds,
   parseNes,
-} from "./parsers/handheld";
-import { parseGenesis } from "./parsers/sega";
+} from "./parsers/handheld.js";
+import { parseGenesis } from "./parsers/sega.js";
 import {
   gameCubeFiles,
   parseDisc,
@@ -45,13 +45,13 @@ import {
   parseWbfs,
   parseWia,
   toZ64,
-} from "./parsers/home";
+} from "./parsers/home.js";
 import {
   BinarySource,
   digestSource,
   type Chunk,
   type StreamDigest,
-} from "./stream";
+} from "./stream.js";
 import type {
   Arch,
   Detection,
@@ -60,7 +60,7 @@ import type {
   FormatParser,
   ParsedImage,
   Section,
-} from "./types";
+} from "./types.js";
 
 const parsers: Record<FormatId, FormatParser | undefined> = {
   nes: parseNes,
@@ -99,17 +99,17 @@ const parsers: Record<FormatId, FormatParser | undefined> = {
 
 export interface OpenOptions {
   /** Ask Magika for a content type even when the bytes already matched. */
-  magika?: boolean;
+  magika?: boolean | undefined;
 }
 
 export interface ImageDisasmOptions {
-  arch?: Arch;
+  arch?: Arch | undefined;
   /** Guest address; defaults to the entry point. */
-  at?: number;
+  at?: number | undefined;
   /** File offset, used instead of `at` for raw windows. */
-  offset?: number;
-  count?: number;
-  backend?: Backend;
+  offset?: number | undefined;
+  count?: number | undefined;
+  backend?: Backend | undefined;
 }
 
 export interface ImageSummary<H extends object = Record<string, unknown>> {
@@ -119,8 +119,8 @@ export interface ImageSummary<H extends object = Record<string, unknown>> {
   format: FormatId;
   platform: string;
   detection: Detection;
-  arch?: Arch;
-  entry?: number;
+  arch?: Arch | undefined;
+  entry?: number | undefined;
   header: H;
   sections: Section[];
   owners: string[];
@@ -135,8 +135,8 @@ export class BinaryImage<
   readonly format: FormatId;
   readonly platform: string;
   readonly detection: Detection;
-  readonly arch?: Arch;
-  readonly entry?: number;
+  readonly arch?: Arch | undefined;
+  readonly entry?: number | undefined;
   readonly header: H;
   readonly sections: Section[];
   readonly owners: string[];
@@ -272,7 +272,7 @@ export class BinaryImage<
 
   async disasm(
     options: ImageDisasmOptions = {},
-  ): Promise<DisasmResult & { offset: number; section?: string }> {
+  ): Promise<DisasmResult & { offset: number; section?: string | undefined }> {
     const count = Math.max(1, Math.min(options.count ?? 16, 4096));
     let offset: number;
     let address: number;

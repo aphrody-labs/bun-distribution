@@ -3,8 +3,13 @@
 // CHD hunks stay with MAME's `chdman` (usr/lib/mame, installed by bep) for extraction.
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { BinarySource, BinaryView, hex32 } from "../stream";
-import type { FileEntry, ParseContext, ParsedImage, Section } from "../types";
+import { BinarySource, BinaryView, hex32 } from "../stream.js";
+import type {
+  FileEntry,
+  ParseContext,
+  ParsedImage,
+  Section,
+} from "../types.js";
 
 export const cdSync = [
   0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00,
@@ -165,8 +170,8 @@ export async function parseCdImage({
       }),
     );
     if (boot) {
-      const ps2 = boot[1].toUpperCase() === "BOOT2";
-      const bootName = boot[2].replace(/^\\/, "").toUpperCase();
+      const ps2 = boot[1]!.toUpperCase() === "BOOT2";
+      const bootName = boot[2]!.replace(/^\\/, "").toUpperCase();
       header.platform = ps2 ? "PlayStation 2" : "PlayStation";
       header.boot = bootName;
       header.serial = bootName
@@ -233,32 +238,32 @@ export async function parseCue({
     name: string;
     type: string;
     exists: boolean;
-    bytes?: number;
+    bytes?: number | undefined;
   }> = [];
   const tracks: Array<{
     number: number;
     type: string;
     file: string;
-    index01?: string;
-    sector?: number;
+    index01?: string | undefined;
+    sector?: number | undefined;
   }> = [];
   for (const line of text.split(/\r?\n/)) {
     const file = /^\s*FILE\s+"?(.+?)"?\s+(\w+)\s*$/i.exec(line);
     const track = /^\s*TRACK\s+(\d+)\s+(\S+)/i.exec(line);
     const index = /^\s*INDEX\s+01\s+(\d+):(\d+):(\d+)/i.exec(line);
     if (file) {
-      const full = resolve(base, file[1]);
+      const full = resolve(base, file[1]!);
       const exists = existsSync(full);
       files.push({
-        name: file[1],
-        type: file[2],
+        name: file[1]!,
+        type: file[2]!,
         exists,
         bytes: exists ? Bun.file(full).size : undefined,
       });
     } else if (track)
       tracks.push({
-        number: Number(track[1]),
-        type: track[2].toUpperCase(),
+        number: Number(track[1]!),
+        type: track[2]!.toUpperCase(),
         file: files.at(-1)?.name ?? "",
       });
     else if (index && tracks.length) {
@@ -393,11 +398,11 @@ export async function parsePbp({
   const offsets = names.map((_, index) => view.u32(8 + index * 4));
   const sections: Section[] = names.map((name, index) => ({
     name,
-    offset: offsets[index],
-    size: (offsets[index + 1] ?? source.size) - offsets[index],
+    offset: offsets[index]!,
+    size: (offsets[index + 1] ?? source.size) - offsets[index]!,
     kind: name.startsWith("DATA") ? "data" : "metadata",
   }));
-  const sfoSection = sections[0];
+  const sfoSection = sections[0]!;
   const sfo = await source.view(sfoSection.offset, sfoSection.size);
   const param: Record<string, string | number> = {};
   if (sfo.equals(0, "\0PSF")) {

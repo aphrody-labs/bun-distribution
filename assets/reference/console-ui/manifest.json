@@ -1,0 +1,49 @@
+{
+  "$comment": "Design references for the Bun OS console shell and play.aphrody.app: official system-UI captures, linked only. These images are copyrighted (editorial/press use or Wikipedia fair use), so the repository versions this index but not the binaries. Surveyed 2026-10-17 with HTTP HEAD and range reads.",
+  "schemaVersion": 1,
+  "licenses": {
+    "ED": "Editorial/press use, all rights reserved by the platform owner",
+    "FU": "Wikipedia non-free fair-use file",
+    "NL": "No license stated, publisher rights",
+    "LIB": "Free license (Wikimedia Commons)"
+  },
+  "consoles": {
+    "ps5": [
+      { "what": "Home screen", "page": "https://blog.playstation.com/2020/10/15/first-look-playstation-5s-next-generation-user-experience/", "image": "https://live.staticflickr.com/65535/50488968796_ed2467ee10_o.png", "width": 3840, "height": 2160, "bytes": 11907439, "license": "ED", "date": "2020-10-15" },
+      { "what": "Activities / cards", "page": "https://www.flickr.com/photos/playstationblog/albums/72157716449475683", "image": "https://live.staticflickr.com/65535/50488259263_76fa007670_o.png", "width": 3840, "height": 2160, "bytes": 10123470, "license": "ED", "date": "2020-10-15" },
+      { "what": "Control Center / Game Base (2021 update)", "page": "https://blog.playstation.com/2021/09/14/ps5s-september-system-software-update-launches-globally-tomorrow/", "image": "https://blog.playstation.com/tachyon/2021/09/51469696886_9cb9e251a5_o-scaled.jpg", "width": 2560, "height": 1440, "license": "ED", "date": "2021-09" },
+      { "what": "Welcome hub", "page": "https://blog.playstation.com/2024/09/12/ps5-system-update-adds-welcome-hub-party-share-personalized-3d-audio-profiles-adaptive-controller-charging-and-more/", "image": "https://live.staticflickr.com/65535/53988783639_6c1de88363_h.jpg", "width": 1600, "height": 900, "bytes": 237453, "license": "ED", "version": "24.06-10.00.00" },
+      { "what": "Classic console themes", "page": "https://blog.playstation.com/2025/04/23/new-ps5-system-software-update-features-audio-focus-and-the-return-of-the-classic-console-ui-customizations/", "image": "https://blog.playstation.com/tachyon/2025/04/ad2349a4d50fff0ea8f5b588c78b175f4a950b3e.jpg", "width": 1920, "height": 1080, "license": "ED", "date": "2025-04-23" }
+    ],
+    "xbox-series": [
+      { "what": "Home (top of Home hero)", "page": "https://news.xbox.com/en-us/2023/07/26/welcome-to-your-new-xbox-home/", "image": "https://news.xbox.com/en-us/wp-content/uploads/sites/2/2023/07/01_Top-of-Home_Hero-d0abc3e44819903010b2.jpg", "width": 1920, "height": 1080, "license": "ED", "date": "2023-07-26", "note": "behind Cloudflare bot management; open in a browser" },
+      { "what": "My favorites row", "page": "https://news.xbox.com/en-us/2023/07/26/welcome-to-your-new-xbox-home/", "image": "https://news.xbox.com/en-us/wp-content/uploads/sites/2/2023/07/02_My-favorites-f9e0eacb5576c0f13294.jpg", "width": 1920, "height": 1080, "license": "ED", "date": "2023-07" },
+      { "what": "Friends and community", "page": "https://news.xbox.com/en-us/2023/07/26/welcome-to-your-new-xbox-home/", "image": "https://news.xbox.com/en-us/wp-content/uploads/sites/2/2023/07/03_Friends-Community-Updates-5edf483b7a31fb312e55.jpg", "width": 1920, "height": 1080, "license": "ED", "date": "2023-07" }
+    ],
+    "steamos": [
+      { "what": "Library (gaming mode)", "page": "https://www.steamdeck.com/en/software", "image": "https://cdn.fastly.steamstatic.com/steamdeck/images/ver2/software_library_english.jpg", "width": 1280, "height": 800, "bytes": 222876, "license": "ED" },
+      { "what": "Quick Access Menu", "page": "https://www.steamdeck.com/en/software", "image": "https://cdn.fastly.steamstatic.com/steamdeck/images/ver2/software_quickaccess.jpg", "width": 1280, "height": 800, "bytes": 70603, "license": "ED" },
+      { "what": "Quick Access Menu (SteamOS 3.2)", "page": "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/4437747060827905309", "image": "https://clan.akamai.steamstatic.com/images/40893422/e49e932f55240ccb79e7d560e39d3a9166d66d80.png", "width": 1280, "height": 800, "bytes": 906708, "license": "ED", "date": "2022-05-27" },
+      { "what": "Lock screen", "page": "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/4348797798091500267", "image": "https://clan.akamai.steamstatic.com/images/40893422/9d5c89372b3d55a7910c158de34c7768f658f735.jpg", "width": 1280, "height": 800, "bytes": 56685, "license": "ED", "date": "2022-04-26" }
+    ],
+    "switch": [
+      { "what": "Switch 2 HOME Menu", "page": "https://en-americas-support.nintendo.com/app/answers/detail/a_id/68181", "image": "https://csassets.nintendo.com/noaext/image/private/f_auto/q_auto/t_KA_default/bee-nso-home-ss-en?_a=DATAg1AAZAA0", "width": 1000, "height": 563, "bytes": 46851, "license": "NL" },
+      { "what": "Switch HOME Menu", "page": "https://en-americas-support.nintendo.com/app/answers/detail/a_id/22308", "image": "https://csassets.nintendo.com/noaext/image/private/f_auto/q_auto/t_KA_default/hac-screenshot-homemenu-userpage-nso-highlighted?_a=DATAg1AAZAA0", "width": 1000, "height": 563, "bytes": 250720, "license": "NL" }
+    ],
+    "wii-u": [
+      { "what": "Wii U Menu / Quick Start", "page": "https://www.nintendo.com/en-gb/Support/Legacy-system/Quick-Start-screen-890388.html", "image": "https://www.nintendo.com/eu/media/images/08_content_images/support_6/wii_u_5/CI16_WiiUQuickStartMenu_GB.png", "width": 1216, "height": 644, "bytes": 588217, "license": "NL", "version": "5.0.0+" },
+      { "what": "Wii U Menu", "page": "https://en.wikipedia.org/wiki/File:Wii_U_Menu_screenshot.jpg", "image": "https://upload.wikimedia.org/wikipedia/en/d/d0/Wii_U_Menu_screenshot.jpg", "width": 421, "height": 236, "license": "FU" }
+    ],
+    "3ds": [
+      { "what": "HOME Menu (both screens)", "page": "https://en.wikipedia.org/wiki/File:Nintendo_3DS_Home_Menu.jpg", "image": "https://upload.wikimedia.org/wikipedia/en/9/9a/Nintendo_3DS_Home_Menu.jpg", "width": 286, "height": 349, "license": "FU", "version": "9.3.0-21" },
+      { "what": "Bottom screen folder", "page": "https://en-americas-support.nintendo.com/app/answers/detail/a_id/183", "image": "https://csassets.nintendo.com/noaext/image/private/f_auto/q_auto/t_KA_default/ss-3ds-dual-foldercreate-320x388?_a=DATAg1AAZAA0", "width": 320, "height": 388, "license": "NL" }
+    ],
+    "wii": [
+      { "what": "HOME button menu (Dolphin HD capture)", "page": "https://wiibrew.org/wiki/File:HOMEMenu3Btn.png", "image": "https://wiibrew.org/w/images/2/2f/HOMEMenu3Btn.png", "width": 3040, "height": 1664, "bytes": 593935, "license": "NL" },
+      { "what": "Wii Menu", "page": "https://wiibrew.org/wiki/File:Bg4545_Wii_menu.png", "image": "https://wiibrew.org/w/images/6/69/Bg4545_Wii_menu.png", "width": 815, "height": 456, "bytes": 456226, "license": "NL" }
+    ],
+    "ds": [
+      { "what": "DSi Menu (native, both screens)", "page": "https://en.wikipedia.org/wiki/File:Nintendo_DSi_Home_Menu.png", "image": "https://upload.wikimedia.org/wikipedia/en/b/b2/Nintendo_DSi_Home_Menu.png", "width": 256, "height": 384, "license": "FU" }
+    ]
+  }
+}

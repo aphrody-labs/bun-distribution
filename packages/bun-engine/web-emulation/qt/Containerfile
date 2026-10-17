@@ -1,0 +1,64 @@
+# syntax=docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
+# Reproducible Emscripten + Qt 6 for WebAssembly toolchain for the Qt emulator front ends of
+# Bun Engine (melonDS first). Every input is pinned: the base image by digest, Ubuntu packages
+# through a dated snapshot, Python tools by version, Qt by release, third-party sources by
+# commit (verified after checkout). The digests are recorded in ../web-emulation.lock.json.
+#
+# Build (from the repository root, on the workstation, never on the VPS):
+#   docker build -f packages/bun-engine/web-emulation/qt/Containerfile \
+#     -t bun-os/qt-wasm:6.12.0-emsdk5.0.5 packages/bun-engine/web-emulation/qt
+
+ARG EMSDK_IMAGE=emscripten/emsdk:5.0.5@sha256:cc4dcb4ca57cb35858b7fbb606c0ee857051d9f76b452f7fcfc3d8159dae670c
+FROM ${EMSDK_IMAGE} AS toolchain
+
+ARG UBUNTU_SNAPSHOT=20261015T000000Z
+ARG QT_VERSION=6.12.0
+ARG AQTINSTALL_VERSION=3.3.0
+ARG NINJA_VERSION=1.13.0
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    SOURCE_DATE_EPOCH=1760659200
+
+# Ubuntu packages from a dated snapshot, so a rebuild resolves the same versions.
+RUN apt-get update --snapshot "${UBUNTU_SNAPSHOT}" \
+ && apt-get install -y --no-install-recommends --snapshot "${UBUNTU_SNAPSHOT}" \
+      pkg-config p7zip-full xz-utils patch libglib2.0-dev-bin \
+      libgl1 libegl1 libfontconfig1 libxkbcommon0 libdbus-1-3 \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install --break-system-packages "aqtinstall==${AQTINSTALL_VERSION}" "ninja==${NINJA_VERSION}"
+
+# Qt for WebAssembly (single- and multi-threaded) plus the matching Linux host Qt that provides
+# moc/rcc/uic and the CMake host tooling (QT_HOST_PATH). Qt 6.12 ships Qt Multimedia for the
+# multi-threaded kit only. aqt verifies every archive against the SHA-256 published by the Qt
+# repository.
+RUN aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 -m qtmultimedia qtshadertools --outputdir /opt/qt \
+ && aqt install-qt all_os wasm "${QT_VERSION}" wasm_multithread -m qtmultimedia qtshadertools --outputdir /opt/qt \
+ && aqt install-qt all_os wasm "${QT_VERSION}" wasm_singlethread -m qtshadertools --outputdir /opt/qt \
+ && rm -rf /opt/qt/*.log /root/.local/share/aqt
+ENV QT_HOST_PATH=/opt/qt/${QT_VERSION}/gcc_64 \
+    QT_WASM_MT=/opt/qt/${QT_VERSION}/wasm_multithread \
+    QT_WASM_ST=/opt/qt/${QT_VERSION}/wasm_singlethread
+
+# Emscripten ports used by the front ends, prebuilt into the cache for both thread models.
+RUN embuilder build sdl2 sdl2-mt zlib bzip2
+
+COPY fetch-git.sh build-deps.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/fetch-git.sh /usr/local/bin/build-deps.sh
+
+# Third-party libraries the Qt front ends link (pinned by commit), built for both thread models.
+FROM toolchain AS deps
+RUN fetch-git.sh https://github.com/facebook/zstd f8745da6ff1ad1e7bab384bd1f9d742439278e99 /src/zstd \
+ && fetch-git.sh https://github.com/libarchive/libarchive 27cbc7827172698143e440801fc0ba39ccb4f1f5 /src/libarchive \
+ && fetch-git.sh https://github.com/knik0/faad2 e8e76f0a44db45aed773a3f62fe35a63c867a738 /src/faad2 \
+ && fetch-git.sh https://github.com/lsalzman/enet 2662c0de09e36f2a2030ccc2c528a3e4c9e8138a /src/enet
+RUN build-deps.sh mt /opt/wasm-deps/mt && build-deps.sh st /opt/wasm-deps/st
+
+FROM deps AS final
+COPY build-melonds.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/build-melonds.sh
+ENV WASM_DEPS_MT=/opt/wasm-deps/mt \
+    WASM_DEPS_ST=/opt/wasm-deps/st
+WORKDIR /work

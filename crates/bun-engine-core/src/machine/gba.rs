@@ -48,6 +48,14 @@ impl Machine for Gba {
         *self.gba.get_key_state_mut() = !(input.keys as u16) & 0x3ff;
     }
 
+    fn save_state(&mut self) -> Option<Vec<u8>> {
+        self.gba.save_state().ok()
+    }
+
+    fn load_state(&mut self, state: &[u8]) -> Result<(), String> {
+        self.gba.restore_state(state).map_err(|e| format!("GBA state: {e}"))
+    }
+
     fn screens(&self) -> Vec<Screen> {
         let rgb = self
             .gba
@@ -55,6 +63,10 @@ impl Machine for Gba {
             .iter()
             .flat_map(|px| [(px >> 16) as u8, (px >> 8) as u8, *px as u8])
             .collect();
-        vec![Screen { width: 240, height: 160, rgb }]
+        vec![Screen {
+            width: 240,
+            height: 160,
+            rgb,
+        }]
     }
 }

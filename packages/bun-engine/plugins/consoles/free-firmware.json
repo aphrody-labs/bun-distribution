@@ -6,6 +6,8 @@
       "console": "sony-playstation",
       "file": "openbios.bin",
       "url": "https://www.mirrorservice.org/sites/libreboot.org/release/stable/26.10/roms/playstation/openbios.bin",
+      "size": 524288,
+      "sha256": "da0bf3d3e0bf75d4bea49c037f9d0639d75c3ff4a569659965e04b9809b707c5",
       "sha512": "4037a9569f57d0a88818f311efeb088fedd556f38593fc4e3c551112b47f99ca8b06fc8c5ca4c600e4457681bff3b9988411507c8c84f9befd05cc885f846e1e",
       "license": "MIT (PCSX-Redux OpenBIOS, built by Libreboot 26.10)",
       "source": "https://github.com/grumpycoders/pcsx-redux/tree/main/src/mips/openbios",
@@ -18,6 +20,9 @@
       "console": "nintendo-game-boy-advance",
       "file": "normatt_gba_bios.bin",
       "path": "vendor/rustboyadvance-ng/core/benches/roms/normatt_gba_bios.bin",
+      "size": 16384,
+      "sha256": "661a9afb93624f2c5e77d07dab137bd8d23cff79e8639c62fe621b49bb064749",
+      "sha512": "96207334b661f9b09302da4128afce8d4e72632c935a244d80bbdd5e9673528bb3e406840579f061b64b0f16a258d85c199e1dbb0605d525890f2f2acd22a4f6",
       "license": "Normmatt's open-source GBA BIOS replacement, vendored by RustBoyAdvance-NG",
       "source": "https://github.com/Nebuleon/ReGBA/tree/master/bios"
     }

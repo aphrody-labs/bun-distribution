@@ -1500,7 +1500,7 @@ fn cmd_window(rgba: &[u8], width: u32, height: u32, max_frames: u32) -> Result<(
 }
 
 fn run_bevy_window(host: AppFenetre, title: &str) -> Result<()> {
-    use aphrody_bevy::{
+    use bevy::{
         app::{PluginGroup, Startup, Update},
         prelude::{App, DefaultPlugins, Window, WindowPlugin},
         winit::WinitSettings,
@@ -1535,19 +1535,19 @@ struct AppFenetre {
     tex_height: u32,
     max_frames: u32,
     frames_rendues: u32,
-    image: Option<aphrody_bevy::asset::Handle<aphrody_bevy::image::Image>>,
+    image: Option<bevy::asset::Handle<bevy::image::Image>>,
     /// Présent en mode `--play` : la FSM et le VFS appartiennent à ce front, le rendu est Bevy.
     jeu: Option<Jeu>,
 }
 
 fn setup_bevy_frame(
-    mut commands: aphrody_bevy::ecs::system::Commands,
-    mut images: aphrody_bevy::ecs::system::ResMut<
-        aphrody_bevy::asset::Assets<aphrody_bevy::image::Image>,
+    mut commands: bevy::ecs::system::Commands,
+    mut images: bevy::ecs::system::ResMut<
+        bevy::asset::Assets<bevy::image::Image>,
     >,
-    mut host: aphrody_bevy::ecs::system::NonSendMut<AppFenetre>,
+    mut host: bevy::ecs::system::NonSendMut<AppFenetre>,
 ) {
-    use aphrody_bevy::{
+    use bevy::{
         asset::RenderAssetUsages,
         camera::Camera2d,
         image::Image,
@@ -1562,7 +1562,7 @@ fn setup_bevy_frame(
         TextureFormat::Rgba8UnormSrgb,
         RenderAssetUsages::default(),
     );
-    image.sampler = aphrody_bevy::image::ImageSampler::nearest();
+    image.sampler = bevy::image::ImageSampler::nearest();
     let handle = images.add(image);
     host.image = Some(handle.clone());
     commands.spawn(Camera2d);
@@ -1570,20 +1570,20 @@ fn setup_bevy_frame(
 }
 
 fn update_bevy_frame(
-    mut host: aphrody_bevy::ecs::system::NonSendMut<AppFenetre>,
-    time: aphrody_bevy::ecs::system::Res<aphrody_bevy::time::Time>,
-    mut keyboard: aphrody_bevy::ecs::message::MessageReader<
-        aphrody_bevy::input::keyboard::KeyboardInput,
+    mut host: bevy::ecs::system::NonSendMut<AppFenetre>,
+    time: bevy::ecs::system::Res<bevy::time::Time>,
+    mut keyboard: bevy::ecs::message::MessageReader<
+        bevy::input::keyboard::KeyboardInput,
     >,
-    mut focus_lost: aphrody_bevy::ecs::message::MessageReader<
-        aphrody_bevy::input::keyboard::KeyboardFocusLost,
+    mut focus_lost: bevy::ecs::message::MessageReader<
+        bevy::input::keyboard::KeyboardFocusLost,
     >,
-    mut images: aphrody_bevy::ecs::system::ResMut<
-        aphrody_bevy::asset::Assets<aphrody_bevy::image::Image>,
+    mut images: bevy::ecs::system::ResMut<
+        bevy::asset::Assets<bevy::image::Image>,
     >,
-    mut exits: aphrody_bevy::ecs::message::MessageWriter<aphrody_bevy::app::AppExit>,
+    mut exits: bevy::ecs::message::MessageWriter<bevy::app::AppExit>,
 ) {
-    use aphrody_bevy::input::ButtonState;
+    use bevy::input::ButtonState;
 
     let new_frame = if let Some(jeu) = &mut host.jeu {
         if focus_lost.read().next().is_some() {
@@ -1600,7 +1600,7 @@ fn update_bevy_frame(
             if event.state != ButtonState::Pressed || event.repeat {
                 continue;
             }
-            if code == aphrody_bevy::input::keyboard::KeyCode::KeyV {
+            if code == bevy::input::keyboard::KeyCode::KeyV {
                 jeu.vue3d = !jeu.vue3d;
                 info!("vue {}", if jeu.vue3d { "3D" } else { "de dessus" });
                 continue;
@@ -1661,7 +1661,7 @@ fn update_bevy_frame(
     host.frames_rendues = host.frames_rendues.saturating_add(1);
     if host.max_frames != 0 && host.frames_rendues >= host.max_frames {
         info!("auto-exit après {} trames", host.frames_rendues);
-        exits.write(aphrody_bevy::app::AppExit::Success);
+        exits.write(bevy::app::AppExit::Success);
     }
 }
 
@@ -1838,9 +1838,9 @@ fn decrire_ecran(e: &aphrody_nie_app::flow::Screen) -> String {
 /// (`aphrody_nie_app::input::BINDINGS`), parce que cette table-là était écrite trois fois et avait déjà
 /// divergé — `Tab` et `i` n'existaient que dans le navigateur, `NumpadEnter` qu'ici.
 fn touche_neutre(
-    code: aphrody_bevy::input::keyboard::KeyCode,
+    code: bevy::input::keyboard::KeyCode,
 ) -> Option<aphrody_nie_app::input::Key> {
-    use aphrody_bevy::input::keyboard::KeyCode as K;
+    use bevy::input::keyboard::KeyCode as K;
     use aphrody_nie_app::input::Key as T;
     Some(match code {
         K::ArrowUp => T::Up,
@@ -1865,7 +1865,7 @@ fn touche_neutre(
 }
 
 /// Traduit une touche en commande de menu IEVR (`MENU_CMD_INFO` / `input_ctrl`).
-fn touche_vers_commande(code: aphrody_bevy::input::keyboard::KeyCode) -> Option<&'static str> {
+fn touche_vers_commande(code: bevy::input::keyboard::KeyCode) -> Option<&'static str> {
     touche_neutre(code).and_then(aphrody_nie_app::input::command_for)
 }
 
@@ -4673,7 +4673,7 @@ mod tests {
     /// seulement dans `bridge.ts`. Ce test échouerait si un code Bevy cessait d'être traduit.
     #[test]
     fn lhote_natif_sert_toute_la_table_partagee() {
-        use aphrody_bevy::input::keyboard::KeyCode as K;
+        use bevy::input::keyboard::KeyCode as K;
         for (code, attendu) in [
             (K::ArrowUp, "CMD_FCS_MTX_UP"),
             (K::KeyZ, "CMD_FCS_MTX_UP"),

@@ -14,11 +14,18 @@ use zakuro_core::{Config, FrameOutcome, System, loader};
 
 use super::{Input, Machine, Screen, Step};
 
+/// 3DS DSP output rate (268,111,856 Hz / 8,192).
+const SAMPLE_RATE: u32 = zakuro_core::AUDIO_SAMPLE_RATE as u32;
+/// 268,111,856 Hz ARM11 clock / `CYCLES_PER_FRAME`.
+const REFRESH_RATE: f64 = 268_111_856.0 / zakuro_core::CYCLES_PER_FRAME as f64;
+
 pub struct Ctr {
     system: Box<System>,
     screens: Vec<Screen>,
     printed: usize,
     stopped: Option<String>,
+    /// DSP output not yet taken by the host (interleaved stereo, bounded to one second).
+    samples: Vec<f32>,
     // Dropped after `system`, which maps the converted image.
     _converted: Option<TempImage>,
 }
@@ -33,19 +40,56 @@ impl Drop for TempImage {
 
 impl Ctr {
     /// Boots `path`: a `.3dsx` (converted to a CXI) or anything Zakuro loads (CXI, CCI, CIA).
+    /// Boots an image held in memory (browser hosts): a `.3dsx` (converted to a CXI) or a
+    /// CXI/CCI/CIA, without touching the file system.
+    pub fn from_image(name: &str, image: &[u8]) -> Result<Self, String> {
+        let bytes = if image.get(..4) == Some(b"3DSX") {
+            cxi_from_3dsx(image, name)?
+        } else {
+            image.to_vec()
+        };
+        let config = Config {
+            data_dir: data_dir(),
+            ..Config::default()
+        };
+        let system = loader::load_bytes(name, bytes, config).map_err(|e| format!("3DS: {e}"))?;
+        let mut machine = Self {
+            system: Box::new(system),
+            screens: Vec::new(),
+            printed: 0,
+            stopped: None,
+            samples: Vec::new(),
+            _converted: None,
+        };
+        machine.capture();
+        Ok(machine)
+    }
+
     pub fn from_path(path: &Path, image: &[u8]) -> Result<Self, String> {
         let converted = if image.get(..4) == Some(b"3DSX") {
             let name = path.file_stem().and_then(|s| s.to_str()).unwrap_or("3dsx");
             let cxi = cxi_from_3dsx(image, name)?;
-            let file = std::env::temp_dir().join(format!("bun-engine-{}-{name}.cxi", std::process::id()));
+            let file =
+                std::env::temp_dir().join(format!("bun-engine-{}-{name}.cxi", std::process::id()));
             std::fs::write(&file, cxi).map_err(|e| format!("{}: {e}", file.display()))?;
             Some(TempImage(file))
         } else {
             None
         };
         let boot = converted.as_ref().map_or(path, |t| t.0.as_path());
-        let system = loader::load(boot, Config::default()).map_err(|e| format!("3DS: {e}"))?;
-        let mut machine = Self { system: Box::new(system), screens: Vec::new(), printed: 0, stopped: None, _converted: converted };
+        let config = Config {
+            data_dir: data_dir(),
+            ..Config::default()
+        };
+        let system = loader::load(boot, config).map_err(|e| format!("3DS: {e}"))?;
+        let mut machine = Self {
+            system: Box::new(system),
+            screens: Vec::new(),
+            printed: 0,
+            stopped: None,
+            samples: Vec::new(),
+            _converted: converted,
+        };
         machine.capture();
         Ok(machine)
     }
@@ -55,8 +99,15 @@ impl Ctr {
             .into_iter()
             .map(|which| {
                 let (rgba, width, height) = self.system.read_screen_scaled(which);
-                let rgb = rgba.chunks_exact(4).flat_map(|p| [p[0], p[1], p[2]]).collect();
-                Screen { width: width as usize, height: height as usize, rgb }
+                let rgb = rgba
+                    .chunks_exact(4)
+                    .flat_map(|p| [p[0], p[1], p[2]])
+                    .collect();
+                Screen {
+                    width: width as usize,
+                    height: height as usize,
+                    rgb,
+                }
             })
             .collect();
     }
@@ -72,8 +123,13 @@ impl Machine for Ctr {
             return Step::Shutdown;
         }
         let outcome = self.system.run_frame();
-        // The machine has no audio sink yet; keep the DSP queue bounded.
-        drop(self.system.take_audio());
+        // Keep the DSP output for the host's sink, bounded to one second when nobody drains it.
+        if self.samples.len() > SAMPLE_RATE as usize * 2 {
+            self.samples.clear();
+        }
+        let pcm = self.system.take_audio();
+        self.samples
+            .extend(pcm.iter().flat_map(|pair| pair.map(|s| f32::from(s) / 32768.0)));
         self.capture();
         match outcome {
             FrameOutcome::Completed => Step::Frame,
@@ -83,14 +139,25 @@ impl Machine for Ctr {
             }
             FrameOutcome::Faulted => {
                 let fatal = self.system.fatal_errors.last().cloned().unwrap_or_default();
-                self.stopped = Some(format!("guest fault (svcBreak or unknown instruction) {fatal}").trim_end().to_owned());
+                self.stopped = Some(
+                    format!("guest fault (svcBreak or unknown instruction) {fatal}")
+                        .trim_end()
+                        .to_owned(),
+                );
                 Step::Shutdown
             }
         }
     }
 
     fn screens(&self) -> Vec<Screen> {
-        self.screens.iter().map(|s| Screen { width: s.width, height: s.height, rgb: s.rgb.clone() }).collect()
+        self.screens
+            .iter()
+            .map(|s| Screen {
+                width: s.width,
+                height: s.height,
+                rgb: s.rgb.clone(),
+            })
+            .collect()
     }
 
     fn set_input(&mut self, input: Input) {
@@ -105,12 +172,48 @@ impl Machine for Ctr {
         self.stopped.clone()
     }
 
+    fn refresh_rate(&self) -> f64 {
+        REFRESH_RATE
+    }
+
+    fn sample_rate(&self) -> u32 {
+        SAMPLE_RATE
+    }
+
+    fn audio(&mut self, out: &mut Vec<f32>) {
+        out.append(&mut self.samples);
+    }
+
     fn console(&mut self) -> Vec<u8> {
         let out = &self.system.debug_output;
-        let new = out.get(self.printed..).unwrap_or_default().as_bytes().to_vec();
+        let new = out
+            .get(self.printed..)
+            .unwrap_or_default()
+            .as_bytes()
+            .to_vec();
         self.printed = out.len();
         new
     }
+}
+
+/// Saves, SD card and mods: `$BUN_ENGINE_DATA/3ds`, else the user data directory
+/// (`%APPDATA%\bun-engine\3ds`, `$XDG_DATA_HOME/bun-engine/3ds` or `~/.local/share/bun-engine/3ds`).
+/// Without it Zakuro would write into the working directory.
+fn data_dir() -> Option<PathBuf> {
+    if let Some(dir) = std::env::var_os("BUN_ENGINE_DATA") {
+        return Some(PathBuf::from(dir).join("3ds"));
+    }
+    let base = if cfg!(windows) {
+        std::env::var_os("APPDATA").map(PathBuf::from)
+    } else {
+        std::env::var_os("XDG_DATA_HOME")
+            .map(PathBuf::from)
+            .or_else(|| {
+                std::env::var_os("HOME")
+                    .map(|home| PathBuf::from(home).join(".local").join("share"))
+            })
+    };
+    base.map(|base| base.join("bun-engine").join("3ds"))
 }
 
 const BASE: u32 = 0x0010_0000;
@@ -122,19 +225,30 @@ fn align(value: usize, to: usize) -> usize {
 }
 
 fn u32_at(data: &[u8], at: usize) -> Result<u32, String> {
-    data.get(at..at + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap())).ok_or_else(|| "3DSX: truncated".to_owned())
+    data.get(at..at + 4)
+        .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
+        .ok_or_else(|| "3DSX: truncated".to_owned())
 }
 
 /// Relocates a 3DSX image and wraps it in a NoCrypto CXI.
 pub fn cxi_from_3dsx(file: &[u8], name: &str) -> Result<Vec<u8>, String> {
     let header_size = u16::from_le_bytes([file[4], file[5]]) as usize;
     let reloc_header_size = u16::from_le_bytes([file[6], file[7]]) as usize;
-    let sizes = [u32_at(file, 0x10)? as usize, u32_at(file, 0x14)? as usize, u32_at(file, 0x18)? as usize];
+    let sizes = [
+        u32_at(file, 0x10)? as usize,
+        u32_at(file, 0x14)? as usize,
+        u32_at(file, 0x18)? as usize,
+    ];
     let bss = u32_at(file, 0x1C)? as usize;
     let (smdh, romfs) = if header_size >= 0x2C {
-        let (smdh_offset, smdh_size, fs_offset) = (u32_at(file, 0x20)? as usize, u32_at(file, 0x24)? as usize, u32_at(file, 0x28)? as usize);
+        let (smdh_offset, smdh_size, fs_offset) = (
+            u32_at(file, 0x20)? as usize,
+            u32_at(file, 0x24)? as usize,
+            u32_at(file, 0x28)? as usize,
+        );
         (
-            file.get(smdh_offset..smdh_offset + smdh_size).filter(|_| smdh_size != 0),
+            file.get(smdh_offset..smdh_offset + smdh_size)
+                .filter(|_| smdh_size != 0),
             file.get(fs_offset..).filter(|_| fs_offset != 0),
         )
     } else {
@@ -163,7 +277,13 @@ pub fn cxi_from_3dsx(file: &[u8], name: &str) -> Result<Vec<u8>, String> {
 
     let translate = |flat: u32| -> u32 {
         let flat = flat as usize;
-        let seg = if flat < starts[1] { 0 } else if flat < starts[2] { 1 } else { 2 };
+        let seg = if flat < starts[1] {
+            0
+        } else if flat < starts[2] {
+            1
+        } else {
+            2
+        };
         BASE + (starts[seg] + flat - [0, starts[1], starts[2]][seg]) as u32
     };
     for seg in 0..3 {
@@ -172,8 +292,14 @@ pub fn cxi_from_3dsx(file: &[u8], name: &str) -> Result<Vec<u8>, String> {
             let mut pos = starts[seg];
             for n in 0..count as usize {
                 let entry = at + n * 4;
-                let skip = u16::from_le_bytes(file.get(entry..entry + 2).ok_or("3DSX: truncated relocations")?.try_into().unwrap()) as usize;
-                let patch = u16::from_le_bytes(file[entry + 2..entry + 4].try_into().unwrap()) as usize;
+                let skip = u16::from_le_bytes(
+                    file.get(entry..entry + 2)
+                        .ok_or("3DSX: truncated relocations")?
+                        .try_into()
+                        .unwrap(),
+                ) as usize;
+                let patch =
+                    u16::from_le_bytes(file[entry + 2..entry + 4].try_into().unwrap()) as usize;
                 pos += skip * 4;
                 for _ in 0..patch {
                     if pos + 4 > end {
@@ -218,9 +344,10 @@ pub fn cxi_from_3dsx(file: &[u8], name: &str) -> Result<Vec<u8>, String> {
     exheader[aci + 0x0E] = 1 << 2; // ideal processor 0, affinity mask 1, Prod system mode
     exheader[aci + 0x0F] = 0x30;
     const SERVICES: [&str; 32] = [
-        "APT:U", "ac:u", "am:net", "boss:U", "cam:u", "cecd:u", "cfg:nor", "cfg:u", "csnd:SND", "dsp::DSP", "frd:u",
-        "fs:USER", "gsp::Gpu", "gsp::Lcd", "hid:USER", "http:C", "ir:rst", "ir:u", "ir:USER", "mic:u", "ndm:u",
-        "news:s", "nwm::UDS", "ptm:u", "ptm:sysm", "pxi:dev", "soc:U", "ssl:C", "y2r:u", "ldr:ro", "mvd:STD", "qtm:u",
+        "APT:U", "ac:u", "am:net", "boss:U", "cam:u", "cecd:u", "cfg:nor", "cfg:u", "csnd:SND",
+        "dsp::DSP", "frd:u", "fs:USER", "gsp::Gpu", "gsp::Lcd", "hid:USER", "http:C", "ir:rst",
+        "ir:u", "ir:USER", "mic:u", "ndm:u", "news:s", "nwm::UDS", "ptm:u", "ptm:sysm", "pxi:dev",
+        "soc:U", "ssl:C", "y2r:u", "ldr:ro", "mvd:STD", "qtm:u",
     ];
     for (i, service) in SERVICES.iter().enumerate() {
         let at = aci + 0x50 + i * 8;
@@ -265,9 +392,11 @@ pub fn cxi_from_3dsx(file: &[u8], name: &str) -> Result<Vec<u8>, String> {
         ivfc[..4].copy_from_slice(b"IVFC");
         ivfc[4..8].copy_from_slice(&0x1_0000u32.to_le_bytes());
         for level in 0..3 {
-            ivfc[0x0C + level * 0x18 + 0x10..0x0C + level * 0x18 + 0x14].copy_from_slice(&12u32.to_le_bytes());
+            ivfc[0x0C + level * 0x18 + 0x10..0x0C + level * 0x18 + 0x14]
+                .copy_from_slice(&12u32.to_le_bytes());
         }
-        ivfc[0x0C + 2 * 0x18 + 8..0x0C + 2 * 0x18 + 16].copy_from_slice(&(level3.len() as u64).to_le_bytes());
+        ivfc[0x0C + 2 * 0x18 + 8..0x0C + 2 * 0x18 + 16]
+            .copy_from_slice(&(level3.len() as u64).to_le_bytes());
         ivfc[0x5C..0x60].copy_from_slice(&0x60u32.to_le_bytes());
         cxi.extend_from_slice(&ivfc);
         cxi.extend_from_slice(level3);

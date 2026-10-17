@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Read-only Steam library inventory and DBXV2 installation inspection.
 //!
-//! Adapts Steam app data discovery, manifest planning, and depot inspection
-//! patterns from `aphrody-nie-steam` tailored for Dragon Ball Xenoverse 2 (AppID 454650).
+//! Dragon Ball install detection over the `bun_steam` app manifest scan, tailored for Dragon Ball
+//! Xenoverse 2 (AppID 454650).
 //!
 //! Only `steamapps/appmanifest_*.acf` metadata and local directories are read.
 //! Account credentials, tokens, and client configuration are never accessed.
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+
+use bun_steam::AppManifest;
 use serde::{Deserialize, Serialize};
 
 /// Steam App ID for Dragon Ball Xenoverse 2 (Dimps / Bandai Namco).
@@ -48,33 +50,6 @@ impl Dbxv2Install {
     pub fn is_valid_installation(&self) -> bool {
         self.has_executable && (self.data2_cpk_exists || self.data_cpk_exists)
     }
-}
-
-/// Upper bounds applied before processing untrusted manifest inputs (from `aphrody-nie-steam`).
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct SteamPlanningLimits {
-    pub max_depots: usize,
-    pub max_manifest_entries: usize,
-    pub max_collisions: usize,
-}
-
-impl Default for SteamPlanningLimits {
-    fn default() -> Self {
-        Self {
-            max_depots: 1024,
-            max_manifest_entries: 250_000,
-            max_collisions: 2048,
-        }
-    }
-}
-
-/// Normalized Steam depot record for Xenoverse content planning.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct SteamDepotRecord {
-    pub depot_id: u32,
-    pub name: String,
-    pub manifest_id: u64,
-    pub is_dlc: bool,
 }
 
 /// Inspects a potential DBXV2 installation directory on disk.
@@ -139,22 +114,24 @@ pub fn scan_dragon_ball_installs(libraries: &[PathBuf]) -> std::io::Result<Vec<S
             }
             let manifest = entry.path();
             let content = std::fs::read_to_string(&manifest)?;
-            if let Some((app_id, name, install_dir)) = parse_app_manifest(&content) {
-                let is_db_app = app_id == STEAM_APP_ID_DBXV2
-                    || app_id == STEAM_APP_ID_DBXV1
-                    || app_id == STEAM_APP_ID_DB_FIGHTERZ
-                    || app_id == STEAM_APP_ID_DB_KAKAROT
-                    || app_id == STEAM_APP_ID_DB_SPARKING_ZERO
-                    || name.to_ascii_lowercase().contains("dragon ball");
+            let Ok(app) = AppManifest::parse(&content) else { continue };
+            if !is_single_component(&app.install_dir) {
+                continue;
+            }
+            let is_db_app = app.app_id == STEAM_APP_ID_DBXV2
+                || app.app_id == STEAM_APP_ID_DBXV1
+                || app.app_id == STEAM_APP_ID_DB_FIGHTERZ
+                || app.app_id == STEAM_APP_ID_DB_KAKAROT
+                || app.app_id == STEAM_APP_ID_DB_SPARKING_ZERO
+                || app.name.to_ascii_lowercase().contains("dragon ball");
 
-                if is_db_app && seen_app_ids.insert(app_id) {
-                    installs.push(SteamGameInstall {
-                        app_id,
-                        name,
-                        install_dir: steamapps.join("common").join(install_dir),
-                        manifest,
-                    });
-                }
+            if is_db_app && seen_app_ids.insert(app.app_id) {
+                installs.push(SteamGameInstall {
+                    app_id: app.app_id,
+                    name: app.name,
+                    install_dir: steamapps.join("common").join(&app.install_dir),
+                    manifest,
+                });
             }
         }
     }
@@ -162,24 +139,11 @@ pub fn scan_dragon_ball_installs(libraries: &[PathBuf]) -> std::io::Result<Vec<S
     Ok(installs)
 }
 
-fn parse_app_manifest(content: &str) -> Option<(u32, String, String)> {
-    let app_id = vdf_value(content, "appid")?.parse().ok()?;
-    let name = vdf_value(content, "name")?;
-    let install_dir = vdf_value(content, "installdir")?;
-    let install_dir = Path::new(&install_dir);
-    if install_dir.components().count() != 1
-        || install_dir.components().any(|part| !matches!(part, std::path::Component::Normal(_)))
-    {
-        return None;
-    }
-    Some((app_id, name, install_dir.to_string_lossy().into_owned()))
-}
-
-fn vdf_value(content: &str, key: &str) -> Option<String> {
-    content.lines().find_map(|line| {
-        let mut fields = line.split('"').filter(|field| !field.trim().is_empty());
-        (fields.next()? == key).then(|| fields.next().map(str::to_owned)).flatten()
-    })
+/// `installdir` must be one plain path component (no separators, `..` or roots).
+fn is_single_component(install_dir: &str) -> bool {
+    let path = Path::new(install_dir);
+    path.components().count() == 1
+        && path.components().all(|part| matches!(part, std::path::Component::Normal(_)))
 }
 
 #[cfg(test)]

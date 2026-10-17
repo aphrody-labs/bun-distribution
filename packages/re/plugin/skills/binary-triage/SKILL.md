@@ -19,6 +19,8 @@ A markdown report with these sections (omit a section only if it's truly empty):
 
 ## How to do it
 
+**Start on Bun OS with `re bin <file> --json`** (MCP `binary_inspect`; `--host vps` reads a remote file read-only): format, SHA-256, sections with entropy, imported libraries and symbols, exports, PE version resource and Authenticode, a bounded string sample and provenance (bep release in `usr/`, Steam app). It covers the Identity, Layout and Surface sections without starting Ghidra; console ROMs and BIOS dumps go to `re formats header` (skill `bun-engine`).
+
 **Prefer the live MCP server (`mcp__ghidra__*` tools)** when the binary is already loaded in Ghidra:
 
 - `mcp__ghidra__get_binary_info` — identity, architecture, compiler.

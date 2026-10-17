@@ -4,6 +4,10 @@ version.workspace = true
 edition = "2021"
 
 [features]
+default = ["ffmpeg"]
+# NVDEC video decoding through FFmpeg (libavcodec/libavutil via pkg-config). Without it the
+# decoders report failure, so CPU-only and FFmpeg-less hosts (bun-engine) still build.
+ffmpeg = []
 metal-spirv-validation = ["dep:spirv-cross2"]
 
 [dependencies]

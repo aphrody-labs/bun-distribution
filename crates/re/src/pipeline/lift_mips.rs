@@ -34,7 +34,15 @@ pub fn abi() -> Abi {
     let mut regs: Vec<String> = (0..32).map(|i| format!("r{i}")).collect();
     regs.push("hi".into());
     regs.push("lo".into());
-    Abi { regs, link: "r31".into(), sp: "r29".into(), ret: "r2".into(), machine: Some("psx".into()), flags: Vec::new(), isas: vec!["mips".into()] }
+    Abi {
+        regs,
+        link: "r31".into(),
+        sp: "r29".into(),
+        ret: "r2".into(),
+        machine: Some("psx".into()),
+        flags: Vec::new(),
+        isas: vec!["mips".into()],
+    }
 }
 
 /// FNV-1a over little-endian instruction words (shared with the runtime's `code_hash`).
@@ -69,17 +77,22 @@ impl Mem {
         }
         self.regions.iter().find_map(|r| {
             let off = addr.checked_sub(r.base)? as usize;
-            r.data.get(off..off + 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+            r.data
+                .get(off..off + 4)
+                .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
         })
     }
     fn ram(&self, addr: u32) -> bool {
-        self.regions.iter().any(|r| r.ram && addr >= r.base && ((addr - r.base) as usize) < r.data.len())
+        self.regions
+            .iter()
+            .any(|r| r.ram && addr >= r.base && ((addr - r.base) as usize) < r.data.len())
     }
 }
 
 const NAMES: [&str; 32] = [
-    "zero", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
-    "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra",
+    "zero", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3", "t4", "t5", "t6",
+    "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8", "t9", "k0", "k1", "gp", "sp", "fp",
+    "ra",
 ];
 
 /// Control flow of an instruction.
@@ -103,9 +116,15 @@ struct Lowered {
 
 fn fb(w: u32, why: &str, text: String) -> Lowered {
     Lowered {
-        g: Guest { raw: w, body: vec![Stmt::Fallback { why: why.into() }] },
+        g: Guest {
+            raw: w,
+            body: vec![Stmt::Fallback { why: why.into() }],
+        },
         text,
-        flow: Flow { fallback: true, ..Flow::default() },
+        flow: Flow {
+            fallback: true,
+            ..Flow::default()
+        },
     }
 }
 
@@ -132,7 +151,11 @@ fn lower(pc: u32, w: u32, delay: bool) -> Lowered {
     let text;
     // Precondition guard: hand the instruction to the interpreter before any side effect.
     let guard = |pre: &mut Builder, c: Val, why: &str| {
-        pre.if_else(c, |p| p.out.push(Stmt::Fallback { why: why.into() }), |_| {});
+        pre.if_else(
+            c,
+            |p| p.out.push(Stmt::Fallback { why: why.into() }),
+            |_| {},
+        );
     };
     let branch_target = pc.wrapping_add(im << 2).wrapping_add(4);
     match op {
@@ -145,7 +168,11 @@ fn lower(pc: u32, w: u32, delay: bool) -> Lowered {
                 };
                 let v = b.op(alu, r(rt), imm(sa));
                 b.set(rd, v);
-                text = if w == 0 { "nop".into() } else { format!("{mn} {nd}, {nt}, {sa}") };
+                text = if w == 0 {
+                    "nop".into()
+                } else {
+                    format!("{mn} {nd}, {nt}, {sa}")
+                };
             }
             0x04 | 0x06 | 0x07 => {
                 let (alu, mn) = match funct {
@@ -160,13 +187,22 @@ fn lower(pc: u32, w: u32, delay: bool) -> Lowered {
             }
             0x08 => {
                 b.call("branch", &[r(rs)]);
-                flow = Flow { branch: true, always: true, ..Flow::default() };
+                flow = Flow {
+                    branch: true,
+                    always: true,
+                    ..Flow::default()
+                };
                 text = format!("jr {ns}");
             }
             0x09 => {
                 b.set(rd, imm(pc.wrapping_add(8)));
                 b.call("branch", &[r(rs)]);
-                flow = Flow { branch: true, always: true, targets: vec![pc.wrapping_add(8)], ..Flow::default() };
+                flow = Flow {
+                    branch: true,
+                    always: true,
+                    targets: vec![pc.wrapping_add(8)],
+                    ..Flow::default()
+                };
                 text = format!("jalr {nd}, {ns}");
             }
             0x0c => return fb(w, "syscall", "syscall".into()),
@@ -253,8 +289,16 @@ fn lower(pc: u32, w: u32, delay: bool) -> Lowered {
             if al {
                 targets.push(pc.wrapping_add(8));
             }
-            flow = Flow { branch: true, targets, ..Flow::default() };
-            text = format!("b{}z{} {ns}, 0x{branch_target:08x}", if ge { "ge" } else { "lt" }, if al { "al" } else { "" });
+            flow = Flow {
+                branch: true,
+                targets,
+                ..Flow::default()
+            };
+            text = format!(
+                "b{}z{} {ns}, 0x{branch_target:08x}",
+                if ge { "ge" } else { "lt" },
+                if al { "al" } else { "" }
+            );
         }
         0x02 | 0x03 => {
             let target = (pc & 0xf000_0000).wrapping_add((w & 0x03ff_ffff) << 2);
@@ -264,7 +308,12 @@ fn lower(pc: u32, w: u32, delay: bool) -> Lowered {
                 targets.push(pc.wrapping_add(8));
             }
             b.call("branch", &[imm(target)]);
-            flow = Flow { branch: true, always: true, targets, ..Flow::default() };
+            flow = Flow {
+                branch: true,
+                always: true,
+                targets,
+                ..Flow::default()
+            };
             text = format!("{} 0x{target:08x}", if op == 3 { "jal" } else { "j" });
         }
         0x04..=0x07 => {
@@ -276,7 +325,12 @@ fn lower(pc: u32, w: u32, delay: bool) -> Lowered {
             };
             b.if_else(cond, |b| b.call("branch", &[imm(branch_target)]), |_| {});
             let always = op == 0x04 && rs == rt;
-            flow = Flow { branch: true, always, targets: vec![branch_target], ..Flow::default() };
+            flow = Flow {
+                branch: true,
+                always,
+                targets: vec![branch_target],
+                ..Flow::default()
+            };
             text = match op {
                 0x04 => format!("beq {ns}, {nt}, 0x{branch_target:08x}"),
                 0x05 => format!("bne {ns}, {nt}, 0x{branch_target:08x}"),
@@ -349,30 +403,69 @@ fn lower(pc: u32, w: u32, delay: bool) -> Lowered {
             }
             text = format!("{name} {nt}, {}({ns})", im as i32);
         }
-        _ => return fb(w, "coprocessor or illegal instruction", format!(".word 0x{w:08x}")),
+        _ => {
+            return fb(
+                w,
+                "coprocessor or illegal instruction",
+                format!(".word 0x{w:08x}"),
+            );
+        }
     }
     // Assemble: [guard] begin, semantics, end, [delay slot exit].
     let mut out = Builder::new();
-    let pre_temps = Guest { raw: 0, body: pre.out.clone() }.temps();
-    let body_temps = Guest { raw: 0, body: b.out.clone() }.temps();
+    let pre_temps = Guest {
+        raw: 0,
+        body: pre.out.clone(),
+    }
+    .temps();
+    let body_temps = Guest {
+        raw: 0,
+        body: b.out.clone(),
+    }
+    .temps();
     let mut body = pre.out;
     // Re-number the semantic temporaries after the guard's.
     let shift = |s: &mut Vec<Stmt>| renumber(s, pre_temps);
     let mut sem = b.out;
     shift(&mut sem);
     let _ = body_temps;
-    body.push(Stmt::Call { f: "begin".into(), args: vec![imm(pc)], t: None });
+    body.push(Stmt::Call {
+        f: "begin".into(),
+        args: vec![imm(pc)],
+        t: None,
+    });
     body.extend(sem);
-    body.push(Stmt::Call { f: "end".into(), args: vec![], t: None });
+    body.push(Stmt::Call {
+        f: "end".into(),
+        args: vec![],
+        t: None,
+    });
     if delay {
         // After a delay slot the committed pc tells whether the branch was taken.
         let t = pre_temps + body_temps;
-        body.push(Stmt::Call { f: "pc".into(), args: vec![], t: Some(t) });
-        body.push(Stmt::Op { t: t + 1, op: Alu::Ne, a: Val::Tmp { t }, b: imm(pc.wrapping_add(4)) });
-        body.push(Stmt::If { c: Val::Tmp { t: t + 1 }, then: vec![Stmt::Exit], els: Vec::new() });
+        body.push(Stmt::Call {
+            f: "pc".into(),
+            args: vec![],
+            t: Some(t),
+        });
+        body.push(Stmt::Op {
+            t: t + 1,
+            op: Alu::Ne,
+            a: Val::Tmp { t },
+            b: imm(pc.wrapping_add(4)),
+        });
+        body.push(Stmt::If {
+            c: Val::Tmp { t: t + 1 },
+            then: vec![Stmt::Exit],
+            els: Vec::new(),
+        });
     }
     out.out = body;
-    Lowered { g: out.finish(w), text, flow }
+    Lowered {
+        g: out.finish(w),
+        text,
+        flow,
+    }
 }
 
 fn renumber(s: &mut [Stmt], by: u16) {
@@ -426,16 +519,30 @@ fn renumber(s: &mut [Stmt], by: u16) {
 /// # Errors
 /// Returns why the image cannot be lifted.
 pub fn lift_psx(bios: &[u8], exe: Option<&[u8]>, limits: Limits) -> Result<IrModule, String> {
-    let mut regions = vec![Region { name: "bios", base: 0xbfc0_0000, data: bios.to_vec(), ram: false }];
+    let mut regions = vec![Region {
+        name: "bios",
+        base: 0xbfc0_0000,
+        data: bios.to_vec(),
+        ram: false,
+    }];
     let mut entries = vec![0xbfc0_0000, 0xbfc0_0180];
     let mut entry = 0xbfc0_0000;
     if let Some(e) = exe {
-        let rd = |o: usize| e.get(o..o + 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]])).ok_or("truncated PS-EXE header");
+        let rd = |o: usize| {
+            e.get(o..o + 4)
+                .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+                .ok_or("truncated PS-EXE header")
+        };
         let pc0 = rd(0x10)?;
         let taddr = rd(0x18)?;
         let tsize = rd(0x1c)? as usize;
         let text = e.get(0x800..0x800 + tsize).ok_or("PS-EXE text truncated")?;
-        regions.push(Region { name: "exe", base: taddr, data: text.to_vec(), ram: true });
+        regions.push(Region {
+            name: "exe",
+            base: taddr,
+            data: text.to_vec(),
+            ram: true,
+        });
         entries.push(pc0);
         entry = pc0;
     }
@@ -493,7 +600,12 @@ pub fn lift_psx(bios: &[u8], exe: Option<&[u8]>, limits: Limits) -> Result<IrMod
         loop {
             let Some(w) = mem.word(pc) else { break };
             let low = lower(pc, w, delay);
-            insns.push(IrInsn { addr: u64::from(pc), len: 4, text: low.text, op: IrOp::Guest(low.g) });
+            insns.push(IrInsn {
+                addr: u64::from(pc),
+                len: 4,
+                text: low.text,
+                op: IrOp::Guest(low.g),
+            });
             if low.flow.fallback {
                 break;
             }
@@ -518,14 +630,35 @@ pub fn lift_psx(bios: &[u8], exe: Option<&[u8]>, limits: Limits) -> Result<IrMod
         }
         if guard_ram {
             // Entry guard: the code in RAM must still be what was lifted.
-            let words: Vec<u32> = insns.iter().filter_map(|i| mem.word(i.addr as u32)).collect();
+            let words: Vec<u32> = insns
+                .iter()
+                .filter_map(|i| mem.word(i.addr as u32))
+                .collect();
             let h = code_hash(&words);
-            if let Some(IrInsn { op: IrOp::Guest(g), .. }) = insns.first_mut() {
+            if let Some(IrInsn {
+                op: IrOp::Guest(g), ..
+            }) = insns.first_mut()
+            {
                 let t = g.temps();
                 let mut guarded = vec![
-                    Stmt::Call { f: "code_hash".into(), args: vec![imm(start), imm(words.len() as u32)], t: Some(t) },
-                    Stmt::Op { t: t + 1, op: Alu::Ne, a: Val::Tmp { t }, b: imm(h) },
-                    Stmt::If { c: Val::Tmp { t: t + 1 }, then: vec![Stmt::Fallback { why: "code in RAM changed since lifting".into() }], els: Vec::new() },
+                    Stmt::Call {
+                        f: "code_hash".into(),
+                        args: vec![imm(start), imm(words.len() as u32)],
+                        t: Some(t),
+                    },
+                    Stmt::Op {
+                        t: t + 1,
+                        op: Alu::Ne,
+                        a: Val::Tmp { t },
+                        b: imm(h),
+                    },
+                    Stmt::If {
+                        c: Val::Tmp { t: t + 1 },
+                        then: vec![Stmt::Fallback {
+                            why: "code in RAM changed since lifting".into(),
+                        }],
+                        els: Vec::new(),
+                    },
                 ];
                 guarded.append(&mut g.body);
                 g.body = guarded;
@@ -534,7 +667,11 @@ pub fn lift_psx(bios: &[u8], exe: Option<&[u8]>, limits: Limits) -> Result<IrMod
         functions.push(IrFunction {
             addr: u64::from(start),
             name: None,
-            blocks: vec![IrBlock { addr: u64::from(start), insns, fallthrough }],
+            blocks: vec![IrBlock {
+                addr: u64::from(start),
+                insns,
+                fallthrough,
+            }],
             truncated: budget == 0,
             isa: 0,
         });
@@ -544,7 +681,15 @@ pub fn lift_psx(bios: &[u8], exe: Option<&[u8]>, limits: Limits) -> Result<IrMod
         .regions
         .iter()
         .map(|r| {
-            let s = SectionEntry { name: r.name.into(), vaddr: u64::from(r.base), vsize: r.data.len() as u64, file_offset: off, file_size: r.data.len() as u64, exec: true, write: r.ram };
+            let s = SectionEntry {
+                name: r.name.into(),
+                vaddr: u64::from(r.base),
+                vsize: r.data.len() as u64,
+                file_offset: off,
+                file_size: r.data.len() as u64,
+                exec: true,
+                write: r.ram,
+            };
             off += r.data.len() as u64;
             s
         })
@@ -555,9 +700,19 @@ pub fn lift_psx(bios: &[u8], exe: Option<&[u8]>, limits: Limits) -> Result<IrMod
         arch: "r3000a".into(),
         abi: Some(abi()),
         bits: 32,
-        image_base: mem.regions.iter().map(|r| u64::from(r.base)).min().unwrap_or(0),
+        image_base: mem
+            .regions
+            .iter()
+            .map(|r| u64::from(r.base))
+            .min()
+            .unwrap_or(0),
         entry: u64::from(entry),
-        image_end: mem.regions.iter().map(|r| u64::from(r.base) + r.data.len() as u64).max().unwrap_or(0),
+        image_end: mem
+            .regions
+            .iter()
+            .map(|r| u64::from(r.base) + r.data.len() as u64)
+            .max()
+            .unwrap_or(0),
         imports: Vec::new(),
         sections,
         functions,
@@ -566,7 +721,9 @@ pub fn lift_psx(bios: &[u8], exe: Option<&[u8]>, limits: Limits) -> Result<IrMod
 
 /// True when the instruction at `slot` is the delay slot of an unconditional transfer.
 fn ends_after(mem: &Mem, slot: u32) -> bool {
-    let Some(w) = mem.word(slot.wrapping_sub(4)) else { return false };
+    let Some(w) = mem.word(slot.wrapping_sub(4)) else {
+        return false;
+    };
     let low = lower(slot.wrapping_sub(4), w, false);
     low.flow.branch && low.flow.always
 }

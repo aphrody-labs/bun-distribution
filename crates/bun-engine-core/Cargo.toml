@@ -3,7 +3,7 @@ name = "bun-engine"
 version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
-description = "Unified Rust engine and emulator kernel: plugins, binary inspection, one Machine trait, one input, one wgpu/winit window and one CLI over every in-tree core"
+description = "Unified Rust engine and emulator kernel on Bevy 0.20: machine plugins over one Machine trait, one App, window, input, audio and render graph on wgpu 30, binary inspection and one CLI over every in-tree core"
 repository = "https://github.com/aphrody-labs/bun-engine"
 
 [lib]
@@ -11,12 +11,12 @@ crate-type = ["rlib", "cdylib", "staticlib"]
 
 # Every consumer selects what it shares; nothing is duplicated in another crate.
 [features]
-default = ["window", "nds", "nes", "gba", "psx", "host", "arm", "x86", "wii", "cartridge"]
+default = ["window", "audio", "gamepad", "nds", "nes", "gba", "psx", "host", "arm", "x86", "wii", "cartridge", "stream"]
 # Nintendo DS machine on Dust with software 2D/3D rendering.
 nds = ["dep:aphrody-dust-soft-2d", "dep:aphrody-dust-soft-3d"]
 # Bevy scheduling of the DS core (wasm and desktop hosts).
-host = ["nds", "dep:bevy_app", "dep:bevy_ecs"]
-bevy-web = ["host", "bevy_app/web"]
+host = ["nds", "runtime"]
+bevy-web = ["host", "bevy/web"]
 # AArch64 firmware machine on the rdynarmic JIT.
 arm = ["dep:rdynarmic"]
 # Game Boy Advance on RustBoyAdvance-NG with its free BIOS.
@@ -33,8 +33,62 @@ switch = ["dep:ruzu-core", "dep:ruzu-common", "dep:video_core", "dep:hid_core", 
 wii = ["dep:aphrody-wii-runtime", "dep:aphrody-wii-image"]
 # x86 guests on the Windows Hypervisor Platform.
 x86 = ["dep:windows"]
-# The single winit window and wgpu presenter.
-window = ["dep:winit", "dep:wgpu", "dep:aphrody-gpu-backend", "dep:pollster"]
+# C++ cores (melonDS, Dolphin, Azahar, Kyty) loaded from packages/bun-emu-host plugins.
+cpp-host = ["dep:bun-emu-host"]
+# Bevy runtime (`bun_engine::runtime`, `bun_engine::bevy`): BunEnginePlugin, MachinePlugin and the
+# per-machine plugins, headless runner on MinimalPlugins. No GPU, no system libraries.
+runtime = ["dep:bevy", "bevy/std", "bevy/async_executor"]
+# Target-neutral Bevy rendering: winit window, render schedules on wgpu 30, sprites, UI, text,
+# keyboard and mouse, the FSR1 post-process.
+render = [
+    "runtime",
+    "dep:wgpu",
+    "bevy/bevy_log",
+    "bevy/bevy_asset",
+    "bevy/bevy_winit",
+    "bevy/bevy_window",
+    "bevy/bevy_render",
+    "bevy/bevy_core_pipeline",
+    "bevy/bevy_camera",
+    "bevy/bevy_image",
+    "bevy/bevy_sprite",
+    "bevy/bevy_sprite_render",
+    "bevy/bevy_ui",
+    "bevy/bevy_ui_render",
+    "bevy/bevy_text",
+    "bevy/default_font",
+    "bevy/keyboard",
+    "bevy/mouse",
+]
+# The desktop window (Bevy DefaultPlugins, multi-threaded, X11/Wayland on Linux).
+window = ["render", "dep:aphrody-gpu-backend", "bevy/multi_threaded", "bevy/x11", "bevy/wayland"]
+# Machine audio on a bevy_audio sink (ALSA on Linux).
+audio = ["render", "bevy/bevy_audio"]
+# Gamepads through bevy_gilrs (libudev on Linux).
+gamepad = ["render", "bevy/bevy_gilrs", "bevy/gamepad"]
+# Bevy on WebGPU in the browser (wasm32-unknown-unknown): examples/bevy_web.rs.
+runtime-web = ["render", "bevy/web", "bevy/webgpu"]
+# Native game-stream client in the window: Moonlight/GameStream protocol (pairing, RTSP, ENet
+# control, RTP + FEC video), zero-copy Media Foundation decode into wgpu, FSR1 upscale, HUD.
+stream = ["window", "dep:windows", "dep:rusty_enet", "dep:aes", "dep:aes-gcm", "dep:ring", "dep:rcgen", "dep:rsa", "dep:rustls"]
+# Open-source BIOS/firmware loader: registry digests, streamed gzip/zstd decoding.
+firmware = ["dep:sha2", "dep:miniz_oxide", "dep:ruzstd", "dep:serde_json"]
+# Browser facade for play.aphrody.app (wasm32-unknown-unknown): the Bevy runtime on WebGPU
+# (`runtime-web`, bevy_audio, gamepads) behind the wasm-bindgen `start`/`set_input`/`set_touch`
+# contract, plus the open-source firmware loader. Build: packages/bun-engine/web-emulation.
+web = [
+    "firmware",
+    "runtime-web",
+    "audio",
+    "gamepad",
+    "dep:wasm-bindgen",
+    "dep:js-sys",
+    "dep:web-sys",
+]
+# Steamworks SDK (steamworks-rs, bundled redistributable steam_api): init, Steam Input, overlay-safe
+# present, Rich Presence, screenshots, Steam Cloud saves (ISteamRemoteStorage), stats stub.
+# `steam::SteamPlugin` is the Bevy plugin over the same core (`crate::bevy`).
+steam = ["window", "dep:steamworks", "dep:sha2", "dep:serde_json"]
 # Nintendo DS cartridge inspection (`bun-engine info`).
 cartridge = ["aphrody-dust-core/nds-complete", "dep:serde_json"]
 
@@ -43,14 +97,15 @@ aphrody-dust-core = { workspace = true }
 serde = { workspace = true, features = ["std", "derive"] }
 aphrody-dust-soft-2d = { path = "../aphrody-dust-soft-2d", optional = true }
 aphrody-dust-soft-3d = { path = "../aphrody-dust-soft-3d", optional = true }
-bevy_app = { workspace = true, optional = true }
-bevy_ecs = { workspace = true, optional = true }
+# Bevy 0.20 (wgpu 30, absorbed in crates/bevy*), re-exported as `bun_engine::bevy`. The key must
+# stay `bevy`: Bevy's derive macros resolve `bevy::ecs` through the dependency named `bevy`.
+bevy = { workspace = true, optional = true }
 rdynarmic = { path = "../rdynarmic", optional = true }
 tetanes-core = { path = "../../vendor/tetanes/tetanes-core", optional = true }
 starpsx-core = { path = "../../vendor/starpsx/core", optional = true }
 ruzu-core = { package = "core", path = "../ruzu-core", default-features = false, optional = true }
 ruzu-common = { package = "common", path = "../ruzu-common", optional = true }
-video_core = { path = "../ruzu-video-core", optional = true }
+video_core = { path = "../ruzu-video-core", default-features = false, optional = true }
 hid_core = { path = "../ruzu-hid-core", optional = true }
 log = { workspace = true, optional = true }
 zakuro-core = { path = "../../vendor/zakuro/crates/zakuro-core", optional = true }
@@ -59,13 +114,43 @@ rustboyadvance-core = { path = "../../vendor/rustboyadvance-ng/core", default-fe
 aphrody-wii-runtime = { path = "../aphrody-wii-runtime", optional = true }
 aphrody-wii-image = { path = "../aphrody-wii-image", default-features = false, optional = true }
 wgpu = { workspace = true, optional = true }
-winit = { workspace = true, features = ["rwh_06"], optional = true }
 aphrody-gpu-backend = { path = "../aphrody-gpu-backend", optional = true }
-pollster = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
+bun-emu-host = { path = "../bun-emu-host", optional = true }
+sha2 = { workspace = true, features = ["alloc"], optional = true }
+miniz_oxide = { workspace = true, optional = true }
+ruzstd = { version = "0.9.1", default-features = false, features = ["std"], optional = true }
+wasm-bindgen = { workspace = true, features = ["std"], optional = true }
+js-sys = { workspace = true, features = ["std"], optional = true }
+web-sys = { workspace = true, features = ["std", "Document", "Element", "HtmlCanvasElement", "Window"], optional = true }
+rusty_enet = { workspace = true, optional = true }
+aes = { workspace = true, optional = true }
+aes-gcm = { workspace = true, optional = true }
+ring = { version = "0.17", optional = true }
+rcgen = { version = "0.14", default-features = false, features = ["crypto", "pem", "ring"], optional = true }
+rsa = { version = "0.9", optional = true }
+rustls = { workspace = true, features = ["std", "ring", "tls12"], optional = true }
+steamworks = { version = "0.13.1", features = ["raw-bindings"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
-windows = { workspace = true, features = ["Win32_System_Hypervisor", "Win32_System_Memory"], optional = true }
+windows = { workspace = true, features = [
+  "Win32_System_Hypervisor",
+  "Win32_System_Memory",
+  "Win32_UI_Input_XboxController",
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_System_Com",
+  "Win32_System_Ole",
+  "Win32_System_Variant",
+  "Win32_System_Threading",
+  "Win32_Graphics_Direct3D",
+  "Win32_Graphics_Direct3D11",
+  "Win32_Graphics_Direct3D12",
+  "Win32_Graphics_Dxgi",
+  "Win32_Graphics_Dxgi_Common",
+  "Win32_Graphics_Gdi",
+  "Win32_Media_MediaFoundation",
+], optional = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }

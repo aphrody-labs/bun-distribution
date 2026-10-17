@@ -602,9 +602,9 @@ impl SpirvEmitContext {
         };
         let u32_type = builder.type_int(32, 0);
         let i32_type = builder.type_int(32, 1);
-        let f32_type = builder.type_float(32);
+        let f32_type = builder.type_float(32, None);
         let f16_type = if program.info.uses_fp16 {
-            builder.type_float(16)
+            builder.type_float(16, None)
         } else {
             f32_type
         };
@@ -642,7 +642,7 @@ impl SpirvEmitContext {
             u32_type
         };
         let f64_type = if program.info.uses_fp64 {
-            builder.type_float(64)
+            builder.type_float(64, None)
         } else {
             f32_type
         };

@@ -36,6 +36,8 @@ host = ["dep:libc", "dep:windows-sys"]
 
 [dependencies]
 thiserror = { workspace = true }
+# Steam app ids and the Steam compatibility environment of Proton launches.
+bun-steam = { workspace = true }
 
 # Backend Linux/Wine : process_vm_readv/writev via libc.
 [target.'cfg(target_os = "linux")'.dependencies]

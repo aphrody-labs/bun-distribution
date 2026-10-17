@@ -1,12 +1,1164 @@
 {
+  "$defs": {
+    "stmt": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "imm"
+                    },
+                    "v": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "v"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "reg"
+                    },
+                    "r": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "r"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "tmp"
+                    },
+                    "t": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "t"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "f": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "k": {
+                      "const": "flag"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "f"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "b": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "imm"
+                    },
+                    "v": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "v"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "reg"
+                    },
+                    "r": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "r"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "tmp"
+                    },
+                    "t": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "t"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "f": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "k": {
+                      "const": "flag"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "f"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "op": {
+              "enum": [
+                "add",
+                "sub",
+                "and",
+                "or",
+                "xor",
+                "mul",
+                "mul_hi_u",
+                "mul_hi_s",
+                "shl",
+                "shr",
+                "sar",
+                "ror",
+                "eq",
+                "ne",
+                "ltu",
+                "lts",
+                "leu",
+                "les",
+                "div_u",
+                "rem_u",
+                "div_s",
+                "rem_s",
+                "sext8",
+                "sext16",
+                "not"
+              ],
+              "type": "string"
+            },
+            "s": {
+              "const": "op"
+            },
+            "t": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "s",
+            "t",
+            "op",
+            "a",
+            "b"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "imm"
+                    },
+                    "v": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "v"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "reg"
+                    },
+                    "r": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "r"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "tmp"
+                    },
+                    "t": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "t"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "f": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "k": {
+                      "const": "flag"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "f"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "b": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "imm"
+                    },
+                    "v": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "v"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "reg"
+                    },
+                    "r": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "r"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "tmp"
+                    },
+                    "t": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "t"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "f": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "k": {
+                      "const": "flag"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "f"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "c": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "imm"
+                    },
+                    "v": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "v"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "reg"
+                    },
+                    "r": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "r"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "tmp"
+                    },
+                    "t": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "t"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "f": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "k": {
+                      "const": "flag"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "f"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "s": {
+              "const": "sel"
+            },
+            "t": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "s",
+            "t",
+            "c",
+            "a",
+            "b"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "r": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "s": {
+              "const": "set"
+            },
+            "v": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "imm"
+                    },
+                    "v": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "v"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "reg"
+                    },
+                    "r": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "r"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "tmp"
+                    },
+                    "t": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "t"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "f": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "k": {
+                      "const": "flag"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "f"
+                  ],
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "required": [
+            "s",
+            "r",
+            "v"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "f": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "s": {
+              "const": "set_flag"
+            },
+            "v": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "imm"
+                    },
+                    "v": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "v"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "reg"
+                    },
+                    "r": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "r"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "tmp"
+                    },
+                    "t": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "t"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "f": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "k": {
+                      "const": "flag"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "f"
+                  ],
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "required": [
+            "s",
+            "f",
+            "v"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "addr": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "imm"
+                    },
+                    "v": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "v"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "reg"
+                    },
+                    "r": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "r"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "tmp"
+                    },
+                    "t": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "t"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "f": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "k": {
+                      "const": "flag"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "f"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "bits": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "s": {
+              "const": "load"
+            },
+            "t": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "s",
+            "t",
+            "bits",
+            "addr",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "addr": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "imm"
+                    },
+                    "v": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "v"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "reg"
+                    },
+                    "r": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "r"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "tmp"
+                    },
+                    "t": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "t"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "f": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "k": {
+                      "const": "flag"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "f"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "bits": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "s": {
+              "const": "store"
+            },
+            "v": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "imm"
+                    },
+                    "v": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "v"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "reg"
+                    },
+                    "r": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "r"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "tmp"
+                    },
+                    "t": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "t"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "f": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "k": {
+                      "const": "flag"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "f"
+                  ],
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "required": [
+            "s",
+            "bits",
+            "addr",
+            "v",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "args": {
+              "items": {
+                "oneOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "k": {
+                        "const": "imm"
+                      },
+                      "v": {
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "k",
+                      "v"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "k": {
+                        "const": "reg"
+                      },
+                      "r": {
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "k",
+                      "r"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "k": {
+                        "const": "tmp"
+                      },
+                      "t": {
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "k",
+                      "t"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "f": {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "k": {
+                        "const": "flag"
+                      }
+                    },
+                    "required": [
+                      "k",
+                      "f"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            "f": {
+              "type": "string"
+            },
+            "s": {
+              "const": "call"
+            },
+            "t": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "s",
+            "f",
+            "args"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "c": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "imm"
+                    },
+                    "v": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "v"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "reg"
+                    },
+                    "r": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "r"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "k": {
+                      "const": "tmp"
+                    },
+                    "t": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "t"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "f": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "k": {
+                      "const": "flag"
+                    }
+                  },
+                  "required": [
+                    "k",
+                    "f"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "els": {
+              "items": {
+                "$ref": "#/$defs/stmt"
+              },
+              "type": "array"
+            },
+            "s": {
+              "const": "if"
+            },
+            "then": {
+              "items": {
+                "$ref": "#/$defs/stmt"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "s",
+            "c",
+            "then"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "s": {
+              "const": "exit"
+            }
+          },
+          "required": [
+            "s"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "s": {
+              "const": "fallback"
+            },
+            "why": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "s",
+            "why"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  },
   "$id": "https://aphrody.com/schema/re/ir.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "abi": {
+      "additionalProperties": false,
+      "properties": {
+        "flags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "isas": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "link": {
+          "type": "string"
+        },
+        "machine": {
+          "type": "string"
+        },
+        "regs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "ret": {
+          "type": "string"
+        },
+        "sp": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "regs",
+        "link",
+        "sp",
+        "ret"
+      ],
+      "type": "object"
+    },
     "arch": {
       "enum": [
         "x86",
-        "x86_64"
+        "x86_64",
+        "aarch64",
+        "armv4t",
+        "r3000a",
+        "6502"
       ],
       "type": "string"
     },
@@ -21,7 +1173,10 @@
     "format": {
       "enum": [
         "pe",
-        "elf"
+        "elf",
+        "gba",
+        "psx",
+        "nes"
       ],
       "type": "string"
     },
@@ -245,6 +1400,12 @@
                           }
                         ]
                       },
+                      "body": {
+                        "items": {
+                          "$ref": "#/$defs/stmt"
+                        },
+                        "type": "array"
+                      },
                       "cond": {
                         "enum": [
                           "o",
@@ -390,11 +1551,16 @@
                           "jmp",
                           "jcc",
                           "ret",
-                          "unlifted"
+                          "unlifted",
+                          "guest"
                         ],
                         "type": "string"
                       },
                       "pop": {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "raw": {
                         "minimum": 0,
                         "type": "integer"
                       },
@@ -673,6 +1839,10 @@
               "type": "object"
             },
             "type": "array"
+          },
+          "isa": {
+            "minimum": 0,
+            "type": "integer"
           },
           "name": {
             "anyOf": [

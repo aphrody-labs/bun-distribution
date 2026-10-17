@@ -42,7 +42,9 @@ impl Switch {
     /// Loads an NRO, NSO or any format Ruzu's loader accepts and starts the guest.
     pub fn from_path(path: &str) -> Result<Self, String> {
         console::install();
-        ruzu_common::settings::values_mut().renderer_backend.set_value(RendererBackend::Null);
+        ruzu_common::settings::values_mut()
+            .renderer_backend
+            .set_value(RendererBackend::Null);
 
         let mut system = Box::new(System::new());
         system.initialize();
@@ -53,13 +55,18 @@ impl Switch {
             system.set_filesystem(ruzu_core::file_sys::vfs::vfs_real::RealVfsFilesystem::new());
         }
         let filesystem = system.get_filesystem().unwrap().clone();
-        system.get_filesystem_controller().lock().unwrap().create_factories(filesystem, false);
+        system
+            .get_filesystem_controller()
+            .lock()
+            .unwrap()
+            .create_factories(filesystem, false);
         system.clear_user_channel();
 
         let signal: Signal = Arc::default();
         let sink = signal.clone();
         system.set_subsystem_factory(Box::new(move |system| {
-            let host1x = video_core::host1x::host1x::Host1x::new_with_system(SystemRef::from_ref(system));
+            let host1x =
+                video_core::host1x::host1x::Host1x::new_with_system(SystemRef::from_ref(system));
             let syncpoints = host1x.syncpoint_manager().clone();
             let device_memory = host1x.memory_manager().clone();
             system.set_host1x_core(Box::new(host1x));
@@ -75,7 +82,9 @@ impl Switch {
                     Arc::new(|| {}),
                     Arc::new(move || {
                         // SAFETY: the GPU owns this renderer and outlives it.
-                        unsafe { (*(gpu_ptr as *const video_core::gpu::Gpu)).renderer_frame_end_notify() }
+                        unsafe {
+                            (*(gpu_ptr as *const video_core::gpu::Gpu)).renderer_frame_end_notify()
+                        }
                     }),
                 );
                 renderer.set_frame_capture(
@@ -88,7 +97,9 @@ impl Switch {
                         cvar.notify_all();
                     }),
                 );
-                Ok::<_, String>(Box::new(renderer) as Box<dyn video_core::renderer_base::RendererBase>)
+                Ok::<_, String>(
+                    Box::new(renderer) as Box<dyn video_core::renderer_base::RendererBase>
+                )
             })?;
 
             // GPU engines reach guest memory through device addresses: SMMU first, then the
@@ -98,9 +109,15 @@ impl Switch {
             let raw = memory_raw.clone();
             gpu.set_guest_memory_reader(Arc::new(move |addr, out: &mut [u8]| {
                 let sys = system_ref.get();
-                if let Some(ptr) = sys.host1x_core().map(|h| h.smmu_lookup(addr)).filter(|&p| p != 0) {
+                if let Some(ptr) = sys
+                    .host1x_core()
+                    .map(|h| h.smmu_lookup(addr))
+                    .filter(|&p| p != 0)
+                {
                     // SAFETY: SMMU-mapped host backing covers the requested span.
-                    unsafe { std::ptr::copy_nonoverlapping(ptr as *const u8, out.as_mut_ptr(), out.len()) };
+                    unsafe {
+                        std::ptr::copy_nonoverlapping(ptr as *const u8, out.as_mut_ptr(), out.len())
+                    };
                     return true;
                 }
                 if let Some(memory) = sys.memory_shared() {
@@ -117,9 +134,15 @@ impl Switch {
             let system_ref = SystemRef::from_ref(system);
             gpu.set_guest_memory_writer(Arc::new(move |addr, data: &[u8]| {
                 let sys = system_ref.get();
-                if let Some(ptr) = sys.host1x_core().map(|h| h.smmu_lookup(addr)).filter(|&p| p != 0) {
+                if let Some(ptr) = sys
+                    .host1x_core()
+                    .map(|h| h.smmu_lookup(addr))
+                    .filter(|&p| p != 0)
+                {
                     // SAFETY: SMMU-mapped host backing covers the span.
-                    unsafe { std::ptr::copy_nonoverlapping(data.as_ptr(), ptr as *mut u8, data.len()) };
+                    unsafe {
+                        std::ptr::copy_nonoverlapping(data.as_ptr(), ptr as *mut u8, data.len())
+                    };
                     return;
                 }
                 if let Some(memory) = sys.memory_shared() {
@@ -129,7 +152,9 @@ impl Switch {
                 }
                 if let Some(ptr) = dram(sys, addr, data.len()) {
                     // SAFETY: inside the emulated DRAM backing.
-                    unsafe { std::ptr::copy_nonoverlapping(data.as_ptr(), ptr as *mut u8, data.len()) };
+                    unsafe {
+                        std::ptr::copy_nonoverlapping(data.as_ptr(), ptr as *mut u8, data.len())
+                    };
                 }
             }));
             system.set_gpu_core(gpu);
@@ -141,7 +166,10 @@ impl Switch {
             return Err(format!("Switch: cannot load {path}: {status:?}"));
         }
         system.apply_settings();
-        if let Some(gpu) = system.gpu_core().and_then(|g| g.as_any().downcast_ref::<video_core::gpu::Gpu>()) {
+        if let Some(gpu) = system
+            .gpu_core()
+            .and_then(|g| g.as_any().downcast_ref::<video_core::gpu::Gpu>())
+        {
             gpu.start();
         }
         system.get_cpu_manager().on_gpu_ready();
@@ -152,7 +180,13 @@ impl Switch {
             cvar.notify_all();
         }));
         system.run();
-        Ok(Self { system: std::mem::ManuallyDrop::new(system), signal, seen: 0, screen: None, stopped: None })
+        Ok(Self {
+            system: std::mem::ManuallyDrop::new(system),
+            signal,
+            seen: 0,
+            screen: None,
+            stopped: None,
+        })
     }
 }
 
@@ -172,7 +206,13 @@ fn dram(system: &System, addr: u64, len: usize) -> Option<*const u8> {
         return None;
     }
     // SAFETY: offsets past BASE inside the DRAM size index the emulated DRAM backing.
-    Some(unsafe { system.device_memory().buffer.backing_base_pointer().add(offset) as *const u8 })
+    Some(unsafe {
+        system
+            .device_memory()
+            .buffer
+            .backing_base_pointer()
+            .add(offset) as *const u8
+    })
 }
 
 impl Machine for Switch {
@@ -191,8 +231,16 @@ impl Machine for Switch {
             if shared.frames > self.seen {
                 self.seen = shared.frames;
                 if let Some(frame) = shared.latest.take() {
-                    let rgb = frame.rgba.chunks_exact(4).flat_map(|p| [p[0], p[1], p[2]]).collect();
-                    self.screen = Some(Screen { width: frame.width as usize, height: frame.height as usize, rgb });
+                    let rgb = frame
+                        .rgba
+                        .chunks_exact(4)
+                        .flat_map(|p| [p[0], p[1], p[2]])
+                        .collect();
+                    self.screen = Some(Screen {
+                        width: frame.width as usize,
+                        height: frame.height as usize,
+                        rgb,
+                    });
                 }
                 return Step::Frame;
             }
@@ -204,7 +252,10 @@ impl Machine for Switch {
             let now = Instant::now();
             if now >= deadline {
                 drop(shared);
-                self.stopped = Some(format!("no frame presented within {}s", FRAME_TIMEOUT.as_secs()));
+                self.stopped = Some(format!(
+                    "no frame presented within {}s",
+                    FRAME_TIMEOUT.as_secs()
+                ));
                 return Step::Shutdown;
             }
             shared = cvar.wait_timeout(shared, deadline - now).unwrap().0;
@@ -213,8 +264,16 @@ impl Machine for Switch {
 
     fn screens(&self) -> Vec<Screen> {
         let screen = self.screen.as_ref().map_or_else(
-            || Screen { width: 1280, height: 720, rgb: vec![0; 1280 * 720 * 3] },
-            |s| Screen { width: s.width, height: s.height, rgb: s.rgb.clone() },
+            || Screen {
+                width: 1280,
+                height: 720,
+                rgb: vec![0; 1280 * 720 * 3],
+            },
+            |s| Screen {
+                width: s.width,
+                height: s.height,
+                rgb: s.rgb.clone(),
+            },
         );
         vec![screen]
     }
@@ -263,7 +322,8 @@ mod console {
 
     impl log::Log for Sink {
         fn enabled(&self, metadata: &log::Metadata) -> bool {
-            metadata.target().ends_with("svc_debug_string") || (self.echo && metadata.level() <= log::Level::Warn)
+            metadata.target().ends_with("svc_debug_string")
+                || (self.echo && metadata.level() <= log::Level::Warn)
         }
 
         fn log(&self, record: &log::Record) {

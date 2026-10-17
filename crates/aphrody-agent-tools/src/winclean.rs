@@ -2,7 +2,7 @@
 //! Native Windows computer use and OS control through the in-process
 //! `aphrody-winclean` crate.
 //!
-//! Every tool of the WinClean catalog (166, see [`aphrody_winclean::TOOL_NAMES`]) becomes a
+//! Every tool of the WinClean catalog (see [`aphrody_winclean::TOOL_NAMES`]) becomes a
 //! [`ToolExecutor`] backed by an in-process call into the DLL — no MCP server,
 //! no subprocess. Two exposure tiers keep the model context small:
 //!
@@ -41,6 +41,23 @@ pub const WINCLEAN_DIRECT_TOOLS: &[&str] = &[
     "list_windows",
 ];
 
+/// Gaming profile: low-latency capture, frame pacing, high-rate input, Steam launch and the
+/// read-only optimisation checks, advertised directly by [`winclean_gaming_tools`].
+pub const WINCLEAN_GAMING_TOOLS: &[&str] = &[
+    "gaming_environment",
+    "gaming_capture_window",
+    "gaming_capture_benchmark",
+    "gaming_frame_pacing",
+    "gaming_mouse_delta",
+    "gaming_mouse_button",
+    "gaming_key",
+    "gaming_input_sequence",
+    "gaming_steam_launch",
+    "gaming_profile_status",
+    "list_windows",
+    "switch_to_window",
+];
+
 /// Tools that change machine state; escalated when `APHRODY_GUARD` is enabled.
 const MUTATING_TOOLS: &[&str] = &[
     "delete_path",
@@ -63,6 +80,7 @@ const MUTATING_TOOLS: &[&str] = &[
     "set_active_power_plan",
     "set_hags_mode",
     "set_gpu_preference",
+    "gaming_profile_apply",
     "wsl_execute",
     "wsl_send_signal",
     "steam_kill_game",
@@ -226,9 +244,22 @@ impl ToolExecutor for WincleanGatewayTool {
 /// rest of the catalog as deferred (dispatch-only) tools.
 #[must_use]
 pub fn winclean_tools() -> Vec<Arc<dyn ToolExecutor>> {
+    profile_tools(WINCLEAN_DIRECT_TOOLS)
+}
+
+/// The gaming profile: the gateway, the computer-use core plus [`WINCLEAN_GAMING_TOOLS`] as direct
+/// tools, and the rest of the catalog deferred.
+#[must_use]
+pub fn winclean_gaming_tools() -> Vec<Arc<dyn ToolExecutor>> {
+    let direct: Vec<&str> =
+        WINCLEAN_DIRECT_TOOLS.iter().chain(WINCLEAN_GAMING_TOOLS).copied().collect();
+    profile_tools(&direct)
+}
+
+fn profile_tools(direct: &[&str]) -> Vec<Arc<dyn ToolExecutor>> {
     let mut tools: Vec<Arc<dyn ToolExecutor>> = vec![Arc::new(WincleanGatewayTool::new())];
     for info in aphrody_winclean::catalog() {
-        let exposure = if WINCLEAN_DIRECT_TOOLS.contains(&info.name.as_str()) {
+        let exposure = if direct.contains(&info.name.as_str()) {
             ToolExposure::Direct
         } else {
             ToolExposure::Deferred

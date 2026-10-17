@@ -660,13 +660,10 @@ pub fn scan_installed_steam_games(libraries: &[PathBuf]) -> std::io::Result<Vec<
                     Err(_) => continue,
                 };
 
-                let app_id = match parse_vdf_key(&content, "appid").and_then(|v| v.parse::<u32>().ok()) {
-                    Some(id) => id,
-                    None => continue,
-                };
-
-                let name = parse_vdf_key(&content, "name").unwrap_or_default();
-                let install_dir = parse_vdf_key(&content, "installdir").unwrap_or_default();
+                let Ok(manifest) = bun_steam::AppManifest::parse(&content) else { continue };
+                let app_id = manifest.app_id;
+                let name = manifest.name;
+                let install_dir = manifest.install_dir;
 
                 // Match by Steam AppID first, then by title
                 let matched_game = catalog.iter().find(|g| g.steam_app_id == Some(app_id)).cloned().or_else(|| {
@@ -769,19 +766,6 @@ pub fn scan_all_installed_games(
     let mut android = scan_installed_android_packages(android_roots)?;
     all.append(&mut android);
     Ok(all)
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-fn parse_vdf_key(content: &str, target_key: &str) -> Option<String> {
-    for line in content.lines() {
-        let mut tokens = line.split('"').filter(|t| !t.trim().is_empty());
-        if let Some(key) = tokens.next()
-            && key == target_key
-        {
-            return tokens.next().map(str::to_owned);
-        }
-    }
-    None
 }
 
 #[cfg(test)]

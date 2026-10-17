@@ -7,7 +7,7 @@ use serde::Serialize;
 use crate::{Result, ToolResult, Winclean};
 
 /// Every tool name exposed by the Rust WinClean compatibility surface.
-pub const TOOL_NAMES: [&str; 166] = [
+pub const TOOL_NAMES: [&str; 182] = [
     "analyze_pe",
     "aob_scan",
     "asar_list",
@@ -47,6 +47,22 @@ pub const TOOL_NAMES: [&str; 166] = [
     "gamepad_environment",
     "gamepad_press_button",
     "gamepad_send_xbox360_state",
+    "gaming_capture_benchmark",
+    "gaming_capture_window",
+    "gaming_environment",
+    "gaming_frame_pacing",
+    "gaming_get_background_apps",
+    "gaming_get_game_bar_capture",
+    "gaming_get_game_mode",
+    "gaming_get_gpu_info",
+    "gaming_get_timer_resolution",
+    "gaming_input_sequence",
+    "gaming_key",
+    "gaming_mouse_button",
+    "gaming_mouse_delta",
+    "gaming_profile_apply",
+    "gaming_profile_status",
+    "gaming_steam_launch",
     "get_active_power_plan",
     "get_clipboard_text",
     "get_cpu_info",
@@ -1886,6 +1902,606 @@ impl GamepadSendXbox360StateArgs {
     }
 }
 
+/// Arguments for [`Winclean::gaming_capture_benchmark`] (`gaming_capture_benchmark`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingCaptureBenchmarkArgs {
+    /// Target window: Windows HWND or X11 window id. 0 or absent uses title, else the foreground
+    /// window.
+    #[serde(rename = "hwnd", skip_serializing_if = "Option::is_none")]
+    pub hwnd: Option<i64>,
+    /// Case-insensitive substring of the target window title, used when hwnd is absent.
+    #[serde(rename = "title", skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    /// Measurement window in ms [100, 30000].
+    ///
+    /// Default: `3000`.
+    #[serde(rename = "durationMs", skip_serializing_if = "Option::is_none")]
+    pub duration_ms: Option<i64>,
+    /// Also measure the GDI PNG capture rate (Windows).
+    ///
+    /// Default: `true`.
+    #[serde(rename = "compareGdi", skip_serializing_if = "Option::is_none")]
+    pub compare_gdi: Option<bool>,
+}
+
+impl GamingCaptureBenchmarkArgs {
+    /// Creates arguments with every field at its default.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets `hwnd`.
+    #[must_use]
+    pub fn hwnd(mut self, value: i64) -> Self {
+        self.hwnd = Some(value);
+        self
+    }
+
+    /// Sets `title`.
+    #[must_use]
+    pub fn title(mut self, value: impl Into<String>) -> Self {
+        self.title = Some(value.into());
+        self
+    }
+
+    /// Sets `durationMs`.
+    #[must_use]
+    pub fn duration_ms(mut self, value: i64) -> Self {
+        self.duration_ms = Some(value);
+        self
+    }
+
+    /// Sets `compareGdi`.
+    #[must_use]
+    pub fn compare_gdi(mut self, value: bool) -> Self {
+        self.compare_gdi = Some(value);
+        self
+    }
+}
+
+/// Arguments for [`Winclean::gaming_capture_window`] (`gaming_capture_window`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingCaptureWindowArgs {
+    /// Target window: Windows HWND or X11 window id. 0 or absent uses title, else the foreground
+    /// window.
+    #[serde(rename = "hwnd", skip_serializing_if = "Option::is_none")]
+    pub hwnd: Option<i64>,
+    /// Case-insensitive substring of the target window title, used when hwnd is absent.
+    #[serde(rename = "title", skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    /// Optional PNG path written in addition to the returned image.
+    #[serde(rename = "outputPath", skip_serializing_if = "Option::is_none")]
+    pub output_path: Option<String>,
+    /// Return the PNG inline as base64.
+    ///
+    /// Default: `true`.
+    #[serde(rename = "includeImage", skip_serializing_if = "Option::is_none")]
+    pub include_image: Option<bool>,
+}
+
+impl GamingCaptureWindowArgs {
+    /// Creates arguments with every field at its default.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets `hwnd`.
+    #[must_use]
+    pub fn hwnd(mut self, value: i64) -> Self {
+        self.hwnd = Some(value);
+        self
+    }
+
+    /// Sets `title`.
+    #[must_use]
+    pub fn title(mut self, value: impl Into<String>) -> Self {
+        self.title = Some(value.into());
+        self
+    }
+
+    /// Sets `outputPath`.
+    #[must_use]
+    pub fn output_path(mut self, value: impl Into<String>) -> Self {
+        self.output_path = Some(value.into());
+        self
+    }
+
+    /// Sets `includeImage`.
+    #[must_use]
+    pub fn include_image(mut self, value: bool) -> Self {
+        self.include_image = Some(value);
+        self
+    }
+}
+
+/// Arguments for [`Winclean::gaming_environment`] (`gaming_environment`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingEnvironmentArgs {}
+
+/// Arguments for [`Winclean::gaming_frame_pacing`] (`gaming_frame_pacing`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingFramePacingArgs {
+    /// Target window: Windows HWND or X11 window id. 0 or absent uses title, else the foreground
+    /// window.
+    #[serde(rename = "hwnd", skip_serializing_if = "Option::is_none")]
+    pub hwnd: Option<i64>,
+    /// Case-insensitive substring of the target window title, used when hwnd is absent.
+    #[serde(rename = "title", skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    /// Observation window in ms [100, 30000].
+    ///
+    /// Default: `3000`.
+    #[serde(rename = "durationMs", skip_serializing_if = "Option::is_none")]
+    pub duration_ms: Option<i64>,
+}
+
+impl GamingFramePacingArgs {
+    /// Creates arguments with every field at its default.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets `hwnd`.
+    #[must_use]
+    pub fn hwnd(mut self, value: i64) -> Self {
+        self.hwnd = Some(value);
+        self
+    }
+
+    /// Sets `title`.
+    #[must_use]
+    pub fn title(mut self, value: impl Into<String>) -> Self {
+        self.title = Some(value.into());
+        self
+    }
+
+    /// Sets `durationMs`.
+    #[must_use]
+    pub fn duration_ms(mut self, value: i64) -> Self {
+        self.duration_ms = Some(value);
+        self
+    }
+}
+
+/// Arguments for [`Winclean::gaming_get_background_apps`] (`gaming_get_background_apps`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingGetBackgroundAppsArgs {}
+
+/// Arguments for [`Winclean::gaming_get_game_bar_capture`] (`gaming_get_game_bar_capture`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingGetGameBarCaptureArgs {}
+
+/// Arguments for [`Winclean::gaming_get_game_mode`] (`gaming_get_game_mode`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingGetGameModeArgs {}
+
+/// Arguments for [`Winclean::gaming_get_gpu_info`] (`gaming_get_gpu_info`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingGetGpuInfoArgs {}
+
+/// Arguments for [`Winclean::gaming_get_timer_resolution`] (`gaming_get_timer_resolution`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingGetTimerResolutionArgs {}
+
+/// Arguments for [`Winclean::gaming_input_sequence`] (`gaming_input_sequence`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingInputSequenceArgs {
+    /// Target window (Windows HWND or X11 id): focused and verified as foreground before any input
+    /// is sent; input is refused otherwise.
+    #[serde(rename = "hwnd", skip_serializing_if = "Option::is_none")]
+    pub hwnd: Option<i64>,
+    /// Case-insensitive title substring of the target window, used when hwnd is absent; same focus
+    /// guard.
+    #[serde(rename = "title", skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    /// Input events, at most 10000.
+    #[serde(rename = "events")]
+    pub events: Vec<serde_json::Value>,
+}
+
+impl GamingInputSequenceArgs {
+    /// Creates arguments with every field at its default.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets `hwnd`.
+    #[must_use]
+    pub fn hwnd(mut self, value: i64) -> Self {
+        self.hwnd = Some(value);
+        self
+    }
+
+    /// Sets `title`.
+    #[must_use]
+    pub fn title(mut self, value: impl Into<String>) -> Self {
+        self.title = Some(value.into());
+        self
+    }
+
+    /// Sets `events`.
+    #[must_use]
+    pub fn events(mut self, value: Vec<serde_json::Value>) -> Self {
+        self.events = value;
+        self
+    }
+}
+
+/// Arguments for [`Winclean::gaming_key`] (`gaming_key`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingKeyArgs {
+    /// Target window (Windows HWND or X11 id): focused and verified as foreground before any input
+    /// is sent; input is refused otherwise.
+    #[serde(rename = "hwnd", skip_serializing_if = "Option::is_none")]
+    pub hwnd: Option<i64>,
+    /// Case-insensitive title substring of the target window, used when hwnd is absent; same focus
+    /// guard.
+    #[serde(rename = "title", skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    /// Key name at its US-QWERTY physical position (games bind scan codes): a-z, 0-9, space, enter,
+    /// escape, tab, shift, rshift, ctrl, alt, backspace, capslock, f1-f12, up, down, left, right,
+    /// home, end, pageup, pagedown, insert, delete.
+    #[serde(rename = "key", skip_serializing_if = "Option::is_none")]
+    pub key: Option<String>,
+    /// PC set-1 scan code, used instead of key for any other key.
+    #[serde(rename = "scanCode", skip_serializing_if = "Option::is_none")]
+    pub scan_code: Option<i64>,
+    /// Extended (E0) scan code flag for scanCode.
+    ///
+    /// Default: `false`.
+    #[serde(rename = "extended", skip_serializing_if = "Option::is_none")]
+    pub extended: Option<bool>,
+    /// down, up, tap or hold.
+    #[serde(rename = "action", skip_serializing_if = "Option::is_none")]
+    pub action: Option<String>,
+    /// Hold time in ms for tap/hold (tap 20, hold 250 by default).
+    #[serde(rename = "holdMs", skip_serializing_if = "Option::is_none")]
+    pub hold_ms: Option<i64>,
+    /// Repetitions [1, 1000].
+    ///
+    /// Default: `1`.
+    #[serde(rename = "repeat", skip_serializing_if = "Option::is_none")]
+    pub repeat: Option<i64>,
+    /// Pause between repetitions in ms.
+    ///
+    /// Default: `20`.
+    #[serde(rename = "intervalMs", skip_serializing_if = "Option::is_none")]
+    pub interval_ms: Option<i64>,
+}
+
+impl GamingKeyArgs {
+    /// Creates arguments with every field at its default.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets `hwnd`.
+    #[must_use]
+    pub fn hwnd(mut self, value: i64) -> Self {
+        self.hwnd = Some(value);
+        self
+    }
+
+    /// Sets `title`.
+    #[must_use]
+    pub fn title(mut self, value: impl Into<String>) -> Self {
+        self.title = Some(value.into());
+        self
+    }
+
+    /// Sets `key`.
+    #[must_use]
+    pub fn key(mut self, value: impl Into<String>) -> Self {
+        self.key = Some(value.into());
+        self
+    }
+
+    /// Sets `scanCode`.
+    #[must_use]
+    pub fn scan_code(mut self, value: i64) -> Self {
+        self.scan_code = Some(value);
+        self
+    }
+
+    /// Sets `extended`.
+    #[must_use]
+    pub fn extended(mut self, value: bool) -> Self {
+        self.extended = Some(value);
+        self
+    }
+
+    /// Sets `action`.
+    #[must_use]
+    pub fn action(mut self, value: impl Into<String>) -> Self {
+        self.action = Some(value.into());
+        self
+    }
+
+    /// Sets `holdMs`.
+    #[must_use]
+    pub fn hold_ms(mut self, value: i64) -> Self {
+        self.hold_ms = Some(value);
+        self
+    }
+
+    /// Sets `repeat`.
+    #[must_use]
+    pub fn repeat(mut self, value: i64) -> Self {
+        self.repeat = Some(value);
+        self
+    }
+
+    /// Sets `intervalMs`.
+    #[must_use]
+    pub fn interval_ms(mut self, value: i64) -> Self {
+        self.interval_ms = Some(value);
+        self
+    }
+}
+
+/// Arguments for [`Winclean::gaming_mouse_button`] (`gaming_mouse_button`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingMouseButtonArgs {
+    /// Target window (Windows HWND or X11 id): focused and verified as foreground before any input
+    /// is sent; input is refused otherwise.
+    #[serde(rename = "hwnd", skip_serializing_if = "Option::is_none")]
+    pub hwnd: Option<i64>,
+    /// Case-insensitive title substring of the target window, used when hwnd is absent; same focus
+    /// guard.
+    #[serde(rename = "title", skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    /// left, right or middle.
+    #[serde(rename = "button", skip_serializing_if = "Option::is_none")]
+    pub button: Option<String>,
+    /// down, up or click.
+    #[serde(rename = "action", skip_serializing_if = "Option::is_none")]
+    pub action: Option<String>,
+    /// Hold time for click in ms.
+    ///
+    /// Default: `30`.
+    #[serde(rename = "holdMs", skip_serializing_if = "Option::is_none")]
+    pub hold_ms: Option<i64>,
+}
+
+impl GamingMouseButtonArgs {
+    /// Creates arguments with every field at its default.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets `hwnd`.
+    #[must_use]
+    pub fn hwnd(mut self, value: i64) -> Self {
+        self.hwnd = Some(value);
+        self
+    }
+
+    /// Sets `title`.
+    #[must_use]
+    pub fn title(mut self, value: impl Into<String>) -> Self {
+        self.title = Some(value.into());
+        self
+    }
+
+    /// Sets `button`.
+    #[must_use]
+    pub fn button(mut self, value: impl Into<String>) -> Self {
+        self.button = Some(value.into());
+        self
+    }
+
+    /// Sets `action`.
+    #[must_use]
+    pub fn action(mut self, value: impl Into<String>) -> Self {
+        self.action = Some(value.into());
+        self
+    }
+
+    /// Sets `holdMs`.
+    #[must_use]
+    pub fn hold_ms(mut self, value: i64) -> Self {
+        self.hold_ms = Some(value);
+        self
+    }
+}
+
+/// Arguments for [`Winclean::gaming_mouse_delta`] (`gaming_mouse_delta`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingMouseDeltaArgs {
+    /// Target window (Windows HWND or X11 id): focused and verified as foreground before any input
+    /// is sent; input is refused otherwise.
+    #[serde(rename = "hwnd", skip_serializing_if = "Option::is_none")]
+    pub hwnd: Option<i64>,
+    /// Case-insensitive title substring of the target window, used when hwnd is absent; same focus
+    /// guard.
+    #[serde(rename = "title", skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    /// Total horizontal counts.
+    ///
+    /// Default: `0`.
+    #[serde(rename = "dx", skip_serializing_if = "Option::is_none")]
+    pub dx: Option<i64>,
+    /// Total vertical counts.
+    ///
+    /// Default: `0`.
+    #[serde(rename = "dy", skip_serializing_if = "Option::is_none")]
+    pub dy: Option<i64>,
+    /// Number of input events [1, 100000].
+    ///
+    /// Default: `1`.
+    #[serde(rename = "steps", skip_serializing_if = "Option::is_none")]
+    pub steps: Option<i64>,
+    /// Event rate [1, 8000].
+    ///
+    /// Default: `1000`.
+    #[serde(rename = "rateHz", skip_serializing_if = "Option::is_none")]
+    pub rate_hz: Option<i64>,
+}
+
+impl GamingMouseDeltaArgs {
+    /// Creates arguments with every field at its default.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets `hwnd`.
+    #[must_use]
+    pub fn hwnd(mut self, value: i64) -> Self {
+        self.hwnd = Some(value);
+        self
+    }
+
+    /// Sets `title`.
+    #[must_use]
+    pub fn title(mut self, value: impl Into<String>) -> Self {
+        self.title = Some(value.into());
+        self
+    }
+
+    /// Sets `dx`.
+    #[must_use]
+    pub fn dx(mut self, value: i64) -> Self {
+        self.dx = Some(value);
+        self
+    }
+
+    /// Sets `dy`.
+    #[must_use]
+    pub fn dy(mut self, value: i64) -> Self {
+        self.dy = Some(value);
+        self
+    }
+
+    /// Sets `steps`.
+    #[must_use]
+    pub fn steps(mut self, value: i64) -> Self {
+        self.steps = Some(value);
+        self
+    }
+
+    /// Sets `rateHz`.
+    #[must_use]
+    pub fn rate_hz(mut self, value: i64) -> Self {
+        self.rate_hz = Some(value);
+        self
+    }
+}
+
+/// Arguments for [`Winclean::gaming_profile_apply`] (`gaming_profile_apply`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingProfileApplyArgs {
+    /// Must be true to apply.
+    ///
+    /// Default: `false`.
+    #[serde(rename = "confirm", skip_serializing_if = "Option::is_none")]
+    pub confirm: Option<bool>,
+    /// Return the command without applying.
+    ///
+    /// Default: `false`.
+    #[serde(rename = "dryRun", skip_serializing_if = "Option::is_none")]
+    pub dry_run: Option<bool>,
+}
+
+impl GamingProfileApplyArgs {
+    /// Creates arguments with every field at its default.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets `confirm`.
+    #[must_use]
+    pub fn confirm(mut self, value: bool) -> Self {
+        self.confirm = Some(value);
+        self
+    }
+
+    /// Sets `dryRun`.
+    #[must_use]
+    pub fn dry_run(mut self, value: bool) -> Self {
+        self.dry_run = Some(value);
+        self
+    }
+}
+
+/// Arguments for [`Winclean::gaming_profile_status`] (`gaming_profile_status`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingProfileStatusArgs {}
+
+/// Arguments for [`Winclean::gaming_steam_launch`] (`gaming_steam_launch`).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GamingSteamLaunchArgs {
+    /// Steam application id.
+    #[serde(rename = "appId")]
+    pub app_id: i64,
+    /// Game executable name used to find its window (e.g. game.exe).
+    #[serde(rename = "processName", skip_serializing_if = "Option::is_none")]
+    pub process_name: Option<String>,
+    /// Case-insensitive substring of the game window title.
+    #[serde(rename = "windowTitle", skip_serializing_if = "Option::is_none")]
+    pub window_title: Option<String>,
+    /// Window wait timeout in ms (max 600000).
+    ///
+    /// Default: `120000`.
+    #[serde(rename = "timeoutMs", skip_serializing_if = "Option::is_none")]
+    pub timeout_ms: Option<i64>,
+    /// Bring the window to the foreground.
+    ///
+    /// Default: `true`.
+    #[serde(rename = "focus", skip_serializing_if = "Option::is_none")]
+    pub focus: Option<bool>,
+}
+
+impl GamingSteamLaunchArgs {
+    /// Creates arguments with every field at its default.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets `appId`.
+    #[must_use]
+    pub fn app_id(mut self, value: i64) -> Self {
+        self.app_id = value;
+        self
+    }
+
+    /// Sets `processName`.
+    #[must_use]
+    pub fn process_name(mut self, value: impl Into<String>) -> Self {
+        self.process_name = Some(value.into());
+        self
+    }
+
+    /// Sets `windowTitle`.
+    #[must_use]
+    pub fn window_title(mut self, value: impl Into<String>) -> Self {
+        self.window_title = Some(value.into());
+        self
+    }
+
+    /// Sets `timeoutMs`.
+    #[must_use]
+    pub fn timeout_ms(mut self, value: i64) -> Self {
+        self.timeout_ms = Some(value);
+        self
+    }
+
+    /// Sets `focus`.
+    #[must_use]
+    pub fn focus(mut self, value: bool) -> Self {
+        self.focus = Some(value);
+        self
+    }
+}
+
 /// Arguments for [`Winclean::get_active_power_plan`] (`get_active_power_plan`).
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct GetActivePowerPlanArgs {}
@@ -2256,7 +2872,8 @@ pub struct ListDirectoryArgs {
     /// Default: `false`.
     #[serde(rename = "showHidden", skip_serializing_if = "Option::is_none")]
     pub show_hidden: Option<bool>,
-    /// Glob patterns matching entry names to omit. Matching directories are not traversed.
+    /// Optional ASCII case-insensitive glob patterns matching entry names to omit. Matching
+    /// directories are not returned or traversed.
     ///
     /// Default: `[]`.
     #[serde(rename = "exclude", skip_serializing_if = "Option::is_none")]
@@ -2298,7 +2915,7 @@ impl ListDirectoryArgs {
         self
     }
 
-    /// Sets basename glob patterns to exclude, including matching directories.
+    /// Sets `exclude`.
     #[must_use]
     pub fn exclude(mut self, value: Vec<String>) -> Self {
         self.exclude = Some(value);
@@ -4590,12 +5207,9 @@ pub struct SteamGetGameArgs {
     /// Steam AppID (integer).
     #[serde(rename = "appId")]
     pub app_id: i64,
-    /// Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or
-    /// <repo>/var/data/steam-scan.db.
-    ///
-    /// Default: `null`.
-    #[serde(rename = "dbPath", skip_serializing_if = "Option::is_none")]
-    pub db_path: Option<String>,
+    /// Steam client root; defaults to the registry SteamPath or the standard install locations.
+    #[serde(rename = "steamRoot", skip_serializing_if = "Option::is_none")]
+    pub steam_root: Option<String>,
 }
 
 impl SteamGetGameArgs {
@@ -4612,10 +5226,10 @@ impl SteamGetGameArgs {
         self
     }
 
-    /// Sets `dbPath`.
+    /// Sets `steamRoot`.
     #[must_use]
-    pub fn db_path(mut self, value: impl Into<String>) -> Self {
-        self.db_path = Some(value.into());
+    pub fn steam_root(mut self, value: impl Into<String>) -> Self {
+        self.steam_root = Some(value.into());
         self
     }
 }
@@ -4631,12 +5245,9 @@ pub struct SteamGetGameStatusArgs {
     /// Default: `null`.
     #[serde(rename = "executableName", skip_serializing_if = "Option::is_none")]
     pub executable_name: Option<String>,
-    /// Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or
-    /// <repo>/var/data/steam-scan.db.
-    ///
-    /// Default: `null`.
-    #[serde(rename = "dbPath", skip_serializing_if = "Option::is_none")]
-    pub db_path: Option<String>,
+    /// Steam client root; defaults to the registry SteamPath or the standard install locations.
+    #[serde(rename = "steamRoot", skip_serializing_if = "Option::is_none")]
+    pub steam_root: Option<String>,
 }
 
 impl SteamGetGameStatusArgs {
@@ -4660,10 +5271,10 @@ impl SteamGetGameStatusArgs {
         self
     }
 
-    /// Sets `dbPath`.
+    /// Sets `steamRoot`.
     #[must_use]
-    pub fn db_path(mut self, value: impl Into<String>) -> Self {
-        self.db_path = Some(value.into());
+    pub fn steam_root(mut self, value: impl Into<String>) -> Self {
+        self.steam_root = Some(value.into());
         self
     }
 }
@@ -4777,12 +5388,9 @@ pub struct SteamListGamesArgs {
     /// Default: `false`.
     #[serde(rename = "includeMissing", skip_serializing_if = "Option::is_none")]
     pub include_missing: Option<bool>,
-    /// Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or
-    /// <repo>/var/data/steam-scan.db.
-    ///
-    /// Default: `null`.
-    #[serde(rename = "dbPath", skip_serializing_if = "Option::is_none")]
-    pub db_path: Option<String>,
+    /// Steam client root; defaults to the registry SteamPath or the standard install locations.
+    #[serde(rename = "steamRoot", skip_serializing_if = "Option::is_none")]
+    pub steam_root: Option<String>,
 }
 
 impl SteamListGamesArgs {
@@ -4799,10 +5407,10 @@ impl SteamListGamesArgs {
         self
     }
 
-    /// Sets `dbPath`.
+    /// Sets `steamRoot`.
     #[must_use]
-    pub fn db_path(mut self, value: impl Into<String>) -> Self {
-        self.db_path = Some(value.into());
+    pub fn steam_root(mut self, value: impl Into<String>) -> Self {
+        self.steam_root = Some(value.into());
         self
     }
 }
@@ -4810,12 +5418,9 @@ impl SteamListGamesArgs {
 /// Arguments for [`Winclean::steam_list_libraries`] (`steam_list_libraries`).
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct SteamListLibrariesArgs {
-    /// Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or
-    /// <repo>/var/data/steam-scan.db.
-    ///
-    /// Default: `null`.
-    #[serde(rename = "dbPath", skip_serializing_if = "Option::is_none")]
-    pub db_path: Option<String>,
+    /// Steam client root; defaults to the registry SteamPath or the standard install locations.
+    #[serde(rename = "steamRoot", skip_serializing_if = "Option::is_none")]
+    pub steam_root: Option<String>,
 }
 
 impl SteamListLibrariesArgs {
@@ -4825,10 +5430,10 @@ impl SteamListLibrariesArgs {
         Self::default()
     }
 
-    /// Sets `dbPath`.
+    /// Sets `steamRoot`.
     #[must_use]
-    pub fn db_path(mut self, value: impl Into<String>) -> Self {
-        self.db_path = Some(value.into());
+    pub fn steam_root(mut self, value: impl Into<String>) -> Self {
+        self.steam_root = Some(value.into());
         self
     }
 }
@@ -4859,12 +5464,9 @@ impl SteamOpenUriArgs {
 /// Arguments for [`Winclean::steam_scan_summary`] (`steam_scan_summary`).
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct SteamScanSummaryArgs {
-    /// Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or
-    /// <repo>/var/data/steam-scan.db.
-    ///
-    /// Default: `null`.
-    #[serde(rename = "dbPath", skip_serializing_if = "Option::is_none")]
-    pub db_path: Option<String>,
+    /// Steam client root; defaults to the registry SteamPath or the standard install locations.
+    #[serde(rename = "steamRoot", skip_serializing_if = "Option::is_none")]
+    pub steam_root: Option<String>,
 }
 
 impl SteamScanSummaryArgs {
@@ -4874,10 +5476,10 @@ impl SteamScanSummaryArgs {
         Self::default()
     }
 
-    /// Sets `dbPath`.
+    /// Sets `steamRoot`.
     #[must_use]
-    pub fn db_path(mut self, value: impl Into<String>) -> Self {
-        self.db_path = Some(value.into());
+    pub fn steam_root(mut self, value: impl Into<String>) -> Self {
+        self.steam_root = Some(value.into());
         self
     }
 }
@@ -4885,12 +5487,9 @@ impl SteamScanSummaryArgs {
 /// Arguments for [`Winclean::steam_vault_status`] (`steam_vault_status`).
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct SteamVaultStatusArgs {
-    /// Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or
-    /// <repo>/var/data/steam-scan.db.
-    ///
-    /// Default: `null`.
-    #[serde(rename = "dbPath", skip_serializing_if = "Option::is_none")]
-    pub db_path: Option<String>,
+    /// Steam client root; defaults to the registry SteamPath or the standard install locations.
+    #[serde(rename = "steamRoot", skip_serializing_if = "Option::is_none")]
+    pub steam_root: Option<String>,
 }
 
 impl SteamVaultStatusArgs {
@@ -4900,10 +5499,10 @@ impl SteamVaultStatusArgs {
         Self::default()
     }
 
-    /// Sets `dbPath`.
+    /// Sets `steamRoot`.
     #[must_use]
-    pub fn db_path(mut self, value: impl Into<String>) -> Self {
-        self.db_path = Some(value.into());
+    pub fn steam_root(mut self, value: impl Into<String>) -> Self {
+        self.steam_root = Some(value.into());
         self
     }
 }
@@ -6514,7 +7113,10 @@ impl Winclean {
         self.call_async("enable_scheduled_task", args).await
     }
 
-    /// Allocates a virtual Xbox 360 controller via ViGEmBus and connects it to the system. The virtual controller is indexed by slotIndex (0–7). Returns {"success":true,"slot":N,"vendorId":"045e","productId":"028e"} on success. Requires ViGEmBus: https://github.com/nefarius/ViGEmBus/releases
+    /// Allocates a virtual Xbox 360 controller via ViGEmBus and connects it to the system. The
+    /// virtual controller is indexed by slotIndex (0–7). Returns
+    /// {"success":true,"slot":N,"vendorId":"045e","productId":"028e"} on success. Requires
+    /// ViGEmBus: https://github.com/nefarius/ViGEmBus/releases
     ///
     /// # Errors
     /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
@@ -6570,7 +7172,9 @@ impl Winclean {
         self.call_async("gamepad_destroy_all", args).await
     }
 
-    /// Diagnoses the ViGEmBus virtual gamepad environment. Reports whether ViGEmBus registry key exists, whether the service is running, and whether ViGEmClient.dll can be located on disk. Install ViGEmBus from https://github.com/nefarius/ViGEmBus/releases if absent.
+    /// Diagnoses the ViGEmBus virtual gamepad environment. Reports whether ViGEmBus registry key
+    /// exists, whether the service is running, and whether ViGEmClient.dll can be located on disk.
+    /// Install ViGEmBus from https://github.com/nefarius/ViGEmBus/releases if absent.
     ///
     /// # Errors
     /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
@@ -6633,6 +7237,351 @@ impl Winclean {
         args: &GamepadSendXbox360StateArgs,
     ) -> Result<ToolResult> {
         self.call_async("gamepad_send_xbox360_state", args).await
+    }
+
+    /// Measures sustained capture throughput of a window for durationMs: GPU grabs with CPU
+    /// readback per second (grabFps, grab latency avg/p95/max) and frames delivered by the
+    /// compositor (deliveredFps). Windows also reports the GDI PrintWindow PNG rate for comparison.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_capture_benchmark(
+        &self,
+        args: &GamingCaptureBenchmarkArgs,
+    ) -> Result<ToolResult> {
+        self.call("gaming_capture_benchmark", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_capture_benchmark`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_capture_benchmark_async(
+        &self,
+        args: &GamingCaptureBenchmarkArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_capture_benchmark", args).await
+    }
+
+    /// Low-latency capture of one game window. Windows: Windows.Graphics.Capture on a Direct3D 11
+    /// device (works for DirectX/Vulkan and occluded windows; GDI PrintWindow fallback). Linux: X11
+    /// import on DISPLAY (Xvfb :99 on the VPS session). Returns PNG plus backend, size and capture
+    /// time.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_capture_window(&self, args: &GamingCaptureWindowArgs) -> Result<ToolResult> {
+        self.call("gaming_capture_window", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_capture_window`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_capture_window_async(
+        &self,
+        args: &GamingCaptureWindowArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_capture_window", args).await
+    }
+
+    /// Reports the gaming computer-use backends of this host: Windows.Graphics.Capture support,
+    /// SendInput, XInput pad slots (read-only), GameInput runtime and whether the ViGEmBus driver
+    /// needed for virtual Xbox pads is installed (never installed by this SDK); on Linux the X11
+    /// display, xdotool, import, /dev/uinput and gamescope.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_environment(&self, args: &GamingEnvironmentArgs) -> Result<ToolResult> {
+        self.call("gaming_environment", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_environment`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_environment_async(
+        &self,
+        args: &GamingEnvironmentArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_environment", args).await
+    }
+
+    /// Observes a game window's presented frames for durationMs without hooking the game: fps,
+    /// frame time avg/p50/p95/p99/min/max, jitter and 1% low, from DWM present timestamps
+    /// (Windows.Graphics.Capture). A static window delivers no frames. Linux samples X11 content
+    /// changes (bounded by the capture rate).
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_frame_pacing(&self, args: &GamingFramePacingArgs) -> Result<ToolResult> {
+        self.call("gaming_frame_pacing", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_frame_pacing`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_frame_pacing_async(
+        &self,
+        args: &GamingFramePacingArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_frame_pacing", args).await
+    }
+
+    /// Read-only: background apps switch (BackgroundAccessApplications GlobalUserDisabled) and the
+    /// LetAppsRunInBackground policy.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_get_background_apps(
+        &self,
+        args: &GamingGetBackgroundAppsArgs,
+    ) -> Result<ToolResult> {
+        self.call("gaming_get_background_apps", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_get_background_apps`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_get_background_apps_async(
+        &self,
+        args: &GamingGetBackgroundAppsArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_get_background_apps", args).await
+    }
+
+    /// Read-only: Xbox Game Bar background recording and app capture (GameConfigStore
+    /// GameDVR_Enabled, GameDVR AppCaptureEnabled, AllowGameDVR policy).
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_get_game_bar_capture(
+        &self,
+        args: &GamingGetGameBarCaptureArgs,
+    ) -> Result<ToolResult> {
+        self.call("gaming_get_game_bar_capture", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_get_game_bar_capture`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_get_game_bar_capture_async(
+        &self,
+        args: &GamingGetGameBarCaptureArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_get_game_bar_capture", args).await
+    }
+
+    /// Read-only: Windows Game Mode (HKCU GameBar AutoGameModeEnabled / AllowAutoGameMode) with the
+    /// recommended value.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_get_game_mode(&self, args: &GamingGetGameModeArgs) -> Result<ToolResult> {
+        self.call("gaming_get_game_mode", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_get_game_mode`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_get_game_mode_async(
+        &self,
+        args: &GamingGetGameModeArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_get_game_mode", args).await
+    }
+
+    /// Read-only: NVIDIA GPU state through nvidia-smi/NVML (name, driver, P-state, power limit and
+    /// draw, clocks, temperature, utilisation, memory, PCIe link), hardware-accelerated GPU
+    /// scheduling and per-app GPU preferences.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_get_gpu_info(&self, args: &GamingGetGpuInfoArgs) -> Result<ToolResult> {
+        self.call("gaming_get_gpu_info", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_get_gpu_info`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_get_gpu_info_async(
+        &self,
+        args: &GamingGetGpuInfoArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_get_gpu_info", args).await
+    }
+
+    /// Read-only: current, finest and coarsest kernel timer resolution (NtQueryTimerResolution) and
+    /// the Windows 11 GlobalTimerResolutionRequests setting.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_get_timer_resolution(
+        &self,
+        args: &GamingGetTimerResolutionArgs,
+    ) -> Result<ToolResult> {
+        self.call("gaming_get_timer_resolution", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_get_timer_resolution`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_get_timer_resolution_async(
+        &self,
+        args: &GamingGetTimerResolutionArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_get_timer_resolution", args).await
+    }
+
+    /// Plays a timed input sequence in one call for frame-accurate combos: events
+    /// [{type:'move',dx,dy} | {type:'key',key|scanCode,action:down|up|tap,holdMs} |
+    /// {type:'button',button,action:down|up|click,holdMs} | {type:'wait',ms}], each optionally
+    /// scheduled at atMs from the start. Reports the worst scheduling lateness.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_input_sequence(&self, args: &GamingInputSequenceArgs) -> Result<ToolResult> {
+        self.call("gaming_input_sequence", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_input_sequence`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_input_sequence_async(
+        &self,
+        args: &GamingInputSequenceArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_input_sequence", args).await
+    }
+
+    /// Sends a keyboard key as a hardware scan code (SendInput KEYEVENTF_SCANCODE; Linux: xdotool
+    /// keysym) so games that read scan codes or raw input see it: down, up, tap or hold for holdMs,
+    /// repeated with intervalMs.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_key(&self, args: &GamingKeyArgs) -> Result<ToolResult> {
+        self.call("gaming_key", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_key`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_key_async(&self, args: &GamingKeyArgs) -> Result<ToolResult> {
+        self.call_async("gaming_key", args).await
+    }
+
+    /// Presses a mouse button through SendInput (Linux: xdotool): down, up, or click with holdMs.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_mouse_button(&self, args: &GamingMouseButtonArgs) -> Result<ToolResult> {
+        self.call("gaming_mouse_button", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_mouse_button`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_mouse_button_async(
+        &self,
+        args: &GamingMouseButtonArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_mouse_button", args).await
+    }
+
+    /// Sends raw relative mouse motion (SendInput MOUSEEVENTF_MOVE, no absolute positioning) as
+    /// games reading raw input expect: dx/dy split exactly across steps sent at rateHz with
+    /// sub-millisecond pacing. Linux: xdotool mousemove_relative. Reports achieved rate and cursor
+    /// before/after.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_mouse_delta(&self, args: &GamingMouseDeltaArgs) -> Result<ToolResult> {
+        self.call("gaming_mouse_delta", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_mouse_delta`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_mouse_delta_async(
+        &self,
+        args: &GamingMouseDeltaArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_mouse_delta", args).await
+    }
+
+    /// Applies the pending gaming profile items (registry values and power plan). Changes Windows
+    /// settings: requires confirm=true and is meant to be run by the machine owner; dryRun=true
+    /// only returns the command.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_profile_apply(&self, args: &GamingProfileApplyArgs) -> Result<ToolResult> {
+        self.call("gaming_profile_apply", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_profile_apply`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_profile_apply_async(
+        &self,
+        args: &GamingProfileApplyArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_profile_apply", args).await
+    }
+
+    /// Read-only gaming optimisation report: Game Mode, HAGS, power plan, background apps, Game Bar
+    /// capture, timer resolution and GPU, each with current and recommended values, the pending
+    /// items and applyCommand, the exact PowerShell one-liner the owner runs (elevated) to apply
+    /// them.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_profile_status(&self, args: &GamingProfileStatusArgs) -> Result<ToolResult> {
+        self.call("gaming_profile_status", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_profile_status`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_profile_status_async(
+        &self,
+        args: &GamingProfileStatusArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_profile_status", args).await
+    }
+
+    /// Launches an installed Steam game through the bun-steam owner (steam://rungameid/<appId>),
+    /// then waits for its window by processName or windowTitle and brings it to the foreground for
+    /// capture and input.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub fn gaming_steam_launch(&self, args: &GamingSteamLaunchArgs) -> Result<ToolResult> {
+        self.call("gaming_steam_launch", args)
+    }
+
+    /// Async variant of [`Winclean::gaming_steam_launch`]; runs on the library thread pool.
+    ///
+    /// # Errors
+    /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
+    pub async fn gaming_steam_launch_async(
+        &self,
+        args: &GamingSteamLaunchArgs,
+    ) -> Result<ToolResult> {
+        self.call_async("gaming_steam_launch", args).await
     }
 
     /// Returns the GUID and friendly name of the active Windows power plan.
@@ -7000,8 +7949,9 @@ impl Winclean {
     }
 
     /// Lists directory contents as streamed JSON. Set recursive=true to descend, showHidden=true to
-    /// include hidden entries, pattern to filter by glob. Hard cap: 10000 entries returned; result
-    /// is marked truncated when exceeded.
+    /// include hidden entries, pattern to filter by glob, and exclude to omit matching entry names
+    /// and skip matching directories. Exclusion matching is ASCII case-insensitive. Hard cap: 10000
+    /// entries returned; result is marked truncated when exceeded.
     ///
     /// # Errors
     /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
@@ -7788,7 +8738,7 @@ impl Winclean {
         self.call_async("perf_purge_standby_list", args).await
     }
 
-    /// Toggles Win11 EcoQoS (PowerThrottling) on a process. EcoMode = on  → process is throttled to
+    /// Toggles Win11 EcoQoS (PowerThrottling) on a process. EcoMode = on → process is throttled to
     /// E-cores and capped frequency (saves power). EcoMode = off → release throttling (max
     /// performance). Reset all overrides with mode='default'.
     ///
@@ -7965,8 +8915,9 @@ impl Winclean {
         self.call_async("scroll", args).await
     }
 
-    /// Searches a directory tree for files matching a glob pattern. Hard cap: 10000 results; result
-    /// is marked truncated when exceeded.
+    /// Searches a directory tree for files matching a glob pattern. Exclude basenames with glob
+    /// patterns; excluded directories are not traversed. Hard cap: 10000 results; result is marked
+    /// truncated when exceeded.
     ///
     /// # Errors
     /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
@@ -8213,8 +9164,8 @@ impl Winclean {
         self.call_async("start_service", args).await
     }
 
-    /// Returns full details of a single Steam game by appId. Returns {"success":false,...} if the
-    /// appId is not found.
+    /// Returns one installed Steam game by appId from the live app manifests of every library
+    /// (bun-steam). Returns {"success":false,...} when the app is not installed.
     ///
     /// # Errors
     /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
@@ -8230,9 +9181,10 @@ impl Winclean {
         self.call_async("steam_get_game", args).await
     }
 
-    /// Checks whether a Steam game process is currently running. Resolves install_dir and
-    /// absolute_install_path from steam-scan.db. Executable name defaults to install_dir + ".exe".
-    /// Returns {"appId":N,"running":bool,"pid":N|null,"executable":"...","installDir":"..."}.
+    /// Checks whether an installed Steam game's process is running. Resolves install_dir and the
+    /// absolute install path from the live app manifests. Executable name defaults to install_dir +
+    /// ".exe". Returns
+    /// {"appId":N,"running":bool,"pid":N|null,"executable":"...","installDir":"...","absoluteInstallPath":"..."}.
     ///
     /// # Errors
     /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
@@ -8310,9 +9262,9 @@ impl Winclean {
         self.call_async("steam_launch_by_app_id", args).await
     }
 
-    /// Returns a JSON array of Steam games from steam-scan.db. By default only games whose files
-    /// are present on disk (files_present > 0) are returned. Set includeMissing=true to include all
-    /// rows regardless of files_present.
+    /// Returns the installed Steam games of every library from the live app manifests (bun-steam).
+    /// By default only games whose install directory exists are returned; includeMissing=true
+    /// returns every manifest.
     ///
     /// # Errors
     /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
@@ -8328,8 +9280,8 @@ impl Winclean {
         self.call_async("steam_list_games", args).await
     }
 
-    /// Returns all Steam library paths with their game_count and total_size_bytes as recorded in
-    /// steam-scan.db.
+    /// Returns the Steam library folders (libraryfolders.vdf) with game_count and total_size_bytes
+    /// from their app manifests.
     ///
     /// # Errors
     /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
@@ -8365,8 +9317,7 @@ impl Winclean {
         self.call_async("steam_open_uri", args).await
     }
 
-    /// Returns aggregate counts from steam-scan.db: nb_installs, nb_libraries, nb_games,
-    /// nb_games_present, total_size_bytes.
+    /// Returns live Steam counts: nb_libraries, nb_games, nb_games_present, total_size_bytes.
     ///
     /// # Errors
     /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.
@@ -8385,9 +9336,9 @@ impl Winclean {
         self.call_async("steam_scan_summary", args).await
     }
 
-    /// Returns vault target metadata from secrets_vault_ref (target name, kind, description,
-    /// user_hint). Secret material (passwords, tokens) is never included. Also attempts to invoke
-    /// 'winclean-steam-auth list --json' (if present) for live vault status.
+    /// Reports Steam credential state without secrets: client accounts (names and flags) and, per
+    /// account, whether the client or steamcmd holds a reusable cached session (ConnectCache key
+    /// presence only). Passwords, tokens and ConnectCache values are never read.
     ///
     /// # Errors
     /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.

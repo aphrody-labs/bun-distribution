@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-use crate::steam::IEVR_STEAM_APP_ID;
+use crate::IEVR_STEAM_APP_ID;
 
 // Re-export converged types from aphrody-nie-net
 pub use aphrody_nie_net::friends::{FriendGameInvite, PersonaState, SteamFriend, SteamFriends018};

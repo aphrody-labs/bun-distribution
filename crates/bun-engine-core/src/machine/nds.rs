@@ -21,6 +21,25 @@ use aphrody_dust_soft_3d::{Renderer, RenderingData};
 
 use super::{Input, Machine, Screen, Step};
 
+/// DS output: 32.768 kHz, 10-bit unsigned samples around the 0x200 bias.
+const SAMPLE_RATE: u32 = 32_768;
+/// 33.513982 MHz ARM7 bus / (355 dots * 263 lines * 6 cycles).
+const REFRESH_RATE: f64 = 59.826_098_288_598_9;
+
+/// Collects the mixer output for the host's audio sink.
+struct Capture(Rc<RefCell<Vec<f32>>>);
+
+impl audio::Backend for Capture {
+    fn handle_sample_chunk(&mut self, samples: &mut Vec<[audio::OutputSample; 2]>) {
+        let mut out = self.0.borrow_mut();
+        // Keep at most one second queued when nobody drains it (headless runs).
+        if out.len() > SAMPLE_RATE as usize * 2 {
+            out.clear();
+        }
+        out.extend(samples.drain(..).flat_map(|pair| pair.map(|s| (f32::from(s) - 512.0) / 512.0)));
+    }
+}
+
 struct Soft3d {
     data: Box<RenderingData>,
     renderer: Renderer,
@@ -94,6 +113,7 @@ pub struct Nds {
     ended: bool,
     keys: Keys,
     touching: bool,
+    samples: Rc<RefCell<Vec<f32>>>,
 }
 
 impl Nds {
@@ -106,18 +126,23 @@ impl Nds {
             output: unsafe { Box::new_zeroed().assume_init() },
         }));
         let rx = Rx { shared: shared.clone(), line: 0, output: Scanline([0; 256]) };
-        let mut contents = BoxedByteSlice::new_zeroed(rom.len());
-        contents.copy_from_slice(rom);
+        // Cartridge chips are power-of-two sized; dumps and homebrew builds are often trimmed.
+        // Pad with 0xFF (erased flash) like a real cartridge reads past the image.
+        let size = rom.len().max(0x200).next_power_of_two();
+        let mut contents = BoxedByteSlice::new_zeroed(size);
+        contents[..rom.len()].copy_from_slice(rom);
+        contents[rom.len()..].fill(0xFF);
         let flash = Flash::new(
             SaveContents::Existing(firmware::default(Model::Ds)),
             firmware::id_for_model(Model::Ds),
         )
         .map_err(|e| format!("firmware: {e:?}"))?;
+        let samples = Rc::new(RefCell::new(Vec::new()));
         let builder = emu::Builder::new(
             flash,
             Some(Box::new(contents)),
             ds_slot::spi::Empty::new().into(),
-            Box::new(audio::DummyBackend),
+            Box::new(Capture(samples.clone())),
             None,
             Box::new(rtc::DummyBackend),
             Box::new(aphrody_dust_soft_2d::sync::Renderer::new(Box::new(rx))),
@@ -126,8 +151,18 @@ impl Nds {
         );
         let emu = builder
             .build(Interpreter)
-            .map_err(|_| "the cartridge image is not bootable".to_string())?;
-        Ok(Self { emu, ended: false, keys: Keys::empty(), touching: false })
+            .map_err(|e| {
+                let why = match e {
+                    emu::BuildError::MissingRom => "no ROM",
+                    emu::BuildError::MissingSysFiles => "BIOS files required",
+                    emu::BuildError::RomCreation(_) => "invalid ROM size",
+                    emu::BuildError::RomNeedsDecryptionButNoBiosProvided => {
+                        "the secure area is encrypted and direct boot has no BIOS to decrypt it"
+                    }
+                };
+                format!("the cartridge image is not bootable: {why}")
+            })?;
+        Ok(Self { emu, ended: false, keys: Keys::empty(), touching: false, samples })
     }
 }
 
@@ -139,6 +174,18 @@ fn expand(px: u32, out: &mut Vec<u8>) {
 impl Machine for Nds {
     fn name(&self) -> &'static str {
         "nintendo-ds"
+    }
+
+    fn refresh_rate(&self) -> f64 {
+        REFRESH_RATE
+    }
+
+    fn sample_rate(&self) -> u32 {
+        SAMPLE_RATE
+    }
+
+    fn audio(&mut self, out: &mut Vec<f32>) {
+        out.append(&mut self.samples.borrow_mut());
     }
 
     fn run_frame(&mut self) -> Step {

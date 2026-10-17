@@ -7,8 +7,8 @@ use aphrody_dust_core::{
     cpu::interpreter::Interpreter,
     emu::{Emu, RunOutput, input::Keys},
 };
-use bevy_app::{App, Update};
-use bevy_ecs::prelude::{NonSendMut, Res, ResMut, Resource};
+use crate::bevy::app::{App, Update};
+use crate::bevy::ecs::prelude::{NonSendMut, Res, ResMut, Resource};
 
 /// Input sampled immediately before an explicit emulator tick.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Resource)]

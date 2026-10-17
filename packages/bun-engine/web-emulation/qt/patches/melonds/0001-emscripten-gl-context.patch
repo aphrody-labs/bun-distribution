@@ -1,0 +1,20 @@
+--- a/src/frontend/duckstation/gl/context.cpp
++++ b/src/frontend/duckstation/gl/context.cpp
+@@ -10,6 +10,8 @@
+ #include "context_wgl.h"
+ #elif defined(__APPLE__)
+ #include "context_agl.h"
++#elif defined(__EMSCRIPTEN__)
++// WebAssembly: no native GL context; the front end falls back to its QPainter screen panel.
+ #else
+ #ifdef WAYLAND_ENABLED
+ #include "context_egl_wayland.h"
+@@ -68,6 +70,8 @@
+   context = ContextWGL::Create(wi, versions_to_try, num_versions_to_try);
+ #elif defined(__APPLE__)
+   context = ContextAGL::Create(wi, versions_to_try, num_versions_to_try);
++#elif defined(__EMSCRIPTEN__)
++  context = nullptr;
+ #else
+   if (wi.type == WindowInfo::Type::X11)
+   {

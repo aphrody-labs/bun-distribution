@@ -52,6 +52,15 @@
       "sha256": "09b535826caa9b04a682ec07e0df605b5d8774af35b4dd77955e6c913df1a48b",
       "glob": "*.cia",
       "license": "MIT, Steveice10/FBI 2.6.1 (NoCrypto CIA)"
+    },
+    {
+      "id": "godmode9i",
+      "console": "nintendo-ds",
+      "kind": "homebrew",
+      "url": "https://github.com/DS-Homebrew/GodMode9i/releases/download/v3.10.0/GodMode9i.nds",
+      "sha256": "44360cc84f1193f8a3c3fd19128d07c4b28266e246d61d07f9c0f14a4611c812",
+      "glob": "*.nds",
+      "license": "GPL-3.0, DS-Homebrew/GodMode9i v3.10.0 (DS-mode file manager; boots without BIOS dumps or SD card)"
     }
   ]
 }

@@ -169,13 +169,22 @@ fn emb_cli_extracts_entries_to_a_new_directory_without_overwriting() {
     assert_eq!(fs::read(output.join("texture.dds")).unwrap(), b"DDS!");
 }
 
+#[cfg(feature = "dbxv2")]
 #[test]
 fn cpk_cli_extracts_to_a_new_directory_and_rejects_traversal() {
-    use bun_re::game::fs::cpk::CpkArchive;
+    use aphrody_nie_formats::cpk_encode::{CpkWriteEntry, encode_cpk};
+    let cpk = |name: &str, data: &[u8]| {
+        encode_cpk(&[CpkWriteEntry {
+            filename: name.to_string(),
+            directory: String::new(),
+            data: data.to_vec(),
+        }])
+        .unwrap()
+    };
 
     let temp = tempfile::tempdir().unwrap();
     let input = temp.path().join("sample.cpk");
-    fs::write(&input, CpkArchive::create_mock(&[("texture.dds", b"DDS!")])).unwrap();
+    fs::write(&input, cpk("texture.dds", b"DDS!")).unwrap();
     let output = temp.path().join("unpacked");
     let extracted = Command::new(env!("CARGO_BIN_EXE_bunre")).arg("dbxv2")
         .arg("cpk")
@@ -201,7 +210,7 @@ fn cpk_cli_extracts_to_a_new_directory_and_rejects_traversal() {
     assert_eq!(fs::read(output.join("texture.dds")).unwrap(), b"DDS!");
 
     let traversal = temp.path().join("traversal.cpk");
-    fs::write(&traversal, CpkArchive::create_mock(&[("../escape.bin", b"unsafe")])).unwrap();
+    fs::write(&traversal, cpk("../escape.bin", b"unsafe")).unwrap();
     let refused = Command::new(env!("CARGO_BIN_EXE_bunre")).arg("dbxv2")
         .arg("cpk")
         .arg(&traversal)

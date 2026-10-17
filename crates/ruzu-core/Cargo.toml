@@ -22,7 +22,7 @@ ctr.workspace = true
 hmac.workspace = true
 hex.workspace = true
 flate2 = { workspace = true }
-image = { workspace = true, features = ["png"] }
+image = { workspace = true, features = ["png", "jpeg"] }
 libc = { workspace = true }
 log = { workspace = true }
 lz4_flex.workspace = true

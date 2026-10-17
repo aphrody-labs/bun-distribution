@@ -6,7 +6,7 @@ use bun_engine::cartridge::dust::rom::raw;
 use bun_engine::machine::{Machine, Step, arm::ArmFirmware, nds::Nds};
 use serde_json::json;
 
-const USAGE: &str = "usage: bun-engine info <rom.nds> [--json] | bun-engine run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] [--cmdline ARGS]";
+const USAGE: &str = "usage: bun-engine info <rom.nds> [--json] | bun-engine shell [--session|status|install-session] | bun-engine steam <command> (feature steam) | bun-engine stream <host>|--loopback [options] | bun-engine run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux|melonds|dolphin|azahar|kyty> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] [--cmdline ARGS] [--input key@first[-last],...] [--trace FILE.jsonl] [--fsr [--sharpness STOPS]] [--steam [--steam-*]]";
 
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1).peekable();
@@ -18,6 +18,37 @@ fn main() -> ExitCode {
         Some("run") => {
             args.next();
         }
+        // The console shell is its own Bevy app (crates/bun-os-shell) built next to this binary.
+        Some("shell") => {
+            args.next();
+            let shell = std::env::current_exe()
+                .ok()
+                .and_then(|exe| Some(exe.parent()?.join(format!("bun-os-shell{}", std::env::consts::EXE_SUFFIX))))
+                .filter(|path| path.is_file());
+            let Some(shell) = shell else {
+                return fail("bun-os-shell is not built next to bun-engine (cargo build -p bun-os-shell)".into());
+            };
+            return match std::process::Command::new(shell).args(args).status() {
+                Ok(status) => ExitCode::from(status.code().unwrap_or(1).clamp(0, 255) as u8),
+                Err(e) => fail(e.to_string()),
+            };
+        }
+        #[cfg(feature = "steam")]
+        Some("steam") => {
+            args.next();
+            return match bun_engine::steam::cli::main(args) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(e) => fail(e),
+            };
+        }
+        #[cfg(feature = "stream")]
+        Some("stream") => {
+            args.next();
+            return match bun_engine::stream::main(args) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(e) => fail(e),
+            };
+        }
         _ => {}
     }
     let (Some(system), Some(path)) = (args.next(), args.next()) else {
@@ -26,6 +57,11 @@ fn main() -> ExitCode {
     };
     let (mut frames, mut out, mut headless) = (u64::MAX, None::<PathBuf>, false);
     let mut bios = None::<PathBuf>;
+    // Headless replay: scripted pad input and a per-frame screen digest trace (`re replica`).
+    let (mut script, mut trace) = (Vec::<(u32, u64, u64)>::new(), None::<PathBuf>);
+    let (mut fsr, mut sharpness) = (false, 0.25_f32);
+    #[cfg(feature = "steam")]
+    let mut steam_args = Vec::<String>::new();
     let mut cmdline = String::from("console=ttyS0 earlyprintk=serial,ttyS0 reboot=k panic=1 pci=off nomodule noapic");
     while let Some(a) = args.next() {
         match a.as_str() {
@@ -34,6 +70,20 @@ fn main() -> ExitCode {
             "--bios" => bios = args.next().map(PathBuf::from),
             "--out" => out = args.next().map(PathBuf::from),
             "--cmdline" => cmdline = args.next().unwrap_or(cmdline),
+            "--input" => match bun_engine::recomp::parse_input(&args.next().unwrap_or_default()) {
+                Ok(s) => script = s,
+                Err(e) => return fail(e),
+            },
+            "--trace" => trace = args.next().map(PathBuf::from),
+            "--fsr" => fsr = true,
+            "--sharpness" => sharpness = args.next().and_then(|v| v.parse().ok()).unwrap_or(sharpness),
+            #[cfg(feature = "steam")]
+            flag if flag == "--steam" || flag.starts_with("--steam-") => {
+                steam_args.push(a.clone());
+                if bun_engine::steam::options::takes_value(flag) {
+                    steam_args.extend(args.next());
+                }
+            }
             _ => {
                 eprintln!("{USAGE}");
                 return ExitCode::from(2);
@@ -98,18 +148,60 @@ fn main() -> ExitCode {
             Ok(m) => Box::new(m),
             Err(e) => return fail(e),
         },
+        #[cfg(feature = "cpp-host")]
+        core @ ("melonds" | "dolphin" | "azahar" | "kyty") => {
+            match bun_engine::machine::cpp_host::CppHost::open(core, std::path::Path::new(&path), bios.as_deref()) {
+                Ok(m) => Box::new(m),
+                Err(e) => return fail(e),
+            }
+        }
         other => return fail(format!("unsupported system `{other}`")),
     };
     if !headless && !machine.screens().is_empty() {
-        return match bun_engine::window::run(machine, "Bun Engine") {
-            Ok(()) => ExitCode::SUCCESS,
-            Err(e) => fail(e),
+        // One Bevy app: window, input, audio and the machine plugin.
+        let options = bun_engine::runtime::run::RunOptions {
+            title: format!("Bun Engine - {}", std::path::Path::new(&path).file_stem().map_or_else(Default::default, |s| s.to_string_lossy())),
+            frames: (frames != u64::MAX).then_some(frames),
+            out,
+            fsr,
+            sharpness_stops: sharpness,
+            ..Default::default()
+        };
+        let (mut app, report) = bun_engine::runtime::run::machine_app(machine, &options);
+        #[cfg(feature = "steam")]
+        if !steam_args.is_empty() {
+            match bun_engine::steam::options::parse(&steam_args) {
+                Ok(steam) => {
+                    app.add_plugins(bun_engine::steam::SteamPlugin::new(steam, system.as_str(), path.as_str()));
+                }
+                Err(e) => return fail(e),
+            }
+        }
+        let exit = app.run();
+        let report = report.lock().unwrap().clone();
+        if let Some(why) = report.diagnostic.as_ref() {
+            eprintln!("stopped: {why}");
+        }
+        return match (report.failure, exit) {
+            (Some(e), _) => fail(e),
+            (None, bun_engine::bevy::app::AppExit::Error(code)) => fail(format!("exited with code {code}")),
+            (None, _) => ExitCode::SUCCESS,
         };
     }
+    let mut trace_lines = trace.as_ref().map(|_| String::new());
     let mut done = 0;
     while done < frames {
+        let keys = bun_engine::recomp::keys_at(&script, done);
+        if !script.is_empty() {
+            machine.set_input(bun_engine::machine::Input { keys, touch: None });
+        }
         match machine.run_frame() {
-            Step::Frame => done += 1,
+            Step::Frame => {
+                if let Some(lines) = trace_lines.as_mut() {
+                    lines.push_str(&trace_line(done, keys, &machine.screens()));
+                }
+                done += 1;
+            }
             Step::Shutdown => {
                 flush(&mut *machine);
                 break;
@@ -128,7 +220,29 @@ fn main() -> ExitCode {
     {
         return fail(format!("{}: {e}", dir.display()));
     }
+    if let (Some(path), Some(lines)) = (trace, trace_lines)
+        && let Err(e) = fs::write(&path, lines)
+    {
+        return fail(format!("{}: {e}", path.display()));
+    }
     ExitCode::SUCCESS
+}
+
+/// One JSON line of a replay trace: frame index, held keys and the FNV-1a 64 digest of every
+/// screen (dimensions and RGB bytes), so two runs compare frame by frame without storing images.
+fn trace_line(frame: u64, keys: u32, screens: &[bun_engine::machine::Screen]) -> String {
+    let digests = screens
+        .iter()
+        .map(|s| {
+            let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+            for b in (s.width as u64).to_le_bytes().iter().chain(&(s.height as u64).to_le_bytes()).chain(&s.rgb) {
+                h = (h ^ u64::from(*b)).wrapping_mul(0x0100_0000_01b3);
+            }
+            format!("\"{h:016x}\"")
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("{{\"frame\":{frame},\"keys\":{keys},\"screens\":[{digests}]}}\n")
 }
 
 fn flush(machine: &mut dyn Machine) {

@@ -9,7 +9,7 @@
 
 use steamroom::types::key_value::{KeyValue, KvValue};
 
-use crate::steam::planning::{DepotRecord, DepotSelection, ManifestId, PlanningLimits};
+use crate::depot::planning::{DepotRecord, DepotSelection, ManifestId, PlanningLimits};
 
 /// Valeur de sentinel : manifest absent / introuvable.
 pub const INVALID_MANIFEST: u64 = 0;
@@ -45,7 +45,7 @@ pub fn select_depot_ids(
     if !explicit_depots.is_empty() {
         let limits =
             PlanningLimits { max_depots: explicit_depots.len(), ..PlanningLimits::default() };
-        return crate::steam::planning::select_depot_ids(&[], &selection, limits).unwrap_or_default();
+        return crate::depot::planning::select_depot_ids(&[], &selection, limits).unwrap_or_default();
     }
 
     let KvValue::Children(ref map) = depots.value else {
@@ -58,7 +58,7 @@ pub fn select_depot_ids(
         })
         .collect();
     let limits = PlanningLimits { max_depots: records.len(), ..PlanningLimits::default() };
-    crate::steam::planning::select_depot_ids(&records, &selection, limits).unwrap_or_default()
+    crate::depot::planning::select_depot_ids(&records, &selection, limits).unwrap_or_default()
 }
 
 /// Teste l'éligibilité d'un nœud depot vis-à-vis des filtres OS/arch/langue/lowviolence.
@@ -77,7 +77,7 @@ pub fn is_depot_eligible(depot: &KeyValue, os: &str, arch: Option<&str>, languag
         architecture: arch.map(str::to_owned),
         language: language.to_owned(),
     };
-    crate::steam::planning::is_depot_eligible(&depot_record_from_kv(0, depot), &selection)
+    crate::depot::planning::is_depot_eligible(&depot_record_from_kv(0, depot), &selection)
 }
 
 /// Lit le GID du manifest d'un depot pour une branche donnée.
@@ -85,7 +85,7 @@ pub fn is_depot_eligible(depot: &KeyValue, os: &str, arch: Option<&str>, languag
 /// Chemin KV : `depot_child["manifests"][branch]["gid"]`.
 /// Renvoie [`INVALID_MANIFEST`] si la clé est absente ou non parsable.
 pub fn read_manifest_gid(depot_child: &KeyValue, branch: &str) -> u64 {
-    crate::steam::planning::manifest_id_for_branch(&depot_record_from_kv(0, depot_child), branch)
+    crate::depot::planning::manifest_id_for_branch(&depot_record_from_kv(0, depot_child), branch)
 }
 
 /// Indique si le depot est proxié vers une autre app (`depotfromapp`).
@@ -93,7 +93,7 @@ pub fn read_manifest_gid(depot_child: &KeyValue, branch: &str) -> u64 {
 /// Renvoie l'app ID cible si le champ `depotfromapp` existe et que `manifests`
 /// est absent (comportement identique au C#). Renvoie `0` sinon.
 pub fn proxied_from_app(depot_child: &KeyValue) -> u32 {
-    crate::steam::planning::proxy_app_id(&depot_record_from_kv(0, depot_child)).unwrap_or(0)
+    crate::depot::planning::proxy_app_id(&depot_record_from_kv(0, depot_child)).unwrap_or(0)
 }
 
 /// Convert Steam's host-only KeyValue record into the portable planner model.

@@ -48,26 +48,28 @@ pub fn detect_wine_runtime() -> WineRuntimeInfo {
         };
     }
 
-    // Check common Proton paths
-    if let Ok(home) = env::var("HOME") {
-        let steam_proton = Path::new(&home).join(".local/share/Steam/steamapps/common");
-        if steam_proton.exists()
-            && let Ok(entries) = std::fs::read_dir(&steam_proton)
-        {
-            for entry in entries.flatten() {
-                let name = entry.file_name().to_string_lossy().to_string();
-                if name.starts_with("Proton") {
-                    let proton_bin = entry.path().join("proton");
-                    return WineRuntimeInfo {
-                        available: true,
-                        kind: "proton".to_owned(),
-                        path: Some(proton_bin.to_string_lossy().to_string()),
-                        prefix: env::var("STEAM_COMPAT_DATA_PATH").ok(),
-                        proton_version: Some(name),
-                    };
-                }
-            }
+    // Proton tools of every local Steam install and library (bun-steam discovery).
+    let roots: Vec<PathBuf> =
+        bun_steam::find_steam_installations().into_iter().map(|i| i.root_path).collect();
+    let mut libraries = roots.clone();
+    for root in &roots {
+        if let Ok(found) = bun_steam::scan_steam_libraries(root) {
+            libraries.extend(found.into_iter().map(|library| library.path));
         }
+    }
+    let tool_dirs: Vec<PathBuf> =
+        roots.iter().flat_map(|root| bun_steam::proton::compat_tool_dirs(root)).collect();
+    if let Some(tool) = bun_steam::proton::discover_compat_tools(&tool_dirs, &libraries)
+        .into_iter()
+        .find(|tool| tool.path.join("proton").is_file())
+    {
+        return WineRuntimeInfo {
+            available: true,
+            kind: "proton".to_owned(),
+            path: Some(tool.path.join("proton").to_string_lossy().to_string()),
+            prefix: env::var("STEAM_COMPAT_DATA_PATH").ok(),
+            proton_version: Some(tool.display_name.unwrap_or(tool.name)),
+        };
     }
 
     WineRuntimeInfo {

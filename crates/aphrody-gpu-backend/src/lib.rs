@@ -45,18 +45,28 @@ pub enum DeviceLimits {
     DownlevelWithAdapterResolution,
 }
 
-/// Shared device-creation profile. Required features are kept empty until a renderer names and
+/// Shared device-creation profile. Required features stay empty unless a renderer names and
 /// verifies a concrete capability; per-application labels and limit policy remain explicit.
 #[derive(Clone, Copy, Debug)]
 pub struct DeviceRequest<'a> {
     pub label: Option<&'a str>,
     pub limits: DeviceLimits,
+    /// Features the renderer verified against the adapter (for example NV12 video planes).
+    pub features: wgpu::Features,
 }
 
 impl<'a> DeviceRequest<'a> {
     #[must_use]
     pub const fn new(label: Option<&'a str>, limits: DeviceLimits) -> Self {
-        Self { label, limits }
+        Self { label, limits, features: wgpu::Features::empty() }
+    }
+
+    /// Request `features` in addition to the shared defaults. The caller checks
+    /// `adapter.features()` first; unsupported features fail device creation.
+    #[must_use]
+    pub const fn with_features(mut self, features: wgpu::Features) -> Self {
+        self.features = features;
+        self
     }
 }
 
@@ -80,7 +90,7 @@ pub async fn request_device(
 
     let descriptor = wgpu::DeviceDescriptor {
         label: request.label,
-        required_features: wgpu::Features::empty(),
+        required_features: request.features,
         required_limits,
         experimental_features: wgpu::ExperimentalFeatures::disabled(),
         memory_hints: wgpu::MemoryHints::default(),

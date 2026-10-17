@@ -26,6 +26,28 @@ fn main() {
         bc_decoder_dir.join("bc_decoder.h").display()
     );
 
+    if std::env::var_os("CARGO_FEATURE_FFMPEG").is_some() {
+        build_ffmpeg_shim();
+    }
+
+    let mut bcn_build = cc::Build::new();
+    bcn_build.cpp(true);
+    // Apple Clang still defaults to C++98 when no language standard is
+    // specified.
+    bcn_build.std("c++17");
+    bcn_build.file("src/textures/bcn_shim.cpp");
+    bcn_build.file(stb_dir.join("stb_dxt.cpp"));
+    bcn_build.file(bc_decoder_dir.join("bc_decoder.cpp"));
+    bcn_build.include(&stb_dir);
+    bcn_build.include(&bc_decoder_dir);
+    bcn_build.warnings(false);
+    bcn_build.compile("ruzu_video_core_bcn_shim");
+
+    compile_vulkan_present_shaders(&manifest_dir);
+}
+
+/// The FFmpeg NVDEC shim, linked against libavcodec and libavutil found by pkg-config.
+fn build_ffmpeg_shim() {
     let avcodec = pkg_config::Config::new()
         .probe("libavcodec")
         .expect("libavcodec is required for video_core FFmpeg decoding");
@@ -54,21 +76,6 @@ fn main() {
         }
     }
     build.compile("ruzu_video_core_ffmpeg_shim");
-
-    let mut bcn_build = cc::Build::new();
-    bcn_build.cpp(true);
-    // Apple Clang still defaults to C++98 when no language standard is
-    // specified.
-    bcn_build.std("c++17");
-    bcn_build.file("src/textures/bcn_shim.cpp");
-    bcn_build.file(stb_dir.join("stb_dxt.cpp"));
-    bcn_build.file(bc_decoder_dir.join("bc_decoder.cpp"));
-    bcn_build.include(&stb_dir);
-    bcn_build.include(&bc_decoder_dir);
-    bcn_build.warnings(false);
-    bcn_build.compile("ruzu_video_core_bcn_shim");
-
-    compile_vulkan_present_shaders(&manifest_dir);
 }
 
 fn compile_vulkan_present_shaders(manifest_dir: &std::path::Path) {
@@ -177,7 +184,9 @@ fn compile_vulkan_present_shaders(manifest_dir: &std::path::Path) {
         .map(|(name, filename)| (*name, *filename, filename.to_string(), Vec::new()))
         .chain(shader_type_variants.iter().map(
             |(name, filename, suffix, sampler_type, texel_type)| {
-                let stem = filename.rsplit_once('.').map_or(*filename, |(stem, _)| stem);
+                let stem = filename
+                    .rsplit_once('.')
+                    .map_or(*filename, |(stem, _)| stem);
                 (
                     *name,
                     *filename,

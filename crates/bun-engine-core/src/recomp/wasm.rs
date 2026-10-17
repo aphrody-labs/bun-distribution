@@ -25,12 +25,20 @@ pub fn init(factory: Factory, interp: bool) -> u32 {
 
 /// Run `n` frames; returns the number of frames produced.
 pub fn frames(n: u32) -> u32 {
-    MACHINE.with(|c| c.borrow_mut().as_mut().map_or(0, |m| super::run_frames(m.as_mut(), n)))
+    MACHINE.with(|c| {
+        c.borrow_mut()
+            .as_mut()
+            .map_or(0, |m| super::run_frames(m.as_mut(), n))
+    })
 }
 
 /// Capture screen `index` as RGB; returns its byte length (0 when absent).
 pub fn screen(index: u32) -> u32 {
-    let s = MACHINE.with(|c| c.borrow().as_ref().and_then(|m| m.screens().into_iter().nth(index as usize)));
+    let s = MACHINE.with(|c| {
+        c.borrow()
+            .as_ref()
+            .and_then(|m| m.screens().into_iter().nth(index as usize))
+    });
     let len = s.as_ref().map_or(0, |s| s.rgb.len() as u32);
     SCREEN.with(|c| *c.borrow_mut() = s);
     len
@@ -38,7 +46,11 @@ pub fn screen(index: u32) -> u32 {
 
 /// Pointer to the captured RGB bytes.
 pub fn screen_ptr() -> *const u8 {
-    SCREEN.with(|c| c.borrow().as_ref().map_or(std::ptr::null(), |s| s.rgb.as_ptr()))
+    SCREEN.with(|c| {
+        c.borrow()
+            .as_ref()
+            .map_or(std::ptr::null(), |s| s.rgb.as_ptr())
+    })
 }
 
 /// Width of the captured screen.

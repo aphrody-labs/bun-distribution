@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // Entry point of the `bun-engine-formats` single-file executable.
-import { runFormats } from "./cli";
+import { runFormats } from "./cli.js";
 
 try {
   process.exitCode = await runFormats(process.argv.slice(2));

@@ -1,19 +1,19 @@
 // Content detection: magic bytes first, then structural heuristics, then the file extension,
 // then Magika through `re`. Detection never trusts the extension over the bytes.
 import { extname } from "node:path";
-import { catalogFormats } from "./catalog";
-import { crc16, BinaryView, type BinarySource } from "./stream";
+import { catalogFormats } from "./catalog.js";
+import { crc16, BinaryView, type BinarySource } from "./stream.js";
 import {
   armBiosFormat,
   hasArmVectors,
   looksLikeNdsFirmware,
-} from "./parsers/firmware";
-import { gbLogoPrefix, looksLikeNds } from "./parsers/handheld";
-import { looksLikeDol, n64Order } from "./parsers/home";
-import { cdSync } from "./parsers/playstation";
-import { isInterleavedSmd } from "./parsers/sega";
-import { magikaIdentify } from "./tools";
-import type { Detection, FormatId } from "./types";
+} from "./parsers/firmware.js";
+import { gbLogoPrefix, looksLikeNds } from "./parsers/handheld.js";
+import { looksLikeDol, n64Order } from "./parsers/home.js";
+import { cdSync } from "./parsers/playstation.js";
+import { isInterleavedSmd } from "./parsers/sega.js";
+import { magikaIdentify } from "./tools.js";
+import type { Detection, FormatId } from "./types.js";
 
 export const platforms: Record<FormatId, string> = {
   nes: "Nintendo Entertainment System",
@@ -133,6 +133,20 @@ function magic(view: BinaryView, path: string): FormatId | undefined {
   return undefined;
 }
 
+/**
+ * PlayStation reset vector at 0xBFC00000: `lui t0,hi; ori t0,t0,lo; lui at,0x1f80; sw t0,0x1010(at)`
+ * (BIOS ROM delay/size register). Retail BIOS and the free OpenBIOS both start with it; OpenBIOS
+ * carries no Sony copyright string.
+ */
+function looksLikePsxReset(view: BinaryView): boolean {
+  return (
+    view.u32(0) >>> 16 === 0x3c08 &&
+    view.u32(4) >>> 16 === 0x3508 &&
+    view.u32(8) === 0x3c011f80 &&
+    view.u32(12) === 0xac281010
+  );
+}
+
 async function heuristic(
   view: BinaryView,
   path: string,
@@ -146,9 +160,10 @@ async function heuristic(
     return armBiosFormat(path, size);
   if (
     size === 0x80000 &&
-    /Sony Computer Entertainment/.test(
-      new TextDecoder("latin1").decode(view.slice(0x100, 0x80)),
-    )
+    (looksLikePsxReset(view) ||
+      /Sony Computer Entertainment/.test(
+        new TextDecoder("latin1").decode(view.slice(0x100, 0x80)),
+      ))
   )
     return "psx-bios";
   if (
@@ -163,7 +178,7 @@ async function heuristic(
 export async function detect(
   source: BinarySource,
   path: string,
-  options: { magika?: boolean } = {},
+  options: { magika?: boolean | undefined } = {},
 ): Promise<Detection> {
   const view = new BinaryView(await source.read(0, 0x10000), "le");
   let format = magic(view, path);
@@ -189,7 +204,7 @@ export async function detect(
     format = "unknown";
     by = catalog.length ? "catalog" : "magika";
     confidence = catalog.length ? 0.6 : 0;
-    if (catalog.length) platform = catalog[0].consoles.join(", ");
+    if (catalog.length) platform = catalog[0]!.consoles.join(", ");
   }
   return {
     format,

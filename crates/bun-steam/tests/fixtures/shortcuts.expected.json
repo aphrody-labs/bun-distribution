@@ -1,0 +1,16 @@
+{
+  "shortcuts": {
+    "0": {
+      "appid": "-1234567890",
+      "AppName": "Notepad",
+      "Exe": "\"C:\\Windows\\notepad.exe\"",
+      "StartDir": "\"C:\\Windows\\\"",
+      "icon": "",
+      "LaunchOptions": "",
+      "IsHidden": "0",
+      "AllowOverlay": "1",
+      "LastPlayTime": "0",
+      "tags": { "0": "favorite" }
+    }
+  }
+}

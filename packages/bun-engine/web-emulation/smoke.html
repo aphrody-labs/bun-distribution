@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>web emulation smoke</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #ddd; font: 13px system-ui, sans-serif; }
+  #stage { width: 512px; height: 768px; margin: 8px; background: #000; position: relative; }
+  #stage > canvas, #stage > div { width: 100%; height: 100%; display: block; }
+  #status { margin: 8px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="screen" tabindex="0"></canvas></div>
+<div id="status">loading</div>
+<script type="module">
+  // /smoke/?core=dust-nds&system=nds&rom=/roms/godmode9i/GodMode9i.nds&frames=120[&threads=1][&firmware=openbios]
+  const params = new URLSearchParams(location.search);
+  const core = params.get("core");
+  const frames = Number(params.get("frames") ?? 120);
+  const status = document.getElementById("status");
+  const errors = [];
+  const consoleError = console.error.bind(console);
+  console.error = (...args) => { errors.push(args.map(String).join(" ")); consoleError(...args); };
+  addEventListener("error", (e) => errors.push(`error: ${e.message}`));
+  addEventListener("unhandledrejection", (e) => errors.push(`rejection: ${e.reason?.message ?? e.reason}`));
+  const report = (result) => {
+    window.__smoke = result;
+    document.title = `SMOKE ${result.ok ? "ok" : "fail"}`;
+    status.textContent = JSON.stringify(result, null, 2);
+  };
+  const t = { begin: performance.now() };
+  try {
+    const manifest = await (await fetch(`/emulation/${core}/manifest.json`, { cache: "no-cache" })).json();
+    const variant = params.get("threads") === "1" && manifest.variants?.threads ? manifest.variants.threads : manifest;
+    t.manifest = performance.now();
+    const mod = await import(`/emulation/${core}/${variant.module}`);
+    await mod.default({ module_or_path: `/emulation/${core}/${variant.wasm}` });
+    t.instantiate = performance.now();
+    const system = params.get("system") ?? manifest.systems[0];
+    const options = { system, audio: params.get("audio") !== "0" };
+    if (params.get("firmware")) {
+      const { loadFreeFirmware } = await import("/emulation/runtime/firmware.js");
+      const firmware = await loadFreeFirmware(params.get("firmware"), { Verifier: mod.FirmwareVerifier });
+      Object.assign(options, { bios: firmware.bytes, firmware: params.get("firmware") });
+      t.firmware = performance.now();
+    }
+    const rom = new Uint8Array(await (await fetch(params.get("rom"))).arrayBuffer());
+    t.rom = performance.now();
+    const canvas = document.getElementById("screen");
+    const handle = await mod[manifest.start ?? "start"](canvas, rom, options);
+    t.started = performance.now();
+    if (manifest.touch) {
+      const { bindTouch } = await import("/emulation/runtime/touch.js");
+      bindTouch(handle.canvas ?? canvas, handle, system);
+    }
+    window.__handle = handle;
+    const deadline = performance.now() + Number(params.get("timeout") ?? 90000);
+    let firstFrame;
+    while (performance.now() < deadline) {
+      await new Promise((r) => requestAnimationFrame(r));
+      if (handle.frames > 0 && !firstFrame) firstFrame = performance.now();
+      if (handle.frames >= frames || handle.stopped) break;
+    }
+    const done = performance.now();
+    const result = {
+      ok: handle.frames >= frames && handle.lit && !handle.stopped && errors.length === 0,
+      core, system, threads: variant.threads === true,
+      frames: handle.frames, hash: handle.frame_hash, lit: handle.lit,
+      renderer: handle.renderer, audio: handle.audio, stopped: handle.stopped ?? null,
+      crossOriginIsolated,
+      ms: {
+        manifest: t.manifest - t.begin, instantiate: t.instantiate - t.manifest,
+        firmware: t.firmware ? t.firmware - t.instantiate : 0, rom: t.rom - (t.firmware ?? t.instantiate),
+        start: t.started - t.rom, firstFrame: (firstFrame ?? done) - t.begin,
+        firstFrameFromStart: handle.first_frame_ms ?? null, total: done - t.begin,
+      },
+      fps: handle.frames / Math.max(0.001, (done - (firstFrame ?? done)) / 1000),
+      errors,
+    };
+    report(result);
+  } catch (error) {
+    report({ ok: false, core, error: String(error?.stack ?? error), errors, ms: { total: performance.now() - t.begin } });
+  }
+</script>
+</body>
+</html>

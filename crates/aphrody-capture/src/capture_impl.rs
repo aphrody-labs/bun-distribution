@@ -274,7 +274,7 @@ unsafe fn render_to_bgra(
 
 // ─── PNG encoding ────────────────────────────────────────────────────────────
 
-fn encode_rgba_to_png(rgba: &[u8], w: u32, h: u32) -> Result<Vec<u8>> {
+pub(crate) fn encode_rgba_to_png(rgba: &[u8], w: u32, h: u32) -> Result<Vec<u8>> {
     use image::{ImageFormat, RgbaImage};
     let img = RgbaImage::from_raw(w, h, rgba.to_vec()).ok_or_else(|| {
         CaptureError::Encode("RgbaImage::from_raw: dimensions mismatch".to_owned())
@@ -580,15 +580,33 @@ pub(crate) fn set_topmost(handle: usize, topmost: bool) -> Result<()> {
 }
 
 pub(crate) fn switch_to_window(handle: usize) -> Result<()> {
+    use windows::Win32::{
+        System::Threading::{AttachThreadInput, GetCurrentThreadId},
+        UI::WindowsAndMessaging::{
+            BringWindowToTop, GetForegroundWindow, GetWindowThreadProcessId, IsIconic, SW_RESTORE,
+            SetForegroundWindow, ShowWindow,
+        },
+    };
     let hwnd = HWND(handle as *mut _);
-    unsafe {
-        let _ = windows::Win32::UI::WindowsAndMessaging::ShowWindow(
-            hwnd,
-            windows::Win32::UI::WindowsAndMessaging::SW_RESTORE,
-        );
+    // Restore only minimised windows: SW_RESTORE would un-maximise a maximised game window.
+    if unsafe { IsIconic(hwnd) }.as_bool() {
+        let _ = unsafe { ShowWindow(hwnd, SW_RESTORE) };
     }
-    let ok = unsafe { windows::Win32::UI::WindowsAndMessaging::SetForegroundWindow(hwnd) };
-    if ok.as_bool() {
+    if unsafe { SetForegroundWindow(hwnd) }.as_bool() {
+        return Ok(());
+    }
+    // The foreground lock refuses callers that are not the foreground thread: share the input
+    // state of the current foreground thread for the duration of the request.
+    let foreground = unsafe { GetWindowThreadProcessId(GetForegroundWindow(), None) };
+    let current = unsafe { GetCurrentThreadId() };
+    let attached =
+        foreground != 0 && foreground != current && unsafe { AttachThreadInput(current, foreground, true) }.as_bool();
+    let _ = unsafe { BringWindowToTop(hwnd) };
+    let ok = unsafe { SetForegroundWindow(hwnd) }.as_bool();
+    if attached {
+        let _ = unsafe { AttachThreadInput(current, foreground, false) };
+    }
+    if ok {
         Ok(())
     } else {
         Err(CaptureError::Win32("SetForegroundWindow failed".into()))
@@ -853,6 +871,43 @@ pub(crate) fn key_scan(scan: u16, action: &str, extended: bool) -> Result<()> {
     } else {
         Err(CaptureError::Win32(format!("SendInput sent {sent}/{} events", inputs.len())))
     }
+}
+
+fn send_mouse(flags: windows::Win32::UI::Input::KeyboardAndMouse::MOUSE_EVENT_FLAGS, dx: i32, dy: i32) -> Result<()> {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{INPUT, INPUT_0, INPUT_MOUSE, MOUSEINPUT, SendInput};
+    let input = INPUT {
+        r#type: INPUT_MOUSE,
+        Anonymous: INPUT_0 {
+            mi: MOUSEINPUT { dx, dy, mouseData: 0, dwFlags: flags, time: 0, dwExtraInfo: 0 },
+        },
+    };
+    // Safety: one fully initialised INPUT with its exact size.
+    let sent = unsafe { SendInput(&[input], std::mem::size_of::<INPUT>() as i32) };
+    if sent == 1 {
+        Ok(())
+    } else {
+        Err(CaptureError::Win32("SendInput rejected the mouse event (UIPI or input desktop)".into()))
+    }
+}
+
+pub(crate) fn mouse_move_relative(dx: i32, dy: i32) -> Result<()> {
+    send_mouse(windows::Win32::UI::Input::KeyboardAndMouse::MOUSEEVENTF_MOVE, dx, dy)
+}
+
+pub(crate) fn mouse_button_input(button: &str, down: bool) -> Result<()> {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, MOUSEEVENTF_MIDDLEDOWN, MOUSEEVENTF_MIDDLEUP,
+        MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP,
+    };
+    let flag = match (button.to_ascii_lowercase().as_str(), down) {
+        ("right", true) => MOUSEEVENTF_RIGHTDOWN,
+        ("right", false) => MOUSEEVENTF_RIGHTUP,
+        ("middle", true) => MOUSEEVENTF_MIDDLEDOWN,
+        ("middle", false) => MOUSEEVENTF_MIDDLEUP,
+        (_, true) => MOUSEEVENTF_LEFTDOWN,
+        (_, false) => MOUSEEVENTF_LEFTUP,
+    };
+    send_mouse(flag, 0, 0)
 }
 
 pub(crate) fn key_vk(vk: u8, down: bool) -> Result<()> {

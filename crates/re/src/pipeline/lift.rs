@@ -3,11 +3,12 @@
 
 use super::image::Image;
 use super::ir::{
-    BinKind, Cond, Ext, ImportEntry, IrBlock, IrFunction, IrInsn, IrModule, IrOp, Operand, SectionEntry, Target, UnKind,
+    BinKind, Cond, Ext, ImportEntry, IrBlock, IrFunction, IrInsn, IrModule, IrOp, Operand,
+    SectionEntry, Target, UnKind,
 };
 use iced_x86::{
-    ConditionCode, Decoder, DecoderOptions, FlowControl, Formatter, Instruction, IntelFormatter, Mnemonic, OpKind,
-    Register,
+    ConditionCode, Decoder, DecoderOptions, FlowControl, Formatter, Instruction, IntelFormatter,
+    Mnemonic, OpKind, Register,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -22,7 +23,10 @@ pub struct LiftOptions {
 
 impl Default for LiftOptions {
     fn default() -> Self {
-        Self { max_functions: 512, max_insns: 4096 }
+        Self {
+            max_functions: 512,
+            max_insns: 4096,
+        }
     }
 }
 
@@ -41,10 +45,22 @@ pub fn lift_image(img: &Image, opts: LiftOptions) -> (IrModule, Vec<u8>) {
     let imports: Vec<ImportEntry> = img
         .imports
         .iter()
-        .map(|(slot, s)| ImportEntry { name: s.name.clone(), lib: s.lib.clone(), slot: *slot })
+        .map(|(slot, s)| ImportEntry {
+            name: s.name.clone(),
+            lib: s.lib.clone(),
+            slot: *slot,
+        })
         .collect();
-    let imp_index = imports.iter().enumerate().map(|(i, e)| (e.slot, i as u32)).collect();
-    let ctx = Ctx { img, imp_index, imports };
+    let imp_index = imports
+        .iter()
+        .enumerate()
+        .map(|(i, e)| (e.slot, i as u32))
+        .collect();
+    let ctx = Ctx {
+        img,
+        imp_index,
+        imports,
+    };
 
     let mut known: BTreeSet<u64> = BTreeSet::new();
     let mut queue: Vec<u64> = Vec::new();
@@ -86,7 +102,11 @@ pub fn lift_image(img: &Image, opts: LiftOptions) -> (IrModule, Vec<u8>) {
     let module = IrModule {
         schema_version: 1,
         format: img.format.to_string(),
-        arch: if img.bits == 64 { "x86_64".into() } else { "x86".into() },
+        arch: if img.bits == 64 {
+            "x86_64".into()
+        } else {
+            "x86".into()
+        },
         abi: None,
         bits: img.bits,
         image_base: img.base,
@@ -105,7 +125,12 @@ fn decode_at(img: &Image, addr: u64) -> Option<Instruction> {
         return None;
     }
     let off = (addr - seg.vaddr) as usize;
-    let mut d = Decoder::with_ip(u32::from(img.bits), &seg.data[off..], addr, DecoderOptions::NONE);
+    let mut d = Decoder::with_ip(
+        u32::from(img.bits),
+        &seg.data[off..],
+        addr,
+        DecoderOptions::NONE,
+    );
     let ins = d.decode();
     if ins.is_invalid() { None } else { Some(ins) }
 }
@@ -121,7 +146,12 @@ fn is_terminator(ins: &Instruction) -> bool {
     }
 }
 
-fn lift_function(ctx: &Ctx, start: u64, known: &BTreeSet<u64>, max_insns: usize) -> (IrFunction, Vec<u64>) {
+fn lift_function(
+    ctx: &Ctx,
+    start: u64,
+    known: &BTreeSet<u64>,
+    max_insns: usize,
+) -> (IrFunction, Vec<u64>) {
     let img = ctx.img;
     let mut insns: BTreeMap<u64, Instruction> = BTreeMap::new();
     let mut bad: BTreeSet<u64> = BTreeSet::new();
@@ -154,7 +184,9 @@ fn lift_function(ctx: &Ctx, start: u64, known: &BTreeSet<u64>, max_insns: usize)
             insns.insert(ip, ins);
             match ins.flow_control() {
                 FlowControl::UnconditionalBranch => {
-                    if let OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64 = ins.op0_kind() {
+                    if let OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64 =
+                        ins.op0_kind()
+                    {
                         let t = ins.near_branch_target();
                         if local(t) {
                             leaders.insert(t);
@@ -190,19 +222,37 @@ fn lift_function(ctx: &Ctx, start: u64, known: &BTreeSet<u64>, max_insns: usize)
     for (&addr, ins) in &insns {
         let new_block = prev_term || leaders.contains(&addr) || prev_end != Some(addr);
         if new_block {
-            blocks.push(IrBlock { addr, insns: Vec::new(), fallthrough: None });
+            blocks.push(IrBlock {
+                addr,
+                insns: Vec::new(),
+                fallthrough: None,
+            });
         }
         let mut text = String::new();
         fmt.format(ins, &mut text);
         let op = lower(ctx, ins);
         let blk = blocks.last_mut().expect("block pushed");
-        blk.insns.push(IrInsn { addr, len: ins.len() as u8, text, op });
+        blk.insns.push(IrInsn {
+            addr,
+            len: ins.len() as u8,
+            text,
+            op,
+        });
         prev_term = is_terminator(ins);
         prev_end = Some(ins.next_ip());
         blk.fallthrough = if prev_term { None } else { Some(ins.next_ip()) };
     }
     let name = ctx.img.symbols.get(&start).cloned();
-    (IrFunction { addr: start, name, blocks, truncated, isa: 0 }, calls)
+    (
+        IrFunction {
+            addr: start,
+            name,
+            blocks,
+            truncated,
+            isa: 0,
+        },
+        calls,
+    )
 }
 
 fn canon(r: Register) -> Option<(String, u8, bool)> {
@@ -230,7 +280,9 @@ fn opnd(ctx: &Ctx, ins: &Instruction, i: u32) -> Option<Operand> {
         | OpKind::Immediate8to16
         | OpKind::Immediate8to32
         | OpKind::Immediate8to64
-        | OpKind::Immediate32to64 => Some(Operand::Imm { value: ins.immediate(i) as i64 }),
+        | OpKind::Immediate32to64 => Some(Operand::Imm {
+            value: ins.immediate(i) as i64,
+        }),
         OpKind::Memory => mem_op(ctx, ins),
         _ => None,
     }
@@ -294,15 +346,27 @@ fn branch_target(ctx: &Ctx, ins: &Instruction) -> Option<Target> {
         OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64 => {
             let t = ins.near_branch_target();
             if let Some(&i) = ctx.imp_index.get(&t) {
-                return Some(Target::Import { index: i, name: ctx.imports[i as usize].name.clone() });
+                return Some(Target::Import {
+                    index: i,
+                    name: ctx.imports[i as usize].name.clone(),
+                });
             }
             Some(Target::Direct { addr: t })
         }
         OpKind::Register | OpKind::Memory => {
             let o = opnd(ctx, ins, 0)?;
-            if let Operand::Mem { base: None, index: None, disp, .. } = &o {
+            if let Operand::Mem {
+                base: None,
+                index: None,
+                disp,
+                ..
+            } = &o
+            {
                 if let Some(&i) = ctx.imp_index.get(&(*disp as u64)) {
-                    return Some(Target::Import { index: i, name: ctx.imports[i as usize].name.clone() });
+                    return Some(Target::Import {
+                        index: i,
+                        name: ctx.imports[i as usize].name.clone(),
+                    });
                 }
             }
             Some(Target::Indirect { operand: o })
@@ -312,7 +376,9 @@ fn branch_target(ctx: &Ctx, ins: &Instruction) -> Option<Target> {
 }
 
 fn unl(reason: &str) -> IrOp {
-    IrOp::Unlifted { reason: reason.to_string() }
+    IrOp::Unlifted {
+        reason: reason.to_string(),
+    }
 }
 
 fn lower(ctx: &Ctx, ins: &Instruction) -> IrOp {
@@ -327,38 +393,106 @@ fn lower(ctx: &Ctx, ins: &Instruction) -> IrOp {
         }
     }
     for i in 0..ins.op_count() {
-        if ins.op_kind(i) == OpKind::Memory && m != Mnemonic::Lea && !matches!(ins.memory_size().size(), 1 | 2 | 4 | 8) {
+        if ins.op_kind(i) == OpKind::Memory
+            && m != Mnemonic::Lea
+            && !matches!(ins.memory_size().size(), 1 | 2 | 4 | 8)
+        {
             return unl("memory operand width not modelled");
         }
     }
     let r = match m {
         Mnemonic::Nop | Mnemonic::Endbr64 | Mnemonic::Endbr32 | Mnemonic::Pause => Some(IrOp::Nop),
-        Mnemonic::Mov => two().map(|(dst, src)| IrOp::Mov { dst, src, ext: Ext::None }),
-        Mnemonic::Movzx => two().map(|(dst, src)| IrOp::Mov { dst, src, ext: Ext::Zero }),
-        Mnemonic::Movsx | Mnemonic::Movsxd => two().map(|(dst, src)| IrOp::Mov { dst, src, ext: Ext::Sign }),
+        Mnemonic::Mov => two().map(|(dst, src)| IrOp::Mov {
+            dst,
+            src,
+            ext: Ext::None,
+        }),
+        Mnemonic::Movzx => two().map(|(dst, src)| IrOp::Mov {
+            dst,
+            src,
+            ext: Ext::Zero,
+        }),
+        Mnemonic::Movsx | Mnemonic::Movsxd => two().map(|(dst, src)| IrOp::Mov {
+            dst,
+            src,
+            ext: Ext::Sign,
+        }),
         Mnemonic::Lea => two().map(|(dst, src)| IrOp::Lea { dst, src }),
-        Mnemonic::Add => two().map(|(dst, src)| IrOp::Bin { kind: BinKind::Add, dst, src }),
-        Mnemonic::Sub => two().map(|(dst, src)| IrOp::Bin { kind: BinKind::Sub, dst, src }),
-        Mnemonic::And => two().map(|(dst, src)| IrOp::Bin { kind: BinKind::And, dst, src }),
-        Mnemonic::Or => two().map(|(dst, src)| IrOp::Bin { kind: BinKind::Or, dst, src }),
-        Mnemonic::Xor => two().map(|(dst, src)| IrOp::Bin { kind: BinKind::Xor, dst, src }),
-        Mnemonic::Shl => two().map(|(dst, src)| IrOp::Bin { kind: BinKind::Shl, dst, src }),
-        Mnemonic::Shr => two().map(|(dst, src)| IrOp::Bin { kind: BinKind::Shr, dst, src }),
-        Mnemonic::Sar => two().map(|(dst, src)| IrOp::Bin { kind: BinKind::Sar, dst, src }),
-        Mnemonic::Inc => o(0).map(|dst| IrOp::Un { kind: UnKind::Inc, dst }),
-        Mnemonic::Dec => o(0).map(|dst| IrOp::Un { kind: UnKind::Dec, dst }),
-        Mnemonic::Neg => o(0).map(|dst| IrOp::Un { kind: UnKind::Neg, dst }),
-        Mnemonic::Not => o(0).map(|dst| IrOp::Un { kind: UnKind::Not, dst }),
+        Mnemonic::Add => two().map(|(dst, src)| IrOp::Bin {
+            kind: BinKind::Add,
+            dst,
+            src,
+        }),
+        Mnemonic::Sub => two().map(|(dst, src)| IrOp::Bin {
+            kind: BinKind::Sub,
+            dst,
+            src,
+        }),
+        Mnemonic::And => two().map(|(dst, src)| IrOp::Bin {
+            kind: BinKind::And,
+            dst,
+            src,
+        }),
+        Mnemonic::Or => two().map(|(dst, src)| IrOp::Bin {
+            kind: BinKind::Or,
+            dst,
+            src,
+        }),
+        Mnemonic::Xor => two().map(|(dst, src)| IrOp::Bin {
+            kind: BinKind::Xor,
+            dst,
+            src,
+        }),
+        Mnemonic::Shl => two().map(|(dst, src)| IrOp::Bin {
+            kind: BinKind::Shl,
+            dst,
+            src,
+        }),
+        Mnemonic::Shr => two().map(|(dst, src)| IrOp::Bin {
+            kind: BinKind::Shr,
+            dst,
+            src,
+        }),
+        Mnemonic::Sar => two().map(|(dst, src)| IrOp::Bin {
+            kind: BinKind::Sar,
+            dst,
+            src,
+        }),
+        Mnemonic::Inc => o(0).map(|dst| IrOp::Un {
+            kind: UnKind::Inc,
+            dst,
+        }),
+        Mnemonic::Dec => o(0).map(|dst| IrOp::Un {
+            kind: UnKind::Dec,
+            dst,
+        }),
+        Mnemonic::Neg => o(0).map(|dst| IrOp::Un {
+            kind: UnKind::Neg,
+            dst,
+        }),
+        Mnemonic::Not => o(0).map(|dst| IrOp::Un {
+            kind: UnKind::Not,
+            dst,
+        }),
         Mnemonic::Cmp => two().map(|(a, b)| IrOp::Cmp { a, b }),
         Mnemonic::Test => two().map(|(a, b)| IrOp::Test { a, b }),
         Mnemonic::Push => o(0).map(|src| IrOp::Push { src }),
         Mnemonic::Pop => o(0).map(|dst| IrOp::Pop { dst }),
         Mnemonic::Leave => Some(IrOp::Leave),
-        Mnemonic::Ret => Some(IrOp::Ret { pop: if ins.op_count() == 1 { ins.immediate(0) as u16 } else { 0 } }),
+        Mnemonic::Ret => Some(IrOp::Ret {
+            pop: if ins.op_count() == 1 {
+                ins.immediate(0) as u16
+            } else {
+                0
+            },
+        }),
         Mnemonic::Call => branch_target(ctx, ins).map(|target| IrOp::Call { target }),
         Mnemonic::Jmp => branch_target(ctx, ins).map(|target| IrOp::Jmp { target }),
         _ if ins.flow_control() == FlowControl::ConditionalBranch && mnem.starts_with('J') => {
-            cond(ins).map(|c| IrOp::Jcc { cond: c, target: ins.near_branch_target() })
+            cond(ins).map(|c| IrOp::Jcc {
+                cond: c,
+                target: ins.near_branch_target(),
+            })
         }
         _ if mnem.starts_with("Set") => match (cond(ins), o(0)) {
             (Some(c), Some(dst)) => Some(IrOp::Setcc { cond: c, dst }),
@@ -377,12 +511,19 @@ fn lower(ctx: &Ctx, ins: &Instruction) -> IrOp {
             }
         }
     }
-    let Some(op) = r else { return unl("operand form not modelled") };
+    let Some(op) = r else {
+        return unl("operand form not modelled");
+    };
     // Reject mixed shapes the emitters do not handle.
     match &op {
-        IrOp::Mov { dst: Operand::Imm { .. }, .. } | IrOp::Lea { src: Operand::Reg { .. } | Operand::Imm { .. }, .. } => {
-            unl("unsupported operand shape")
+        IrOp::Mov {
+            dst: Operand::Imm { .. },
+            ..
         }
+        | IrOp::Lea {
+            src: Operand::Reg { .. } | Operand::Imm { .. },
+            ..
+        } => unl("unsupported operand shape"),
         IrOp::Lea { dst, .. } if dst.bits().is_none() => unl("unsupported operand shape"),
         _ => op,
     }

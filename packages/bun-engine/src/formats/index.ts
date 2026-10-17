@@ -1,4 +1,4 @@
-export { detect, platforms } from "./detect";
+export { detect, platforms } from "./detect.js";
 export {
   backends,
   backendFor,
@@ -7,15 +7,15 @@ export {
   type Backend,
   type DisasmLine,
   type DisasmResult,
-} from "./disasm";
-export { disassemble6502 } from "./disasm/m6502";
+} from "./disasm/index.js";
+export { disassemble6502 } from "./disasm/m6502.js";
 export {
   BinaryImage,
   openBinary,
   type ImageDisasmOptions,
   type ImageSummary,
   type OpenOptions,
-} from "./image";
+} from "./image.js";
 export {
   BinarySource,
   BinaryView,
@@ -24,7 +24,7 @@ export {
   type Chunk,
   type Endian,
   type StreamDigest,
-} from "./stream";
+} from "./stream.js";
 export {
   archIds,
   formatIds,
@@ -34,5 +34,6 @@ export {
   type FormatId,
   type ParsedImage,
   type Section,
-} from "./types";
-export type * from "./headers";
+} from "./types.js";
+export type * from "./headers.js";
+export { formatsUsage, runFormats } from "./cli.js";

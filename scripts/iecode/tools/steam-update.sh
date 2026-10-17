@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# MAJ en place de l'install IEVR depuis Steam (depot 2799861), via bunre steam (crates/re).
+# MAJ en place de l'install IEVR depuis Steam (depot 2799861), via bun-steam-depot (crates/bun-steam).
 #
 # Sépare l'auth courte du téléchargement relançable. Le refresh token reste dans
 # le magasin NIE protégé; la longue synchronisation tourne dans une session tmux.
@@ -7,7 +7,7 @@ set -euo pipefail
 umask 077
 
 REPO="${NIE_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-BIN="$REPO/target/release/bunre"
+BIN="$REPO/target/release/bun-steam-depot"
 ENV_FILE="${NIE_STEAM_ENV_FILE:-$HOME/.config/nie/steam.env}"
 if [[ -f "$ENV_FILE" ]]; then
   if grep -Eq '^[[:space:]]*(export[[:space:]]+)?(STEAM_PASSWORD|STEAM_GUARD_CODE)[[:space:]]*=' "$ENV_FILE"; then
@@ -32,7 +32,7 @@ MAX_DOWNLOADS="${NIE_STEAM_MAX_DOWNLOADS:-16}"
 SESSION="${NIE_STEAM_TMUX_SESSION:-ievr-download}"
 LOG="${STEAM_UPDATE_LOG:-$HOME/steam-update-$(date +%Y%m%d-%H%M%S).log}"
 
-[[ -x "$BIN" ]] || { echo "erreur: $BIN absent (cargo build --release -p bun-re --features steam-download --bin bunre)"; exit 1; }
+[[ -x "$BIN" ]] || { echo "erreur: $BIN absent (cargo build --release -p bun-steam --features depot --bin bun-steam-depot)"; exit 1; }
 [[ -d "$DEST" ]] || { echo "erreur: dossier install $DEST absent"; exit 1; }
 [[ "$APPID" == "2799860" && "$DEPOT" == "2799861" ]] || {
   echo "erreur: ce script est réservé à l'app IEVR 2799860 et au depot 2799861" >&2
@@ -76,7 +76,7 @@ fi
 echo "== 1/2 auth =="
 # La commande lit STEAM_PASSWORD / STEAM_GUARD_CODE dans l'environnement, jamais
 # dans argv. Elle crée le refresh token uniquement dans TOKEN_STORE.
-if "$BIN" steam --token-store "$TOKEN_STORE" -u "$STEAM_USER" --depot "$DEPOT" list "$APPID"; then
+if "$BIN" --token-store "$TOKEN_STORE" -u "$STEAM_USER" --depot "$DEPOT" list "$APPID"; then
   echo "auth ok — token mis en cache"
 else
   echo "erreur: auth/list a échoué (identifiants ? Guard expiré ? accès depot ?)"
@@ -88,7 +88,7 @@ echo "== 2/2 sync persistante dans tmux =="
 unset STEAM_PASSWORD STEAM_GUARD_CODE
 tmux -S "$TMUX_SOCKET" set-environment -g -u STEAM_PASSWORD 2>/dev/null || true
 tmux -S "$TMUX_SOCKET" set-environment -g -u STEAM_GUARD_CODE 2>/dev/null || true
-printf -v sync_command '%q ' "$BIN" steam --token-store "$TOKEN_STORE" -u "$STEAM_USER" \
+printf -v sync_command '%q ' "$BIN" --token-store "$TOKEN_STORE" -u "$STEAM_USER" \
   --depot "$DEPOT" sync -o "$DEST" --max-downloads "$MAX_DOWNLOADS"
 printf -v log_quoted '%q' "$LOG"
 printf -v run_command '%q ' bash -lc "exec ${sync_command}>${log_quoted} 2>&1"

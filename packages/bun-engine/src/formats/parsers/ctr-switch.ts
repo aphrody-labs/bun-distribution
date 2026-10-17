@@ -1,8 +1,13 @@
 // Nintendo 3DS (NCSD/CCI, NCCH/CXI) and Nintendo Switch (NSP/PFS0, XCI/HFS0, NRO) containers.
 // Headers and plaintext tables only: encrypted NCCH/NCA payloads need console keys, which are
 // never handled here (see packages/re/plugin/skills/3ds-reverse and switch-reverse).
-import { BinaryView, hex, hex32, type BinarySource } from "../stream";
-import type { FileEntry, ParseContext, ParsedImage, Section } from "../types";
+import { BinaryView, hex, hex32, type BinarySource } from "../stream.js";
+import type {
+  FileEntry,
+  ParseContext,
+  ParsedImage,
+  Section,
+} from "../types.js";
 
 const mediaUnit = 0x200;
 
@@ -16,7 +21,7 @@ export async function ncch(
   const view = await source.view(base, 0x200);
   if (!view.equals(0x100, "NCCH")) return undefined;
   const flags = view.slice(0x188, 8);
-  const noCrypto = (flags[7] & 0x04) !== 0;
+  const noCrypto = (flags[7]! & 0x04) !== 0;
   const region = (
     name: string,
     at: number,

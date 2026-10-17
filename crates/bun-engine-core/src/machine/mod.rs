@@ -2,6 +2,8 @@
 
 #[cfg(feature = "arm")]
 pub mod arm;
+#[cfg(feature = "cpp-host")]
+pub mod cpp_host;
 #[cfg(feature = "ctr")]
 pub mod ctr;
 #[cfg(feature = "nds")]
@@ -83,5 +85,23 @@ pub trait Machine {
     /// Serial output produced since the last call.
     fn console(&mut self) -> Vec<u8> {
         Vec::new()
+    }
+    /// Video frames per second of the emulated display (frame pacing).
+    fn refresh_rate(&self) -> f64 {
+        60.0
+    }
+    /// Sample rate of [`Machine::audio`] in Hz; 0 when the machine produces no audio.
+    fn sample_rate(&self) -> u32 {
+        0
+    }
+    /// Append the interleaved stereo samples (-1.0..=1.0) produced since the last call.
+    fn audio(&mut self, _out: &mut Vec<f32>) {}
+    /// Serialized machine state (suspend/resume, save states); `None` when the core cannot save.
+    fn save_state(&mut self) -> Option<Vec<u8>> {
+        None
+    }
+    /// Restore a state produced by [`Machine::save_state`] for the same image.
+    fn load_state(&mut self, _state: &[u8]) -> Result<(), String> {
+        Err(format!("{} has no save states", self.name()))
     }
 }

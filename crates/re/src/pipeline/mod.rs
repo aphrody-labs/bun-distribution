@@ -46,7 +46,12 @@ pub fn run_with(reg: &Registry, opts: Options) -> std::io::Result<PipelineReport
     let mut aborted = false;
     for stage in Stage::ALL {
         if aborted {
-            stages.push(report(stage, "-", StageStatus::Skipped, "earlier stage failed"));
+            stages.push(report(
+                stage,
+                "-",
+                StageStatus::Skipped,
+                "earlier stage failed",
+            ));
             continue;
         }
         let ready: Vec<&dyn registry::StageAdapter> = reg
@@ -59,21 +64,37 @@ pub fn run_with(reg: &Registry, opts: Options) -> std::io::Result<PipelineReport
                 .filter(|a| a.applies(&ctx))
                 .map(|a| {
                     let i = a.info(&opts);
-                    let st = serde_json::to_value(i.status).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_default();
+                    let st = serde_json::to_value(i.status)
+                        .ok()
+                        .and_then(|v| v.as_str().map(str::to_string))
+                        .unwrap_or_default();
                     match i.reason {
                         Some(r) => format!("{} [{st}: {r}]", i.id),
                         None => format!("{} [{st}]", i.id),
                     }
                 })
                 .collect();
-            let ident = ctx.effective_ident().map(|i| i.format.clone()).unwrap_or_else(|| "unidentified".into());
+            let ident = ctx
+                .effective_ident()
+                .map(|i| i.format.clone())
+                .unwrap_or_else(|| "unidentified".into());
             let prereq_missing = stage >= Stage::Analyze && ctx.payload.is_none();
             let (status, detail) = if prereq_missing {
-                (StageStatus::Skipped, "no payload produced by earlier stages".to_string())
+                (
+                    StageStatus::Skipped,
+                    "no payload produced by earlier stages".to_string(),
+                )
             } else {
                 (
                     StageStatus::Unavailable,
-                    format!("no runnable adapter for {ident}; candidates: {}", if cands.is_empty() { "none registered".into() } else { cands.join("; ") }),
+                    format!(
+                        "no runnable adapter for {ident}; candidates: {}",
+                        if cands.is_empty() {
+                            "none registered".into()
+                        } else {
+                            cands.join("; ")
+                        }
+                    ),
                 )
             };
             stages.push(report(stage, "-", status, detail));
@@ -84,7 +105,9 @@ pub fn run_with(reg: &Registry, opts: Options) -> std::io::Result<PipelineReport
         }
         for a in ready {
             let rep = a.run(&mut ctx);
-            if rep.status == StageStatus::Failed && matches!(stage, Stage::Acquire | Stage::Identify) {
+            if rep.status == StageStatus::Failed
+                && matches!(stage, Stage::Acquire | Stage::Identify)
+            {
                 aborted = true;
             }
             stages.push(rep);

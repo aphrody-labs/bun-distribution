@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: Apache-2.0
+# Bun OS console shell: a Bevy 0.20 app (bevy_ui with the Material 3 tokens, gilrs gamepads,
+# bevy_audio, states) over the Bun Engine machines, the Steam owner and the bep library.
+[package]
+name = "bun-os-shell"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-dev <contact@aphrody.com>"]
+license = "Apache-2.0"
+repository = "https://github.com/aphrody-labs/bun-os"
+description = "Bun OS console shell: controller-first full-screen session with Material 3 in Bevy, game library, quick menu, per-game profiles, instant resume and NVIDIA state."
+
+[lints]
+workspace = true
+
+[dependencies]
+bevy = { workspace = true, features = ["ui", "audio", "wav", "png", "jpeg"] }
+bun-engine = { workspace = true, features = ["render", "nes", "gba", "psx", "nds"] }
+bun-steam = { workspace = true }
+aphrody-m3-tokens = { path = "../aphrody-m3-tokens" }
+aphrody-svg = { path = "../aphrody-svg", default-features = false, features = ["symbols", "raster"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
+serde_json = { workspace = true }
+image = { workspace = true, features = ["png", "jpeg"] }
+raw-window-handle = "0.6"
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = [
+  "Win32_Foundation",
+  "Win32_Graphics_Dxgi",
+  "Win32_Graphics_Dxgi_Common",
+  "Win32_Graphics_Gdi",
+  "Win32_Media_Audio",
+  "Win32_Media_Audio_Endpoints",
+  "Win32_Media_MediaFoundation",
+  "Win32_System_Com",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_Diagnostics_ToolHelp",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Power",
+  "Win32_System_Registry",
+  "Win32_System_SystemInformation",
+  "Win32_System_Threading",
+  "Win32_System_Variant",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_Input_XboxController",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+[[bin]]
+name = "bun-os-shell"
+path = "src/bin/bun-os-shell.rs"

@@ -16,7 +16,8 @@
 //!   tests).
 //!
 //! - [`WincleanTool`] / [`WincleanGatewayTool`] — native Windows computer use and OS control
-//!   through the in-process `aphrody-winclean` crate (166 tools, see [`winclean_tools`]).
+//!   through the in-process `aphrody-winclean` crate (see [`winclean_tools`] and the gaming profile
+//!   [`winclean_gaming_tools`]).
 //!
 //! # Safety posture
 //!
@@ -71,5 +72,6 @@ pub use web_tools::{
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use winclean::{
-    WINCLEAN_DIRECT_TOOLS, WINCLEAN_GATEWAY, WincleanGatewayTool, WincleanTool, winclean_tools,
+    WINCLEAN_DIRECT_TOOLS, WINCLEAN_GAMING_TOOLS, WINCLEAN_GATEWAY, WincleanGatewayTool, WincleanTool,
+    winclean_gaming_tools, winclean_tools,
 };

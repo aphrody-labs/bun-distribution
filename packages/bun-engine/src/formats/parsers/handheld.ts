@@ -1,14 +1,14 @@
 // NES/Famicom Disk System, Game Boy (Color), Game Boy Advance and Nintendo DS(i) cartridges.
 // The DS header layout follows crates/bun-engine-core/src/cartridge.rs and
 // packages/re/src/replica/nds.ts; validation is delegated to the native `bun-engine info`.
-import { BinaryView, crc16, hex, hex32 } from "../stream";
-import { nativeNdsInfo } from "../tools";
+import { BinaryView, crc16, hex, hex32 } from "../stream.js";
+import { nativeNdsInfo } from "../tools.js";
 import {
   parsed,
   type FileEntry,
   type ParseContext,
   type Section,
-} from "../types";
+} from "../types.js";
 
 export const regionByGameCode: Record<string, string> = {
   A: "Asia",
@@ -250,7 +250,7 @@ export async function parseGameBoy({ source, head }: ParseContext) {
     for (let index = 0; index < bytes.byteLength; index++) {
       const at = offset + index;
       if (at !== 0x14e && at !== 0x14f)
-        globalSum = (globalSum + bytes[index]) & 0xffff;
+        globalSum = (globalSum + bytes[index]!) & 0xffff;
     }
   }
   const romBytes = 0x8000 << view.u8(0x148);

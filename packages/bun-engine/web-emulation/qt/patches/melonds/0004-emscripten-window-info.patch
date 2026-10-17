@@ -1,0 +1,12 @@
+--- a/src/frontend/qt_sdl/Screen.cpp
++++ b/src/frontend/qt_sdl/Screen.cpp
+@@ -1293,6 +1293,9 @@
+     #elif defined(__APPLE__)
+     wi.type = WindowInfo::Type::MacOS;
+     wi.window_handle = reinterpret_cast<void*>(winId());
++    #elif defined(__EMSCRIPTEN__)
++    // Qt for WebAssembly has no native window handle for a GL context.
++    return std::nullopt;
+     #else
+     const QString platform_name = QGuiApplication::platformName();
+ 

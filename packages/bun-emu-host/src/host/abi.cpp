@@ -216,7 +216,7 @@ BUN_EMU_API int32_t bun_emu_load_firmware(bun_emu* emu, const char* kind, const 
 BUN_EMU_API int32_t bun_emu_load_content_path(bun_emu* emu, const char* path) {
   if (!path) return BUN_EMU_E_INVALID;
   return guarded(emu, [&] {
-    std::ifstream in(std::filesystem::u8path(path), std::ios::binary);
+    std::ifstream in(std::filesystem::path(reinterpret_cast<const char8_t*>(path)), std::ios::binary);
     if (!in) bun::emu::fail(BUN_EMU_E_IO, std::string("cannot open ") + path);
     std::vector<uint8_t> data((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     std::string p(path);
@@ -267,7 +267,7 @@ BUN_EMU_API uint64_t bun_emu_frame_count(const bun_emu* emu) { return emu ? emu-
 
 BUN_EMU_API uint32_t bun_emu_screen_count(const bun_emu* emu) { return emu ? emu->core->screen_count() : 0; }
 
-BUN_EMU_API int32_t bun_emu_screen(const bun_emu* emu, uint32_t index, bun_emu_screen* out) {
+BUN_EMU_API int32_t bun_emu_get_screen(const bun_emu* emu, uint32_t index, bun_emu_screen* out) {
   if (!emu || !out) return BUN_EMU_E_INVALID;
   try {
     auto s = emu->core->screen(index);

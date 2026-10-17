@@ -31,16 +31,16 @@ use steamroom_client::manifest::ManifestCache;
 use tokio::sync::mpsc;
 use tracing::{info, warn};
 
-use crate::steam::depot_resolver::{self, INVALID_MANIFEST};
-use crate::steam::options::{
+use crate::depot::depot_resolver::{self, INVALID_MANIFEST};
+use crate::depot::options::{
     DepotInfo, DownloadResult, ManifestCollision, SteamDownloadOptions, SteamDownloadPhase,
     SteamDownloadProgress,
 };
-use crate::steam::planning::{
+use crate::depot::planning::{
     ExistingPath, ExistingPathKind, ManifestEntry, PlanningLimits, plan_manifest_application,
 };
-use crate::steam::session::SteamSession;
-use crate::steam::transfer::{CachedFetcher, RateLimiter, TransferStats};
+use crate::depot::session::SteamSession;
+use crate::depot::transfer::{CachedFetcher, RateLimiter, TransferStats};
 
 // ─── Downloader ───────────────────────────────────────────────────────────────
 
@@ -674,12 +674,12 @@ impl Default for SteamDepotDownloader {
 /// existant. Résultat : `Is a directory (os error 21)`, sans nom de chemin, qui
 /// avorte le depot **entier** dès la première entrée. Diagnostiqué par
 /// [`SteamDepotDownloader::audit_manifest`].
-pub use crate::steam::planning::STEAM_FLAG_DIRECTORY;
+pub use crate::depot::planning::STEAM_FLAG_DIRECTORY;
 
 /// Vrai si l'entrée de manifest décrit un répertoire (cf. [`STEAM_FLAG_DIRECTORY`]).
 ///
 /// À préférer à `DepotFileFlags::is_directory()`, qui teste le bit `2`.
-pub use crate::steam::planning::is_manifest_directory;
+pub use crate::depot::planning::is_manifest_directory;
 
 // ─── Plan interne ─────────────────────────────────────────────────────────────
 

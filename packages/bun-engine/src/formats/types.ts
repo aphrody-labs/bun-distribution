@@ -1,4 +1,4 @@
-import type { BinarySource } from "./stream";
+import type { BinarySource } from "./stream.js";
 
 export const formatIds = [
   "nes",
@@ -58,8 +58,8 @@ export interface Section {
   offset: number;
   size: number;
   /** Load address in the guest memory map, when the format defines one. */
-  address?: number;
-  arch?: Arch;
+  address?: number | undefined;
+  arch?: Arch | undefined;
   kind:
     | "header"
     | "code"
@@ -70,7 +70,7 @@ export interface Section {
     | "metadata"
     | "padding";
   /** Byte order of the stored data when it differs from the guest order (N64 v64/n64 dumps). */
-  swap?: "16" | "32";
+  swap?: "16" | "32" | undefined;
 }
 
 export interface Detection {
@@ -85,20 +85,20 @@ export interface Detection {
     id: string;
     kind: string;
     consoles: string[];
-    status?: string;
+    status?: string | undefined;
     owners: string[];
     spec: string[];
   }>;
-  magika?: unknown;
+  magika?: unknown | undefined;
 }
 
 export interface ParsedImage<H extends object = Record<string, unknown>> {
   header: H;
   sections: Section[];
-  arch?: Arch;
-  entry?: number;
+  arch?: Arch | undefined;
+  entry?: number | undefined;
   /** Other owners that contributed to the parse (native Rust inspector, MAME tools...). */
-  owners?: string[];
+  owners?: string[] | undefined;
 }
 
 export interface ParseContext {

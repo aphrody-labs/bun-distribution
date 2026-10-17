@@ -328,6 +328,22 @@
         "@aphrody/m3-config": "workspace:*",
       },
     },
+    "apps/play": {
+      "name": "@aphrody/play",
+      "version": "1.4.4",
+      "dependencies": {
+        "@aphrody/bun-steam": "workspace:*",
+        "@aphrody/m3": "workspace:*",
+        "@aphrody/m3-fonts": "workspace:*",
+        "@aphrody/m3-front": "workspace:*",
+        "@aphrody/m3-tailwind": "workspace:*",
+        "@aphrody/m3-tokens": "workspace:*",
+        "tailwindcss": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
+    },
     "apps/rg-bot": {
       "name": "@rosegriffon/bot",
       "version": "1.4.4",
@@ -832,20 +848,44 @@
         "bun-blender-mcp": "./src/mcp.ts",
       },
     },
+    "packages/bun-emu-host": {
+      "name": "@aphrody/bun-emu-host",
+      "version": "1.4.4",
+      "bin": {
+        "bun-emu-host": "./src/cli.ts",
+      },
+    },
     "packages/bun-engine": {
       "name": "@aphrody/bun-engine",
       "version": "1.4.4",
       "bin": {
         "bep": "./src/bep.ts",
         "bun-engine": "./src/cli.ts",
+        "bun-engine-formats": "./src/formats/main.ts",
       },
       "dependencies": {
+        "@aphrody/bun-steam": "workspace:*",
         "@aphrody/typesafe-sdk": "0.6.2",
+        "@bun-os/re": "workspace:*",
       },
+    },
+    "packages/bun-gamestream": {
+      "name": "@aphrody/bun-gamestream",
+      "version": "1.4.4",
     },
     "packages/bun-loaders": {
       "name": "@aphrody/bun-loaders",
       "version": "1.4.4",
+    },
+    "packages/bun-steam": {
+      "name": "@aphrody/bun-steam",
+      "version": "1.4.4",
+      "bin": {
+        "bun-steam": "src/cli.ts",
+      },
+      "dependencies": {
+        "@aphrody/paths": "workspace:*",
+      },
     },
     "packages/bun-tauri": {
       "name": "@aphrody/tauri",
@@ -4246,12 +4286,11 @@
       "name": "@bun-os/re",
       "version": "1.4.4",
       "bin": {
-        "rea": "scripts/rea.mjs",
-        "rea-agents": "scripts/rea.mjs",
-        "re-pipeline": "src/pipeline/cli.ts",
-        "re-steam": "src/steam/cli.ts",
+        "re": "scripts/rea.mjs",
       },
       "dependencies": {
+        "@aphrody/bun-engine": "workspace:*",
+        "@aphrody/bun-steam": "workspace:*",
         "@aphrody/paths": "workspace:*",
         "@babel/parser": "8.0.7",
         "@babel/types": "8.0.6",
@@ -5468,9 +5507,13 @@
 
     "@aphrody/bun-desktop": ["@aphrody/bun-desktop@workspace:apps/desktop"],
 
+    "@aphrody/bun-emu-host": ["@aphrody/bun-emu-host@workspace:packages/bun-emu-host"],
+
     "@aphrody/bun-engine": ["@aphrody/bun-engine@workspace:packages/bun-engine"],
 
     "@aphrody/bun-engine-android": ["@aphrody/bun-engine-android@workspace:packages/android-pipeline"],
+
+    "@aphrody/bun-gamestream": ["@aphrody/bun-gamestream@workspace:packages/bun-gamestream"],
 
     "@aphrody/bun-google": ["@aphrody/bun-google@workspace:toolchains/bun/packages/bun-google"],
 
@@ -5543,6 +5586,8 @@
     "@aphrody/bun-plugin-yaml": ["@aphrody/bun-plugin-yaml@0.0.1-aphrody.3", "", { "dependencies": { "js-yaml": "^4.1.0" } }, "sha512-h9rtkv7Gxtovfu0laSwU1ww8uEprV9n80mpy+7cGa9QQ131vktTuty/4YLiugZIBFkBFtXvciJcypa8QCy+2BQ=="],
 
     "@aphrody/bun-runtime-sdk": ["@aphrody/bun-runtime-sdk@1.4.4", "", {}, "sha512-9Lb6HmdM3o255d4HTvpG9B7AkagHmTBhIpF914riIsQKEvkFG67ayLXtSKFrquBw07LOry1p1iPAGETwba98ag=="],
+
+    "@aphrody/bun-steam": ["@aphrody/bun-steam@workspace:packages/bun-steam"],
 
     "@aphrody/bun-types": ["@aphrody/bun-types@workspace:toolchains/bun/packages/bun-types"],
 
@@ -6401,6 +6446,8 @@
     "@aphrody/ovh": ["@aphrody/ovh@workspace:packages/ovh"],
 
     "@aphrody/paths": ["@aphrody/paths@workspace:packages/paths"],
+
+    "@aphrody/play": ["@aphrody/play@workspace:apps/play"],
 
     "@aphrody/product": ["@aphrody/product@workspace:packages/product"],
 
@@ -13954,6 +14001,4 @@
 
     "webpack-dev-server/express/type-is/mime-types/mime-db": ["mime-db@1.52.0", "", {}, "sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg=="],
 
-    "shadcn/ts-morph/@ts-morph/common/minimatch/brace-expansion/balanced-match": ["balanced-match@4.0.4", "", {}, "sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA=="],
-  }
-}
+    "shadcn/ts-morph/@ts-morph/common/minimatch/brace-expansion/balanced-match": ["balanced-match@4.0.4", "", {}, "sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU

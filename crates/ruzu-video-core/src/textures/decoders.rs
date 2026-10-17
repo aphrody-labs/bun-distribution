@@ -70,7 +70,7 @@ pub fn unswizzle_texture(
     block_depth: u32,
     stride_alignment: u32,
 ) {
-    let layout = iecode_switch::texture::Layout::new(
+    let layout = aphrody_switch::texture::Layout::new(
         width,
         height,
         depth,
@@ -80,7 +80,9 @@ pub fn unswizzle_texture(
         stride_alignment,
     )
     .expect("invalid Tegra texture layout");
-    layout.unswizzle(output, input).expect("invalid Tegra texture buffers");
+    layout
+        .unswizzle(output, input)
+        .expect("invalid Tegra texture buffers");
 }
 
 /// Swizzles linear memory into a block linear texture.
@@ -97,7 +99,7 @@ pub fn swizzle_texture(
     block_depth: u32,
     stride_alignment: u32,
 ) {
-    let layout = iecode_switch::texture::Layout::new(
+    let layout = aphrody_switch::texture::Layout::new(
         width,
         height,
         depth,
@@ -107,7 +109,9 @@ pub fn swizzle_texture(
         stride_alignment,
     )
     .expect("invalid Tegra texture layout");
-    layout.swizzle(output, input).expect("invalid Tegra texture buffers");
+    layout
+        .swizzle(output, input)
+        .expect("invalid Tegra texture buffers");
 }
 
 /// Core subrect swizzle/unswizzle implementation for a given bytes-per-pixel.
@@ -175,20 +179,16 @@ fn swizzle_subrect_impl<const TO_LINEAR: bool, const BYTES_PER_PIXEL: u32>(
                     as usize;
 
                 let bpp = BYTES_PER_PIXEL as usize;
-                if TO_LINEAR {
-                    if let (Some(dst_end), Some(src_end)) =
-                        (swizzled_offset.checked_add(bpp), unswizzled_offset.checked_add(bpp))
-                        && dst_end <= output.len() && src_end <= input.len() {
-                            output[swizzled_offset..dst_end]
-                                .copy_from_slice(&input[unswizzled_offset..src_end]);
-                        }
+                let (dst, src) = if TO_LINEAR {
+                    (swizzled_offset, unswizzled_offset)
                 } else {
-                    if let (Some(dst_end), Some(src_end)) =
-                        (unswizzled_offset.checked_add(bpp), swizzled_offset.checked_add(bpp))
-                        && dst_end <= output.len() && src_end <= input.len() {
-                            output[unswizzled_offset..dst_end]
-                                .copy_from_slice(&input[swizzled_offset..src_end]);
-                        }
+                    (unswizzled_offset, swizzled_offset)
+                };
+                if let (Some(dst_end), Some(src_end)) = (dst.checked_add(bpp), src.checked_add(bpp))
+                {
+                    if dst_end <= output.len() && src_end <= input.len() {
+                        output[dst..dst_end].copy_from_slice(&input[src..src_end]);
+                    }
                 }
 
                 incrpdep::<SWIZZLE_X_BITS, BYTES_PER_PIXEL>(&mut swizzled_x);
@@ -316,9 +316,14 @@ pub fn calculate_size(
             align_up_log2(width.wrapping_mul(bytes_per_pixel) as u64, GOB_SIZE_X_SHIFT) as u32;
         let aligned_height = align_up_log2(height as u64, GOB_SIZE_Y_SHIFT + block_height) as u32;
         let aligned_depth = align_up_log2(depth as u64, GOB_SIZE_Z_SHIFT + block_depth) as u32;
-        aligned_width.wrapping_mul(aligned_height).wrapping_mul(aligned_depth) as usize
+        aligned_width
+            .wrapping_mul(aligned_height)
+            .wrapping_mul(aligned_depth) as usize
     } else {
-        width.wrapping_mul(height).wrapping_mul(depth).wrapping_mul(bytes_per_pixel) as usize
+        width
+            .wrapping_mul(height)
+            .wrapping_mul(depth)
+            .wrapping_mul(bytes_per_pixel) as usize
     }
 }
 
@@ -394,14 +399,35 @@ mod tests {
             let height = 9;
             let depth = 2;
             let linear_size = (width * height * depth * bytes_per_pixel) as usize;
-            let input =
-                (0..linear_size).map(|index| index.wrapping_mul(37) as u8).collect::<Vec<_>>();
+            let input = (0..linear_size)
+                .map(|index| index.wrapping_mul(37) as u8)
+                .collect::<Vec<_>>();
             let mut tiled =
                 vec![0u8; calculate_size(true, bytes_per_pixel, width, height, depth, 1, 1)];
             let mut output = vec![0u8; linear_size];
 
-            swizzle_texture(&mut tiled, &input, bytes_per_pixel, width, height, depth, 1, 1, 1);
-            unswizzle_texture(&mut output, &tiled, bytes_per_pixel, width, height, depth, 1, 1, 1);
+            swizzle_texture(
+                &mut tiled,
+                &input,
+                bytes_per_pixel,
+                width,
+                height,
+                depth,
+                1,
+                1,
+                1,
+            );
+            unswizzle_texture(
+                &mut output,
+                &tiled,
+                bytes_per_pixel,
+                width,
+                height,
+                depth,
+                1,
+                1,
+                1,
+            );
 
             assert_eq!(output, input, "bytes_per_pixel={bytes_per_pixel}");
         }
@@ -416,8 +442,9 @@ mod tests {
             let extent_y = 4;
             let pitch = extent_x * bytes_per_pixel;
             let linear_size = (pitch * extent_y) as usize;
-            let input =
-                (0..linear_size).map(|index| index.wrapping_mul(19) as u8).collect::<Vec<_>>();
+            let input = (0..linear_size)
+                .map(|index| index.wrapping_mul(19) as u8)
+                .collect::<Vec<_>>();
             let mut tiled =
                 vec![0u8; calculate_size(true, bytes_per_pixel, width, height, 1, 0, 0)];
             let mut output = vec![0u8; linear_size];
@@ -466,8 +493,9 @@ mod tests {
             let extent_y = 4;
             let pitch = extent_x * bytes_per_pixel;
             let linear_size = (pitch * extent_y) as usize;
-            let input =
-                (0..linear_size).map(|index| index.wrapping_mul(19) as u8).collect::<Vec<_>>();
+            let input = (0..linear_size)
+                .map(|index| index.wrapping_mul(19) as u8)
+                .collect::<Vec<_>>();
             let mut tiled =
                 vec![0u8; calculate_size(true, bytes_per_pixel, width, height, 1, 0, 0)];
             let mut output = vec![0u8; linear_size];
@@ -509,12 +537,41 @@ mod tests {
 
         let bytes_per_pixel = 6;
         let pitch = 4 * bytes_per_pixel;
-        let input =
-            (0..(pitch * 4) as usize).map(|index| index.wrapping_mul(19) as u8).collect::<Vec<_>>();
+        let input = (0..(pitch * 4) as usize)
+            .map(|index| index.wrapping_mul(19) as u8)
+            .collect::<Vec<_>>();
         let mut tiled = vec![0u8; calculate_size(true, bytes_per_pixel, 16, 16, 1, 0, 0)];
         let mut output = vec![0u8; input.len()];
-        swizzle_subrect(&mut tiled, &input, bytes_per_pixel, 16, 16, 1, 0, 0, 4, 4, 0, 0, pitch);
-        unswizzle_subrect(&mut output, &tiled, bytes_per_pixel, 16, 16, 1, 0, 0, 4, 4, 0, 0, pitch);
+        swizzle_subrect(
+            &mut tiled,
+            &input,
+            bytes_per_pixel,
+            16,
+            16,
+            1,
+            0,
+            0,
+            4,
+            4,
+            0,
+            0,
+            pitch,
+        );
+        unswizzle_subrect(
+            &mut output,
+            &tiled,
+            bytes_per_pixel,
+            16,
+            16,
+            1,
+            0,
+            0,
+            4,
+            4,
+            0,
+            0,
+            pitch,
+        );
         assert_eq!(&output[16..18], &input[24..26]);
         assert_eq!(&output[64..66], &input[72..74]);
     }

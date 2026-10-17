@@ -31,21 +31,46 @@ pub struct Rt<'a> {
 
 #[inline(always)]
 fn access(kind: u32) -> MemoryAccess {
-    if kind == 0 { MemoryAccess::NonSeq } else { MemoryAccess::Seq }
+    if kind == 0 {
+        MemoryAccess::NonSeq
+    } else {
+        MemoryAccess::Seq
+    }
 }
 
 /// Dispatcher installed as the core's CPU runner: run the translated block of the next
 /// instruction, or return false so the interpreter executes it.
+///
+/// Blocks are chained without returning to the core loop while the scheduler deadline is ahead:
+/// between two instructions the core only re-checks DMA, HALT and pending interrupts, which change
+/// solely through scheduler events and the I/O stores that end a chain.
 pub fn run(cpu: &mut Cpu, deadline: usize, lookup: Lookup) -> bool {
-    let thumb = cpu.cpsr.state() == CpuState::THUMB;
-    let pc = cpu.get_next_pc();
-    let Some(block) = lookup(pc | u32::from(thumb)) else {
+    let mut rt = Rt {
+        cpu,
+        deadline,
+        stop: false,
+        executed: 0,
+        fallback: false,
+    };
+    let mut entries = 0u64;
+    loop {
+        let thumb = rt.cpu.cpsr.state() == CpuState::THUMB;
+        let pc = rt.cpu.get_next_pc();
+        let Some(block) = lookup(pc | u32::from(thumb)) else {
+            break;
+        };
+        entries += 1;
+        rt.executed += 1;
+        block(&mut rt);
+        if rt.stop || rt.fallback || rt.cpu.bus.timestamp() > deadline {
+            break;
+        }
+    }
+    if entries == 0 {
         super::count_interpreted(1);
         return false;
-    };
-    let mut rt = Rt { cpu, deadline, stop: false, executed: 1, fallback: false };
-    block(&mut rt);
-    super::count(rt.executed - u64::from(rt.fallback), rt.fallback);
+    }
+    super::count_entries(rt.executed - u64::from(rt.fallback), entries, rt.fallback);
     true
 }
 

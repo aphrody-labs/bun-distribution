@@ -10,13 +10,15 @@
 
 #[cfg(feature = "gba")]
 pub mod gba;
+#[cfg(feature = "nes")]
+pub mod nes;
 #[cfg(feature = "psx")]
 pub mod psx;
 pub mod wasm;
 
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::machine::{Machine, Step};
+use crate::machine::{Input, Machine, Step, keys};
 
 static NATIVE: AtomicU64 = AtomicU64::new(0);
 static INTERPRETED: AtomicU64 = AtomicU64::new(0);
@@ -41,7 +43,11 @@ impl Stats {
     #[must_use]
     pub fn native_ratio(&self) -> f64 {
         let total = self.native + self.interpreted + self.fallbacks;
-        if total == 0 { 0.0 } else { self.native as f64 / total as f64 }
+        if total == 0 {
+            0.0
+        } else {
+            self.native as f64 / total as f64
+        }
     }
 }
 
@@ -56,9 +62,9 @@ pub fn stats() -> Stats {
     }
 }
 
-pub(crate) fn count(native: u64, fallback: bool) {
+pub(crate) fn count_entries(native: u64, entries: u64, fallback: bool) {
     NATIVE.fetch_add(native, Ordering::Relaxed);
-    ENTRIES.fetch_add(1, Ordering::Relaxed);
+    ENTRIES.fetch_add(entries, Ordering::Relaxed);
     if fallback {
         FALLBACKS.fetch_add(1, Ordering::Relaxed);
     }
@@ -72,13 +78,59 @@ pub(crate) fn count_interpreted(n: u64) {
 /// translated code (pure interpreter), for comparisons.
 pub type Factory = fn(bool) -> Result<Box<dyn Machine>, String>;
 
+/// Scripted input: comma-separated `key@first[-last]` entries (frames, inclusive), keys
+/// `a b select start right left up down r l x y`.
+pub fn parse_input(spec: &str) -> Result<Vec<(u32, u64, u64)>, String> {
+    spec.split(',')
+        .filter(|e| !e.trim().is_empty())
+        .map(|e| {
+            let (key, range) = e
+                .trim()
+                .split_once('@')
+                .ok_or_else(|| format!("input `{e}`: expected key@frame[-frame]"))?;
+            let mask = match key.to_ascii_lowercase().as_str() {
+                "a" => keys::A,
+                "b" => keys::B,
+                "select" => keys::SELECT,
+                "start" => keys::START,
+                "right" => keys::RIGHT,
+                "left" => keys::LEFT,
+                "up" => keys::UP,
+                "down" => keys::DOWN,
+                "r" => keys::R,
+                "l" => keys::L,
+                "x" => keys::X,
+                "y" => keys::Y,
+                other => return Err(format!("input `{e}`: unknown key `{other}`")),
+            };
+            let (first, last) = range.split_once('-').unwrap_or((range, range));
+            let num = |v: &str| {
+                v.trim()
+                    .parse::<u64>()
+                    .map_err(|_| format!("input `{e}`: bad frame `{v}`"))
+            };
+            Ok((mask, num(first)?, num(last)?))
+        })
+        .collect()
+}
+
+/// Keys held at `frame` by a parsed input script.
+#[must_use]
+pub fn keys_at(script: &[(u32, u64, u64)], frame: u64) -> u32 {
+    script
+        .iter()
+        .filter(|(_, a, b)| (*a..=*b).contains(&frame))
+        .fold(0, |k, (m, _, _)| k | m)
+}
+
 /// Command line of a generated recompiled executable:
-/// `[--frames N] [--out DIR] [--interp] [--json]`.
+/// `[--frames N] [--out DIR] [--interp] [--input SCRIPT] [--json]`.
 pub fn cli(factory: Factory, blocks: usize, insns: usize) -> std::process::ExitCode {
     let mut frames = 600_u64;
     let mut out = None::<std::path::PathBuf>;
     let mut interp = false;
     let mut json = false;
+    let mut script = Vec::new();
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
         match a.as_str() {
@@ -86,8 +138,17 @@ pub fn cli(factory: Factory, blocks: usize, insns: usize) -> std::process::ExitC
             "--out" => out = args.next().map(Into::into),
             "--interp" => interp = true,
             "--json" => json = true,
+            "--input" => match parse_input(&args.next().unwrap_or_default()) {
+                Ok(s) => script = s,
+                Err(e) => {
+                    eprintln!("recompiled: {e}");
+                    return std::process::ExitCode::from(2);
+                }
+            },
             _ => {
-                eprintln!("usage: [--frames N] [--out DIR] [--interp] [--json]");
+                eprintln!(
+                    "usage: [--frames N] [--out DIR] [--interp] [--input key@first[-last],...] [--json]"
+                );
                 return std::process::ExitCode::from(2);
             }
         }
@@ -103,6 +164,12 @@ pub fn cli(factory: Factory, blocks: usize, insns: usize) -> std::process::ExitC
     let mut done = 0;
     let mut console = Vec::new();
     while done < frames {
+        if !script.is_empty() {
+            machine.set_input(Input {
+                keys: keys_at(&script, done),
+                touch: None,
+            });
+        }
         match machine.run_frame() {
             Step::Frame => done += 1,
             Step::Shutdown => break,
@@ -135,7 +202,11 @@ pub fn cli(factory: Factory, blocks: usize, insns: usize) -> std::process::ExitC
         println!(
             "{}: {done} frames in {elapsed:.2}s ({}), {blocks} blocks / {insns} instructions translated; executed {} native, {} interpreted, {} fallbacks ({:.1}% native)",
             machine.name(),
-            if interp { "interpreter only" } else { "recompiled" },
+            if interp {
+                "interpreter only"
+            } else {
+                "recompiled"
+            },
             s.native,
             s.interpreted,
             s.fallbacks,

@@ -43,6 +43,22 @@ export const TOOL_NAMES = [
   "gamepad_environment",
   "gamepad_press_button",
   "gamepad_send_xbox360_state",
+  "gaming_capture_benchmark",
+  "gaming_capture_window",
+  "gaming_environment",
+  "gaming_frame_pacing",
+  "gaming_get_background_apps",
+  "gaming_get_game_bar_capture",
+  "gaming_get_game_mode",
+  "gaming_get_gpu_info",
+  "gaming_get_timer_resolution",
+  "gaming_input_sequence",
+  "gaming_key",
+  "gaming_mouse_button",
+  "gaming_mouse_delta",
+  "gaming_profile_apply",
+  "gaming_profile_status",
+  "gaming_steam_launch",
   "get_active_power_plan",
   "get_clipboard_text",
   "get_cpu_info",
@@ -835,6 +851,243 @@ export interface GamepadSendXbox360StateArgs {
   rt?: number;
 }
 
+/** Arguments for `gaming_capture_benchmark`. */
+export interface GamingCaptureBenchmarkArgs {
+  /**
+   * Target window: Windows HWND or X11 window id. 0 or absent uses title, else the foreground window.
+   */
+  hwnd?: number;
+  /**
+   * Case-insensitive substring of the target window title, used when hwnd is absent.
+   */
+  title?: string;
+  /**
+   * Measurement window in ms [100, 30000].
+   * @default 3000
+   */
+  durationMs?: number;
+  /**
+   * Also measure the GDI PNG capture rate (Windows).
+   * @default true
+   */
+  compareGdi?: boolean;
+}
+
+/** Arguments for `gaming_capture_window`. */
+export interface GamingCaptureWindowArgs {
+  /**
+   * Target window: Windows HWND or X11 window id. 0 or absent uses title, else the foreground window.
+   */
+  hwnd?: number;
+  /**
+   * Case-insensitive substring of the target window title, used when hwnd is absent.
+   */
+  title?: string;
+  /**
+   * Optional PNG path written in addition to the returned image.
+   */
+  outputPath?: string;
+  /**
+   * Return the PNG inline as base64.
+   * @default true
+   */
+  includeImage?: boolean;
+}
+
+/** Arguments for `gaming_environment`. */
+export interface GamingEnvironmentArgs {}
+
+/** Arguments for `gaming_frame_pacing`. */
+export interface GamingFramePacingArgs {
+  /**
+   * Target window: Windows HWND or X11 window id. 0 or absent uses title, else the foreground window.
+   */
+  hwnd?: number;
+  /**
+   * Case-insensitive substring of the target window title, used when hwnd is absent.
+   */
+  title?: string;
+  /**
+   * Observation window in ms [100, 30000].
+   * @default 3000
+   */
+  durationMs?: number;
+}
+
+/** Arguments for `gaming_get_background_apps`. */
+export interface GamingGetBackgroundAppsArgs {}
+
+/** Arguments for `gaming_get_game_bar_capture`. */
+export interface GamingGetGameBarCaptureArgs {}
+
+/** Arguments for `gaming_get_game_mode`. */
+export interface GamingGetGameModeArgs {}
+
+/** Arguments for `gaming_get_gpu_info`. */
+export interface GamingGetGpuInfoArgs {}
+
+/** Arguments for `gaming_get_timer_resolution`. */
+export interface GamingGetTimerResolutionArgs {}
+
+/** Arguments for `gaming_input_sequence`. */
+export interface GamingInputSequenceArgs {
+  /**
+   * Target window (Windows HWND or X11 id): focused and verified as foreground before any input is sent; input is refused otherwise.
+   */
+  hwnd?: number;
+  /**
+   * Case-insensitive title substring of the target window, used when hwnd is absent; same focus guard.
+   */
+  title?: string;
+  /**
+   * Input events, at most 10000.
+   */
+  events: Record<string, unknown>[];
+}
+
+/** Arguments for `gaming_key`. */
+export interface GamingKeyArgs {
+  /**
+   * Target window (Windows HWND or X11 id): focused and verified as foreground before any input is sent; input is refused otherwise.
+   */
+  hwnd?: number;
+  /**
+   * Case-insensitive title substring of the target window, used when hwnd is absent; same focus guard.
+   */
+  title?: string;
+  /**
+   * Key name at its US-QWERTY physical position (games bind scan codes): a-z, 0-9, space, enter, escape, tab, shift, rshift, ctrl, alt, backspace, capslock, f1-f12, up, down, left, right, home, end, pageup, pagedown, insert, delete.
+   */
+  key?: string;
+  /**
+   * PC set-1 scan code, used instead of key for any other key.
+   */
+  scanCode?: number;
+  /**
+   * Extended (E0) scan code flag for scanCode.
+   * @default false
+   */
+  extended?: boolean;
+  /**
+   * down, up, tap or hold.
+   */
+  action?: string;
+  /**
+   * Hold time in ms for tap/hold (tap 20, hold 250 by default).
+   */
+  holdMs?: number;
+  /**
+   * Repetitions [1, 1000].
+   * @default 1
+   */
+  repeat?: number;
+  /**
+   * Pause between repetitions in ms.
+   * @default 20
+   */
+  intervalMs?: number;
+}
+
+/** Arguments for `gaming_mouse_button`. */
+export interface GamingMouseButtonArgs {
+  /**
+   * Target window (Windows HWND or X11 id): focused and verified as foreground before any input is sent; input is refused otherwise.
+   */
+  hwnd?: number;
+  /**
+   * Case-insensitive title substring of the target window, used when hwnd is absent; same focus guard.
+   */
+  title?: string;
+  /**
+   * left, right or middle.
+   */
+  button?: string;
+  /**
+   * down, up or click.
+   */
+  action?: string;
+  /**
+   * Hold time for click in ms.
+   * @default 30
+   */
+  holdMs?: number;
+}
+
+/** Arguments for `gaming_mouse_delta`. */
+export interface GamingMouseDeltaArgs {
+  /**
+   * Target window (Windows HWND or X11 id): focused and verified as foreground before any input is sent; input is refused otherwise.
+   */
+  hwnd?: number;
+  /**
+   * Case-insensitive title substring of the target window, used when hwnd is absent; same focus guard.
+   */
+  title?: string;
+  /**
+   * Total horizontal counts.
+   * @default 0
+   */
+  dx?: number;
+  /**
+   * Total vertical counts.
+   * @default 0
+   */
+  dy?: number;
+  /**
+   * Number of input events [1, 100000].
+   * @default 1
+   */
+  steps?: number;
+  /**
+   * Event rate [1, 8000].
+   * @default 1000
+   */
+  rateHz?: number;
+}
+
+/** Arguments for `gaming_profile_apply`. */
+export interface GamingProfileApplyArgs {
+  /**
+   * Must be true to apply.
+   * @default false
+   */
+  confirm?: boolean;
+  /**
+   * Return the command without applying.
+   * @default false
+   */
+  dryRun?: boolean;
+}
+
+/** Arguments for `gaming_profile_status`. */
+export interface GamingProfileStatusArgs {}
+
+/** Arguments for `gaming_steam_launch`. */
+export interface GamingSteamLaunchArgs {
+  /**
+   * Steam application id.
+   */
+  appId: number;
+  /**
+   * Game executable name used to find its window (e.g. game.exe).
+   */
+  processName?: string;
+  /**
+   * Case-insensitive substring of the game window title.
+   */
+  windowTitle?: string;
+  /**
+   * Window wait timeout in ms (max 600000).
+   * @default 120000
+   */
+  timeoutMs?: number;
+  /**
+   * Bring the window to the foreground.
+   * @default true
+   */
+  focus?: boolean;
+}
+
 /** Arguments for `get_active_power_plan`. */
 export interface GetActivePowerPlanArgs {}
 
@@ -1003,7 +1256,7 @@ export interface ListDirectoryArgs {
    */
   showHidden?: boolean;
   /**
-   * Glob patterns matching entry names to omit. Matching directories are not traversed.
+   * Optional ASCII case-insensitive glob patterns matching entry names to omit. Matching directories are not returned or traversed.
    * @default []
    */
   exclude?: string[];
@@ -1874,10 +2127,9 @@ export interface SteamGetGameArgs {
    */
   appId: number;
   /**
-   * Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or <repo>/var/data/steam-scan.db.
-   * @default null
+   * Steam client root; defaults to the registry SteamPath or the standard install locations.
    */
-  dbPath?: string | null;
+  steamRoot?: string;
 }
 
 /** Arguments for `steam_get_game_status`. */
@@ -1892,10 +2144,9 @@ export interface SteamGetGameStatusArgs {
    */
   executableName?: string | null;
   /**
-   * Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or <repo>/var/data/steam-scan.db.
-   * @default null
+   * Steam client root; defaults to the registry SteamPath or the standard install locations.
    */
-  dbPath?: string | null;
+  steamRoot?: string;
 }
 
 /** Arguments for `steam_kill_game`. */
@@ -1943,19 +2194,17 @@ export interface SteamListGamesArgs {
    */
   includeMissing?: boolean;
   /**
-   * Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or <repo>/var/data/steam-scan.db.
-   * @default null
+   * Steam client root; defaults to the registry SteamPath or the standard install locations.
    */
-  dbPath?: string | null;
+  steamRoot?: string;
 }
 
 /** Arguments for `steam_list_libraries`. */
 export interface SteamListLibrariesArgs {
   /**
-   * Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or <repo>/var/data/steam-scan.db.
-   * @default null
+   * Steam client root; defaults to the registry SteamPath or the standard install locations.
    */
-  dbPath?: string | null;
+  steamRoot?: string;
 }
 
 /** Arguments for `steam_open_uri`. */
@@ -1969,19 +2218,17 @@ export interface SteamOpenUriArgs {
 /** Arguments for `steam_scan_summary`. */
 export interface SteamScanSummaryArgs {
   /**
-   * Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or <repo>/var/data/steam-scan.db.
-   * @default null
+   * Steam client root; defaults to the registry SteamPath or the standard install locations.
    */
-  dbPath?: string | null;
+  steamRoot?: string;
 }
 
 /** Arguments for `steam_vault_status`. */
 export interface SteamVaultStatusArgs {
   /**
-   * Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or <repo>/var/data/steam-scan.db.
-   * @default null
+   * Steam client root; defaults to the registry SteamPath or the standard install locations.
    */
-  dbPath?: string | null;
+  steamRoot?: string;
 }
 
 /** Arguments for `steam_wait_for_launch`. */
@@ -2401,6 +2648,22 @@ export type ToolArgsMap = {
   gamepad_environment: GamepadEnvironmentArgs;
   gamepad_press_button: GamepadPressButtonArgs;
   gamepad_send_xbox360_state: GamepadSendXbox360StateArgs;
+  gaming_capture_benchmark: GamingCaptureBenchmarkArgs;
+  gaming_capture_window: GamingCaptureWindowArgs;
+  gaming_environment: GamingEnvironmentArgs;
+  gaming_frame_pacing: GamingFramePacingArgs;
+  gaming_get_background_apps: GamingGetBackgroundAppsArgs;
+  gaming_get_game_bar_capture: GamingGetGameBarCaptureArgs;
+  gaming_get_game_mode: GamingGetGameModeArgs;
+  gaming_get_gpu_info: GamingGetGpuInfoArgs;
+  gaming_get_timer_resolution: GamingGetTimerResolutionArgs;
+  gaming_input_sequence: GamingInputSequenceArgs;
+  gaming_key: GamingKeyArgs;
+  gaming_mouse_button: GamingMouseButtonArgs;
+  gaming_mouse_delta: GamingMouseDeltaArgs;
+  gaming_profile_apply: GamingProfileApplyArgs;
+  gaming_profile_status: GamingProfileStatusArgs;
+  gaming_steam_launch: GamingSteamLaunchArgs;
   get_active_power_plan: GetActivePowerPlanArgs;
   get_clipboard_text: GetClipboardTextArgs;
   get_cpu_info: GetCpuInfoArgs;
@@ -2813,6 +3076,126 @@ export abstract class GeneratedTools {
   }
 
   /**
+   * Measures sustained capture throughput of a window for durationMs: GPU grabs with CPU readback per second (grabFps, grab latency avg/p95/max) and frames delivered by the compositor (deliveredFps). Windows also reports the GDI PrintWindow PNG rate for comparison.
+   */
+  gamingCaptureBenchmark(
+    args?: GamingCaptureBenchmarkArgs,
+  ): Promise<ToolResult> {
+    return this.call("gaming_capture_benchmark", args);
+  }
+
+  /**
+   * Low-latency capture of one game window. Windows: Windows.Graphics.Capture on a Direct3D 11 device (works for DirectX/Vulkan and occluded windows; GDI PrintWindow fallback). Linux: X11 import on DISPLAY (Xvfb :99 on the VPS session). Returns PNG plus backend, size and capture time.
+   */
+  gamingCaptureWindow(args?: GamingCaptureWindowArgs): Promise<ToolResult> {
+    return this.call("gaming_capture_window", args);
+  }
+
+  /**
+   * Reports the gaming computer-use backends of this host: Windows.Graphics.Capture support, SendInput, XInput pad slots (read-only), GameInput runtime and whether the ViGEmBus driver needed for virtual Xbox pads is installed (never installed by this SDK); on Linux the X11 display, xdotool, import, /dev/uinput and gamescope.
+   */
+  gamingEnvironment(args?: GamingEnvironmentArgs): Promise<ToolResult> {
+    return this.call("gaming_environment", args);
+  }
+
+  /**
+   * Observes a game window's presented frames for durationMs without hooking the game: fps, frame time avg/p50/p95/p99/min/max, jitter and 1% low, from DWM present timestamps (Windows.Graphics.Capture). A static window delivers no frames. Linux samples X11 content changes (bounded by the capture rate).
+   */
+  gamingFramePacing(args?: GamingFramePacingArgs): Promise<ToolResult> {
+    return this.call("gaming_frame_pacing", args);
+  }
+
+  /**
+   * Read-only: background apps switch (BackgroundAccessApplications GlobalUserDisabled) and the LetAppsRunInBackground policy.
+   */
+  gamingGetBackgroundApps(
+    args?: GamingGetBackgroundAppsArgs,
+  ): Promise<ToolResult> {
+    return this.call("gaming_get_background_apps", args);
+  }
+
+  /**
+   * Read-only: Xbox Game Bar background recording and app capture (GameConfigStore GameDVR_Enabled, GameDVR AppCaptureEnabled, AllowGameDVR policy).
+   */
+  gamingGetGameBarCapture(
+    args?: GamingGetGameBarCaptureArgs,
+  ): Promise<ToolResult> {
+    return this.call("gaming_get_game_bar_capture", args);
+  }
+
+  /**
+   * Read-only: Windows Game Mode (HKCU GameBar AutoGameModeEnabled / AllowAutoGameMode) with the recommended value.
+   */
+  gamingGetGameMode(args?: GamingGetGameModeArgs): Promise<ToolResult> {
+    return this.call("gaming_get_game_mode", args);
+  }
+
+  /**
+   * Read-only: NVIDIA GPU state through nvidia-smi/NVML (name, driver, P-state, power limit and draw, clocks, temperature, utilisation, memory, PCIe link), hardware-accelerated GPU scheduling and per-app GPU preferences.
+   */
+  gamingGetGpuInfo(args?: GamingGetGpuInfoArgs): Promise<ToolResult> {
+    return this.call("gaming_get_gpu_info", args);
+  }
+
+  /**
+   * Read-only: current, finest and coarsest kernel timer resolution (NtQueryTimerResolution) and the Windows 11 GlobalTimerResolutionRequests setting.
+   */
+  gamingGetTimerResolution(
+    args?: GamingGetTimerResolutionArgs,
+  ): Promise<ToolResult> {
+    return this.call("gaming_get_timer_resolution", args);
+  }
+
+  /**
+   * Plays a timed input sequence in one call for frame-accurate combos: events [{type:'move',dx,dy} | {type:'key',key|scanCode,action:down|up|tap,holdMs} | {type:'button',button,action:down|up|click,holdMs} | {type:'wait',ms}], each optionally scheduled at atMs from the start. Reports the worst scheduling lateness.
+   */
+  gamingInputSequence(args: GamingInputSequenceArgs): Promise<ToolResult> {
+    return this.call("gaming_input_sequence", args);
+  }
+
+  /**
+   * Sends a keyboard key as a hardware scan code (SendInput KEYEVENTF_SCANCODE; Linux: xdotool keysym) so games that read scan codes or raw input see it: down, up, tap or hold for holdMs, repeated with intervalMs.
+   */
+  gamingKey(args?: GamingKeyArgs): Promise<ToolResult> {
+    return this.call("gaming_key", args);
+  }
+
+  /**
+   * Presses a mouse button through SendInput (Linux: xdotool): down, up, or click with holdMs.
+   */
+  gamingMouseButton(args?: GamingMouseButtonArgs): Promise<ToolResult> {
+    return this.call("gaming_mouse_button", args);
+  }
+
+  /**
+   * Sends raw relative mouse motion (SendInput MOUSEEVENTF_MOVE, no absolute positioning) as games reading raw input expect: dx/dy split exactly across steps sent at rateHz with sub-millisecond pacing. Linux: xdotool mousemove_relative. Reports achieved rate and cursor before/after.
+   */
+  gamingMouseDelta(args?: GamingMouseDeltaArgs): Promise<ToolResult> {
+    return this.call("gaming_mouse_delta", args);
+  }
+
+  /**
+   * Applies the pending gaming profile items (registry values and power plan). Changes Windows settings: requires confirm=true and is meant to be run by the machine owner; dryRun=true only returns the command.
+   */
+  gamingProfileApply(args?: GamingProfileApplyArgs): Promise<ToolResult> {
+    return this.call("gaming_profile_apply", args);
+  }
+
+  /**
+   * Read-only gaming optimisation report: Game Mode, HAGS, power plan, background apps, Game Bar capture, timer resolution and GPU, each with current and recommended values, the pending items and applyCommand, the exact PowerShell one-liner the owner runs (elevated) to apply them.
+   */
+  gamingProfileStatus(args?: GamingProfileStatusArgs): Promise<ToolResult> {
+    return this.call("gaming_profile_status", args);
+  }
+
+  /**
+   * Launches an installed Steam game through the bun-steam owner (steam://rungameid/<appId>), then waits for its window by processName or windowTitle and brings it to the foreground for capture and input.
+   */
+  gamingSteamLaunch(args: GamingSteamLaunchArgs): Promise<ToolResult> {
+    return this.call("gaming_steam_launch", args);
+  }
+
+  /**
    * Returns the GUID and friendly name of the active Windows power plan.
    */
   getActivePowerPlan(args?: GetActivePowerPlanArgs): Promise<ToolResult> {
@@ -2953,7 +3336,7 @@ export abstract class GeneratedTools {
   }
 
   /**
-   * Lists directory contents as streamed JSON. Set recursive=true to descend, showHidden=true to include hidden entries, pattern to filter by glob. Hard cap: 10000 entries returned; result is marked truncated when exceeded.
+   * Lists directory contents as streamed JSON. Set recursive=true to descend, showHidden=true to include hidden entries, pattern to filter by glob, and exclude to omit matching entry names and skip matching directories. Exclusion matching is ASCII case-insensitive. Hard cap: 10000 entries returned; result is marked truncated when exceeded.
    */
   listDirectory(args: ListDirectoryArgs): Promise<ToolResult> {
     return this.call("list_directory", args);
@@ -3333,7 +3716,7 @@ export abstract class GeneratedTools {
   }
 
   /**
-   * Searches a directory tree for files matching a glob pattern. Hard cap: 10000 results; result is marked truncated when exceeded.
+   * Searches a directory tree for files matching a glob pattern. Exclude basenames with glob patterns; excluded directories are not traversed. Hard cap: 10000 results; result is marked truncated when exceeded.
    */
   searchFiles(args: SearchFilesArgs): Promise<ToolResult> {
     return this.call("search_files", args);
@@ -3424,14 +3807,14 @@ export abstract class GeneratedTools {
   }
 
   /**
-   * Returns full details of a single Steam game by appId. Returns {"success":false,...} if the appId is not found.
+   * Returns one installed Steam game by appId from the live app manifests of every library (bun-steam). Returns {"success":false,...} when the app is not installed.
    */
   steamGetGame(args: SteamGetGameArgs): Promise<ToolResult> {
     return this.call("steam_get_game", args);
   }
 
   /**
-   * Checks whether a Steam game process is currently running. Resolves install_dir and absolute_install_path from steam-scan.db. Executable name defaults to install_dir + ".exe". Returns {"appId":N,"running":bool,"pid":N|null,"executable":"...","installDir":"..."}.
+   * Checks whether an installed Steam game's process is running. Resolves install_dir and the absolute install path from the live app manifests. Executable name defaults to install_dir + ".exe". Returns {"appId":N,"running":bool,"pid":N|null,"executable":"...","installDir":"...","absoluteInstallPath":"..."}.
    */
   steamGetGameStatus(args: SteamGetGameStatusArgs): Promise<ToolResult> {
     return this.call("steam_get_game_status", args);
@@ -3459,14 +3842,14 @@ export abstract class GeneratedTools {
   }
 
   /**
-   * Returns a JSON array of Steam games from steam-scan.db. By default only games whose files are present on disk (files_present > 0) are returned. Set includeMissing=true to include all rows regardless of files_present.
+   * Returns the installed Steam games of every library from the live app manifests (bun-steam). By default only games whose install directory exists are returned; includeMissing=true returns every manifest.
    */
   steamListGames(args?: SteamListGamesArgs): Promise<ToolResult> {
     return this.call("steam_list_games", args);
   }
 
   /**
-   * Returns all Steam library paths with their game_count and total_size_bytes as recorded in steam-scan.db.
+   * Returns the Steam library folders (libraryfolders.vdf) with game_count and total_size_bytes from their app manifests.
    */
   steamListLibraries(args?: SteamListLibrariesArgs): Promise<ToolResult> {
     return this.call("steam_list_libraries", args);
@@ -3480,14 +3863,14 @@ export abstract class GeneratedTools {
   }
 
   /**
-   * Returns aggregate counts from steam-scan.db: nb_installs, nb_libraries, nb_games, nb_games_present, total_size_bytes.
+   * Returns live Steam counts: nb_libraries, nb_games, nb_games_present, total_size_bytes.
    */
   steamScanSummary(args?: SteamScanSummaryArgs): Promise<ToolResult> {
     return this.call("steam_scan_summary", args);
   }
 
   /**
-   * Returns vault target metadata from secrets_vault_ref (target name, kind, description, user_hint). Secret material (passwords, tokens) is never included. Also attempts to invoke 'winclean-steam-auth list --json' (if present) for live vault status.
+   * Reports Steam credential state without secrets: client accounts (names and flags) and, per account, whether the client or steamcmd holds a reusable cached session (ConnectCache key presence only). Passwords, tokens and ConnectCache values are never read.
    */
   steamVaultStatus(args?: SteamVaultStatusArgs): Promise<ToolResult> {
     return this.call("steam_vault_status", args);

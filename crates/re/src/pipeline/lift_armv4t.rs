@@ -84,7 +84,10 @@ pub fn abi() -> Abi {
         sp: "r13".into(),
         ret: "r0".into(),
         machine: Some("gba".into()),
-        flags: ["n", "z", "c", "v"].iter().map(|s| (*s).to_string()).collect(),
+        flags: ["n", "z", "c", "v"]
+            .iter()
+            .map(|s| (*s).to_string())
+            .collect(),
         isas: vec!["arm".into(), "thumb".into()],
     }
 }
@@ -101,10 +104,12 @@ impl Mem<'_> {
         })
     }
     fn u32(&self, addr: u32) -> Option<u32> {
-        self.bytes(addr, 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+        self.bytes(addr, 4)
+            .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
     }
     fn u16(&self, addr: u32) -> Option<u16> {
-        self.bytes(addr, 2).map(|b| u16::from_le_bytes([b[0], b[1]]))
+        self.bytes(addr, 2)
+            .map(|b| u16::from_le_bytes([b[0], b[1]]))
     }
 }
 
@@ -133,8 +138,12 @@ fn bit(w: u32, b: u32) -> bool {
     (w >> b) & 1 == 1
 }
 
-const CONDS: [&str; 16] = ["eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc", "hi", "ls", "ge", "lt", "gt", "le", "", "nv"];
-const REGS: [&str; 16] = ["r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "fp", "ip", "sp", "lr", "pc"];
+const CONDS: [&str; 16] = [
+    "eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc", "hi", "ls", "ge", "lt", "gt", "le", "", "nv",
+];
+const REGS: [&str; 16] = [
+    "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "fp", "ip", "sp", "lr", "pc",
+];
 
 /// Condition value (0/1) of an ARM condition code; `None` for AL.
 fn cond_val(b: &mut Builder, c: u32) -> Option<Val> {
@@ -286,9 +295,16 @@ fn shift_reg(b: &mut Builder, op: u32, v: Val, amt: Val, carry: Val) -> (Val, Va
 
 fn fallback(raw: u32, text: String, why: &str, next: (u32, Isa)) -> Lowered {
     Lowered {
-        g: Guest { raw, body: vec![Stmt::Fallback { why: why.into() }] },
+        g: Guest {
+            raw,
+            body: vec![Stmt::Fallback { why: why.into() }],
+        },
         text,
-        flow: Flow { targets: vec![next], ends: true, falls: false },
+        flow: Flow {
+            targets: vec![next],
+            ends: true,
+            falls: false,
+        },
     }
 }
 
@@ -297,21 +313,33 @@ fn arm_wrap(pc: u32, w: u32, b: Builder, kind: Option<u32>) -> Guest {
     // `b.out` holds the semantics; `kind` is the advance access (None when the body flushed).
     let mut outer = Builder::new();
     // Reuse the temporaries of the body: shift the outer counter past them.
-    let body_temps = Guest { raw: 0, body: b.out.clone() }.temps();
+    let body_temps = Guest {
+        raw: 0,
+        body: b.out.clone(),
+    }
+    .temps();
     for _ in 0..body_temps {
         outer.fresh();
     }
     outer.call("arm_begin", &[imm(pc)]);
     let mut body = b.out;
     match kind {
-        Some(k) => body.push(Stmt::Call { f: "arm_next".into(), args: vec![imm(k)], t: None }),
+        Some(k) => body.push(Stmt::Call {
+            f: "arm_next".into(),
+            args: vec![imm(k)],
+            t: None,
+        }),
         None => body.push(Stmt::Exit),
     }
     let cond = w >> 28;
     match cond_val(&mut outer, cond) {
         None => outer.out.extend(body),
         Some(c) => {
-            let els = vec![Stmt::Call { f: "arm_next".into(), args: vec![imm(NSEQ)], t: None }];
+            let els = vec![Stmt::Call {
+                f: "arm_next".into(),
+                args: vec![imm(NSEQ)],
+                t: None,
+            }];
             outer.out.push(Stmt::If { c, then: body, els });
         }
     }
@@ -321,7 +349,11 @@ fn arm_wrap(pc: u32, w: u32, b: Builder, kind: Option<u32>) -> Guest {
 fn arm_flow(w: u32, exits: bool, targets: Vec<(u32, Isa)>) -> Flow {
     let always = w >> 28 == 14;
     let never = w >> 28 == 15;
-    Flow { targets: if never { Vec::new() } else { targets }, ends: exits && always, falls: !(exits && always) }
+    Flow {
+        targets: if never { Vec::new() } else { targets },
+        ends: exits && always,
+        falls: !(exits && always),
+    }
 }
 
 /// Constant-register knowledge used to resolve `bx`/`mov pc` targets.
@@ -337,7 +369,13 @@ fn lower_arm(m: &Mem, pc: u32, w: u32, k: &mut Consts) -> Lowered {
     let rs = bits(w, 8, 4);
     let rm = bits(w, 0, 4);
     let next = (pc.wrapping_add(4), Isa::Arm);
-    let r = |n: u32| -> Val { if n == 15 { imm(pc.wrapping_add(8)) } else { reg(n as u8) } };
+    let r = |n: u32| -> Val {
+        if n == 15 {
+            imm(pc.wrapping_add(8))
+        } else {
+            reg(n as u8)
+        }
+    };
     let fb = |why: &str| fallback(w, format!(".word 0x{w:08x} ; {why}"), why, next);
     let always = cond == 14;
     let mut known = std::mem::take(k);
@@ -372,11 +410,28 @@ fn lower_arm(m: &Mem, pc: u32, w: u32, k: &mut Consts) -> Lowered {
                 }
                 set_known = Some((rd, None));
                 let text = if acc {
-                    format!("mla{}{cs} {}, {}, {}, {}", if s { "s" } else { "" }, REGS[rd as usize], REGS[rm as usize], REGS[rs as usize], REGS[rn as usize])
+                    format!(
+                        "mla{}{cs} {}, {}, {}, {}",
+                        if s { "s" } else { "" },
+                        REGS[rd as usize],
+                        REGS[rm as usize],
+                        REGS[rs as usize],
+                        REGS[rn as usize]
+                    )
                 } else {
-                    format!("mul{}{cs} {}, {}, {}", if s { "s" } else { "" }, REGS[rd as usize], REGS[rm as usize], REGS[rs as usize])
+                    format!(
+                        "mul{}{cs} {}, {}, {}",
+                        if s { "s" } else { "" },
+                        REGS[rd as usize],
+                        REGS[rm as usize],
+                        REGS[rs as usize]
+                    )
                 };
-                Lowered { g: arm_wrap(pc, w, b, Some(SEQ)), text, flow: arm_flow(w, false, Vec::new()) }
+                Lowered {
+                    g: arm_wrap(pc, w, b, Some(SEQ)),
+                    text,
+                    flow: arm_flow(w, false, Vec::new()),
+                }
             } else if hi == 1 && mid == 0b1001 {
                 // UMULL / SMULL / UMLAL / SMLAL
                 let signed = bit(w, 22);
@@ -413,19 +468,41 @@ fn lower_arm(m: &Mem, pc: u32, w: u32, k: &mut Consts) -> Lowered {
                 }
                 set_known = Some((rdhi, None));
                 known.0[rdlo as usize] = None;
-                let name = format!("{}{}l{}", if signed { "s" } else { "u" }, if acc { "mla" } else { "mul" }, if s { "s" } else { "" });
-                let text = format!("{name}{cs} {}, {}, {}, {}", REGS[rdlo as usize], REGS[rdhi as usize], REGS[rm as usize], REGS[rs as usize]);
-                Lowered { g: arm_wrap(pc, w, b, Some(SEQ)), text, flow: arm_flow(w, false, Vec::new()) }
+                let name = format!(
+                    "{}{}l{}",
+                    if signed { "s" } else { "u" },
+                    if acc { "mla" } else { "mul" },
+                    if s { "s" } else { "" }
+                );
+                let text = format!(
+                    "{name}{cs} {}, {}, {}, {}",
+                    REGS[rdlo as usize], REGS[rdhi as usize], REGS[rm as usize], REGS[rs as usize]
+                );
+                Lowered {
+                    g: arm_wrap(pc, w, b, Some(SEQ)),
+                    text,
+                    flow: arm_flow(w, false, Vec::new()),
+                }
             } else if hi == 2 && mid == 0b1001 && bits(w, 20, 2) == 0 {
                 return fb("swp");
             } else if hi == 2 && mid == 0b0001 && bits(w, 20, 3) == 0b010 {
                 // BX
                 let mut b = Builder::new();
-                let target = known.0[rm as usize].or(if rm == 15 { Some(pc.wrapping_add(8)) } else { None });
+                let target = known.0[rm as usize].or(if rm == 15 {
+                    Some(pc.wrapping_add(8))
+                } else {
+                    None
+                });
                 b.call("branch_exchange", &[r(rm)]);
-                let targets = target.map(|t| vec![(t & !1, if t & 1 == 1 { Isa::Thumb } else { Isa::Arm })]).unwrap_or_default();
+                let targets = target
+                    .map(|t| vec![(t & !1, if t & 1 == 1 { Isa::Thumb } else { Isa::Arm })])
+                    .unwrap_or_default();
                 let text = format!("bx{cs} {}", REGS[rm as usize]);
-                Lowered { g: arm_wrap(pc, w, b, None), text, flow: arm_flow(w, true, targets) }
+                Lowered {
+                    g: arm_wrap(pc, w, b, None),
+                    text,
+                    flow: arm_flow(w, true, targets),
+                }
             } else if !bit(w, 25) && bit(w, 7) && bit(w, 4) {
                 // Halfword / signed transfers
                 let hs = bits(w, 5, 2);
@@ -446,8 +523,16 @@ fn lower_arm(m: &Mem, pc: u32, w: u32, k: &mut Consts) -> Lowered {
                     return fb("pc load with pc base");
                 }
                 let mut b = Builder::new();
-                let off = if bit(w, 22) { imm((bits(w, 8, 4) << 4) + bits(w, 0, 4)) } else { r(rm) };
-                let off = if add { off } else { b.op(Alu::Sub, imm(0), off) };
+                let off = if bit(w, 22) {
+                    imm((bits(w, 8, 4) << 4) + bits(w, 0, 4))
+                } else {
+                    r(rm)
+                };
+                let off = if add {
+                    off
+                } else {
+                    b.op(Alu::Sub, imm(0), off)
+                };
                 let base = r(rn);
                 let eff = b.op(Alu::Add, base, off);
                 let addr = if pre { eff } else { base };
@@ -471,7 +556,11 @@ fn lower_arm(m: &Mem, pc: u32, w: u32, k: &mut Consts) -> Lowered {
                         b.call("idle", &[]);
                     }
                 } else {
-                    let value = if rd == 15 { imm(pc.wrapping_add(12)) } else { r(rd) };
+                    let value = if rd == 15 {
+                        imm(pc.wrapping_add(12))
+                    } else {
+                        r(rd)
+                    };
                     match hs {
                         2 => b.store(8, addr, value, NSEQ as u8),
                         _ => b.store(16, addr, value, NSEQ as u8),
@@ -491,9 +580,18 @@ fn lower_arm(m: &Mem, pc: u32, w: u32, k: &mut Consts) -> Lowered {
                     (false, 2) => "strsb",
                     (false, _) => "strh",
                 };
-                let text = format!("{mn}{cs} {}, [{}{}]", REGS[rd as usize], REGS[rn as usize], if pre { "" } else { "], ..." });
+                let text = format!(
+                    "{mn}{cs} {}, [{}{}]",
+                    REGS[rd as usize],
+                    REGS[rn as usize],
+                    if pre { "" } else { "], ..." }
+                );
                 let exits = flushed;
-                Lowered { g: arm_wrap(pc, w, b, if flushed { None } else { Some(NSEQ) }), text, flow: arm_flow(w, exits, Vec::new()) }
+                Lowered {
+                    g: arm_wrap(pc, w, b, if flushed { None } else { Some(NSEQ) }),
+                    text,
+                    flow: arm_flow(w, exits, Vec::new()),
+                }
             } else {
                 let s = bit(w, 20);
                 let opc = bits(w, 21, 4);
@@ -507,18 +605,30 @@ fn lower_arm(m: &Mem, pc: u32, w: u32, k: &mut Consts) -> Lowered {
                     return fb("data processing to pc with spsr restore");
                 }
                 let mut b = Builder::new();
-                let mut op1 = if rn == 15 { imm(pc.wrapping_add(8)) } else { reg(rn as u8) };
+                let mut op1 = if rn == 15 {
+                    imm(pc.wrapping_add(8))
+                } else {
+                    reg(rn as u8)
+                };
                 let carry_in = flag(C);
                 let (op2, shc) = if imm_op {
                     let v = bits(w, 0, 8);
                     let rot = 2 * bits(w, 8, 4);
-                    if rot == 0 { (imm(v), carry_in) } else { (imm(v.rotate_right(rot)), imm(v.rotate_right(rot) >> 31)) }
+                    if rot == 0 {
+                        (imm(v), carry_in)
+                    } else {
+                        (imm(v.rotate_right(rot)), imm(v.rotate_right(rot) >> 31))
+                    }
                 } else if by_reg {
                     if rn == 15 {
                         op1 = imm(pc.wrapping_add(12));
                     }
                     b.call("idle", &[]);
-                    let v = if rm == 15 { imm(pc.wrapping_add(12)) } else { reg(rm as u8) };
+                    let v = if rm == 15 {
+                        imm(pc.wrapping_add(12))
+                    } else {
+                        reg(rm as u8)
+                    };
                     let amt = b.op(Alu::And, r(rs), imm(0xff));
                     shift_reg(&mut b, bits(w, 5, 2), v, amt, carry_in)
                 } else {
@@ -573,7 +683,11 @@ fn lower_arm(m: &Mem, pc: u32, w: u32, k: &mut Consts) -> Lowered {
                         b.set_flag(V, v);
                     }
                     let _ = logical;
-                    if matches!(opc, 8..=11) { None } else { Some(res) }
+                    if matches!(opc, 8..=11) {
+                        None
+                    } else {
+                        Some(res)
+                    }
                 } else {
                     // Non-flag-setting forms use the shifter carry as the carry input, as the
                     // interpreter does.
@@ -628,34 +742,62 @@ fn lower_arm(m: &Mem, pc: u32, w: u32, k: &mut Consts) -> Lowered {
                         let value = match (opc, imm_op) {
                             (13, true) => kv(op2, &known),
                             (15, true) => kv(op2, &known).map(|v| !v),
-                            (4, true) => kv(op1, &known).zip(kv(op2, &known)).map(|(a, c)| a.wrapping_add(c)),
-                            (2, true) => kv(op1, &known).zip(kv(op2, &known)).map(|(a, c)| a.wrapping_sub(c)),
+                            (4, true) => kv(op1, &known)
+                                .zip(kv(op2, &known))
+                                .map(|(a, c)| a.wrapping_add(c)),
+                            (2, true) => kv(op1, &known)
+                                .zip(kv(op2, &known))
+                                .map(|(a, c)| a.wrapping_sub(c)),
                             (12, true) => kv(op1, &known).zip(kv(op2, &known)).map(|(a, c)| a | c),
                             _ => None,
                         };
                         set_known = Some((rd, value));
                     }
                 }
-                const OPS: [&str; 16] = ["and", "eor", "sub", "rsb", "add", "adc", "sbc", "rsc", "tst", "teq", "cmp", "cmn", "orr", "mov", "bic", "mvn"];
+                const OPS: [&str; 16] = [
+                    "and", "eor", "sub", "rsb", "add", "adc", "sbc", "rsc", "tst", "teq", "cmp",
+                    "cmn", "orr", "mov", "bic", "mvn",
+                ];
                 const SHIFTS: [&str; 4] = ["lsl", "lsr", "asr", "ror"];
                 let op2_text = if imm_op {
                     format!("#0x{:x}", bits(w, 0, 8).rotate_right(2 * bits(w, 8, 4)))
                 } else if by_reg {
-                    format!("{}, {} {}", REGS[rm as usize], SHIFTS[bits(w, 5, 2) as usize], REGS[rs as usize])
+                    format!(
+                        "{}, {} {}",
+                        REGS[rm as usize],
+                        SHIFTS[bits(w, 5, 2) as usize],
+                        REGS[rs as usize]
+                    )
                 } else if bits(w, 5, 7) == 0 {
                     REGS[rm as usize].to_string()
                 } else if bits(w, 5, 2) == 3 && bits(w, 7, 5) == 0 {
                     format!("{}, rrx", REGS[rm as usize])
                 } else {
-                    format!("{}, {} #{}", REGS[rm as usize], SHIFTS[bits(w, 5, 2) as usize], bits(w, 7, 5))
+                    format!(
+                        "{}, {} #{}",
+                        REGS[rm as usize],
+                        SHIFTS[bits(w, 5, 2) as usize],
+                        bits(w, 7, 5)
+                    )
                 };
-                let mn = format!("{}{cs}{}", OPS[opc as usize], if s && !matches!(opc, 8..=11) { "s" } else { "" });
+                let mn = format!(
+                    "{}{cs}{}",
+                    OPS[opc as usize],
+                    if s && !matches!(opc, 8..=11) { "s" } else { "" }
+                );
                 let text = match opc {
                     13 | 15 => format!("{mn} {}, {op2_text}", REGS[rd as usize]),
                     8..=11 => format!("{mn} {}, {op2_text}", REGS[rn as usize]),
-                    _ => format!("{mn} {}, {}, {op2_text}", REGS[rd as usize], REGS[rn as usize]),
+                    _ => format!(
+                        "{mn} {}, {}, {op2_text}",
+                        REGS[rd as usize], REGS[rn as usize]
+                    ),
                 };
-                Lowered { g: arm_wrap(pc, w, b, if flushed { None } else { Some(SEQ) }), text, flow: arm_flow(w, flushed, targets) }
+                Lowered {
+                    g: arm_wrap(pc, w, b, if flushed { None } else { Some(SEQ) }),
+                    text,
+                    flow: arm_flow(w, flushed, targets),
+                }
             }
         }
         0b01 => {
@@ -677,20 +819,32 @@ fn lower_arm(m: &Mem, pc: u32, w: u32, k: &mut Consts) -> Lowered {
                 return fb("pc load with pc base");
             }
             let mut b = Builder::new();
-            let base = if rn == 15 { imm(pc.wrapping_add(8)) } else { reg(rn as u8) };
+            let base = if rn == 15 {
+                imm(pc.wrapping_add(8))
+            } else {
+                reg(rn as u8)
+            };
             let off = if bit(w, 25) {
                 let (v, _) = shift_imm(&mut b, bits(w, 5, 2), r(rm), bits(w, 7, 5), flag(C));
                 v
             } else {
                 imm(bits(w, 0, 12))
             };
-            let off = if add { off } else { b.op(Alu::Sub, imm(0), off) };
+            let off = if add {
+                off
+            } else {
+                b.op(Alu::Sub, imm(0), off)
+            };
             let eff = b.op(Alu::Add, base, off);
             let addr = if pre { eff } else { base };
             let mut flushed = false;
             let mut targets = Vec::new();
             if load {
-                let data = if byte { b.load(8, addr, NSEQ as u8) } else { b.call_v("ldr_word", &[addr, imm(NSEQ)]) };
+                let data = if byte {
+                    b.load(8, addr, NSEQ as u8)
+                } else {
+                    b.call_v("ldr_word", &[addr, imm(NSEQ)])
+                };
                 // Literal pool loads feed the constant tracker.
                 let lit = match addr {
                     Val::Imm { v } if !byte && v & 3 == 0 => m.u32(v),
@@ -710,7 +864,11 @@ fn lower_arm(m: &Mem, pc: u32, w: u32, k: &mut Consts) -> Lowered {
                     set_known = Some((rd, lit));
                 }
             } else {
-                let value = if rd == 15 { imm(pc.wrapping_add(12)) } else { reg(rd as u8) };
+                let value = if rd == 15 {
+                    imm(pc.wrapping_add(12))
+                } else {
+                    reg(rd as u8)
+                };
                 if byte {
                     b.store(8, addr, value, NSEQ as u8);
                 } else {
@@ -722,8 +880,18 @@ fn lower_arm(m: &Mem, pc: u32, w: u32, k: &mut Consts) -> Lowered {
                 b.set(rn as u8, eff);
                 known.0[rn as usize] = None;
             }
-            let text = format!("{}{}{cs} {}, [{}, ...]", if load { "ldr" } else { "str" }, if byte { "b" } else { "" }, REGS[rd as usize], REGS[rn as usize]);
-            Lowered { g: arm_wrap(pc, w, b, if flushed { None } else { Some(NSEQ) }), text, flow: arm_flow(w, flushed, targets) }
+            let text = format!(
+                "{}{}{cs} {}, [{}, ...]",
+                if load { "ldr" } else { "str" },
+                if byte { "b" } else { "" },
+                REGS[rd as usize],
+                REGS[rn as usize]
+            );
+            Lowered {
+                g: arm_wrap(pc, w, b, if flushed { None } else { Some(NSEQ) }),
+                text,
+                flow: arm_flow(w, flushed, targets),
+            }
         }
         0b10 => {
             if bit(w, 25) {
@@ -742,9 +910,14 @@ fn lower_arm(m: &Mem, pc: u32, w: u32, k: &mut Consts) -> Lowered {
                     set_known = Some((14, Some(pc.wrapping_add(4))));
                 }
                 let text = format!("b{}{cs} 0x{target:08x}", if link { "l" } else { "" });
-                Lowered { g: arm_wrap(pc, w, b, None), text, flow: arm_flow(w, true, targets) }
+                Lowered {
+                    g: arm_wrap(pc, w, b, None),
+                    text,
+                    flow: arm_flow(w, true, targets),
+                }
             } else {
-                lower_block_transfer(pc, w, &mut known, &mut set_known).unwrap_or_else(|why| fb(why))
+                lower_block_transfer(pc, w, &mut known, &mut set_known)
+                    .unwrap_or_else(|why| fb(why))
             }
         }
         _ => {
@@ -770,7 +943,12 @@ fn lower_arm(m: &Mem, pc: u32, w: u32, k: &mut Consts) -> Lowered {
 }
 
 /// LDM / STM without the S bit.
-fn lower_block_transfer(pc: u32, w: u32, known: &mut Consts, _set: &mut Option<(u32, Option<u32>)>) -> Result<Lowered, &'static str> {
+fn lower_block_transfer(
+    pc: u32,
+    w: u32,
+    known: &mut Consts,
+    _set: &mut Option<(u32, Option<u32>)>,
+) -> Result<Lowered, &'static str> {
     let load = bit(w, 20);
     let wbit = bit(w, 21);
     let sbit = bit(w, 22);
@@ -838,7 +1016,11 @@ fn lower_block_transfer(pc: u32, w: u32, known: &mut Consts, _set: &mut Option<(
                     continue;
                 }
                 let val = if r != rn {
-                    if r == 15 { imm(pc.wrapping_add(12)) } else { reg(r as u8) }
+                    if r == 15 {
+                        imm(pc.wrapping_add(12))
+                    } else {
+                        reg(r as u8)
+                    }
                 } else if first {
                     old_base
                 } else if ascending {
@@ -874,29 +1056,59 @@ fn lower_block_transfer(pc: u32, w: u32, known: &mut Consts, _set: &mut Option<(
             let a = b.op(Alu::And, a, imm(!3));
             b.store(32, a, imm(pc.wrapping_add(12)), NSEQ as u8);
         }
-        addr = if ascending { b.op(Alu::Add, addr, imm(0x40)) } else { b.op(Alu::Sub, addr, imm(0x40)) };
+        addr = if ascending {
+            b.op(Alu::Add, addr, imm(0x40))
+        } else {
+            b.op(Alu::Sub, addr, imm(0x40))
+        };
     }
     if writeback {
         b.set(rn as u8, addr);
     }
     known.0[rn as usize] = None;
-    let text = format!("{}{}{}{cs} {}{}, {{0x{rlist:04x}}}", if load { "ldm" } else { "stm" }, if ascending { "i" } else { "d" }, if pre { "b" } else { "a" }, REGS[rn as usize], if wbit { "!" } else { "" });
-    Ok(Lowered { g: arm_wrap(pc, w, b, if flushed { None } else { Some(NSEQ) }), text, flow: arm_flow(w, flushed, Vec::new()) })
+    let text = format!(
+        "{}{}{}{cs} {}{}, {{0x{rlist:04x}}}",
+        if load { "ldm" } else { "stm" },
+        if ascending { "i" } else { "d" },
+        if pre { "b" } else { "a" },
+        REGS[rn as usize],
+        if wbit { "!" } else { "" }
+    );
+    Ok(Lowered {
+        g: arm_wrap(pc, w, b, if flushed { None } else { Some(NSEQ) }),
+        text,
+        flow: arm_flow(w, flushed, Vec::new()),
+    })
 }
 
 /// Wrap a Thumb body with its prologue fetch and advance.
 fn thumb_wrap(pc: u32, h: u16, b: Builder, kind: Option<u32>) -> Guest {
-    let mut out = vec![Stmt::Call { f: "thumb_begin".into(), args: vec![imm(pc)], t: None }];
+    let mut out = vec![Stmt::Call {
+        f: "thumb_begin".into(),
+        args: vec![imm(pc)],
+        t: None,
+    }];
     out.extend(b.out);
     match kind {
-        Some(k) => out.push(Stmt::Call { f: "thumb_next".into(), args: vec![imm(k)], t: None }),
+        Some(k) => out.push(Stmt::Call {
+            f: "thumb_next".into(),
+            args: vec![imm(k)],
+            t: None,
+        }),
         None => out.push(Stmt::Exit),
     }
-    Guest { raw: u32::from(h), body: out }
+    Guest {
+        raw: u32::from(h),
+        body: out,
+    }
 }
 
 fn tflow(exits: bool, conditional: bool, targets: Vec<(u32, Isa)>) -> Flow {
-    Flow { targets, ends: exits && !conditional, falls: !exits || conditional }
+    Flow {
+        targets,
+        ends: exits && !conditional,
+        falls: !exits || conditional,
+    }
 }
 
 #[allow(clippy::too_many_lines)]
@@ -920,13 +1132,24 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
         let immf = bit(i, 10);
         let rn = (i >> 6) & 7;
         let op2 = if immf { imm(rn) } else { reg(rn as u8) };
-        let (res, c, v) = if sub { sub_flags(&mut b, reg(rs as u8), op2) } else { add_flags(&mut b, reg(rs as u8), op2) };
+        let (res, c, v) = if sub {
+            sub_flags(&mut b, reg(rs as u8), op2)
+        } else {
+            add_flags(&mut b, reg(rs as u8), op2)
+        };
         nz(&mut b, res);
         b.set_flag(C, c);
         b.set_flag(V, v);
         b.set(rd as u8, res);
         kset = Some((rd, None));
-        text = format!("{} {}, {}, {}{}", if sub { "subs" } else { "adds" }, REGS[rd as usize], REGS[rs as usize], if immf { "#" } else { "r" }, rn);
+        text = format!(
+            "{} {}, {}, {}{}",
+            if sub { "subs" } else { "adds" },
+            REGS[rd as usize],
+            REGS[rs as usize],
+            if immf { "#" } else { "r" },
+            rn
+        );
     } else if i & 0xe000 == 0x0000 {
         // Format 1: move shifted register
         let op = (i >> 11) & 3;
@@ -938,7 +1161,12 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
             b.set_flag(C, c);
         }
         kset = Some((rd, None));
-        text = format!("{} {}, {}, #{amount}", ["lsls", "lsrs", "asrs", "rors"][op as usize], REGS[rd as usize], REGS[rs as usize]);
+        text = format!(
+            "{} {}, {}, #{amount}",
+            ["lsls", "lsrs", "asrs", "rors"][op as usize],
+            REGS[rd as usize],
+            REGS[rs as usize]
+        );
     } else if i & 0xe000 == 0x2000 {
         // Format 3: mov/cmp/add/sub immediate
         let op = (i >> 11) & 3;
@@ -958,17 +1186,31 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
                 b.set_flag(V, v);
             }
             2 | 3 => {
-                let (res, c, v) = if op == 2 { add_flags(&mut b, reg(rd as u8), imm(v8)) } else { sub_flags(&mut b, reg(rd as u8), imm(v8)) };
+                let (res, c, v) = if op == 2 {
+                    add_flags(&mut b, reg(rd as u8), imm(v8))
+                } else {
+                    sub_flags(&mut b, reg(rd as u8), imm(v8))
+                };
                 nz(&mut b, res);
                 b.set_flag(C, c);
                 b.set_flag(V, v);
                 b.set(rd as u8, res);
-                let kv = known.0[rd as usize].map(|x| if op == 2 { x.wrapping_add(v8) } else { x.wrapping_sub(v8) });
+                let kv = known.0[rd as usize].map(|x| {
+                    if op == 2 {
+                        x.wrapping_add(v8)
+                    } else {
+                        x.wrapping_sub(v8)
+                    }
+                });
                 kset = Some((rd, kv));
             }
             _ => unreachable!(),
         }
-        text = format!("{} {}, #{v8}", ["movs", "cmp", "adds", "subs"][op as usize], REGS[rd as usize]);
+        text = format!(
+            "{} {}, #{v8}",
+            ["movs", "cmp", "adds", "subs"][op as usize],
+            REGS[rd as usize]
+        );
     } else if i & 0xfc00 == 0x4000 {
         // Format 4: ALU operations
         let op = (i >> 6) & 15;
@@ -981,12 +1223,18 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
             1 => b.op(Alu::Xor, dst, src),
             2..=4 | 7 => {
                 let amt = b.op(Alu::And, src, imm(0xff));
-                let (res, c) = shift_reg(&mut b, match op {
-                    2 => 0,
-                    3 => 1,
-                    4 => 2,
-                    _ => 3,
-                }, dst, amt, flag(C));
+                let (res, c) = shift_reg(
+                    &mut b,
+                    match op {
+                        2 => 0,
+                        3 => 1,
+                        4 => 2,
+                        _ => 3,
+                    },
+                    dst,
+                    amt,
+                    flag(C),
+                );
                 b.call("idle", &[]);
                 c_out = Some(c);
                 res
@@ -1038,8 +1286,14 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
             b.set(rd as u8, res);
             kset = Some((rd, None));
         }
-        const OPS: [&str; 16] = ["ands", "eors", "lsls", "lsrs", "asrs", "adcs", "sbcs", "rors", "tst", "negs", "cmp", "cmn", "orrs", "muls", "bics", "mvns"];
-        text = format!("{} {}, {}", OPS[op as usize], REGS[rd as usize], REGS[rs as usize]);
+        const OPS: [&str; 16] = [
+            "ands", "eors", "lsls", "lsrs", "asrs", "adcs", "sbcs", "rors", "tst", "negs", "cmp",
+            "cmn", "orrs", "muls", "bics", "mvns",
+        ];
+        text = format!(
+            "{} {}, {}",
+            OPS[op as usize], REGS[rd as usize], REGS[rs as usize]
+        );
     } else if i & 0xfc00 == 0x4400 {
         // Format 5: hi-register operations / bx
         let op = (i >> 8) & 3;
@@ -1051,24 +1305,54 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
             3 => {
                 b.call("branch_exchange", &[op2]);
                 kind = None;
-                let t = if sreg == 15 { Some(pcv) } else { known.0[sreg as usize] };
-                flow = tflow(true, false, t.map(|t| vec![(t & !1, if t & 1 == 1 { Isa::Thumb } else { Isa::Arm })]).unwrap_or_default());
+                let t = if sreg == 15 {
+                    Some(pcv)
+                } else {
+                    known.0[sreg as usize]
+                };
+                flow = tflow(
+                    true,
+                    false,
+                    t.map(|t| vec![(t & !1, if t & 1 == 1 { Isa::Thumb } else { Isa::Arm })])
+                        .unwrap_or_default(),
+                );
                 text = format!("bx {}", REGS[sreg as usize]);
             }
             0 | 2 => {
-                let res = if op == 0 { b.op(Alu::Add, op1, op2) } else { op2 };
+                let res = if op == 0 {
+                    b.op(Alu::Add, op1, op2)
+                } else {
+                    op2
+                };
                 if dreg == 15 {
                     let t = b.op(Alu::And, res, imm(!1));
                     b.call("reload16", &[t]);
                     kind = None;
-                    let targets = if let Val::Imm { v } = t { vec![(v, Isa::Thumb)] } else { Vec::new() };
+                    let targets = if let Val::Imm { v } = t {
+                        vec![(v, Isa::Thumb)]
+                    } else {
+                        Vec::new()
+                    };
                     flow = tflow(true, false, targets);
                 } else {
                     b.set(dreg as u8, res);
-                    let kv = if op == 2 { if sreg == 15 { Some(pcv) } else { known.0[sreg as usize] } } else { None };
+                    let kv = if op == 2 {
+                        if sreg == 15 {
+                            Some(pcv)
+                        } else {
+                            known.0[sreg as usize]
+                        }
+                    } else {
+                        None
+                    };
                     kset = Some((dreg, kv));
                 }
-                text = format!("{} {}, {}", if op == 0 { "add" } else { "mov" }, REGS[dreg as usize], REGS[sreg as usize]);
+                text = format!(
+                    "{} {}, {}",
+                    if op == 0 { "add" } else { "mov" },
+                    REGS[dreg as usize],
+                    REGS[sreg as usize]
+                );
             }
             _ => {
                 let (res, c, v) = sub_flags(&mut b, op1, op2);
@@ -1087,7 +1371,11 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
         b.call("idle", &[]);
         kind = Some(NSEQ);
         kset = Some((rd, m.u32(addr)));
-        text = format!("ldr {}, [pc, #0x{:x}] ; 0x{addr:08x}", REGS[rd as usize], (i & 0xff) << 2);
+        text = format!(
+            "ldr {}, [pc, #0x{:x}] ; 0x{addr:08x}",
+            REGS[rd as usize],
+            (i & 0xff) << 2
+        );
     } else if i & 0xf000 == 0x5000 {
         let ro = (i >> 6) & 7;
         let addr = b.op(Alu::Add, reg(rs as u8), reg(ro as u8));
@@ -1096,7 +1384,14 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
             let load = bit(i, 11);
             let byte = bit(i, 10);
             thumb_ldr_str(&mut b, load, byte, rd, addr, &mut kind, &mut kset);
-            text = format!("{}{} {}, [{}, {}]", if load { "ldr" } else { "str" }, if byte { "b" } else { "" }, REGS[rd as usize], REGS[rs as usize], REGS[ro as usize]);
+            text = format!(
+                "{}{} {}, [{}, {}]",
+                if load { "ldr" } else { "str" },
+                if byte { "b" } else { "" },
+                REGS[rd as usize],
+                REGS[rs as usize],
+                REGS[ro as usize]
+            );
         } else {
             // Format 8: sign-extended byte/halfword
             let sign = bit(i, 10);
@@ -1124,7 +1419,13 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
                 }
             }
             kind = Some(NSEQ);
-            text = format!("{} {}, [{}, {}]", ["strh", "ldrh", "ldrsb", "ldrsh"][usize::from(sign) * 2 + usize::from(half)], REGS[rd as usize], REGS[rs as usize], REGS[ro as usize]);
+            text = format!(
+                "{} {}, [{}, {}]",
+                ["strh", "ldrh", "ldrsb", "ldrsh"][usize::from(sign) * 2 + usize::from(half)],
+                REGS[rd as usize],
+                REGS[rs as usize],
+                REGS[ro as usize]
+            );
         }
     } else if i & 0xe000 == 0x6000 {
         // Format 9: load/store with immediate offset
@@ -1134,7 +1435,13 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
         let off = if byte { off5 } else { off5 << 2 };
         let addr = b.op(Alu::Add, reg(rs as u8), imm(off));
         thumb_ldr_str(&mut b, load, byte, rd, addr, &mut kind, &mut kset);
-        text = format!("{}{} {}, [{}, #0x{off:x}]", if load { "ldr" } else { "str" }, if byte { "b" } else { "" }, REGS[rd as usize], REGS[rs as usize]);
+        text = format!(
+            "{}{} {}, [{}, #0x{off:x}]",
+            if load { "ldr" } else { "str" },
+            if byte { "b" } else { "" },
+            REGS[rd as usize],
+            REGS[rs as usize]
+        );
     } else if i & 0xf000 == 0x8000 {
         // Format 10: halfword with immediate offset
         let load = bit(i, 11);
@@ -1149,7 +1456,12 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
             b.store(16, addr, reg(rd as u8), NSEQ as u8);
             kind = Some(NSEQ);
         }
-        text = format!("{} {}, [{}, #0x{off:x}]", if load { "ldrh" } else { "strh" }, REGS[rd as usize], REGS[rs as usize]);
+        text = format!(
+            "{} {}, [{}, #0x{off:x}]",
+            if load { "ldrh" } else { "strh" },
+            REGS[rd as usize],
+            REGS[rs as usize]
+        );
     } else if i & 0xf000 == 0x9000 {
         // Format 11: sp-relative load/store
         let load = bit(i, 11);
@@ -1165,7 +1477,12 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
             b.store(32, a, reg(rd as u8), NSEQ as u8);
             kind = Some(NSEQ);
         }
-        text = format!("{} {}, [sp, #0x{:x}]", if load { "ldr" } else { "str" }, REGS[rd as usize], (i & 0xff) << 2);
+        text = format!(
+            "{} {}, [sp, #0x{:x}]",
+            if load { "ldr" } else { "str" },
+            REGS[rd as usize],
+            (i & 0xff) << 2
+        );
     } else if i & 0xf000 == 0xa000 {
         // Format 12: load address
         let sp = bit(i, 11);
@@ -1180,11 +1497,19 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
             b.set(rd as u8, imm(v));
             kset = Some((rd, Some(v)));
         }
-        text = format!("add {}, {}, #0x{off:x}", REGS[rd as usize], if sp { "sp" } else { "pc" });
+        text = format!(
+            "add {}, {}, #0x{off:x}",
+            REGS[rd as usize],
+            if sp { "sp" } else { "pc" }
+        );
     } else if i & 0xff00 == 0xb000 {
         // Format 13: add offset to sp
         let off = (i & 0x7f) << 2;
-        let v = if bit(i, 7) { b.op(Alu::Sub, reg(13), imm(off)) } else { b.op(Alu::Add, reg(13), imm(off)) };
+        let v = if bit(i, 7) {
+            b.op(Alu::Sub, reg(13), imm(off))
+        } else {
+            b.op(Alu::Add, reg(13), imm(off))
+        };
         b.set(13, v);
         text = format!("add sp, #{}0x{off:x}", if bit(i, 7) { "-" } else { "" });
     } else if i & 0xf600 == 0xb400 {
@@ -1234,7 +1559,15 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
                 }
             }
         }
-        text = format!("{} {{0x{rlist:02x}{}}}", if pop { "pop" } else { "push" }, if rbit { if pop { ",pc" } else { ",lr" } } else { "" });
+        text = format!(
+            "{} {{0x{rlist:02x}{}}}",
+            if pop { "pop" } else { "push" },
+            if rbit {
+                if pop { ",pc" } else { ",lr" }
+            } else {
+                ""
+            }
+        );
     } else if i & 0xf000 == 0xc000 {
         // Format 15: ldmia/stmia
         let load = bit(i, 11);
@@ -1302,7 +1635,11 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
             }
         }
         known.0[rb as usize] = None;
-        text = format!("{} {}!, {{0x{rlist:02x}}}", if load { "ldmia" } else { "stmia" }, REGS[rb as usize]);
+        text = format!(
+            "{} {}!, {{0x{rlist:02x}}}",
+            if load { "ldmia" } else { "stmia" },
+            REGS[rb as usize]
+        );
     } else if i & 0xff00 == 0xdf00 {
         *k = Consts::default();
         return fb("swi");
@@ -1354,7 +1691,10 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
             // Resolve the target from the preceding first half when it is adjacent.
             if let Some(p) = prev.filter(|p| p & 0xf800 == 0xf000) {
                 let hi = ((u32::from(p) & 0x7ff) << 21) as i32 >> 9;
-                let target = pc.wrapping_add(2).wrapping_add(hi as u32).wrapping_add(off << 1);
+                let target = pc
+                    .wrapping_add(2)
+                    .wrapping_add(hi as u32)
+                    .wrapping_add(off << 1);
                 targets.push((target & !1, Isa::Thumb));
             } else if let Some(l) = known.0[14] {
                 targets.push(((l & !1).wrapping_add(off << 1), Isa::Thumb));
@@ -1379,12 +1719,28 @@ fn lower_thumb(m: &Mem, pc: u32, h: u16, prev: Option<u16>, k: &mut Consts) -> L
         known = Consts::default();
     }
     *k = known;
-    Lowered { g: thumb_wrap(pc, h, b, kind), text, flow }
+    Lowered {
+        g: thumb_wrap(pc, h, b, kind),
+        text,
+        flow,
+    }
 }
 
-fn thumb_ldr_str(b: &mut Builder, load: bool, byte: bool, rd: u32, addr: Val, kind: &mut Option<u32>, kset: &mut Option<(u32, Option<u32>)>) {
+fn thumb_ldr_str(
+    b: &mut Builder,
+    load: bool,
+    byte: bool,
+    rd: u32,
+    addr: Val,
+    kind: &mut Option<u32>,
+    kset: &mut Option<(u32, Option<u32>)>,
+) {
     if load {
-        let v = if byte { b.load(8, addr, NSEQ as u8) } else { b.call_v("ldr_word", &[addr, imm(NSEQ)]) };
+        let v = if byte {
+            b.load(8, addr, NSEQ as u8)
+        } else {
+            b.call_v("ldr_word", &[addr, imm(NSEQ)])
+        };
         b.set(rd as u8, v);
         b.call("idle", &[]);
         *kind = Some(SEQ);
@@ -1428,7 +1784,9 @@ pub fn lift(regions: &[Region], entries: &[(u32, Isa)], entry: u32, limits: Limi
             }
             seen.insert((pc, isa), ());
             budget -= 1;
-            let Some(low) = decode(&mem, pc, isa, prev, &mut k) else { break };
+            let Some(low) = decode(&mem, pc, isa, prev, &mut k) else {
+                break;
+            };
             for &t in &low.flow.targets {
                 if valid(&mem, t) && leaders.insert(t) {
                     work.push(t);
@@ -1456,8 +1814,15 @@ pub fn lift(regions: &[Region], entries: &[(u32, Isa)], entry: u32, limits: Limi
         let mut prev: Option<u16> = None;
         let mut fallthrough = None;
         loop {
-            let Some(low) = decode(&mem, pc, isa, prev, &mut k) else { break };
-            insns.push(IrInsn { addr: u64::from(pc), len: isa.size() as u8, text: low.text, op: IrOp::Guest(low.g) });
+            let Some(low) = decode(&mem, pc, isa, prev, &mut k) else {
+                break;
+            };
+            insns.push(IrInsn {
+                addr: u64::from(pc),
+                len: isa.size() as u8,
+                text: low.text,
+                op: IrOp::Guest(low.g),
+            });
             prev = if isa == Isa::Thumb { mem.u16(pc) } else { None };
             if !low.flow.falls {
                 break;
@@ -1478,7 +1843,11 @@ pub fn lift(regions: &[Region], entries: &[(u32, Isa)], entry: u32, limits: Limi
         functions.push(IrFunction {
             addr: u64::from(start),
             name: None,
-            blocks: vec![IrBlock { addr: u64::from(start), insns, fallthrough }],
+            blocks: vec![IrBlock {
+                addr: u64::from(start),
+                insns,
+                fallthrough,
+            }],
             truncated: budget == 0,
             isa: isa.index(),
         });
@@ -1499,7 +1868,11 @@ pub fn lift(regions: &[Region], entries: &[(u32, Isa)], entry: u32, limits: Limi
             Some(s)
         })
         .collect();
-    let image_end = regions.iter().map(|r| u64::from(r.base) + r.data.len() as u64).max().unwrap_or(0);
+    let image_end = regions
+        .iter()
+        .map(|r| u64::from(r.base) + r.data.len() as u64)
+        .max()
+        .unwrap_or(0);
     IrModule {
         schema_version: super::contract::SCHEMA_VERSION,
         format: "gba".into(),
@@ -1531,7 +1904,11 @@ mod tests {
     use super::*;
 
     fn one(w: u32) -> Lowered {
-        let regions = [Region { name: "rom".into(), base: 0x0800_0000, data: w.to_le_bytes().to_vec() }];
+        let regions = [Region {
+            name: "rom".into(),
+            base: 0x0800_0000,
+            data: w.to_le_bytes().to_vec(),
+        }];
         let mem = Mem { regions: &regions };
         lower_arm(&mem, 0x0800_0000, w, &mut Consts::default())
     }

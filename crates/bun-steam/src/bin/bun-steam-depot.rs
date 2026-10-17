@@ -1,24 +1,24 @@
-//! `bunre steam` — acquisition Steam native pour IEVR (app 2799860).
+// SPDX-License-Identifier: Apache-2.0
+//! `bun-steam-depot`: native Steam depot client (formerly `bunre steam`), modelled on
+//! `steamroom-cli`. Subcommands: `list <appId>` (depots and sizes, no download),
+//! `download <appId> -o <dir>`, `sync -o <dir>` (IEVR, app 2799860) and `audit <appId> -o <dir>`.
+//! The `bun-steam depot ...` command of `packages/bun-steam` launches this binary.
 //!
-//! Modélé sur `steamroom-cli`. Sous-commandes :
-//! - `list <appId>` : inspecte depots/tailles sans télécharger
-//! - `download <appId>` : télécharge vers --output
-//! - `sync` : download IEVR (app 2799860) vers --output
-//!
-//! Token store par défaut : `~/.local/share/nie/steam-tokens.json`.
+//! Default token cache: `~/.local/share/nie/steam-tokens.json` (see
+//! [`bun_steam::depot::token_store`]); values are never printed.
 
 use std::path::PathBuf;
 
 use anyhow::Result;
-use bun_re::steam::IEVR_STEAM_APP_ID;
-use bun_re::steam::downloader::SteamDepotDownloader;
-use bun_re::steam::options::SteamDownloadOptions;
+use bun_steam::IEVR_STEAM_APP_ID;
+use bun_steam::depot::downloader::SteamDepotDownloader;
+use bun_steam::depot::options::SteamDownloadOptions;
 use clap::{Parser, Subcommand};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "bunre steam",
+    name = "bun-steam-depot",
     about = "Acquisition Steam native pour nie (IEVR app 2799860)",
     version
 )]
@@ -140,18 +140,19 @@ enum Commands {
 }
 
 
-pub fn main(args: Vec<std::ffi::OsString>) -> std::process::ExitCode {
+fn main() -> std::process::ExitCode {
+    let args: Vec<std::ffi::OsString> = std::env::args_os().skip(1).collect();
     let runtime = match tokio::runtime::Runtime::new() {
         Ok(runtime) => runtime,
         Err(error) => {
-            eprintln!("bunre steam: {error}");
+            eprintln!("bun-steam-depot: {error}");
             return std::process::ExitCode::FAILURE;
         },
     };
     match runtime.block_on(run(args)) {
         Ok(()) => std::process::ExitCode::SUCCESS,
         Err(error) => {
-            eprintln!("bunre steam: {error:#}");
+            eprintln!("bun-steam-depot: {error:#}");
             std::process::ExitCode::FAILURE
         },
     }
@@ -168,15 +169,15 @@ async fn run(args: Vec<std::ffi::OsString>) -> Result<()> {
             // ressemble à un téléchargement lent. C'est ce qui a rendu le gel du
             // 2026-08-15 muet pendant tout son déroulement.
             EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-                EnvFilter::new("bun_re=info,steamroom=info,steamroom_client=info")
+                EnvFilter::new("bun_steam=info,steamroom=info,steamroom_client=info")
             }),
         )
         .init();
 
-    let cli = Cli::parse_from(std::iter::once(std::ffi::OsString::from("bunre steam")).chain(args));
+    let cli = Cli::parse_from(std::iter::once(std::ffi::OsString::from("bun-steam-depot")).chain(args));
 
     let token_store_path =
-        cli.token_store.unwrap_or_else(bun_re::steam::token_store::default_path);
+        cli.token_store.unwrap_or_else(bun_steam::depot::token_store::default_path);
 
     let make_opts = |app_id: u32, output: PathBuf| -> SteamDownloadOptions {
         SteamDownloadOptions {
@@ -197,13 +198,13 @@ async fn run(args: Vec<std::ffi::OsString>) -> Result<()> {
             guard_provider: None,
             stall_timeout: (cli.stall_timeout > 0)
                 .then(|| std::time::Duration::from_secs(cli.stall_timeout)),
-            transfer: bun_re::steam::options::TransferOptions {
+            transfer: bun_steam::depot::options::TransferOptions {
                 max_rate_bytes_per_sec: cli.max_rate * 1024 * 1024,
                 max_depot_parallel: cli.depot_parallel.max(1),
                 chunk_cache_dir: (!cli.no_chunk_cache).then(|| {
                     cli.chunk_cache
                         .clone()
-                        .unwrap_or_else(bun_re::steam::transfer::default_chunk_cache_dir)
+                        .unwrap_or_else(bun_steam::depot::transfer::default_chunk_cache_dir)
                 }),
                 ..Default::default()
             },

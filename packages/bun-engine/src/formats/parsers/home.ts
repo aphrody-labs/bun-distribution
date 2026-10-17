@@ -1,13 +1,13 @@
 // Nintendo 64 cartridges, GameCube/Wii DOL executables and discs (ISO/GCM, WBFS, WIA, RVZ).
 // Disc, DOL and FST layouts mirror crates/aphrody-wii-image (dvd.rs, dol.rs, rvz.rs), whose
 // decompressing reader stays the canonical owner for RVZ/WIA payloads.
-import { BinaryView, hex, hex32, type BinarySource } from "../stream";
+import { BinaryView, hex, hex32, type BinarySource } from "../stream.js";
 import {
   parsed,
   type FileEntry,
   type ParseContext,
   type Section,
-} from "../types";
+} from "../types.js";
 
 export type N64Order = "z64" | "v64" | "n64";
 
@@ -24,8 +24,9 @@ export function toZ64(bytes: Uint8Array, order: N64Order): Uint8Array {
   const out = new Uint8Array(bytes.byteLength & ~3);
   for (let at = 0; at < out.byteLength; at += 4) {
     if (order === "v64")
-      out.set([bytes[at + 1], bytes[at], bytes[at + 3], bytes[at + 2]], at);
-    else out.set([bytes[at + 3], bytes[at + 2], bytes[at + 1], bytes[at]], at);
+      out.set([bytes[at + 1]!, bytes[at]!, bytes[at + 3]!, bytes[at + 2]!], at);
+    else
+      out.set([bytes[at + 3]!, bytes[at + 2]!, bytes[at + 1]!, bytes[at]!], at);
   }
   return out;
 }

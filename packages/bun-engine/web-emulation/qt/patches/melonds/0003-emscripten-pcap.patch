@@ -1,0 +1,20 @@
+--- a/src/net/Net_PCap.cpp
++++ b/src/net/Net_PCap.cpp
+@@ -30,7 +30,7 @@
+ 	#include <netinet/in.h>
+         #ifdef __linux__
+             #include <linux/if_packet.h>
+-        #else
++        #elif !defined(__EMSCRIPTEN__)
+             #include <net/if.h>
+             #include <net/if_dl.h>
+         #endif
+@@ -315,7 +315,7 @@
+                 else
+                     memcpy((void*)adata.MAC, sa->sll_addr, 6);
+             }
+-#else
++#elif !defined(__EMSCRIPTEN__)
+             else if (af == AF_LINK)
+             {
+                 struct sockaddr_dl* sa = (sockaddr_dl*)curaddr->ifa_addr;

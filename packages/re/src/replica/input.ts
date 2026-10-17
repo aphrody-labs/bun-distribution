@@ -94,7 +94,9 @@ export async function inspectReplicaInput(path: string): Promise<ReplicaInputEvi
   const issues: string[] = [];
   const unitCode = header[0x12]!;
   const gameCode = headerText(header.subarray(0x0c, 0x10));
-  if (!/^[A-Z0-9]{4}$/.test(gameCode)) issues.push("game code must contain four uppercase ASCII letters or digits");
+  // devkitPro ndstool writes `####` for homebrew without an assigned code.
+  if (!/^([A-Z0-9]{4}|#{4})$/.test(gameCode))
+    issues.push("game code must contain four uppercase ASCII letters or digits (#### for homebrew)");
   if (![0, 2, 3].includes(unitCode)) issues.push("unsupported Nintendo DS unit code");
   const storedHeaderCrc = view.getUint16(0x15e, true);
   const computedHeaderCrc = crc16(header.subarray(0, 0x15e));

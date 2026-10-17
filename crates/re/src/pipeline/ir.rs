@@ -423,7 +423,9 @@ impl IrModule {
                 s.blocks += 1;
                 for i in &b.insns {
                     s.instructions += 1;
-                    if matches!(&i.op, IrOp::Unlifted { .. }) || matches!(&i.op, IrOp::Guest(g) if g.is_fallback()) {
+                    if matches!(&i.op, IrOp::Unlifted { .. })
+                        || matches!(&i.op, IrOp::Guest(g) if g.is_fallback())
+                    {
                         s.unlifted += 1;
                     } else {
                         s.lifted += 1;

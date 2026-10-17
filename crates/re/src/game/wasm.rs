@@ -8,8 +8,7 @@ use crate::game::catalog::get_dragon_ball_catalog;
 use crate::game::formats::{
     bac::BacFile, bdm::BdmFile, cus::CusFile, emb_archive::EmbArchive, msg::MsgFile, pup::PupFile,
 };
-use crate::game::fs::cpk::{CpkArchive, CpkEntry};
-use crate::game::fs::crilayla::{decompress_crilayla, decompress_crilayla_raw};
+use aphrody_nie_formats::cpk::{CpkEntry, CpkReader};
 use crate::game::live::aob::AobPattern;
 use crate::game::text::extract_msg_text;
 use crate::game::world::xenoverse3::xenoverse3_prototype_map;
@@ -31,45 +30,44 @@ fn to_js_err(err: impl std::fmt::Display) -> JsValue {
     JsValue::from_str(&err.to_string())
 }
 
-/// Analyze a CRIWARE CPK archive in-memory and return its file table and metadata.
+/// Plain (`CPK `) archives only: the generic bindings never try a title's key derivation.
+fn plain_cpk(bytes: &[u8]) -> Result<CpkReader, JsValue> {
+    if !bytes.starts_with(b"CPK ") {
+        return Err(JsValue::from_str("not a plain CPK (header is not `CPK `)"));
+    }
+    CpkReader::new(bytes, "").map_err(to_js_err)
+}
+
+/// Analyze a CRIWARE CPK archive in-memory and return its file table and metadata
+/// (canonical `aphrody-nie-formats` reader).
 #[wasm_bindgen]
 pub fn wasm_triage_cpk(bytes: &[u8]) -> Result<JsValue, JsValue> {
-    let archive = CpkArchive::parse(bytes).map_err(to_js_err)?;
-    let total_file_size = archive.entries.iter().map(|e| e.file_size).sum();
-    let compression_detected = archive.entries.iter().any(|e| e.is_compressed);
+    let archive = plain_cpk(bytes)?;
     let summary = CpkTriageSummary {
         valid: true,
         total_files: archive.entries.len(),
-        total_file_size,
-        has_utf_table: archive.has_utf_table(),
-        compression_detected,
+        total_file_size: archive.entries.iter().map(|e| e.size).sum(),
+        has_utf_table: true,
+        compression_detected: archive.entries.iter().any(|e| e.is_compressed),
         entries: archive.entries,
     };
     serde_wasm_bindgen::to_value(&summary).map_err(to_js_err)
 }
 
-/// Extract a single file from a CPK archive by name (transparently decompressing CRILAYLA if needed).
+/// Extract a single file from a CPK archive by path or name (CRILAYLA is decompressed).
 #[wasm_bindgen]
 pub fn wasm_extract_cpk_file(archive_bytes: &[u8], filename: &str) -> Result<Vec<u8>, JsValue> {
-    let archive = CpkArchive::parse(archive_bytes).map_err(to_js_err)?;
-    archive.extract(archive_bytes, filename).map_err(to_js_err)
+    let archive = plain_cpk(archive_bytes)?;
+    let entry = archive
+        .find_file(filename)
+        .ok_or_else(|| JsValue::from_str(&format!("{filename}: not in the archive")))?;
+    archive.extract(archive_bytes, entry).map_err(to_js_err)
 }
 
-/// Decompress a CRILAYLA compressed buffer into raw uncompressed bytes.
+/// Decompress a `CRILAYLA` buffer (the magic-prefixed form stored in CPK entries).
 #[wasm_bindgen]
-pub fn wasm_decompress_crilayla(
-    compressed: &[u8],
-    uncompressed_size: usize,
-) -> Result<Vec<u8>, JsValue> {
-    if compressed.starts_with(b"CRILAYLA") {
-        decompress_crilayla(compressed).map_err(to_js_err)
-    } else if uncompressed_size > 0 {
-        decompress_crilayla_raw(compressed, uncompressed_size).map_err(to_js_err)
-    } else {
-        Err(JsValue::from_str(
-            "Invalid CRILAYLA input: missing CRILAYLA magic and uncompressed_size is 0",
-        ))
-    }
+pub fn wasm_decompress_crilayla(compressed: &[u8]) -> Result<Vec<u8>, JsValue> {
+    aphrody_nie_formats::crilayla::decompress(compressed).map_err(to_js_err)
 }
 
 /// Parse a DBXV2 CUS (Character Ultimate Skill) binary file and return all skills.

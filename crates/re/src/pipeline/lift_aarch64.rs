@@ -11,7 +11,8 @@
 
 use super::image::Image;
 use super::ir::{
-    Abi, BinKind, Cond, Ext, IrBlock, IrFunction, IrInsn, IrModule, IrOp, Operand, SectionEntry, Target, UnKind,
+    Abi, BinKind, Cond, Ext, IrBlock, IrFunction, IrInsn, IrModule, IrOp, Operand, SectionEntry,
+    Target, UnKind,
 };
 use super::lift::LiftOptions;
 use std::collections::{BTreeMap, BTreeSet};
@@ -21,7 +22,15 @@ use std::collections::{BTreeMap, BTreeSet};
 pub fn abi() -> Abi {
     let mut regs: Vec<String> = (0..=30).map(|i| format!("x{i}")).collect();
     regs.push("sp".into());
-    Abi { regs, link: "x30".into(), sp: "sp".into(), ret: "x0".into(), machine: None, flags: Vec::new(), isas: Vec::new() }
+    Abi {
+        regs,
+        link: "x30".into(),
+        sp: "sp".into(),
+        ret: "x0".into(),
+        machine: None,
+        flags: Vec::new(),
+        isas: Vec::new(),
+    }
 }
 
 /// Control-flow class of a decoded instruction.
@@ -44,8 +53,16 @@ fn reg(n: u32, sf: bool, sp_ctx: bool) -> Option<Operand> {
     if n == 31 && !sp_ctx {
         return None;
     }
-    let name = if n == 31 { "sp".to_string() } else { format!("x{n}") };
-    Some(Operand::Reg { name, bits: if sf { 64 } else { 32 }, high: false })
+    let name = if n == 31 {
+        "sp".to_string()
+    } else {
+        format!("x{n}")
+    };
+    Some(Operand::Reg {
+        name,
+        bits: if sf { 64 } else { 32 },
+        high: false,
+    })
 }
 
 /// Source operand: the zero register reads as an immediate zero.
@@ -64,7 +81,17 @@ fn rname(n: u32, sf: bool, sp_ctx: bool) -> String {
 }
 
 fn mem(base: u32, disp: i64, bits: u8) -> Operand {
-    Operand::Mem { base: Some(if base == 31 { "sp".into() } else { format!("x{base}") }), index: None, scale: 1, disp, bits }
+    Operand::Mem {
+        base: Some(if base == 31 {
+            "sp".into()
+        } else {
+            format!("x{base}")
+        }),
+        index: None,
+        scale: 1,
+        disp,
+        bits,
+    }
 }
 
 fn imm(value: i64) -> Operand {
@@ -96,7 +123,9 @@ fn cond_of(c: u32) -> Option<Cond> {
     })
 }
 
-const COND_NAMES: [&str; 14] = ["eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc", "hi", "ls", "ge", "lt", "gt", "le"];
+const COND_NAMES: [&str; 14] = [
+    "eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc", "hi", "ls", "ge", "lt", "gt", "le",
+];
 
 /// Decode the `DecodeBitMasks` immediate of a logical-immediate instruction.
 fn bitmask(n: u32, imms: u32, immr: u32, sf: bool) -> Option<u64> {
@@ -118,9 +147,21 @@ fn bitmask(n: u32, imms: u32, immr: u32, sf: bool) -> Option<u64> {
     if s == levels {
         return None;
     }
-    let welem: u64 = if s + 1 >= 64 { u64::MAX } else { (1u64 << (s + 1)) - 1 };
-    let emask: u64 = if esize == 64 { u64::MAX } else { (1u64 << esize) - 1 };
-    let rot = if r == 0 { welem } else { ((welem >> r) | (welem << (esize - r))) & emask };
+    let welem: u64 = if s + 1 >= 64 {
+        u64::MAX
+    } else {
+        (1u64 << (s + 1)) - 1
+    };
+    let emask: u64 = if esize == 64 {
+        u64::MAX
+    } else {
+        (1u64 << esize) - 1
+    };
+    let rot = if r == 0 {
+        welem
+    } else {
+        ((welem >> r) | (welem << (esize - r))) & emask
+    };
     let mut out = 0u64;
     let mut at = 0;
     while at < 64 {
@@ -131,11 +172,19 @@ fn bitmask(n: u32, imms: u32, immr: u32, sf: bool) -> Option<u64> {
 }
 
 fn unlifted(w: u32, why: &str) -> Lowered {
-    Lowered { ops: vec![IrOp::Unlifted { reason: why.into() }], text: format!(".inst 0x{w:08x}"), flow: Flow::Seq }
+    Lowered {
+        ops: vec![IrOp::Unlifted { reason: why.into() }],
+        text: format!(".inst 0x{w:08x}"),
+        flow: Flow::Seq,
+    }
 }
 
 fn seq(ops: Vec<IrOp>, text: String) -> Lowered {
-    Lowered { ops, text, flow: Flow::Seq }
+    Lowered {
+        ops,
+        text,
+        flow: Flow::Seq,
+    }
 }
 
 /// Lower one instruction located at `pc`.
@@ -153,9 +202,21 @@ fn lower(pc: u64, w: u32) -> Lowered {
     if w & 0x7c00_0000 == 0x1400_0000 {
         let target = pc.wrapping_add((sext(w & 0x03ff_ffff, 26) * 4) as u64);
         return if w >> 31 == 1 {
-            Lowered { ops: vec![IrOp::Call { target: Target::Direct { addr: target } }], text: format!("bl 0x{target:x}"), flow: Flow::Call(Some(target)) }
+            Lowered {
+                ops: vec![IrOp::Call {
+                    target: Target::Direct { addr: target },
+                }],
+                text: format!("bl 0x{target:x}"),
+                flow: Flow::Call(Some(target)),
+            }
         } else {
-            Lowered { ops: vec![IrOp::Jmp { target: Target::Direct { addr: target } }], text: format!("b 0x{target:x}"), flow: Flow::Jump(Some(target)) }
+            Lowered {
+                ops: vec![IrOp::Jmp {
+                    target: Target::Direct { addr: target },
+                }],
+                text: format!("b 0x{target:x}"),
+                flow: Flow::Jump(Some(target)),
+            }
         };
     }
     // b.cond
@@ -163,8 +224,18 @@ fn lower(pc: u64, w: u32) -> Lowered {
         let target = pc.wrapping_add((sext((w >> 5) & 0x7ffff, 19) * 4) as u64);
         let c = w & 15;
         return match cond_of(c) {
-            Some(cond) => Lowered { ops: vec![IrOp::Jcc { cond, target }], text: format!("b.{} 0x{target:x}", COND_NAMES[c as usize]), flow: Flow::Cond(target) },
-            None => Lowered { ops: vec![IrOp::Jmp { target: Target::Direct { addr: target } }], text: format!("b.al 0x{target:x}"), flow: Flow::Jump(Some(target)) },
+            Some(cond) => Lowered {
+                ops: vec![IrOp::Jcc { cond, target }],
+                text: format!("b.{} 0x{target:x}", COND_NAMES[c as usize]),
+                flow: Flow::Cond(target),
+            },
+            None => Lowered {
+                ops: vec![IrOp::Jmp {
+                    target: Target::Direct { addr: target },
+                }],
+                text: format!("b.al 0x{target:x}"),
+                flow: Flow::Jump(Some(target)),
+            },
         };
     }
     // cbz / cbnz
@@ -172,10 +243,24 @@ fn lower(pc: u64, w: u32) -> Lowered {
         let target = pc.wrapping_add((sext((w >> 5) & 0x7ffff, 19) * 4) as u64);
         let nz = (w >> 24) & 1 == 1;
         let ops = vec![
-            IrOp::Cmp { a: src(rd, sf, false), b: imm(0) },
-            IrOp::Jcc { cond: if nz { Cond::Ne } else { Cond::E }, target },
+            IrOp::Cmp {
+                a: src(rd, sf, false),
+                b: imm(0),
+            },
+            IrOp::Jcc {
+                cond: if nz { Cond::Ne } else { Cond::E },
+                target,
+            },
         ];
-        return Lowered { ops, text: format!("{} {}, 0x{target:x}", if nz { "cbnz" } else { "cbz" }, rname(rd, sf, false)), flow: Flow::Cond(target) };
+        return Lowered {
+            ops,
+            text: format!(
+                "{} {}, 0x{target:x}",
+                if nz { "cbnz" } else { "cbz" },
+                rname(rd, sf, false)
+            ),
+            flow: Flow::Cond(target),
+        };
     }
     // tbz / tbnz
     if w & 0x7e00_0000 == 0x3600_0000 {
@@ -183,35 +268,88 @@ fn lower(pc: u64, w: u32) -> Lowered {
         let nz = (w >> 24) & 1 == 1;
         let bit = ((w >> 31) << 5) | ((w >> 19) & 31);
         let ops = vec![
-            IrOp::Test { a: src(rd, true, false), b: imm((1u64 << bit) as i64) },
-            IrOp::Jcc { cond: if nz { Cond::Ne } else { Cond::E }, target },
+            IrOp::Test {
+                a: src(rd, true, false),
+                b: imm((1u64 << bit) as i64),
+            },
+            IrOp::Jcc {
+                cond: if nz { Cond::Ne } else { Cond::E },
+                target,
+            },
         ];
-        return Lowered { ops, text: format!("{} {}, #{bit}, 0x{target:x}", if nz { "tbnz" } else { "tbz" }, rname(rd, true, false)), flow: Flow::Cond(target) };
+        return Lowered {
+            ops,
+            text: format!(
+                "{} {}, #{bit}, 0x{target:x}",
+                if nz { "tbnz" } else { "tbz" },
+                rname(rd, true, false)
+            ),
+            flow: Flow::Cond(target),
+        };
     }
     // br / blr / ret
     if w & 0xffff_fc1f == 0xd61f_0000 {
-        let t = Target::Indirect { operand: src(rn, true, false) };
-        return Lowered { ops: vec![IrOp::Jmp { target: t }], text: format!("br {}", rname(rn, true, false)), flow: Flow::Jump(None) };
+        let t = Target::Indirect {
+            operand: src(rn, true, false),
+        };
+        return Lowered {
+            ops: vec![IrOp::Jmp { target: t }],
+            text: format!("br {}", rname(rn, true, false)),
+            flow: Flow::Jump(None),
+        };
     }
     if w & 0xffff_fc1f == 0xd63f_0000 {
-        let t = Target::Indirect { operand: src(rn, true, false) };
-        return Lowered { ops: vec![IrOp::Call { target: t }], text: format!("blr {}", rname(rn, true, false)), flow: Flow::Call(None) };
+        let t = Target::Indirect {
+            operand: src(rn, true, false),
+        };
+        return Lowered {
+            ops: vec![IrOp::Call { target: t }],
+            text: format!("blr {}", rname(rn, true, false)),
+            flow: Flow::Call(None),
+        };
     }
     if w & 0xffff_fc1f == 0xd65f_0000 {
         return if rn == 30 {
-            Lowered { ops: vec![IrOp::Ret { pop: 0 }], text: "ret".into(), flow: Flow::End }
+            Lowered {
+                ops: vec![IrOp::Ret { pop: 0 }],
+                text: "ret".into(),
+                flow: Flow::End,
+            }
         } else {
-            let t = Target::Indirect { operand: src(rn, true, false) };
-            Lowered { ops: vec![IrOp::Jmp { target: t }], text: format!("ret {}", rname(rn, true, false)), flow: Flow::Jump(None) }
+            let t = Target::Indirect {
+                operand: src(rn, true, false),
+            };
+            Lowered {
+                ops: vec![IrOp::Jmp { target: t }],
+                text: format!("ret {}", rname(rn, true, false)),
+                flow: Flow::Jump(None),
+            }
         };
     }
     // adr / adrp
     if w & 0x1f00_0000 == 0x1000_0000 {
         let immv = sext(((w >> 5) & 0x7ffff) << 2 | ((w >> 29) & 3), 21);
         let page = w >> 31 == 1;
-        let value = if page { (pc & !0xfff).wrapping_add((immv << 12) as u64) } else { pc.wrapping_add(immv as u64) };
-        let Some(d) = reg(rd, true, false) else { return seq(vec![IrOp::Nop], "adr xzr".into()) };
-        return seq(vec![IrOp::Mov { dst: d, src: imm(value as i64), ext: Ext::None }], format!("{} {}, 0x{value:x}", if page { "adrp" } else { "adr" }, rname(rd, true, false)));
+        let value = if page {
+            (pc & !0xfff).wrapping_add((immv << 12) as u64)
+        } else {
+            pc.wrapping_add(immv as u64)
+        };
+        let Some(d) = reg(rd, true, false) else {
+            return seq(vec![IrOp::Nop], "adr xzr".into());
+        };
+        return seq(
+            vec![IrOp::Mov {
+                dst: d,
+                src: imm(value as i64),
+                ext: Ext::None,
+            }],
+            format!(
+                "{} {}, 0x{value:x}",
+                if page { "adrp" } else { "adr" },
+                rname(rd, true, false)
+            ),
+        );
     }
     // add / sub (immediate)
     if w & 0x1f00_0000 == 0x1100_0000 {
@@ -222,11 +360,23 @@ fn lower(pc: u64, w: u32) -> Lowered {
             return unlifted(w, "reserved add/sub immediate");
         }
         let v = i64::from((w >> 10) & 0xfff) << (12 * sh);
-        let text = format!("{}{} {}, {}, #{v}", if sub { "sub" } else { "add" }, if s { "s" } else { "" }, rname(rd, sf, !s), rname(rn, sf, true));
+        let text = format!(
+            "{}{} {}, {}, #{v}",
+            if sub { "sub" } else { "add" },
+            if s { "s" } else { "" },
+            rname(rd, sf, !s),
+            rname(rn, sf, true)
+        );
         if s {
             if rd == 31 {
                 return if sub {
-                    seq(vec![IrOp::Cmp { a: src(rn, sf, true), b: imm(v) }], format!("cmp {}, #{v}", rname(rn, sf, true)))
+                    seq(
+                        vec![IrOp::Cmp {
+                            a: src(rn, sf, true),
+                            b: imm(v),
+                        }],
+                        format!("cmp {}, #{v}", rname(rn, sf, true)),
+                    )
                 } else {
                     unlifted(w, "cmn is not modelled")
                 };
@@ -234,15 +384,29 @@ fn lower(pc: u64, w: u32) -> Lowered {
             let d = reg(rd, sf, false).expect("non-zero destination");
             return seq(
                 vec![
-                    IrOp::Mov { dst: d.clone(), src: src(rn, sf, true), ext: Ext::None },
-                    IrOp::Bin { kind: if sub { BinKind::Sub } else { BinKind::Add }, dst: d, src: imm(v) },
+                    IrOp::Mov {
+                        dst: d.clone(),
+                        src: src(rn, sf, true),
+                        ext: Ext::None,
+                    },
+                    IrOp::Bin {
+                        kind: if sub { BinKind::Sub } else { BinKind::Add },
+                        dst: d,
+                        src: imm(v),
+                    },
                 ],
                 text,
             );
         }
         let d = reg(rd, sf, true).expect("sp-capable destination");
         let disp = if sub { -v } else { v };
-        return seq(vec![IrOp::Lea { dst: d, src: mem(rn, disp, 0) }], text);
+        return seq(
+            vec![IrOp::Lea {
+                dst: d,
+                src: mem(rn, disp, 0),
+            }],
+            text,
+        );
     }
     // add / sub (shifted register)
     if w & 0x1f20_0000 == 0x0b00_0000 {
@@ -253,20 +417,41 @@ fn lower(pc: u64, w: u32) -> Lowered {
         if shift == 3 || (!sf && amt > 31) {
             return unlifted(w, "reserved shifted-register encoding");
         }
-        let text = format!("{}{} {}, {}, {}", if sub { "sub" } else { "add" }, if s { "s" } else { "" }, rname(rd, sf, false), rname(rn, sf, false), rname(rm, sf, false));
+        let text = format!(
+            "{}{} {}, {}, {}",
+            if sub { "sub" } else { "add" },
+            if s { "s" } else { "" },
+            rname(rd, sf, false),
+            rname(rn, sf, false),
+            rname(rm, sf, false)
+        );
         if s && rd == 31 {
             return if sub && shift == 0 && amt == 0 {
-                seq(vec![IrOp::Cmp { a: src(rn, sf, false), b: src(rm, sf, false) }], format!("cmp {}, {}", rname(rn, sf, false), rname(rm, sf, false)))
+                seq(
+                    vec![IrOp::Cmp {
+                        a: src(rn, sf, false),
+                        b: src(rm, sf, false),
+                    }],
+                    format!("cmp {}, {}", rname(rn, sf, false), rname(rm, sf, false)),
+                )
             } else {
                 unlifted(w, "cmp/cmn with a shifted operand or cmn is not modelled")
             };
         }
-        let Some(d) = reg(rd, sf, false) else { return seq(vec![IrOp::Nop], text) };
+        let Some(d) = reg(rd, sf, false) else {
+            return seq(vec![IrOp::Nop], text);
+        };
         if !s && !sub && shift == 0 && amt <= 3 && rn != 31 && rm != 31 {
             let base = format!("x{rn}");
             let index = format!("x{rm}");
             let scale = 1u8 << amt;
-            let m = Operand::Mem { base: Some(base), index: Some(index), scale, disp: 0, bits: 0 };
+            let m = Operand::Mem {
+                base: Some(base),
+                index: Some(index),
+                scale,
+                disp: 0,
+                bits: 0,
+            };
             return seq(vec![IrOp::Lea { dst: d, src: m }], text);
         }
         if shift != 0 || amt != 0 {
@@ -274,8 +459,16 @@ fn lower(pc: u64, w: u32) -> Lowered {
         }
         return seq(
             vec![
-                IrOp::Mov { dst: d.clone(), src: src(rn, sf, false), ext: Ext::None },
-                IrOp::Bin { kind: if sub { BinKind::Sub } else { BinKind::Add }, dst: d, src: src(rm, sf, false) },
+                IrOp::Mov {
+                    dst: d.clone(),
+                    src: src(rn, sf, false),
+                    ext: Ext::None,
+                },
+                IrOp::Bin {
+                    kind: if sub { BinKind::Sub } else { BinKind::Add },
+                    dst: d,
+                    src: src(rm, sf, false),
+                },
             ],
             text,
         );
@@ -286,26 +479,76 @@ fn lower(pc: u64, w: u32) -> Lowered {
         let n = (w >> 21) & 1;
         let shift = (w >> 22) & 3;
         let amt = (w >> 10) & 63;
-        let text = format!("{} {}, {}, {}", ["and", "orr", "eor", "ands"][opc as usize], rname(rd, sf, false), rname(rn, sf, false), rname(rm, sf, false));
+        let text = format!(
+            "{} {}, {}, {}",
+            ["and", "orr", "eor", "ands"][opc as usize],
+            rname(rd, sf, false),
+            rname(rn, sf, false),
+            rname(rm, sf, false)
+        );
         if shift != 0 || amt != 0 {
             return unlifted(w, "shifted logical operand is not modelled");
         }
         if n == 1 {
             if opc == 1 && rn == 31 {
-                let Some(d) = reg(rd, sf, false) else { return seq(vec![IrOp::Nop], text) };
-                return seq(vec![IrOp::Mov { dst: d.clone(), src: src(rm, sf, false), ext: Ext::None }, IrOp::Un { kind: UnKind::Not, dst: d }], format!("mvn {}, {}", rname(rd, sf, false), rname(rm, sf, false)));
+                let Some(d) = reg(rd, sf, false) else {
+                    return seq(vec![IrOp::Nop], text);
+                };
+                return seq(
+                    vec![
+                        IrOp::Mov {
+                            dst: d.clone(),
+                            src: src(rm, sf, false),
+                            ext: Ext::None,
+                        },
+                        IrOp::Un {
+                            kind: UnKind::Not,
+                            dst: d,
+                        },
+                    ],
+                    format!("mvn {}, {}", rname(rd, sf, false), rname(rm, sf, false)),
+                );
             }
             return unlifted(w, "bic/orn/eon are not modelled");
         }
         if opc == 3 && rd == 31 {
-            return seq(vec![IrOp::Test { a: src(rn, sf, false), b: src(rm, sf, false) }], format!("tst {}, {}", rname(rn, sf, false), rname(rm, sf, false)));
+            return seq(
+                vec![IrOp::Test {
+                    a: src(rn, sf, false),
+                    b: src(rm, sf, false),
+                }],
+                format!("tst {}, {}", rname(rn, sf, false), rname(rm, sf, false)),
+            );
         }
-        let Some(d) = reg(rd, sf, false) else { return seq(vec![IrOp::Nop], text) };
+        let Some(d) = reg(rd, sf, false) else {
+            return seq(vec![IrOp::Nop], text);
+        };
         if opc == 1 && rn == 31 {
-            return seq(vec![IrOp::Mov { dst: d, src: src(rm, sf, false), ext: Ext::None }], format!("mov {}, {}", rname(rd, sf, false), rname(rm, sf, false)));
+            return seq(
+                vec![IrOp::Mov {
+                    dst: d,
+                    src: src(rm, sf, false),
+                    ext: Ext::None,
+                }],
+                format!("mov {}, {}", rname(rd, sf, false), rname(rm, sf, false)),
+            );
         }
         let kind = [BinKind::And, BinKind::Or, BinKind::Xor, BinKind::And][opc as usize];
-        return seq(vec![IrOp::Mov { dst: d.clone(), src: src(rn, sf, false), ext: Ext::None }, IrOp::Bin { kind, dst: d, src: src(rm, sf, false) }], text);
+        return seq(
+            vec![
+                IrOp::Mov {
+                    dst: d.clone(),
+                    src: src(rn, sf, false),
+                    ext: Ext::None,
+                },
+                IrOp::Bin {
+                    kind,
+                    dst: d,
+                    src: src(rm, sf, false),
+                },
+            ],
+            text,
+        );
     }
     // logical (immediate)
     if w & 0x1f80_0000 == 0x1200_0000 {
@@ -313,16 +556,50 @@ fn lower(pc: u64, w: u32) -> Lowered {
         let Some(mask) = bitmask((w >> 22) & 1, (w >> 10) & 0x3f, (w >> 16) & 0x3f, sf) else {
             return unlifted(w, "reserved logical immediate");
         };
-        let text = format!("{} {}, {}, #0x{mask:x}", ["and", "orr", "eor", "ands"][opc as usize], rname(rd, sf, opc != 3), rname(rn, sf, false));
+        let text = format!(
+            "{} {}, {}, #0x{mask:x}",
+            ["and", "orr", "eor", "ands"][opc as usize],
+            rname(rd, sf, opc != 3),
+            rname(rn, sf, false)
+        );
         if opc == 3 && rd == 31 {
-            return seq(vec![IrOp::Test { a: src(rn, sf, false), b: imm(mask as i64) }], format!("tst {}, #0x{mask:x}", rname(rn, sf, false)));
+            return seq(
+                vec![IrOp::Test {
+                    a: src(rn, sf, false),
+                    b: imm(mask as i64),
+                }],
+                format!("tst {}, #0x{mask:x}", rname(rn, sf, false)),
+            );
         }
-        let Some(d) = reg(rd, sf, opc != 3) else { return seq(vec![IrOp::Nop], text) };
+        let Some(d) = reg(rd, sf, opc != 3) else {
+            return seq(vec![IrOp::Nop], text);
+        };
         if opc == 1 && rn == 31 {
-            return seq(vec![IrOp::Mov { dst: d, src: imm(mask as i64), ext: Ext::None }], format!("mov {}, #0x{mask:x}", rname(rd, sf, true)));
+            return seq(
+                vec![IrOp::Mov {
+                    dst: d,
+                    src: imm(mask as i64),
+                    ext: Ext::None,
+                }],
+                format!("mov {}, #0x{mask:x}", rname(rd, sf, true)),
+            );
         }
         let kind = [BinKind::And, BinKind::Or, BinKind::Xor, BinKind::And][opc as usize];
-        return seq(vec![IrOp::Mov { dst: d.clone(), src: src(rn, sf, false), ext: Ext::None }, IrOp::Bin { kind, dst: d, src: imm(mask as i64) }], text);
+        return seq(
+            vec![
+                IrOp::Mov {
+                    dst: d.clone(),
+                    src: src(rn, sf, false),
+                    ext: Ext::None,
+                },
+                IrOp::Bin {
+                    kind,
+                    dst: d,
+                    src: imm(mask as i64),
+                },
+            ],
+            text,
+        );
     }
     // move wide
     if w & 0x1f80_0000 == 0x1280_0000 {
@@ -333,19 +610,48 @@ fn lower(pc: u64, w: u32) -> Lowered {
         }
         let part = u64::from((w >> 5) & 0xffff) << (16 * hw);
         let width_mask = if sf { u64::MAX } else { 0xffff_ffff };
-        let Some(d) = reg(rd, sf, false) else { return seq(vec![IrOp::Nop], "mov xzr".into()) };
+        let Some(d) = reg(rd, sf, false) else {
+            return seq(vec![IrOp::Nop], "mov xzr".into());
+        };
         return match opc {
             0 => {
                 let v = !part & width_mask;
-                seq(vec![IrOp::Mov { dst: d, src: imm(v as i64), ext: Ext::None }], format!("movn {}, #0x{:x}", rname(rd, sf, false), part >> (16 * hw)))
+                seq(
+                    vec![IrOp::Mov {
+                        dst: d,
+                        src: imm(v as i64),
+                        ext: Ext::None,
+                    }],
+                    format!("movn {}, #0x{:x}", rname(rd, sf, false), part >> (16 * hw)),
+                )
             }
-            2 => seq(vec![IrOp::Mov { dst: d, src: imm(part as i64), ext: Ext::None }], format!("movz {}, #0x{:x}", rname(rd, sf, false), part >> (16 * hw))),
+            2 => seq(
+                vec![IrOp::Mov {
+                    dst: d,
+                    src: imm(part as i64),
+                    ext: Ext::None,
+                }],
+                format!("movz {}, #0x{:x}", rname(rd, sf, false), part >> (16 * hw)),
+            ),
             _ => seq(
                 vec![
-                    IrOp::Bin { kind: BinKind::And, dst: d.clone(), src: imm((!(0xffffu64 << (16 * hw)) & width_mask) as i64) },
-                    IrOp::Bin { kind: BinKind::Or, dst: d, src: imm(part as i64) },
+                    IrOp::Bin {
+                        kind: BinKind::And,
+                        dst: d.clone(),
+                        src: imm((!(0xffffu64 << (16 * hw)) & width_mask) as i64),
+                    },
+                    IrOp::Bin {
+                        kind: BinKind::Or,
+                        dst: d,
+                        src: imm(part as i64),
+                    },
                 ],
-                format!("movk {}, #0x{:x}, lsl #{}", rname(rd, sf, false), part >> (16 * hw), 16 * hw),
+                format!(
+                    "movk {}, #0x{:x}, lsl #{}",
+                    rname(rd, sf, false),
+                    part >> (16 * hw),
+                    16 * hw
+                ),
             ),
         };
     }
@@ -355,20 +661,65 @@ fn lower(pc: u64, w: u32) -> Lowered {
         let immr = (w >> 16) & 0x3f;
         let imms = (w >> 10) & 0x3f;
         let width = if sf { 63 } else { 31 };
-        let Some(d) = reg(rd, sf, false) else { return seq(vec![IrOp::Nop], "bfm xzr".into()) };
+        let Some(d) = reg(rd, sf, false) else {
+            return seq(vec![IrOp::Nop], "bfm xzr".into());
+        };
         let s = src(rn, sf, false);
-        let text = format!("{} {}, {}, #{immr}, #{imms}", ["sbfm", "bfm", "ubfm"][opc.min(2) as usize], rname(rd, sf, false), rname(rn, sf, false));
+        let text = format!(
+            "{} {}, {}, #{immr}, #{imms}",
+            ["sbfm", "bfm", "ubfm"][opc.min(2) as usize],
+            rname(rd, sf, false),
+            rname(rn, sf, false)
+        );
         let extend = |bits: u8, ext: Ext| -> Option<IrOp> {
-            let Operand::Reg { name, .. } = &s else { return None };
-            Some(IrOp::Mov { dst: d.clone(), src: Operand::Reg { name: name.clone(), bits, high: false }, ext })
+            let Operand::Reg { name, .. } = &s else {
+                return None;
+            };
+            Some(IrOp::Mov {
+                dst: d.clone(),
+                src: Operand::Reg {
+                    name: name.clone(),
+                    bits,
+                    high: false,
+                },
+                ext,
+            })
         };
         if opc == 2 {
             if imms == width {
-                return seq(vec![IrOp::Mov { dst: d.clone(), src: s, ext: Ext::None }, IrOp::Bin { kind: BinKind::Shr, dst: d, src: imm(i64::from(immr)) }], text);
+                return seq(
+                    vec![
+                        IrOp::Mov {
+                            dst: d.clone(),
+                            src: s,
+                            ext: Ext::None,
+                        },
+                        IrOp::Bin {
+                            kind: BinKind::Shr,
+                            dst: d,
+                            src: imm(i64::from(immr)),
+                        },
+                    ],
+                    text,
+                );
             }
             if imms + 1 == immr {
                 let sh = i64::from(width - imms);
-                return seq(vec![IrOp::Mov { dst: d.clone(), src: s, ext: Ext::None }, IrOp::Bin { kind: BinKind::Shl, dst: d, src: imm(sh) }], text);
+                return seq(
+                    vec![
+                        IrOp::Mov {
+                            dst: d.clone(),
+                            src: s,
+                            ext: Ext::None,
+                        },
+                        IrOp::Bin {
+                            kind: BinKind::Shl,
+                            dst: d,
+                            src: imm(sh),
+                        },
+                    ],
+                    text,
+                );
             }
             if immr == 0 && (imms == 7 || imms == 15) {
                 if let Some(op) = extend(if imms == 7 { 8 } else { 16 }, Ext::Zero) {
@@ -377,10 +728,31 @@ fn lower(pc: u64, w: u32) -> Lowered {
             }
         } else if opc == 0 {
             if imms == width {
-                return seq(vec![IrOp::Mov { dst: d.clone(), src: s, ext: Ext::None }, IrOp::Bin { kind: BinKind::Sar, dst: d, src: imm(i64::from(immr)) }], text);
+                return seq(
+                    vec![
+                        IrOp::Mov {
+                            dst: d.clone(),
+                            src: s,
+                            ext: Ext::None,
+                        },
+                        IrOp::Bin {
+                            kind: BinKind::Sar,
+                            dst: d,
+                            src: imm(i64::from(immr)),
+                        },
+                    ],
+                    text,
+                );
             }
             if immr == 0 && matches!(imms, 7 | 15 | 31) {
-                if let Some(op) = extend(match imms { 7 => 8, 15 => 16, _ => 32 }, Ext::Sign) {
+                if let Some(op) = extend(
+                    match imms {
+                        7 => 8,
+                        15 => 16,
+                        _ => 32,
+                    },
+                    Ext::Sign,
+                ) {
                     return seq(vec![op], text);
                 }
             }
@@ -389,10 +761,28 @@ fn lower(pc: u64, w: u32) -> Lowered {
     }
     // mul (madd with the zero register as accumulator)
     if w & 0x1fe0_8000 == 0x1b00_0000 && (w >> 10) & 31 == 31 {
-        let Some(d) = reg(rd, sf, false) else { return seq(vec![IrOp::Nop], "mul xzr".into()) };
+        let Some(d) = reg(rd, sf, false) else {
+            return seq(vec![IrOp::Nop], "mul xzr".into());
+        };
         return seq(
-            vec![IrOp::Mov { dst: d.clone(), src: src(rn, sf, false), ext: Ext::None }, IrOp::Bin { kind: BinKind::Mul, dst: d, src: src(rm, sf, false) }],
-            format!("mul {}, {}, {}", rname(rd, sf, false), rname(rn, sf, false), rname(rm, sf, false)),
+            vec![
+                IrOp::Mov {
+                    dst: d.clone(),
+                    src: src(rn, sf, false),
+                    ext: Ext::None,
+                },
+                IrOp::Bin {
+                    kind: BinKind::Mul,
+                    dst: d,
+                    src: src(rm, sf, false),
+                },
+            ],
+            format!(
+                "mul {}, {}, {}",
+                rname(rd, sf, false),
+                rname(rn, sf, false),
+                rname(rm, sf, false)
+            ),
         );
     }
     // conditional select: csel and the cset alias of csinc
@@ -400,24 +790,55 @@ fn lower(pc: u64, w: u32) -> Lowered {
         let c = (w >> 12) & 15;
         let o2 = (w >> 10) & 1;
         let op = (w >> 30) & 1;
-        let Some(d) = reg(rd, sf, false) else { return seq(vec![IrOp::Nop], "csel xzr".into()) };
+        let Some(d) = reg(rd, sf, false) else {
+            return seq(vec![IrOp::Nop], "csel xzr".into());
+        };
         if op == 0 && o2 == 0 {
             if let Some(cond) = cond_of(c) {
                 return seq(
                     vec![
-                        IrOp::Mov { dst: d.clone(), src: src(rm, sf, false), ext: Ext::None },
-                        IrOp::Cmovcc { cond, dst: d, src: src(rn, sf, false) },
+                        IrOp::Mov {
+                            dst: d.clone(),
+                            src: src(rm, sf, false),
+                            ext: Ext::None,
+                        },
+                        IrOp::Cmovcc {
+                            cond,
+                            dst: d,
+                            src: src(rn, sf, false),
+                        },
                     ],
-                    format!("csel {}, {}, {}, {}", rname(rd, sf, false), rname(rn, sf, false), rname(rm, sf, false), COND_NAMES[c as usize]),
+                    format!(
+                        "csel {}, {}, {}, {}",
+                        rname(rd, sf, false),
+                        rname(rn, sf, false),
+                        rname(rm, sf, false),
+                        COND_NAMES[c as usize]
+                    ),
                 );
             }
         }
         if op == 0 && o2 == 1 && rn == 31 && rm == 31 && c < 14 {
             if let Some(cond) = cond_of(c ^ 1) {
-                let low = Operand::Reg { name: format!("x{rd}"), bits: 8, high: false };
+                let low = Operand::Reg {
+                    name: format!("x{rd}"),
+                    bits: 8,
+                    high: false,
+                };
                 return seq(
-                    vec![IrOp::Mov { dst: d, src: imm(0), ext: Ext::None }, IrOp::Setcc { cond, dst: low }],
-                    format!("cset {}, {}", rname(rd, sf, false), COND_NAMES[(c ^ 1) as usize]),
+                    vec![
+                        IrOp::Mov {
+                            dst: d,
+                            src: imm(0),
+                            ext: Ext::None,
+                        },
+                        IrOp::Setcc { cond, dst: low },
+                    ],
+                    format!(
+                        "cset {}, {}",
+                        rname(rd, sf, false),
+                        COND_NAMES[(c ^ 1) as usize]
+                    ),
                 );
             }
         }
@@ -441,7 +862,18 @@ fn lower(pc: u64, w: u32) -> Lowered {
             _ => (off, false, false),
         };
         let mut ops = Vec::new();
-        let base_adjust = || IrOp::Lea { dst: Operand::Reg { name: if rn == 31 { "sp".into() } else { format!("x{rn}") }, bits: 64, high: false }, src: mem(rn, off, 0) };
+        let base_adjust = || IrOp::Lea {
+            dst: Operand::Reg {
+                name: if rn == 31 {
+                    "sp".into()
+                } else {
+                    format!("x{rn}")
+                },
+                bits: 64,
+                high: false,
+            },
+            src: mem(rn, off, 0),
+        };
         if pre {
             ops.push(base_adjust());
         }
@@ -452,17 +884,33 @@ fn lower(pc: u64, w: u32) -> Lowered {
             let reg_op = reg(r, sf2, false);
             if load {
                 if let Some(dst) = reg_op {
-                    ops.push(IrOp::Mov { dst, src: slot, ext: Ext::None });
+                    ops.push(IrOp::Mov {
+                        dst,
+                        src: slot,
+                        ext: Ext::None,
+                    });
                 }
             } else {
-                ops.push(IrOp::Mov { dst: slot, src: reg_op.unwrap_or(imm(0)), ext: Ext::None });
+                ops.push(IrOp::Mov {
+                    dst: slot,
+                    src: reg_op.unwrap_or(imm(0)),
+                    ext: Ext::None,
+                });
             }
         }
         if post {
             ops.push(base_adjust());
         }
         let name = if load { "ldp" } else { "stp" };
-        return seq(ops, format!("{name} {}, {}, [{}, #{off}]", rname(rd, sf2, false), rname(rt2, sf2, false), rname(rn, true, true)));
+        return seq(
+            ops,
+            format!(
+                "{name} {}, {}, [{}, #{off}]",
+                rname(rd, sf2, false),
+                rname(rt2, sf2, false),
+                rname(rn, true, true)
+            ),
+        );
     }
     // load / store register (unsigned offset, unscaled, pre/post-index, register offset)
     if w & 0x3b00_0000 == 0x3900_0000 || w & 0x3b00_0000 == 0x3800_0000 {
@@ -477,7 +925,12 @@ fn lower(pc: u64, w: u32) -> Lowered {
                 return unlifted(w, "register-offset form is not modelled");
             }
             let scaled = (w >> 12) & 1 == 1;
-            (0, false, false, Some((rm, if scaled { 1u8 << size } else { 1 })))
+            (
+                0,
+                false,
+                false,
+                Some((rm, if scaled { 1u8 << size } else { 1 })),
+            )
         } else {
             let off = sext((w >> 12) & 0x1ff, 9);
             match (w >> 10) & 3 {
@@ -490,7 +943,11 @@ fn lower(pc: u64, w: u32) -> Lowered {
         let off9 = sext((w >> 12) & 0x1ff, 9);
         let slot = match index {
             Some((m, sc)) => Operand::Mem {
-                base: Some(if rn == 31 { "sp".into() } else { format!("x{rn}") }),
+                base: Some(if rn == 31 {
+                    "sp".into()
+                } else {
+                    format!("x{rn}")
+                }),
                 index: if m == 31 { None } else { Some(format!("x{m}")) },
                 scale: sc,
                 disp: 0,
@@ -509,7 +966,18 @@ fn lower(pc: u64, w: u32) -> Lowered {
             _ => size == 3,
         };
         let mut ops = Vec::new();
-        let adjust = IrOp::Lea { dst: Operand::Reg { name: if rn == 31 { "sp".into() } else { format!("x{rn}") }, bits: 64, high: false }, src: mem(rn, off9, 0) };
+        let adjust = IrOp::Lea {
+            dst: Operand::Reg {
+                name: if rn == 31 {
+                    "sp".into()
+                } else {
+                    format!("x{rn}")
+                },
+                bits: 64,
+                high: false,
+            },
+            src: mem(rn, off9, 0),
+        };
         if pre {
             ops.push(adjust.clone());
         }
@@ -518,14 +986,32 @@ fn lower(pc: u64, w: u32) -> Lowered {
                 src(rd, true, false)
             } else {
                 match reg(rd, false, false) {
-                    Some(Operand::Reg { name, .. }) => Operand::Reg { name, bits, high: false },
+                    Some(Operand::Reg { name, .. }) => Operand::Reg {
+                        name,
+                        bits,
+                        high: false,
+                    },
                     _ => imm(0),
                 }
             };
-            ops.push(IrOp::Mov { dst: slot, src: value, ext: Ext::None });
+            ops.push(IrOp::Mov {
+                dst: slot,
+                src: value,
+                ext: Ext::None,
+            });
         } else if let Some(dst) = reg(rd, dst_sf, false) {
-            let ext = if sign { Ext::Sign } else if size < 2 { Ext::Zero } else { Ext::None };
-            ops.push(IrOp::Mov { dst, src: slot, ext });
+            let ext = if sign {
+                Ext::Sign
+            } else if size < 2 {
+                Ext::Zero
+            } else {
+                Ext::None
+            };
+            ops.push(IrOp::Mov {
+                dst,
+                src: slot,
+                ext,
+            });
         }
         if post {
             ops.push(adjust);
@@ -541,7 +1027,14 @@ fn lower(pc: u64, w: u32) -> Lowered {
             (false, false, 1) => "ldrh",
             (false, false, _) => "ldr",
         };
-        return seq(ops, format!("{mnemonic} {}, [{}, #{disp}]", rname(rd, dst_sf, false), rname(rn, true, true)));
+        return seq(
+            ops,
+            format!(
+                "{mnemonic} {}, [{}, #{disp}]",
+                rname(rd, dst_sf, false),
+                rname(rn, true, true)
+            ),
+        );
     }
     // load register (literal)
     if w & 0x3b00_0000 == 0x1800_0000 {
@@ -553,9 +1046,24 @@ fn lower(pc: u64, w: u32) -> Lowered {
             2 => (32, true, Ext::Sign),
             _ => return seq(vec![IrOp::Nop], "prfm literal".into()),
         };
-        let Some(dst) = reg(rd, sf2, false) else { return seq(vec![IrOp::Nop], "ldr xzr".into()) };
-        let slot = Operand::Mem { base: None, index: None, scale: 1, disp: address as i64, bits };
-        return seq(vec![IrOp::Mov { dst, src: slot, ext }], format!("ldr {}, 0x{address:x}", rname(rd, sf2, false)));
+        let Some(dst) = reg(rd, sf2, false) else {
+            return seq(vec![IrOp::Nop], "ldr xzr".into());
+        };
+        let slot = Operand::Mem {
+            base: None,
+            index: None,
+            scale: 1,
+            disp: address as i64,
+            bits,
+        };
+        return seq(
+            vec![IrOp::Mov {
+                dst,
+                src: slot,
+                ext,
+            }],
+            format!("ldr {}, 0x{address:x}", rname(rd, sf2, false)),
+        );
     }
     unlifted(w, "instruction is outside the modelled AArch64 subset")
 }
@@ -570,7 +1078,12 @@ fn decode_at(img: &Image, addr: u64) -> Option<u32> {
     Some(u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
 }
 
-fn lift_function(img: &Image, start: u64, known: &BTreeSet<u64>, max_insns: usize) -> (IrFunction, Vec<u64>) {
+fn lift_function(
+    img: &Image,
+    start: u64,
+    known: &BTreeSet<u64>,
+    max_insns: usize,
+) -> (IrFunction, Vec<u64>) {
     let mut insns: BTreeMap<u64, Lowered> = BTreeMap::new();
     let mut leaders: BTreeSet<u64> = BTreeSet::new();
     let mut calls: Vec<u64> = Vec::new();
@@ -582,7 +1095,8 @@ fn lift_function(img: &Image, start: u64, known: &BTreeSet<u64>, max_insns: usiz
     while let Some(a) = work.pop() {
         let mut ip = a;
         loop {
-            if insns.contains_key(&ip) || bad.contains(&ip) || (ip != start && known.contains(&ip)) {
+            if insns.contains_key(&ip) || bad.contains(&ip) || (ip != start && known.contains(&ip))
+            {
                 break;
             }
             if insns.len() >= max_insns {
@@ -631,20 +1145,42 @@ fn lift_function(img: &Image, start: u64, known: &BTreeSet<u64>, max_insns: usiz
     let mut prev_term = true;
     for (&addr, low) in &insns {
         if prev_term || leaders.contains(&addr) || prev_end != Some(addr) {
-            blocks.push(IrBlock { addr, insns: Vec::new(), fallthrough: None });
+            blocks.push(IrBlock {
+                addr,
+                insns: Vec::new(),
+                fallthrough: None,
+            });
         }
         let blk = blocks.last_mut().expect("block pushed");
         let count = low.ops.len();
         for (i, op) in low.ops.iter().enumerate() {
             let last = i + 1 == count;
-            blk.insns.push(IrInsn { addr, len: if last { 4 } else { 0 }, text: if i == 0 { low.text.clone() } else { String::new() }, op: op.clone() });
+            blk.insns.push(IrInsn {
+                addr,
+                len: if last { 4 } else { 0 },
+                text: if i == 0 {
+                    low.text.clone()
+                } else {
+                    String::new()
+                },
+                op: op.clone(),
+            });
         }
         prev_term = matches!(low.flow, Flow::Jump(_) | Flow::End);
         prev_end = Some(addr + 4);
         blk.fallthrough = if prev_term { None } else { Some(addr + 4) };
     }
     let name = img.symbols.get(&start).cloned();
-    (IrFunction { addr: start, name, blocks, truncated, isa: 0 }, calls)
+    (
+        IrFunction {
+            addr: start,
+            name,
+            blocks,
+            truncated,
+            isa: 0,
+        },
+        calls,
+    )
 }
 
 /// Lift every function reachable from the entry point and function symbols.

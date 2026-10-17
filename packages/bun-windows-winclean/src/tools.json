@@ -1029,6 +1029,332 @@
       }
     },
     {
+      "name": "gaming_capture_benchmark",
+      "description": "Measures sustained capture throughput of a window for durationMs: GPU grabs with CPU readback per second (grabFps, grab latency avg/p95/max) and frames delivered by the compositor (deliveredFps). Windows also reports the GDI PrintWindow PNG rate for comparison.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "hwnd": {
+            "description": "Target window: Windows HWND or X11 window id. 0 or absent uses title, else the foreground window.",
+            "type": "integer"
+          },
+          "title": {
+            "description": "Case-insensitive substring of the target window title, used when hwnd is absent.",
+            "type": "string"
+          },
+          "durationMs": {
+            "description": "Measurement window in ms [100, 30000].",
+            "type": "integer",
+            "default": 3000
+          },
+          "compareGdi": {
+            "description": "Also measure the GDI PNG capture rate (Windows).",
+            "type": "boolean",
+            "default": true
+          }
+        }
+      }
+    },
+    {
+      "name": "gaming_capture_window",
+      "description": "Low-latency capture of one game window. Windows: Windows.Graphics.Capture on a Direct3D 11 device (works for DirectX/Vulkan and occluded windows; GDI PrintWindow fallback). Linux: X11 import on DISPLAY (Xvfb :99 on the VPS session). Returns PNG plus backend, size and capture time.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "hwnd": {
+            "description": "Target window: Windows HWND or X11 window id. 0 or absent uses title, else the foreground window.",
+            "type": "integer"
+          },
+          "title": {
+            "description": "Case-insensitive substring of the target window title, used when hwnd is absent.",
+            "type": "string"
+          },
+          "outputPath": {
+            "description": "Optional PNG path written in addition to the returned image.",
+            "type": "string"
+          },
+          "includeImage": {
+            "description": "Return the PNG inline as base64.",
+            "type": "boolean",
+            "default": true
+          }
+        }
+      }
+    },
+    {
+      "name": "gaming_environment",
+      "description": "Reports the gaming computer-use backends of this host: Windows.Graphics.Capture support, SendInput, XInput pad slots (read-only), GameInput runtime and whether the ViGEmBus driver needed for virtual Xbox pads is installed (never installed by this SDK); on Linux the X11 display, xdotool, import, /dev/uinput and gamescope.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "gaming_frame_pacing",
+      "description": "Observes a game window's presented frames for durationMs without hooking the game: fps, frame time avg/p50/p95/p99/min/max, jitter and 1% low, from DWM present timestamps (Windows.Graphics.Capture). A static window delivers no frames. Linux samples X11 content changes (bounded by the capture rate).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "hwnd": {
+            "description": "Target window: Windows HWND or X11 window id. 0 or absent uses title, else the foreground window.",
+            "type": "integer"
+          },
+          "title": {
+            "description": "Case-insensitive substring of the target window title, used when hwnd is absent.",
+            "type": "string"
+          },
+          "durationMs": {
+            "description": "Observation window in ms [100, 30000].",
+            "type": "integer",
+            "default": 3000
+          }
+        }
+      }
+    },
+    {
+      "name": "gaming_get_background_apps",
+      "description": "Read-only: background apps switch (BackgroundAccessApplications GlobalUserDisabled) and the LetAppsRunInBackground policy.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "gaming_get_game_bar_capture",
+      "description": "Read-only: Xbox Game Bar background recording and app capture (GameConfigStore GameDVR_Enabled, GameDVR AppCaptureEnabled, AllowGameDVR policy).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "gaming_get_game_mode",
+      "description": "Read-only: Windows Game Mode (HKCU GameBar AutoGameModeEnabled / AllowAutoGameMode) with the recommended value.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "gaming_get_gpu_info",
+      "description": "Read-only: NVIDIA GPU state through nvidia-smi/NVML (name, driver, P-state, power limit and draw, clocks, temperature, utilisation, memory, PCIe link), hardware-accelerated GPU scheduling and per-app GPU preferences.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "gaming_get_timer_resolution",
+      "description": "Read-only: current, finest and coarsest kernel timer resolution (NtQueryTimerResolution) and the Windows 11 GlobalTimerResolutionRequests setting.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "gaming_input_sequence",
+      "description": "Plays a timed input sequence in one call for frame-accurate combos: events [{type:'move',dx,dy} | {type:'key',key|scanCode,action:down|up|tap,holdMs} | {type:'button',button,action:down|up|click,holdMs} | {type:'wait',ms}], each optionally scheduled at atMs from the start. Reports the worst scheduling lateness.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "hwnd": {
+            "description": "Target window (Windows HWND or X11 id): focused and verified as foreground before any input is sent; input is refused otherwise.",
+            "type": "integer"
+          },
+          "title": {
+            "description": "Case-insensitive title substring of the target window, used when hwnd is absent; same focus guard.",
+            "type": "string"
+          },
+          "events": {
+            "description": "Input events, at most 10000.",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "events"
+        ]
+      }
+    },
+    {
+      "name": "gaming_key",
+      "description": "Sends a keyboard key as a hardware scan code (SendInput KEYEVENTF_SCANCODE; Linux: xdotool keysym) so games that read scan codes or raw input see it: down, up, tap or hold for holdMs, repeated with intervalMs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "hwnd": {
+            "description": "Target window (Windows HWND or X11 id): focused and verified as foreground before any input is sent; input is refused otherwise.",
+            "type": "integer"
+          },
+          "title": {
+            "description": "Case-insensitive title substring of the target window, used when hwnd is absent; same focus guard.",
+            "type": "string"
+          },
+          "key": {
+            "description": "Key name at its US-QWERTY physical position (games bind scan codes): a-z, 0-9, space, enter, escape, tab, shift, rshift, ctrl, alt, backspace, capslock, f1-f12, up, down, left, right, home, end, pageup, pagedown, insert, delete.",
+            "type": "string"
+          },
+          "scanCode": {
+            "description": "PC set-1 scan code, used instead of key for any other key.",
+            "type": "integer"
+          },
+          "extended": {
+            "description": "Extended (E0) scan code flag for scanCode.",
+            "type": "boolean",
+            "default": false
+          },
+          "action": {
+            "description": "down, up, tap or hold.",
+            "type": "string"
+          },
+          "holdMs": {
+            "description": "Hold time in ms for tap/hold (tap 20, hold 250 by default).",
+            "type": "integer"
+          },
+          "repeat": {
+            "description": "Repetitions [1, 1000].",
+            "type": "integer",
+            "default": 1
+          },
+          "intervalMs": {
+            "description": "Pause between repetitions in ms.",
+            "type": "integer",
+            "default": 20
+          }
+        }
+      }
+    },
+    {
+      "name": "gaming_mouse_button",
+      "description": "Presses a mouse button through SendInput (Linux: xdotool): down, up, or click with holdMs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "hwnd": {
+            "description": "Target window (Windows HWND or X11 id): focused and verified as foreground before any input is sent; input is refused otherwise.",
+            "type": "integer"
+          },
+          "title": {
+            "description": "Case-insensitive title substring of the target window, used when hwnd is absent; same focus guard.",
+            "type": "string"
+          },
+          "button": {
+            "description": "left, right or middle.",
+            "type": "string"
+          },
+          "action": {
+            "description": "down, up or click.",
+            "type": "string"
+          },
+          "holdMs": {
+            "description": "Hold time for click in ms.",
+            "type": "integer",
+            "default": 30
+          }
+        }
+      }
+    },
+    {
+      "name": "gaming_mouse_delta",
+      "description": "Sends raw relative mouse motion (SendInput MOUSEEVENTF_MOVE, no absolute positioning) as games reading raw input expect: dx/dy split exactly across steps sent at rateHz with sub-millisecond pacing. Linux: xdotool mousemove_relative. Reports achieved rate and cursor before/after.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "hwnd": {
+            "description": "Target window (Windows HWND or X11 id): focused and verified as foreground before any input is sent; input is refused otherwise.",
+            "type": "integer"
+          },
+          "title": {
+            "description": "Case-insensitive title substring of the target window, used when hwnd is absent; same focus guard.",
+            "type": "string"
+          },
+          "dx": {
+            "description": "Total horizontal counts.",
+            "type": "integer",
+            "default": 0
+          },
+          "dy": {
+            "description": "Total vertical counts.",
+            "type": "integer",
+            "default": 0
+          },
+          "steps": {
+            "description": "Number of input events [1, 100000].",
+            "type": "integer",
+            "default": 1
+          },
+          "rateHz": {
+            "description": "Event rate [1, 8000].",
+            "type": "integer",
+            "default": 1000
+          }
+        }
+      }
+    },
+    {
+      "name": "gaming_profile_apply",
+      "description": "Applies the pending gaming profile items (registry values and power plan). Changes Windows settings: requires confirm=true and is meant to be run by the machine owner; dryRun=true only returns the command.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "description": "Must be true to apply.",
+            "type": "boolean",
+            "default": false
+          },
+          "dryRun": {
+            "description": "Return the command without applying.",
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    {
+      "name": "gaming_profile_status",
+      "description": "Read-only gaming optimisation report: Game Mode, HAGS, power plan, background apps, Game Bar capture, timer resolution and GPU, each with current and recommended values, the pending items and applyCommand, the exact PowerShell one-liner the owner runs (elevated) to apply them.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "gaming_steam_launch",
+      "description": "Launches an installed Steam game through the bun-steam owner (steam://rungameid/<appId>), then waits for its window by processName or windowTitle and brings it to the foreground for capture and input.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "appId": {
+            "description": "Steam application id.",
+            "type": "integer"
+          },
+          "processName": {
+            "description": "Game executable name used to find its window (e.g. game.exe).",
+            "type": "string"
+          },
+          "windowTitle": {
+            "description": "Case-insensitive substring of the game window title.",
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Window wait timeout in ms (max 600000).",
+            "type": "integer",
+            "default": 120000
+          },
+          "focus": {
+            "description": "Bring the window to the foreground.",
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "appId"
+        ]
+      }
+    },
+    {
       "name": "get_active_power_plan",
       "description": "Returns the GUID and friendly name of the active Windows power plan.",
       "inputSchema": {
@@ -2813,7 +3139,7 @@
     },
     {
       "name": "steam_get_game",
-      "description": "Returns full details of a single Steam game by appId. Returns {\"success\":false,...} if the appId is not found.",
+      "description": "Returns one installed Steam game by appId from the live app manifests of every library (bun-steam). Returns {\"success\":false,...} when the app is not installed.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2821,13 +3147,9 @@
             "description": "Steam AppID (integer).",
             "type": "integer"
           },
-          "dbPath": {
-            "description": "Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or <repo>/var/data/steam-scan.db.",
-            "type": [
-              "string",
-              "null"
-            ],
-            "default": null
+          "steamRoot": {
+            "description": "Steam client root; defaults to the registry SteamPath or the standard install locations.",
+            "type": "string"
           }
         },
         "required": [
@@ -2837,7 +3159,7 @@
     },
     {
       "name": "steam_get_game_status",
-      "description": "Checks whether a Steam game process is currently running. Resolves install_dir and absolute_install_path from steam-scan.db. Executable name defaults to install_dir + \".exe\". Returns {\"appId\":N,\"running\":bool,\"pid\":N|null,\"executable\":\"...\",\"installDir\":\"...\"}.",
+      "description": "Checks whether an installed Steam game's process is running. Resolves install_dir and the absolute install path from the live app manifests. Executable name defaults to install_dir + \".exe\". Returns {\"appId\":N,\"running\":bool,\"pid\":N|null,\"executable\":\"...\",\"installDir\":\"...\",\"absoluteInstallPath\":\"...\"}.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2853,13 +3175,9 @@
             ],
             "default": null
           },
-          "dbPath": {
-            "description": "Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or <repo>/var/data/steam-scan.db.",
-            "type": [
-              "string",
-              "null"
-            ],
-            "default": null
+          "steamRoot": {
+            "description": "Steam client root; defaults to the registry SteamPath or the standard install locations.",
+            "type": "string"
           }
         },
         "required": [
@@ -2932,7 +3250,7 @@
     },
     {
       "name": "steam_list_games",
-      "description": "Returns a JSON array of Steam games from steam-scan.db. By default only games whose files are present on disk (files_present > 0) are returned. Set includeMissing=true to include all rows regardless of files_present.",
+      "description": "Returns the installed Steam games of every library from the live app manifests (bun-steam). By default only games whose install directory exists are returned; includeMissing=true returns every manifest.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2941,30 +3259,22 @@
             "type": "boolean",
             "default": false
           },
-          "dbPath": {
-            "description": "Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or <repo>/var/data/steam-scan.db.",
-            "type": [
-              "string",
-              "null"
-            ],
-            "default": null
+          "steamRoot": {
+            "description": "Steam client root; defaults to the registry SteamPath or the standard install locations.",
+            "type": "string"
           }
         }
       }
     },
     {
       "name": "steam_list_libraries",
-      "description": "Returns all Steam library paths with their game_count and total_size_bytes as recorded in steam-scan.db.",
+      "description": "Returns the Steam library folders (libraryfolders.vdf) with game_count and total_size_bytes from their app manifests.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "dbPath": {
-            "description": "Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or <repo>/var/data/steam-scan.db.",
-            "type": [
-              "string",
-              "null"
-            ],
-            "default": null
+          "steamRoot": {
+            "description": "Steam client root; defaults to the registry SteamPath or the standard install locations.",
+            "type": "string"
           }
         }
       }
@@ -2987,34 +3297,26 @@
     },
     {
       "name": "steam_scan_summary",
-      "description": "Returns aggregate counts from steam-scan.db: nb_installs, nb_libraries, nb_games, nb_games_present, total_size_bytes.",
+      "description": "Returns live Steam counts: nb_libraries, nb_games, nb_games_present, total_size_bytes.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "dbPath": {
-            "description": "Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or <repo>/var/data/steam-scan.db.",
-            "type": [
-              "string",
-              "null"
-            ],
-            "default": null
+          "steamRoot": {
+            "description": "Steam client root; defaults to the registry SteamPath or the standard install locations.",
+            "type": "string"
           }
         }
       }
     },
     {
       "name": "steam_vault_status",
-      "description": "Returns vault target metadata from secrets_vault_ref (target name, kind, description, user_hint). Secret material (passwords, tokens) is never included. Also attempts to invoke 'winclean-steam-auth list --json' (if present) for live vault status.",
+      "description": "Reports Steam credential state without secrets: client accounts (names and flags) and, per account, whether the client or steamcmd holds a reusable cached session (ConnectCache key presence only). Passwords, tokens and ConnectCache values are never read.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "dbPath": {
-            "description": "Absolute path to steam-scan.db. Default resolves via WINCLEAN_STEAM_SCAN_DB or <repo>/var/data/steam-scan.db.",
-            "type": [
-              "string",
-              "null"
-            ],
-            "default": null
+          "steamRoot": {
+            "description": "Steam client root; defaults to the registry SteamPath or the standard install locations.",
+            "type": "string"
           }
         }
       }

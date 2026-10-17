@@ -192,3 +192,24 @@ export interface PipelineOptions {
   maxInsns?: number | undefined;
   timeoutSecs?: number | undefined;
 }
+
+/** Output of a static recompilation (`bunre recompile`). */
+export type RecompileTarget = "exe" | "wasm";
+/** Bun Engine machine runtime of a recompiled console image. */
+export type RecompileMachine = "gba" | "psx" | "nes";
+
+/** Options of `bunre recompile` (crates/re, `pipeline::recomp`). */
+export interface RecompileOptions {
+  target: RecompileTarget;
+  outdir: string;
+  machine?: RecompileMachine | undefined;
+  /** GBA BIOS (default: the free Normmatt BIOS) or PlayStation BIOS (required for a PS-EXE). */
+  bios?: string | undefined;
+  /** Frames run by the verification (translated vs interpreter vs `bun-engine run`). */
+  frames?: number | undefined;
+  /** Stop after emitting the Rust crate. */
+  noBuild?: boolean | undefined;
+  /** Scripted input of the verification runs: `key@first[-last],...` (executables). */
+  input?: string | undefined;
+  timeoutSecs?: number | undefined;
+}

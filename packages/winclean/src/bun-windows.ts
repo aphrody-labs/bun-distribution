@@ -10,9 +10,7 @@ export interface BunWindowsApi {
   systemInfo: Record<string, unknown>;
   registry: {
     get(path: string, name?: string): RegistryValue | null;
-    list(
-      path: string,
-    ): {
+    list(path: string): {
       keys: string[];
       values: Array<RegistryValue & { name: string }>;
     } | null;

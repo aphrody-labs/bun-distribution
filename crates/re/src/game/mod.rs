@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Game RE engine absorbed from `shenron-re` (Apache-2.0, aphrody-labs/shenron):
-//! CRIWARE CPK archives with CRILAYLA decompression, the Xenoverse 2 VFS, AOB
-//! signature scanning, live process-memory inspection, the DBXV2 binary format
+//! AOB signature scanning, live process-memory inspection, the DBXV2 binary format
 //! parsers (BAC/BDM/CMS/CUS/EMB/EMD/EMM/ESK/MSG/PUP/SAV), the Dragon Ball game
-//! catalog, Steam install inspection, text extraction and the unified state.
+//! catalog, Steam install inspection, text extraction and the unified state; plus the
+//! game-agnostic asset pipeline ([`assets`], feature `assets`) that mounts, indexes and
+//! exports any installed game (CPK through the canonical `aphrody-nie-formats` readers).
+#[cfg(feature = "assets")]
+pub mod assets;
 pub mod catalog;
 pub mod convert;
 pub mod error;
@@ -45,16 +48,11 @@ pub use formats::{
     pup::{PupEntry, PupFile},
     sav::{Dxbv2Cac, Dxbv2Save},
 };
-pub use fs::{
-    cpk::{CpkArchive, CpkEntry},
-    crilayla::{compress_crilayla_mock, decompress_crilayla, decompress_crilayla_raw},
-    vfs::{CacheCpkStats, XenoverseVfs, XenoverseVfsEntry},
-};
 pub use live::aob::AobPattern;
 pub use steam::{
     Dbxv2Install, STEAM_APP_ID_DB_FIGHTERZ, STEAM_APP_ID_DB_KAKAROT,
     STEAM_APP_ID_DB_SPARKING_ZERO, STEAM_APP_ID_DBXV1, STEAM_APP_ID_DBXV2,
-    SteamDepotRecord, SteamGameInstall, SteamPlanningLimits, inspect_dbxv2_install,
+    SteamGameInstall, inspect_dbxv2_install,
     scan_dragon_ball_installs,
 };
 pub use unified::{

@@ -1,0 +1,29 @@
+--- a/src/frontend/qt_sdl/CMakeLists.txt
++++ b/src/frontend/qt_sdl/CMakeLists.txt
+@@ -92,7 +92,14 @@
+ 
+ add_compile_definitions(ARCHIVE_SUPPORT_ENABLED)
+ 
+-add_executable(melonDS ${SOURCES_QT_SDL})
++if (EMSCRIPTEN)
++    # qt_add_executable links the static wasm platform plugin and writes melonDS.html and
++    # qtloader.js; plain add_executable does neither.
++    qt_add_executable(melonDS ${SOURCES_QT_SDL})
++    set_target_properties(melonDS PROPERTIES QT_WASM_INITIAL_MEMORY "256MB")
++else()
++    add_executable(melonDS ${SOURCES_QT_SDL})
++endif()
+ 
+ add_subdirectory("../../net"
+     ${CMAKE_BINARY_DIR}/net)
+@@ -132,6 +139,10 @@
+         ../duckstation/gl/context_agl.mm
+         PROPERTIES COMPILE_OPTIONS "-Wno-deprecated-declarations"
+     )
++elseif (EMSCRIPTEN)
++    # WebAssembly (Qt for WebAssembly): no X11/EGL/Wayland; SDL2 comes from the Emscripten port.
++    add_compile_definitions(QAPPLICATION_CLASS=QApplication)
++    target_link_options(melonDS PRIVATE ${MELONDS_WASM_LINK_OPTIONS})
+ else()
+     find_package(X11 REQUIRED)
+     find_package(EGL REQUIRED)

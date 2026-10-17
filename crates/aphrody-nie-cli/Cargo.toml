@@ -28,7 +28,8 @@ workspace = true
 aphrody-nie-index = { workspace = true, default-features = true }
 aphrody-nie-seed = { workspace = true, default-features = true }
 aphrody-nie-queue = { workspace = true, default-features = true }
-aphrody-re = { workspace = true, features = ["nie", "steam-download"] }
+aphrody-re = { workspace = true, features = ["nie"] }
+bun-steam = { workspace = true, features = ["depot"] }
 aphrody-nie-trace = { workspace = true, default-features = true }
 aphrody-nie-computer-use = { workspace = true, default-features = true }
 aphrody-nie-data = { workspace = true, features = ["serde", "std"] }

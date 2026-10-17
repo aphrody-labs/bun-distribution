@@ -54,3 +54,9 @@ Logins are typed by the owner only:
   `/games/cache/steam-lancache`; `GET /_lancache/audit` (or `bun lancache.ts audit`) returns the
   JSON audit. Measured on a re-download of app 454650: 216/216 chunks served from cache on the
   second pass, 0 errors over 808 requests.
+
+## Browser and Moonlight streaming from Docker
+
+[`stream/`](stream/README.md) runs the session in containers instead: gamescope headless streamed
+over WebRTC to the WebGPU client of `packages/bun-gamestream` (FSR1 upscaling on the client GPU),
+and Wolf (Moonlight protocol, software x264) for Moonlight Qt, both bound to the `wg1` address.

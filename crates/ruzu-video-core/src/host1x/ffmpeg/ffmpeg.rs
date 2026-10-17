@@ -21,6 +21,7 @@ mod ffi {
     pub type RuzuFfmpegHardwareContext = c_void;
     pub type AVFrame = c_void;
 
+    #[cfg(feature = "ffmpeg")]
     extern "C" {
         pub fn ruzu_ffmpeg_decoder_create(
             codec: u64,
@@ -92,6 +93,195 @@ mod ffi {
         pub fn ruzu_ffmpeg_frame_plane(frame: *const AVFrame, plane: c_int) -> *const c_uchar;
         pub fn ruzu_ffmpeg_frame_interlaced(frame: *const AVFrame) -> c_int;
         pub fn ruzu_ffmpeg_frame_is_hardware_decoded(frame: *const AVFrame) -> c_int;
+    }
+
+    // Without the `ffmpeg` feature NVDEC decoding is unavailable: every decoder fails to open
+    // and frames are empty, so hosts without FFmpeg development files still build Ruzu.
+    #[cfg(not(feature = "ffmpeg"))]
+    const DISABLED: &[u8] = b"FFmpeg support is not compiled in\0";
+    #[cfg(not(feature = "ffmpeg"))]
+    pub use disabled::*;
+    #[cfg(not(feature = "ffmpeg"))]
+    #[allow(clippy::missing_safety_doc)]
+    mod disabled {
+        use super::*;
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_decoder_create(
+            _codec: u64,
+            _prefer_mediacodec: c_int,
+        ) -> *mut RuzuFfmpegDecoder {
+            std::ptr::null_mut()
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_decoder_name(
+            _decoder: *const RuzuFfmpegDecoder,
+        ) -> *const c_char {
+            DISABLED.as_ptr().cast()
+        }
+
+        #[cfg(target_os = "android")]
+        pub unsafe extern "C" fn ruzu_ffmpeg_decoder_set_dimensions(
+            _decoder: *mut RuzuFfmpegDecoder,
+            _width: c_int,
+            _height: c_int,
+        ) {
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_decoder_open(
+            _decoder: *mut RuzuFfmpegDecoder,
+            _extradata: *const c_uchar,
+            _extradata_size: uintptr_t,
+        ) -> c_int {
+            -1
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_decoder_destroy(_decoder: *mut RuzuFfmpegDecoder) {}
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_hardware_context_create(
+        ) -> *mut RuzuFfmpegHardwareContext {
+            std::ptr::null_mut()
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_hardware_context_destroy(
+            _hardware: *mut RuzuFfmpegHardwareContext,
+        ) {
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_decoder_supports_decoding_on_device(
+            _codec: u64,
+            _device_type: c_int,
+            _out_pix_fmt: *mut c_int,
+        ) -> c_int {
+            0
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_supported_device_types(
+            _out: *mut c_int,
+            _out_capacity: uintptr_t,
+        ) -> uintptr_t {
+            0
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_preferred_device_types(
+            _out: *mut c_int,
+            _out_capacity: uintptr_t,
+        ) -> uintptr_t {
+            0
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_device_type_name(
+            _device_type: c_int,
+        ) -> *const c_char {
+            DISABLED.as_ptr().cast()
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_decoder_send_packet(
+            _decoder: *mut RuzuFfmpegDecoder,
+            _data: *const c_uchar,
+            _size: uintptr_t,
+            _pts: i64,
+            _dts: i64,
+        ) -> c_int {
+            -1
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_decoder_receive_frame_with_hw_transfer(
+            _decoder: *mut RuzuFfmpegDecoder,
+        ) -> *mut AVFrame {
+            std::ptr::null_mut()
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_hardware_initialize_with_type(
+            _hardware: *mut RuzuFfmpegHardwareContext,
+            _device_type: c_int,
+        ) -> c_int {
+            -1
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_hardware_last_error(
+            _hardware: *const RuzuFfmpegHardwareContext,
+        ) -> c_int {
+            -1
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_hardware_vaapi_vendor_name(
+            _hardware: *const RuzuFfmpegHardwareContext,
+            _device_type: c_int,
+        ) -> *const c_char {
+            DISABLED.as_ptr().cast()
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_decoder_initialize_hardware(
+            _decoder: *mut RuzuFfmpegDecoder,
+            _hardware: *const RuzuFfmpegHardwareContext,
+            _pixel_format: c_int,
+        ) -> c_int {
+            -1
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_decoder_last_error(
+            _decoder: *const RuzuFfmpegDecoder,
+        ) -> c_int {
+            -1
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_error_is_eof_or_again(_error: c_int) -> c_int {
+            0
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_error_string(
+            _errnum: c_int,
+            _out: *mut c_char,
+            _out_size: uintptr_t,
+        ) {
+            if !_out.is_null() && _out_size > 0 {
+                let n = DISABLED.len().min(_out_size);
+                std::ptr::copy_nonoverlapping(DISABLED.as_ptr().cast(), _out, n);
+                *_out.add(n - 1) = 0;
+            }
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_frame_create() -> *mut AVFrame {
+            std::ptr::null_mut()
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_frame_destroy(_frame: *mut AVFrame) {}
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_frame_width(_frame: *const AVFrame) -> c_int {
+            0
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_frame_height(_frame: *const AVFrame) -> c_int {
+            0
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_frame_format(_frame: *const AVFrame) -> c_int {
+            0
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_frame_stride(
+            _frame: *const AVFrame,
+            _plane: c_int,
+        ) -> c_int {
+            0
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_frame_plane(
+            _frame: *const AVFrame,
+            _plane: c_int,
+        ) -> *const c_uchar {
+            std::ptr::null()
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_frame_interlaced(_frame: *const AVFrame) -> c_int {
+            0
+        }
+
+        pub unsafe extern "C" fn ruzu_ffmpeg_frame_is_hardware_decoded(
+            _frame: *const AVFrame,
+        ) -> c_int {
+            0
+        }
     }
 }
 

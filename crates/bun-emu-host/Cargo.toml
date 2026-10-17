@@ -1,0 +1,11 @@
+[package]
+name = "bun-emu-host"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+description = "Safe Rust API over the Bun OS emulator host: melonDS, Dolphin, Azahar and Kyty cores as headless libraries"
+repository = "https://github.com/aphrody-labs/bun-distribution"
+
+[dependencies]
+bun-emu-host-sys = { path = "../bun-emu-host-sys" }
+libloading = { workspace = true }

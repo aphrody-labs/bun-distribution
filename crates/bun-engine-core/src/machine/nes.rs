@@ -16,8 +16,18 @@ pub struct Nes {
 impl Nes {
     pub fn from_rom(name: &str, rom: &[u8]) -> Result<Self, String> {
         let mut deck = ControlDeck::new();
-        deck.load_rom(name, &mut std::io::Cursor::new(rom)).map_err(|e| format!("NES ROM: {e}"))?;
-        Ok(Self { deck, failed: false })
+        deck.load_rom(name, &mut std::io::Cursor::new(rom))
+            .map_err(|e| format!("NES ROM: {e}"))?;
+        Ok(Self {
+            deck,
+            failed: false,
+        })
+    }
+
+    /// Install the dispatcher of statically recompiled code (`crate::recomp::nes`); `None`
+    /// restores pure interpretation.
+    pub fn set_cpu_runner(&mut self, runner: Option<tetanes_core::control_deck::CpuRunner>) {
+        self.deck.set_cpu_runner(runner);
     }
 }
 
@@ -57,10 +67,26 @@ impl Machine for Nes {
         }
     }
 
+    fn save_state(&mut self) -> Option<Vec<u8>> {
+        let mut state = Vec::new();
+        self.deck.save_state(&mut state).ok().map(|()| state)
+    }
+
+    fn load_state(&mut self, state: &[u8]) -> Result<(), String> {
+        self.deck.load_state(state).map_err(|e| format!("NES state: {e}"))
+    }
+
     fn screens(&self) -> Vec<Screen> {
         let mut rgba = Box::new([0_u8; tetanes_core::video::Frame::SIZE]);
         self.deck.frame_buffer_into(&mut rgba);
-        let rgb = rgba.chunks_exact(4).flat_map(|px| [px[0], px[1], px[2]]).collect();
-        vec![Screen { width: 256, height: 240, rgb }]
+        let rgb = rgba
+            .chunks_exact(4)
+            .flat_map(|px| [px[0], px[1], px[2]])
+            .collect();
+        vec![Screen {
+            width: 256,
+            height: 240,
+            rgb,
+        }]
     }
 }

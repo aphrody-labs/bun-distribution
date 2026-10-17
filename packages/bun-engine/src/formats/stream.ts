@@ -205,10 +205,10 @@ export class BinarySource {
   async matches(
     pattern: RegExp,
     options: {
-      start?: number;
-      end?: number;
-      limit?: number;
-      carry?: number;
+      start?: number | undefined;
+      end?: number | undefined;
+      limit?: number | undefined;
+      carry?: number | undefined;
     } = {},
   ): Promise<Array<{ offset: number; text: string }>> {
     const flags = pattern.flags.includes("g")

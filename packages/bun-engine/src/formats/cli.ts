@@ -1,10 +1,10 @@
 // `bun-engine formats ...` and the standalone `bun-engine-formats` executable.
 import { mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
-import { archIds, type Arch } from "./types";
-import { backends, type Backend } from "./disasm";
-import { BinaryImage } from "./image";
-import { workspaceRoot } from "./tools";
+import { archIds, type Arch } from "./types.js";
+import { backends, type Backend } from "./disasm/index.js";
+import { BinaryImage } from "./image.js";
+import { workspaceRoot } from "./tools.js";
 
 export const formatsUsage = `usage: bun-engine-formats <command> <file> [options]
   identify <file> [--magika] [--json]   detected format, platform and detector

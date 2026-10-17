@@ -30,8 +30,9 @@ jobs:
       - name: Build
         run: |
           bun scripts/cargo-nie.ts --install dist/bin
-          bun scripts/cargo.ts exec -- build --release --locked -p bun-re --features pipeline,steam-download --bin bunre
-          cp target/release/bunre dist/bin/
+          bun scripts/cargo.ts exec -- build --release --locked -p bun-re --features pipeline --bin bunre
+          bun scripts/cargo.ts exec -- build --release --locked -p bun-steam --features depot --bin bun-steam-depot
+          cp target/release/bunre target/release/bun-steam-depot dist/bin/
       - name: Archive
         run: tar -C dist -czf "bun-os-${{ matrix.target }}.tar.gz" bin
       - uses: softprops/action-gh-release@v2

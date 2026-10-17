@@ -31,6 +31,7 @@ builtins = [
 ]
 
 [dependencies]
+bun-steam = { workspace = true }
 aphrody-proc = { path = "../aphrody-proc", features = ["tokio"] }
 aphrody-subsystem = { path = "../aphrody-subsystem" }
 aphrody-kernel-client = { path = "../aphrody-kernel-client" }

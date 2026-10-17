@@ -29,8 +29,8 @@ use steamroom::types::key_value::KeyValue;
 use steamroom_client::login::{CredentialsLoginFlow, GuardType, LoginBuilder};
 use tracing::{info, warn};
 
-use crate::steam::options::{SteamDownloadOptions, SteamGuardKind, SteamGuardProvider};
-use crate::steam::token_store::TokenStore;
+use crate::depot::options::{SteamDownloadOptions, SteamGuardKind, SteamGuardProvider};
+use crate::depot::token_store::TokenStore;
 
 // ─── Cache d'app info parsé ───────────────────────────────────────────────────
 
@@ -253,7 +253,7 @@ async fn login_with_opts(
     let Some(ref password) = opts.password else {
         anyhow::bail!(
             "Aucun refresh token caché pour {username} et aucun mot de passe fourni. \
-             Relancez avec STEAM_PASSWORD ou utilisez un refresh token via bunre steam login."
+             Relancez avec STEAM_PASSWORD ou réutilisez le refresh token mis en cache par une connexion précédente de bun-steam-depot."
         );
     };
 
@@ -320,7 +320,7 @@ async fn get_guard_code(opts: &SteamDownloadOptions, kind: SteamGuardKind) -> Re
     if let Some(ref provider) = opts.guard_provider {
         provider.get_code(kind, None, false).await
     } else {
-        crate::steam::options::EnvGuardProvider.get_code(kind, None, false).await
+        crate::depot::options::EnvGuardProvider.get_code(kind, None, false).await
     }
 }
 

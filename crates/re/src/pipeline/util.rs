@@ -41,14 +41,19 @@ pub fn run_cmd(
     timeout: Duration,
 ) -> Result<RunResult, String> {
     let mut cmd = Command::new(program);
-    cmd.args(args).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
+    cmd.args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
     if let Some(d) = cwd {
         cmd.current_dir(d);
     }
     for (k, v) in env {
         cmd.env(k, v);
     }
-    let mut child = cmd.spawn().map_err(|e| format!("{}: {e}", program.display()))?;
+    let mut child = cmd
+        .spawn()
+        .map_err(|e| format!("{}: {e}", program.display()))?;
     let mut out = child.stdout.take();
     let mut err = child.stderr.take();
     let t_out = std::thread::spawn(move || {
@@ -84,7 +89,12 @@ pub fn run_cmd(
     };
     let stdout = String::from_utf8_lossy(&t_out.join().unwrap_or_default()).into_owned();
     let stderr = String::from_utf8_lossy(&t_err.join().unwrap_or_default()).into_owned();
-    Ok(RunResult { code: status.and_then(|s| s.code()), stdout, stderr, timed_out })
+    Ok(RunResult {
+        code: status.and_then(|s| s.code()),
+        stdout,
+        stderr,
+        timed_out,
+    })
 }
 
 /// Locate an executable on `PATH` (tries `.exe`, `.cmd`, `.bat` on Windows).
@@ -95,7 +105,11 @@ pub fn which(name: &str) -> Option<PathBuf> {
         return Some(p.to_path_buf());
     }
     let path = std::env::var_os("PATH")?;
-    let exts: &[&str] = if cfg!(windows) { &["", ".exe", ".cmd", ".bat"] } else { &[""] };
+    let exts: &[&str] = if cfg!(windows) {
+        &["", ".exe", ".cmd", ".bat"]
+    } else {
+        &[""]
+    };
     for dir in std::env::split_paths(&path) {
         for e in exts {
             let cand = dir.join(format!("{name}{e}"));
@@ -138,7 +152,11 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
 #[must_use]
 pub fn artifact(kind: &str, path: &Path) -> Artifact {
     let bytes = std::fs::metadata(path).map_or(0, |m| m.len());
-    Artifact { kind: kind.to_string(), path: path.display().to_string(), bytes }
+    Artifact {
+        kind: kind.to_string(),
+        path: path.display().to_string(),
+        bytes,
+    }
 }
 
 /// Last `n` characters of `s` on a char boundary, for log excerpts.
@@ -170,23 +188,42 @@ pub fn toolchain_env() -> Vec<(String, String)> {
         }
     }
     for root in roots {
-        let Ok(years) = std::fs::read_dir(&root) else { continue };
+        let Ok(years) = std::fs::read_dir(&root) else {
+            continue;
+        };
         for year in years.flatten() {
-            let Ok(eds) = std::fs::read_dir(year.path()) else { continue };
+            let Ok(eds) = std::fs::read_dir(year.path()) else {
+                continue;
+            };
             for ed in eds.flatten() {
-                let bat = ed.path().join("VC").join("Auxiliary").join("Build").join("vcvars64.bat");
+                let bat = ed
+                    .path()
+                    .join("VC")
+                    .join("Auxiliary")
+                    .join("Build")
+                    .join("vcvars64.bat");
                 if !bat.is_file() {
                     continue;
                 }
-                let wrapper = std::env::temp_dir().join(format!("bunre-vcvars-{}.cmd", std::process::id()));
-                let body = format!("@echo off
+                let wrapper =
+                    std::env::temp_dir().join(format!("bunre-vcvars-{}.cmd", std::process::id()));
+                let body = format!(
+                    "@echo off
 call \"{}\" >nul
 set
-", bat.display());
+",
+                    bat.display()
+                );
                 if std::fs::write(&wrapper, body).is_err() {
                     continue;
                 }
-                let res = run_cmd(Path::new("cmd.exe"), &["/c".into(), wrapper.display().to_string()], None, &[], Duration::from_secs(60));
+                let res = run_cmd(
+                    Path::new("cmd.exe"),
+                    &["/c".into(), wrapper.display().to_string()],
+                    None,
+                    &[],
+                    Duration::from_secs(60),
+                );
                 let _ = std::fs::remove_file(&wrapper);
                 let Ok(r) = res else { continue };
                 if !r.ok() {
@@ -195,8 +232,13 @@ set
                 let vars: Vec<(String, String)> = r
                     .stdout
                     .lines()
-                    .filter_map(|l| l.split_once('=').map(|(k, v)| (k.to_string(), v.trim_end().to_string())))
-                    .filter(|(k, _)| ["INCLUDE", "LIB", "LIBPATH", "PATH", "Path"].contains(&k.as_str()))
+                    .filter_map(|l| {
+                        l.split_once('=')
+                            .map(|(k, v)| (k.to_string(), v.trim_end().to_string()))
+                    })
+                    .filter(|(k, _)| {
+                        ["INCLUDE", "LIB", "LIBPATH", "PATH", "Path"].contains(&k.as_str())
+                    })
                     .collect();
                 if !vars.is_empty() {
                     return vars;

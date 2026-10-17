@@ -28,6 +28,8 @@ Before opening Ghidra, decide:
 
 ## Tool routing
 
+- Console BIOS, firmware dumps and ROMs (GBA/DS BIOS, DS firmware, PlayStation BIOS, NES/GBA/NDS/N64/GameCube images): `re formats header <file>` (MCP `formats_inspect`) identifies the format, maps it at its reset address with the CPU and matches the public firmware hashes and the free registry (OpenBIOS, Normmatt); `re formats disasm` disassembles the reset path, `re pipeline <file> --target firmware` lifts it.
+
 **Live GUI** when image is loaded:
 - `mcp__ghidra__get_binary_info` — confirm Ghidra's guess.
 - `mcp__ghidra__get_segments` — flash / RAM mapping.

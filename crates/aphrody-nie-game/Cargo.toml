@@ -39,7 +39,8 @@ clap = { workspace = true, features = ["derive", "color", "env"] }
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3.20", default-features = false, features = ["fmt", "env-filter", "ansi", "tracing-log"] }
 aphrody-gpu-backend.workspace = true
-aphrody-bevy.workspace = true
+# The feature set the former root `aphrody-bevy` pin enabled; the root `bevy` pin is minimal ("std").
+bevy = { workspace = true, features = ["async_executor", "multi_threaded", "bevy_asset", "bevy_camera", "bevy_core_pipeline", "bevy_image", "bevy_render", "bevy_sprite", "bevy_sprite_render", "bevy_window", "bevy_winit", "default_font", "x11", "wayland"] }
 pollster.workspace = true
 bytemuck = { workspace = true, features = ["derive"] }
 # Encodage PNG des captures/exports (le décodage DDS/BCn est passé dans aphrody-nie-formats).

@@ -12,9 +12,9 @@ use std::path::PathBuf;
 use std::pin::Pin;
 use std::time::Duration;
 
-use crate::steam::IEVR_STEAM_APP_ID;
+use crate::IEVR_STEAM_APP_ID;
 
-pub use crate::steam::planning::{CollisionReason, ManifestCollision};
+pub use crate::depot::planning::{CollisionReason, ManifestCollision};
 
 // ─── Steam Guard ──────────────────────────────────────────────────────────────
 
@@ -130,7 +130,7 @@ pub struct SteamDownloadOptions {
     /// Chemin du fichier JSON de cache des jetons (refresh token + guard data) par compte.
     ///
     /// `None` → pas de persistance (2FA redemandé à chaque run).
-    /// Défaut : [`crate::steam::token_store::default_path()`].
+    /// Défaut : [`crate::depot::token_store::default_path()`].
     pub token_store_path: Option<PathBuf>,
 
     /// Fournisseur de codes Steam Guard (2FA). `None` → utilise [`EnvGuardProvider`].
@@ -154,7 +154,7 @@ pub struct SteamDownloadOptions {
     pub transfer: TransferOptions,
 }
 
-/// Optimisation du transfert (cf. [`crate::steam::transfer`]).
+/// Optimisation du transfert (cf. [`crate::depot::transfer`]).
 #[derive(Clone, Debug)]
 pub struct TransferOptions {
     /// Plafond de débit réseau en octets/s, tous depots confondus. `0` → illimité.
@@ -172,7 +172,7 @@ impl Default for TransferOptions {
         Self {
             max_rate_bytes_per_sec: 0,
             max_depot_parallel: 2,
-            chunk_cache_dir: Some(crate::steam::transfer::default_chunk_cache_dir()),
+            chunk_cache_dir: Some(crate::depot::transfer::default_chunk_cache_dir()),
             cdn_pool_size: 50,
         }
     }
@@ -184,7 +184,7 @@ impl SteamDownloadOptions {
     /// Champ `install_dir` à renseigner.
     ///
     /// ```
-    /// use bun_re::steam::options::SteamDownloadOptions;
+    /// use bun_steam::depot::options::SteamDownloadOptions;
     /// use std::path::PathBuf;
     ///
     /// let opts = SteamDownloadOptions::ievr(PathBuf::from("/tmp/ievr"));
@@ -207,7 +207,7 @@ impl SteamDownloadOptions {
             depot_ids: vec![],
             max_downloads: 16,
             verify: true,
-            token_store_path: Some(crate::steam::token_store::default_path()),
+            token_store_path: Some(crate::depot::token_store::default_path()),
             guard_provider: None,
             stall_timeout: Some(Duration::from_secs(300)),
             transfer: TransferOptions::default(),

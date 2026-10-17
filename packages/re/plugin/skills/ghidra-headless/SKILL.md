@@ -20,6 +20,11 @@ Two equivalent script sets ship with this skill:
 
 The Java GhidraScripts in `scripts/ghidra_scripts/*.java` are platform-agnostic — Ghidra runs them via JVM on every OS.
 
+## On Bun OS
+
+- `re ghidra-win probe` (MCP `ghidra_probe`) checks the installed Ghidra (`GHIDRA_INSTALL_DIR`, version, `analyzeHeadless`) and whether `JAVA_HOME` holds a JDK; Ghidra and the rea Ghidra provider take Java from `JAVA_HOME` only, so follow its `remediation` when it reports a stale value.
+- `re pipeline <binary> --target os --out DIR --external` (MCP `re_pipeline_run` with `external: true`) runs the `ghidra-headless` adapter: import, auto-analysis and decompiled C export beside the built-in lift, emit and rebuild stages; the report is `DIR/report.json`.
+
 ## When to Use
 
 - Decompiling a binary to C pseudocode for review

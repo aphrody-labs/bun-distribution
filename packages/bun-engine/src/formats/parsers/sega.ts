@@ -1,6 +1,6 @@
 // Sega Mega Drive / Genesis cartridges (raw .md/.gen/.bin and interleaved .smd dumps).
-import { BinaryView, hex, hex32 } from "../stream";
-import { parsed, type ParseContext, type Section } from "../types";
+import { BinaryView, hex, hex32 } from "../stream.js";
+import { parsed, type ParseContext, type Section } from "../types.js";
 
 /** Interleaved SMD dump: 512-byte header, then 16 KiB blocks storing odd bytes before even ones. */
 export function isInterleavedSmd(head: Uint8Array, size: number): boolean {
@@ -11,8 +11,8 @@ export function deinterleaveSmdBlock(block: Uint8Array): Uint8Array {
   const out = new Uint8Array(block.byteLength);
   const half = block.byteLength >> 1;
   for (let index = 0; index < half; index++) {
-    out[index * 2] = block[half + index];
-    out[index * 2 + 1] = block[index];
+    out[index * 2] = block[half + index]!;
+    out[index * 2 + 1] = block[index]!;
   }
   return out;
 }
@@ -30,12 +30,12 @@ export async function parseGenesis({ source, head }: ParseContext) {
     for await (const { bytes } of source.chunks(0x200)) {
       let index = 0;
       if (carry !== undefined && bytes.byteLength) {
-        sum = (sum + ((carry << 8) | bytes[0])) & 0xffff;
+        sum = (sum + ((carry << 8) | bytes[0]!)) & 0xffff;
         index = 1;
         carry = undefined;
       }
       for (; index + 1 < bytes.byteLength; index += 2)
-        sum = (sum + ((bytes[index] << 8) | bytes[index + 1])) & 0xffff;
+        sum = (sum + ((bytes[index]! << 8) | bytes[index + 1]!)) & 0xffff;
       if (index < bytes.byteLength) carry = bytes[index];
     }
     checksum = sum;

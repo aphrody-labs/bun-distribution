@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#141218" />
+    <meta
+      name="description"
+      content="Bun OS Play: game library, in-browser emulation on WebGPU, Steam and game streaming."
+    />
+    <title>Bun OS Play</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./app.ts"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="shell">
+      <nav class="nav" id="nav" aria-label="Primary"></nav>
+      <div class="frame">
+        <header class="top-bar">
+          <a class="brand" href="/" data-link>
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span class="brand-text">Bun OS <strong>Play</strong></span>
+          </a>
+          <div class="top-actions">
+            <span class="live" id="live" hidden>Live</span>
+            <span id="account"></span>
+          </div>
+        </header>
+        <main id="main" tabindex="-1"></main>
+      </div>
+    </div>
+    <dialog id="signin" aria-labelledby="signin-title">
+      <form method="dialog" class="dialog-body">
+        <h2 id="signin-title">Sign in</h2>
+        <p>
+          Steam, the LAN cache, streaming and the engine controls need an
+          Aphrody identity.
+        </p>
+        <div class="dialog-actions" id="signin-methods"></div>
+        <button class="btn text" value="close">Close</button>
+      </form>
+    </dialog>
+  </body>
+</html>

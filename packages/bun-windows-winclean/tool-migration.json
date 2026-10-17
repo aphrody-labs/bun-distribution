@@ -1,8 +1,8 @@
 {
   "$schema": "https://aphrody.dev/schemas/tool-migration-v1.json",
   "catalog": "src/tools.json",
-  "catalog_sha256": "1c0ac6dce547be7ea77170d2aed93004b1fbfa8013496b334729e3cab3b071ed",
-  "catalog_tool_count": 166,
+  "catalog_sha256": "4d5ff9192975bb53a0cbe79bf316ef81a8da2ab9a23161b4e097daf69e3c8cc9",
+  "catalog_tool_count": 182,
   "state": "complete",
   "tools": [
     "analyze_pe",
@@ -44,6 +44,22 @@
     "gamepad_environment",
     "gamepad_press_button",
     "gamepad_send_xbox360_state",
+    "gaming_capture_benchmark",
+    "gaming_capture_window",
+    "gaming_environment",
+    "gaming_frame_pacing",
+    "gaming_get_background_apps",
+    "gaming_get_game_bar_capture",
+    "gaming_get_game_mode",
+    "gaming_get_gpu_info",
+    "gaming_get_timer_resolution",
+    "gaming_input_sequence",
+    "gaming_key",
+    "gaming_mouse_button",
+    "gaming_mouse_delta",
+    "gaming_profile_apply",
+    "gaming_profile_status",
+    "gaming_steam_launch",
     "get_active_power_plan",
     "get_clipboard_text",
     "get_cpu_info",
@@ -398,7 +414,23 @@
     "winml_get_version": "rust",
     "winml_inspect_onnx": "rust",
     "winml_list_providers": "rust",
-    "winml_run_float32": "rust"
+    "winml_run_float32": "rust",
+    "gaming_capture_benchmark": "rust",
+    "gaming_capture_window": "rust",
+    "gaming_environment": "rust",
+    "gaming_frame_pacing": "rust",
+    "gaming_get_background_apps": "rust",
+    "gaming_get_game_bar_capture": "rust",
+    "gaming_get_game_mode": "rust",
+    "gaming_get_gpu_info": "rust",
+    "gaming_get_timer_resolution": "rust",
+    "gaming_input_sequence": "rust",
+    "gaming_key": "rust",
+    "gaming_mouse_button": "rust",
+    "gaming_mouse_delta": "rust",
+    "gaming_profile_apply": "rust",
+    "gaming_profile_status": "rust",
+    "gaming_steam_launch": "rust"
   },
   "native_rust_tools": [
     "winml_get_version",
@@ -406,5 +438,5 @@
     "winml_list_providers",
     "winml_run_float32"
   ],
-  "note": "The catalog is frozen for compatibility. Ownership is selected by the first matching rule; all 166 tools are implemented and dispatched by the Rust owner. dispatch_overrides and native_rust_tools remain as explicit migration evidence for compatibility tooling."
+  "note": "The catalog is frozen for compatibility. Ownership is selected by the first matching rule; all 182 tools are implemented and dispatched by the Rust owner. dispatch_overrides and native_rust_tools remain as explicit migration evidence for compatibility tooling."
 }

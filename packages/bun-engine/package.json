@@ -10,7 +10,8 @@
   },
   "exports": {
     ".": "./src/plugins/index.ts",
-    "./formats": "./src/formats/index.ts"
+    "./formats": "./src/formats/index.ts",
+    "./usr": "./src/usr.ts"
   },
   "type": "module",
   "scripts": {
@@ -30,7 +31,9 @@
     "console:validate": "bun run ./src/console/validate.ts"
   },
   "dependencies": {
-    "@aphrody/typesafe-sdk": "0.6.2"
+    "@aphrody/bun-steam": "workspace:*",
+    "@aphrody/typesafe-sdk": "0.6.2",
+    "@bun-os/re": "workspace:*"
   },
   "engines": {
     "bun": "=1.4.4"

@@ -5,7 +5,7 @@ use crate::SubsystemError;
 use base64::Engine;
 use serde_json::Value;
 
-use crate::{coordination, notification, ocr, record, snapshot, speech, steam, winml};
+use crate::{coordination, gaming, notification, ocr, record, snapshot, speech, steam, winml};
 
 pub(crate) fn failed(error: impl std::fmt::Display) -> SubsystemError {
     SubsystemError::Failed(error.to_string())
@@ -220,10 +220,7 @@ pub fn call_rust(tool: &str, arguments: Value) -> Result<Value, SubsystemError> 
         "steam_list_libraries" => steam::steam_list_libraries(&arguments),
         "steam_scan_summary" => steam::steam_scan_summary(&arguments),
         "steam_launch_by_app_id" => {
-            let app_id = arguments.get("appId").and_then(Value::as_u64).ok_or_else(|| {
-                SubsystemError::InvalidArguments("steam_launch_by_app_id requires appId".into())
-            })?;
-            steam::open_steam_uri(&format!("steam://rungameid/{app_id}"))
+            steam::open_steam_uri(&steam::rungameid(&arguments, "steam_launch_by_app_id")?)
         },
         "steam_kill_game" => {
             let name = path("executableName")?;
@@ -258,11 +255,9 @@ pub fn call_rust(tool: &str, arguments: Value) -> Result<Value, SubsystemError> 
             )
         },
         "steam_launch_and_wait" => {
-            let app_id = arguments.get("appId").and_then(Value::as_u64).ok_or_else(|| {
-                SubsystemError::InvalidArguments("steam_launch_and_wait requires appId".into())
-            })?;
+            let uri = steam::rungameid(&arguments, "steam_launch_and_wait")?;
             let name = path("executableName")?;
-            steam::open_steam_uri(&format!("steam://rungameid/{app_id}"))?;
+            steam::open_steam_uri(&uri)?;
             let timeout =
                 arguments.get("timeoutMs").and_then(Value::as_u64).unwrap_or(60_000).min(600_000);
             let started = std::time::Instant::now();
@@ -752,6 +747,22 @@ pub fn call_rust(tool: &str, arguments: Value) -> Result<Value, SubsystemError> 
             serde_json::to_value(system::get_memory_info()).map_err(failed)
         },
         "gamepad_environment" => system::gamepad_environment().map_err(failed),
+        "gaming_capture_window" => gaming::capture_window(&arguments),
+        "gaming_capture_benchmark" => gaming::capture_benchmark(&arguments),
+        "gaming_frame_pacing" => gaming::frame_pacing(&arguments),
+        "gaming_mouse_delta" => gaming::mouse_delta(&arguments),
+        "gaming_mouse_button" => gaming::mouse_button(&arguments),
+        "gaming_key" => gaming::key(&arguments),
+        "gaming_input_sequence" => gaming::input_sequence(&arguments),
+        "gaming_environment" => gaming::environment(),
+        "gaming_steam_launch" => gaming::steam_launch(&arguments),
+        "gaming_get_game_mode" => gaming::game_mode(),
+        "gaming_get_background_apps" => gaming::background_apps(),
+        "gaming_get_game_bar_capture" => gaming::game_bar_capture(),
+        "gaming_get_timer_resolution" => gaming::timer_resolution(),
+        "gaming_get_gpu_info" => gaming::gpu_info(),
+        "gaming_profile_status" => gaming::profile_status(),
+        "gaming_profile_apply" => gaming::profile_apply(&arguments),
         "gamepad_create_xbox360" => {
             gamepad::create(arguments.get("slotIndex").and_then(Value::as_i64).unwrap_or(0))
                 .map_err(failed)

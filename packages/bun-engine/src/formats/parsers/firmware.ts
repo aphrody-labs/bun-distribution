@@ -3,10 +3,10 @@
 // from plugins/consoles/firmware.json (public hashes) and the SHA-256 equals the `bep firmware`
 // store key of src/firmware/import.ts.
 import { basename } from "node:path";
-import { catalogFirmware, freeReplacements } from "../catalog";
-import { BinaryView, crc16, digestSource, hex32 } from "../stream";
-import type { FormatId, ParseContext, ParsedImage } from "../types";
-import { armBranchTarget } from "./handheld";
+import { catalogFirmware, freeReplacements } from "../catalog.js";
+import { BinaryView, crc16, digestSource, hex32 } from "../stream.js";
+import type { FormatId, ParseContext, ParsedImage } from "../types.js";
+import { armBranchTarget } from "./handheld.js";
 
 const layouts: Partial<
   Record<

@@ -171,13 +171,23 @@ struct Em<'a> {
 impl Em<'_> {
     fn rd(&self, op: &Operand, bits: u8) -> String {
         match op {
-            Operand::Reg { name, bits: b, high } => match (b, high) {
+            Operand::Reg {
+                name,
+                bits: b,
+                high,
+            } => match (b, high) {
                 (64, _) => rn(name),
                 (8, true) => format!("((uint8_t)({} >> 8))", rn(name)),
                 (b, _) => format!("(({}){})", tn(*b), rn(name)),
             },
             Operand::Imm { value } => format!("(({})0x{:x}ull)", tn(bits), *value as u64),
-            Operand::Mem { base, index, scale, disp, bits: mb } => {
+            Operand::Mem {
+                base,
+                index,
+                scale,
+                disp,
+                bits: mb,
+            } => {
                 let a = addr(base, index, *scale, *disp, self.abits);
                 format!("br_rd{mb}({a})")
             }
@@ -192,11 +202,19 @@ impl Em<'_> {
                     (64, _) => format!("{r} = (uint64_t)({v});"),
                     (32, _) => format!("{r} = (uint32_t)({v});"),
                     (16, _) => format!("{r} = ({r} & ~0xffffull) | (uint16_t)({v});"),
-                    (8, true) => format!("{r} = ({r} & ~0xff00ull) | ((uint64_t)(uint8_t)({v}) << 8);"),
+                    (8, true) => {
+                        format!("{r} = ({r} & ~0xff00ull) | ((uint64_t)(uint8_t)({v}) << 8);")
+                    }
                     _ => format!("{r} = ({r} & ~0xffull) | (uint8_t)({v});"),
                 }
             }
-            Operand::Mem { base, index, scale, disp, bits } => {
+            Operand::Mem {
+                base,
+                index,
+                scale,
+                disp,
+                bits,
+            } => {
                 let a = addr(base, index, *scale, *disp, self.abits);
                 format!("br_wr{bits}({a}, ({})({v}));", tn(*bits))
             }
@@ -253,7 +271,14 @@ impl Em<'_> {
                 }
             }
             IrOp::Lea { dst, src } => {
-                if let Operand::Mem { base, index, scale, disp, .. } = src {
+                if let Operand::Mem {
+                    base,
+                    index,
+                    scale,
+                    disp,
+                    ..
+                } = src
+                {
                     self.wr(dst, &addr(base, index, *scale, *disp, self.abits))
                 } else {
                     String::new()
@@ -273,12 +298,22 @@ impl Em<'_> {
                             BinKind::Or => ("a | b", "BR_FL_LOGIC"),
                             _ => ("a ^ b", "BR_FL_LOGIC"),
                         };
-                        let flags = if fl == "BR_FL_LOGIC" { format!("BR_FL_LOGIC({t}, r);") } else { format!("{fl}({t}, a, b, r);") };
-                        format!("{{ {t} a = {a}; {t} b = {b}; {t} r = ({t})({expr}); {flags} {} }}", self.wr(dst, "r"))
+                        let flags = if fl == "BR_FL_LOGIC" {
+                            format!("BR_FL_LOGIC({t}, r);")
+                        } else {
+                            format!("{fl}({t}, a, b, r);")
+                        };
+                        format!(
+                            "{{ {t} a = {a}; {t} b = {b}; {t} r = ({t})({expr}); {flags} {} }}",
+                            self.wr(dst, "r")
+                        )
                     }
                     BinKind::Mul => {
                         let b = self.rd(src, d);
-                        format!("{{ {t} a = {a}; {t} b = {b}; {t} r = ({t})(a * b); {} }}", self.wr(dst, "r"))
+                        format!(
+                            "{{ {t} a = {a}; {t} b = {b}; {t} r = ({t})(a * b); {} }}",
+                            self.wr(dst, "r")
+                        )
                     }
                     _ => {
                         let n = self.rd(src, 8);
@@ -286,7 +321,9 @@ impl Em<'_> {
                         let (expr, cf) = match kind {
                             BinKind::Shl => (
                                 format!("({t})((uint64_t)a << n)"),
-                                format!("c->cf = (uint8_t)((n <= {d}u) ? (((uint64_t)a >> ({d}u - n)) & 1) : 0);"),
+                                format!(
+                                    "c->cf = (uint8_t)((n <= {d}u) ? (((uint64_t)a >> ({d}u - n)) & 1) : 0);"
+                                ),
                             ),
                             BinKind::Shr => (
                                 format!("({t})((uint64_t)a >> n)"),
@@ -294,7 +331,10 @@ impl Em<'_> {
                             ),
                             _ => (
                                 format!("({t})((int64_t)({}) a >> n)", sn(d)),
-                                format!("c->cf = (uint8_t)(((int64_t)({}) a >> (n - 1)) & 1);", sn(d)),
+                                format!(
+                                    "c->cf = (uint8_t)(((int64_t)({}) a >> (n - 1)) & 1);",
+                                    sn(d)
+                                ),
                             ),
                         };
                         format!(
@@ -310,8 +350,12 @@ impl Em<'_> {
                 let a = self.rd(dst, d);
                 let sign = format!("(({t})1 << {})", d - 1);
                 let body = match kind {
-                    UnKind::Inc => format!("{t} r = ({t})(a + 1); BR_ZS({t}, r); c->of = (r == {sign});"),
-                    UnKind::Dec => format!("{t} r = ({t})(a - 1); BR_ZS({t}, r); c->of = (a == {sign});"),
+                    UnKind::Inc => {
+                        format!("{t} r = ({t})(a + 1); BR_ZS({t}, r); c->of = (r == {sign});")
+                    }
+                    UnKind::Dec => {
+                        format!("{t} r = ({t})(a - 1); BR_ZS({t}, r); c->of = (a == {sign});")
+                    }
                     UnKind::Neg => format!("{t} r = ({t})(0 - a); BR_FL_SUB({t}, 0, a, r);"),
                     UnKind::Not => format!("{t} r = ({t})~a;"),
                 };
@@ -329,7 +373,11 @@ impl Em<'_> {
             IrOp::Test { a, b } => {
                 let d = w(a);
                 let t = tn(d);
-                format!("{{ {t} r = ({t})({} & {}); BR_FL_LOGIC({t}, r); }}", self.rd(a, d), self.rd(b, d))
+                format!(
+                    "{{ {t} r = ({t})({} & {}); BR_FL_LOGIC({t}, r); }}",
+                    self.rd(a, d),
+                    self.rd(b, d)
+                )
             }
             IrOp::Push { src } => {
                 let wb = self.abits;
@@ -341,7 +389,11 @@ impl Em<'_> {
             }
             IrOp::Pop { dst } => {
                 let wb = self.abits;
-                format!("{{ br_word_t v = br_rdw(c->rsp); c->rsp += {}; {} }}", wb / 8, self.wr(dst, "v"))
+                format!(
+                    "{{ br_word_t v = br_rdw(c->rsp); c->rsp += {}; {} }}",
+                    wb / 8,
+                    self.wr(dst, "v")
+                )
             }
             IrOp::Leave => format!(
                 "c->rsp = c->rbp; {{ br_word_t v = br_rdw(c->rsp); c->rsp += {}; c->rbp = v; }}",
@@ -350,14 +402,26 @@ impl Em<'_> {
             IrOp::Setcc { cond, dst } => self.wr(dst, &format!("{} ? 1 : 0", Self::cond(*cond))),
             IrOp::Cmovcc { cond, dst, src } => {
                 let d = w(dst);
-                self.wr(dst, &format!("{} ? {} : {}", Self::cond(*cond), self.rd(src, d), self.rd(dst, d)))
+                self.wr(
+                    dst,
+                    &format!(
+                        "{} ? {} : {}",
+                        Self::cond(*cond),
+                        self.rd(src, d),
+                        self.rd(dst, d)
+                    ),
+                )
             }
             IrOp::Call { target } => match target {
                 Target::Direct { addr } if self.funcs.contains(addr) => {
                     format!("{{ BR_PUSHRET(0x{next:x}ull); sub_{addr:x}(c); }}")
                 }
-                Target::Direct { addr } => format!("{{ BR_PUSHRET(0x{next:x}ull); br_dispatch(c, 0x{addr:x}ull); }}"),
-                Target::Import { index, name } => format!("br_import(c, {index}u); /* {} */", cmt(name)),
+                Target::Direct { addr } => {
+                    format!("{{ BR_PUSHRET(0x{next:x}ull); br_dispatch(c, 0x{addr:x}ull); }}")
+                }
+                Target::Import { index, name } => {
+                    format!("br_import(c, {index}u); /* {} */", cmt(name))
+                }
                 Target::Indirect { operand } => format!(
                     "{{ uint64_t t = (uint64_t){}; BR_PUSHRET(0x{next:x}ull); br_dispatch(c, t); }}",
                     self.rd(operand, self.abits)
@@ -374,17 +438,32 @@ impl Em<'_> {
                     self.abits / 8
                 ),
                 Target::Indirect { operand } => {
-                    format!("{{ br_dispatch(c, (uint64_t){}); return; }}", self.rd(operand, self.abits))
+                    format!(
+                        "{{ br_dispatch(c, (uint64_t){}); return; }}",
+                        self.rd(operand, self.abits)
+                    )
                 }
             },
-            IrOp::Jcc { cond, target } => format!("if ({}) {}", Self::cond(*cond), self.jump(*target, false)),
+            IrOp::Jcc { cond, target } => {
+                format!("if ({}) {}", Self::cond(*cond), self.jump(*target, false))
+            }
             IrOp::Ret { .. } if self.link => "return;".to_string(),
-            IrOp::Ret { pop } => format!("c->rsp += {}; return;", u32::from(self.abits / 8) + u32::from(*pop)),
+            IrOp::Ret { pop } => format!(
+                "c->rsp += {}; return;",
+                u32::from(self.abits / 8) + u32::from(*pop)
+            ),
             IrOp::Unlifted { reason } => {
-                format!("br_unlifted(c, 0x{addr_:x}ull, \"{}\"); /* {} */", cstr(text), cmt(reason))
+                format!(
+                    "br_unlifted(c, 0x{addr_:x}ull, \"{}\"); /* {} */",
+                    cstr(text),
+                    cmt(reason)
+                )
             }
             IrOp::Guest(_) => {
-                format!("br_unlifted(c, 0x{addr_:x}ull, \"{}\"); /* guest semantics: use the console emitter */", cstr(text))
+                format!(
+                    "br_unlifted(c, 0x{addr_:x}ull, \"{}\"); /* guest semantics: use the console emitter */",
+                    cstr(text)
+                )
             }
         };
         let _ = writeln!(out, "    /* {addr_:x}: {} */", cmt(text));
@@ -429,12 +508,22 @@ fn cstr(s: &str) -> String {
 #[must_use]
 pub fn emit_c(m: &IrModule) -> Files {
     let funcs: BTreeSet<u64> = m.functions.iter().map(|f| f.addr).collect();
-    let (sp, ret) = m.abi.as_ref().map_or(("rsp", "rax"), |a| (a.sp.as_str(), a.ret.as_str()));
+    let (sp, ret) = m
+        .abi
+        .as_ref()
+        .map_or(("rsp", "rax"), |a| (a.sp.as_str(), a.ret.as_str()));
     let limit = (m.image_end + 0xfff) & !0xfff;
     let limit = limit + 0x10_0000;
     let mut h = String::new();
-    let _ = writeln!(h, "/* Generated by bun-re pipeline (lift). Do not edit. */\n#ifndef BUNRE_RT_H\n#define BUNRE_RT_H");
-    let _ = writeln!(h, "#define BR_BITS {}\n#define BR_BASE 0x{:x}ull\n#define BR_LIMIT 0x{:x}ull\n#define BR_ENTRY 0x{:x}ull", m.bits, m.image_base, limit, m.entry);
+    let _ = writeln!(
+        h,
+        "/* Generated by bun-re pipeline (lift). Do not edit. */\n#ifndef BUNRE_RT_H\n#define BUNRE_RT_H"
+    );
+    let _ = writeln!(
+        h,
+        "#define BR_BITS {}\n#define BR_BASE 0x{:x}ull\n#define BR_LIMIT 0x{:x}ull\n#define BR_ENTRY 0x{:x}ull",
+        m.bits, m.image_base, limit, m.entry
+    );
     let body = match &m.abi {
         Some(a) => {
             let regs = a.regs.iter().map(|r| format!("uint64_t {r};")).collect::<Vec<_>>().join(" ");
@@ -456,8 +545,15 @@ pub fn emit_c(m: &IrModule) -> Files {
     h.push_str(&body);
     h.push_str("#endif\n");
 
-    let mut em = Em { abits: m.bits, link: m.abi.is_some(), funcs: &funcs, local: BTreeSet::new() };
-    let mut l = String::from("/* Generated by bun-re pipeline (lift). Do not edit. */\n#include \"bunre_rt.h\"\n\n");
+    let mut em = Em {
+        abits: m.bits,
+        link: m.abi.is_some(),
+        funcs: &funcs,
+        local: BTreeSet::new(),
+    };
+    let mut l = String::from(
+        "/* Generated by bun-re pipeline (lift). Do not edit. */\n#include \"bunre_rt.h\"\n\n",
+    );
     for f in &m.functions {
         let _ = writeln!(l, "void sub_{:x}(BrCpu *c);", f.addr);
     }
@@ -465,7 +561,10 @@ pub fn emit_c(m: &IrModule) -> Files {
     for f in &m.functions {
         em.func(f, &mut l);
     }
-    let _ = writeln!(l, "void br_dispatch(BrCpu *c, uint64_t addr) {{\n    switch (addr) {{");
+    let _ = writeln!(
+        l,
+        "void br_dispatch(BrCpu *c, uint64_t addr) {{\n    switch (addr) {{"
+    );
     for f in &m.functions {
         let _ = writeln!(l, "    case 0x{0:x}ull: sub_{0:x}(c); return;", f.addr);
     }
@@ -473,21 +572,47 @@ pub fn emit_c(m: &IrModule) -> Files {
 
     let mut im = String::from("#include \"bunre_rt.h\"\n\nconst BrSection br_sections[] = {\n");
     for s in &m.sections {
-        let _ = writeln!(im, "    {{0x{:x}ull, 0x{:x}ull, 0x{:x}ull, 0x{:x}ull}}, /* {} */", s.vaddr, s.vsize, s.file_offset, s.file_size, cmt(&s.name));
+        let _ = writeln!(
+            im,
+            "    {{0x{:x}ull, 0x{:x}ull, 0x{:x}ull, 0x{:x}ull}}, /* {} */",
+            s.vaddr,
+            s.vsize,
+            s.file_offset,
+            s.file_size,
+            cmt(&s.name)
+        );
     }
-    let _ = writeln!(im, "    {{0, 0, 0, 0}}\n}};\nconst unsigned br_section_count = {};\n", m.sections.len());
+    let _ = writeln!(
+        im,
+        "    {{0, 0, 0, 0}}\n}};\nconst unsigned br_section_count = {};\n",
+        m.sections.len()
+    );
     let _ = writeln!(im, "const char *const br_import_names[] = {{");
     for i in &m.imports {
-        let lib = i.lib.as_deref().map(|l| format!("{l}!")).unwrap_or_default();
+        let lib = i
+            .lib
+            .as_deref()
+            .map(|l| format!("{l}!"))
+            .unwrap_or_default();
         let _ = writeln!(im, "    \"{}\",", cstr(&format!("{lib}{}", i.name)));
     }
-    let _ = writeln!(im, "    0\n}};\nconst unsigned br_import_count = {};", m.imports.len());
+    let _ = writeln!(
+        im,
+        "    0\n}};\nconst unsigned br_import_count = {};",
+        m.imports.len()
+    );
 
     vec![
         ("bunre_rt.h".into(), h),
-        ("bunre_rt.c".into(), RT_C.replace("@@RET@@", &format!("c->{ret}"))),
+        (
+            "bunre_rt.c".into(),
+            RT_C.replace("@@RET@@", &format!("c->{ret}")),
+        ),
         ("lifted.c".into(), l),
         ("image.c".into(), im),
-        ("main.c".into(), MAIN_C.replace("@@SP@@", sp).replace("@@RETNAME@@", ret)),
+        (
+            "main.c".into(),
+            MAIN_C.replace("@@SP@@", sp).replace("@@RETNAME@@", ret),
+        ),
     ]
 }

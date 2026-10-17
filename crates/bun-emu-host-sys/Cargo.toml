@@ -1,0 +1,15 @@
+[package]
+name = "bun-emu-host-sys"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+description = "Raw bindings (bindgen, runtime-loaded) to the Bun OS emulator host C ABI (packages/bun-emu-host/include/bun_emu_host.h)"
+repository = "https://github.com/aphrody-labs/bun-distribution"
+links = "bun_emu_host"
+build = "build.rs"
+
+[dependencies]
+libloading = { workspace = true }
+
+[build-dependencies]
+bindgen = "0.72"

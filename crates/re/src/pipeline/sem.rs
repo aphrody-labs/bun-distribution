@@ -312,6 +312,12 @@ impl Builder {
         if let (Val::Imm { v: x }, Val::Imm { v: y }) = (a, b) {
             return imm(fold(op, x, y));
         }
+        // Comparisons decided by a constant bound.
+        match (op, a, b) {
+            (Alu::Leu, Val::Imm { v: 0 }, _) => return imm(1),
+            (Alu::Ltu, _, Val::Imm { v: 0 }) => return imm(0),
+            _ => {}
+        }
         let t = self.fresh();
         self.out.push(Stmt::Op { t, op, a, b });
         tmp(t)
@@ -340,24 +346,42 @@ impl Builder {
     /// Bus load into a fresh temporary.
     pub fn load(&mut self, bits: u8, addr: Val, kind: u8) -> Val {
         let t = self.fresh();
-        self.out.push(Stmt::Load { t, bits, addr, kind });
+        self.out.push(Stmt::Load {
+            t,
+            bits,
+            addr,
+            kind,
+        });
         tmp(t)
     }
 
     /// Bus store.
     pub fn store(&mut self, bits: u8, addr: Val, v: Val, kind: u8) {
-        self.out.push(Stmt::Store { bits, addr, v, kind });
+        self.out.push(Stmt::Store {
+            bits,
+            addr,
+            v,
+            kind,
+        });
     }
 
     /// Helper call without a result.
     pub fn call(&mut self, f: &str, args: &[Val]) {
-        self.out.push(Stmt::Call { f: f.into(), args: args.to_vec(), t: None });
+        self.out.push(Stmt::Call {
+            f: f.into(),
+            args: args.to_vec(),
+            t: None,
+        });
     }
 
     /// Helper call returning a value.
     pub fn call_v(&mut self, f: &str, args: &[Val]) -> Val {
         let t = self.fresh();
-        self.out.push(Stmt::Call { f: f.into(), args: args.to_vec(), t: Some(t) });
+        self.out.push(Stmt::Call {
+            f: f.into(),
+            args: args.to_vec(),
+            t: Some(t),
+        });
         tmp(t)
     }
 
@@ -379,7 +403,10 @@ impl Builder {
     /// Finish into a [`Guest`] body.
     #[must_use]
     pub fn finish(self, raw: u32) -> Guest {
-        Guest { raw, body: self.out }
+        Guest {
+            raw,
+            body: self.out,
+        }
     }
 }
 

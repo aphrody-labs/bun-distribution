@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
-# Newest Mesa for the GPU-less VPS, built for its Haswell cores (x86-64-v3): llvmpipe (GL/GLES/EGL),
+# Newest Mesa for the GPU-less VPS, built for its Haswell cores (x86-64-v3, -O3 -march=haswell; Mesa rejects LTO): llvmpipe (GL/GLES/EGL),
 # lavapipe (Vulkan) and zink, in /opt/mesa-bunos/<version> beside Ubuntu's Mesa. Gaming sessions
 # select it through ~/.config/environment.d; the system Mesa stays the default.
 set -euo pipefail
@@ -17,7 +17,7 @@ if [ ! -f "$PREFIX/.complete" ]; then
   [ -d "$SRC" ] || curl -fL "https://archive.mesa3d.org/mesa-$MESA.tar.xz" | tar -xJ -C "${SRC%/*}"
   cd "$SRC"
   CFLAGS="-O3 -march=haswell -mtune=haswell -pipe" CXXFLAGS="-O3 -march=haswell -mtune=haswell -pipe" \
-    meson setup build --wipe --prefix "$PREFIX" --libdir lib --buildtype release -Db_lto=true -Db_ndebug=true \
+    meson setup build --wipe --prefix "$PREFIX" --libdir lib --buildtype release -Db_ndebug=true \
       -Dgallium-drivers=llvmpipe,zink -Dvulkan-drivers=swrast -Dplatforms=x11,wayland \
       -Dglx=dri -Degl=enabled -Dgbm=enabled -Dglvnd=enabled -Dllvm=enabled -Dshared-llvm=enabled \
       -Dvideo-codecs=all -Dvulkan-layers=device-select,overlay -Dtools= -Dbuild-tests=false

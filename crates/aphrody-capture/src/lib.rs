@@ -3,7 +3,8 @@
 //!
 //! Uses the Win32 GDI BitBlt pipeline (GetDC / CreateCompatibleDC /
 //! CreateCompatibleBitmap / BitBlt / GetDIBits) to capture pixels, converts
-//! the BGRA buffer to RGBA, and encodes it as PNG via the `image` crate.
+//! the BGRA buffer to RGBA, and encodes it as PNG via the `image` crate. The [`gpu`] module
+//! captures windows on the GPU through Windows.Graphics.Capture and observes frame pacing.
 //!
 //! # Platform gating
 //!
@@ -66,6 +67,9 @@ pub struct RawFrame {
 
 #[cfg(windows)]
 mod capture_impl;
+/// GPU window capture (Windows.Graphics.Capture on Direct3D 11) and frame pacing.
+#[cfg(windows)]
+pub mod gpu;
 
 // ─── public API — Windows ────────────────────────────────────────────────────
 
@@ -206,6 +210,17 @@ pub fn type_unicode(text: &str) -> Result<()> {
 pub fn key_scan(scan: u16, action: &str, extended: bool) -> Result<()> {
     capture_impl::key_scan(scan, action, extended)
 }
+/// Relative mouse motion through `SendInput` (`MOUSEEVENTF_MOVE` without `ABSOLUTE`): games that
+/// read raw input receive exactly `(dx, dy)` counts.
+#[cfg(windows)]
+pub fn mouse_move_relative(dx: i32, dy: i32) -> Result<()> {
+    capture_impl::mouse_move_relative(dx, dy)
+}
+/// Mouse button down/up through `SendInput`.
+#[cfg(windows)]
+pub fn mouse_button_input(button: &str, down: bool) -> Result<()> {
+    capture_impl::mouse_button_input(button, down)
+}
 #[cfg(windows)]
 pub fn key_vk(vk: u8, down: bool) -> Result<()> {
     capture_impl::key_vk(vk, down)
@@ -343,6 +358,14 @@ pub fn type_unicode(_text: &str) -> Result<()> {
 }
 #[cfg(not(windows))]
 pub fn key_scan(_scan: u16, _action: &str, _extended: bool) -> Result<()> {
+    Err(CaptureError::Unsupported)
+}
+#[cfg(not(windows))]
+pub fn mouse_move_relative(_dx: i32, _dy: i32) -> Result<()> {
+    Err(CaptureError::Unsupported)
+}
+#[cfg(not(windows))]
+pub fn mouse_button_input(_button: &str, _down: bool) -> Result<()> {
     Err(CaptureError::Unsupported)
 }
 #[cfg(not(windows))]

@@ -2,7 +2,7 @@
 /**
  * @file setup-data.ts
  * @description Acquisition and setup tool for Inazuma Eleven: Victory Road game data (App 2799860).
- * Supports native Rust downloader (bunre steam), steamcmd, archive decompression, and local linking.
+ * Supports the native Rust depot client (bun-steam-depot), steamcmd, archive decompression, and local linking.
  */
 
 import {
@@ -50,7 +50,7 @@ Usage: bun scripts/iecode/tools/data/setup-data.ts [options]
 
 Methods:
   --method auto      Try local detection/link -> local archive -> native NIE Steam -> steamcmd (default)
-  --method nie       Use native Rust Steam downloader (bunre steam, App ${APP_ID}, Depot ${CONTENT_DEPOT_ID})
+  --method nie       Use native Rust Steam depot client (bun-steam-depot, App ${APP_ID}, Depot ${CONTENT_DEPOT_ID})
   --method steamcmd  Use SteamCMD (/usr/local/bin/steamcmd)
   --method archive   Decompress data.7z or data.tar.zst archive if present
   --method link      Link an existing external Steam installation
@@ -210,7 +210,7 @@ async function runArchiveMethod(): Promise<boolean> {
 // Method: NIE native steam downloader
 async function runNieSteamMethod(): Promise<boolean> {
   console.log(
-    "[NIE STEAM] Preparing native Rust Steam downloader (bunre steam)...",
+    "[NIE STEAM] Preparing native Rust Steam depot client (bun-steam-depot)...",
   );
   mkdirSync(targetDest, { recursive: true });
 
@@ -227,7 +227,7 @@ async function runNieSteamMethod(): Promise<boolean> {
 
   const builtBinary = resolve(
     root,
-    `target/release/bunre${process.platform === "win32" ? ".exe" : ""}`,
+    `target/release/bun-steam-depot${process.platform === "win32" ? ".exe" : ""}`,
   );
   const hasBinary = existsSync(builtBinary);
 
@@ -258,22 +258,26 @@ async function runNieSteamMethod(): Promise<boolean> {
 
   if (options["dry-run"]) {
     console.log(
-      `[DRY-RUN] Run bunre steam sync -o ${targetDest} (Depot ${CONTENT_DEPOT_ID})`,
+      `[DRY-RUN] Run bun-steam-depot sync -o ${targetDest} (Depot ${CONTENT_DEPOT_ID})`,
     );
     return true;
   }
 
+  // The password, when given, is passed to the process but never echoed.
+  const shownArgs = cmdArgs
+    .map((arg, index) => (cmdArgs[index - 1] === "-p" ? "<redacted>" : arg))
+    .join(" ");
   let proc;
   if (hasBinary) {
-    console.log(`[EXEC] ${builtBinary} steam ${cmdArgs.join(" ")}`);
-    proc = Bun.spawnSync([builtBinary, "steam", ...cmdArgs], {
+    console.log(`[EXEC] ${builtBinary} ${shownArgs}`);
+    proc = Bun.spawnSync([builtBinary, ...cmdArgs], {
       cwd: root,
       env,
       stdio: ["inherit", "inherit", "inherit"],
     });
   } else {
     console.log(
-      `[EXEC] cargo run --release -p bun-re --features steam-download --bin bunre -- steam ${cmdArgs.join(" ")}`,
+      `[EXEC] cargo run --release -p bun-steam --features depot --bin bun-steam-depot -- ${shownArgs}`,
     );
     proc = Bun.spawnSync(
       [
@@ -281,13 +285,12 @@ async function runNieSteamMethod(): Promise<boolean> {
         "run",
         "--release",
         "-p",
-        "bun-re",
+        "bun-steam",
         "--features",
-        "steam-download",
+        "depot",
         "--bin",
-        "bunre",
+        "bun-steam-depot",
         "--",
-        "steam",
         ...cmdArgs,
       ],
       {

@@ -22,6 +22,11 @@ pub type Block = for<'a> fn(&mut Rt<'a>);
 /// Block table of a generated crate.
 pub type Lookup = fn(u32) -> Option<Block>;
 
+thread_local! {
+    /// Last validated (RAM write generation, code hash) per guarded block.
+    static GUARDS: std::cell::RefCell<std::collections::HashMap<u32, (u64, u32)>> = std::cell::RefCell::new(std::collections::HashMap::new());
+}
+
 /// Handle passed to translated blocks.
 pub struct Rt<'a> {
     sys: &'a mut Core,
@@ -30,9 +35,15 @@ pub struct Rt<'a> {
     stop: bool,
     fallback: bool,
     next_pc: u32,
+    /// Registers whose delayed copy differs from the committed file (the rest are equal).
+    dirty: u32,
 }
 
 /// Run translated code for up to `budget` instructions; 0 lets the interpreter step.
+///
+/// Blocks are chained within the budget while no delayed branch or interrupt is pending and the
+/// program counter stays on translated code away from the BIOS call vectors (where the core checks
+/// TTY output).
 pub fn run(sys: &mut Core, budget: u32, lookup: Lookup) -> u32 {
     let cpu = sys.cpu();
     if cpu.delayed_branch.is_some() || Cpu::interrupt_pending(sys) {
@@ -43,9 +54,42 @@ pub fn run(sys: &mut Core, budget: u32, lookup: Lookup) -> u32 {
         super::count_interpreted(1);
         return 0;
     };
-    let mut rt = Rt { sys, budget, executed: 1, stop: false, fallback: false, next_pc: 0 };
+    // An interpreter step that raised an exception leaves its delayed writes uncommitted; carry
+    // them into the first commit like the interpreter's full copy would.
+    let cpu = sys.cpu();
+    let dirty = (1..32)
+        .filter(|&r| cpu.regs[r] != cpu.regd[r])
+        .fold(0u32, |m, r| m | (1 << r));
+    let mut rt = Rt {
+        sys,
+        budget,
+        executed: 1,
+        stop: false,
+        fallback: false,
+        next_pc: 0,
+        dirty,
+    };
+    let mut entries = 1u64;
     block(&mut rt);
-    super::count(u64::from(rt.executed - u32::from(rt.fallback)), rt.fallback);
+    while !rt.stop && !rt.fallback && rt.executed < budget {
+        let cpu = rt.sys.cpu();
+        let pc = cpu.pc;
+        if cpu.delayed_branch.is_some()
+            || matches!(pc & 0x1FFF_FFFF, 0xA0 | 0xB0)
+            || Cpu::interrupt_pending(rt.sys)
+        {
+            break;
+        }
+        let Some(next) = lookup(pc) else { break };
+        entries += 1;
+        rt.executed += 1;
+        next(&mut rt);
+    }
+    super::count_entries(
+        u64::from(rt.executed - u32::from(rt.fallback)),
+        entries,
+        rt.fallback,
+    );
     rt.executed
 }
 
@@ -68,7 +112,10 @@ impl Rt<'_> {
         match r {
             32 => cpu.hi = v,
             33 => cpu.lo = v,
-            _ => cpu.regd[r] = v,
+            _ => {
+                cpu.regd[r] = v;
+                self.dirty |= 1 << r;
+            }
         }
     }
 
@@ -107,17 +154,25 @@ impl Rt<'_> {
             && reg != 0
         {
             cpu.regd[reg] = val;
+            self.dirty |= 1 << reg;
         }
         self.next_pc = cpu.delayed_branch.take().unwrap_or(addr.wrapping_add(4));
     }
 
-    /// End of an instruction: commit the delayed register file and move to the next pc.
+    /// End of an instruction: commit the delayed register file and move to the next pc. Only
+    /// the registers written since the last commit differ, so only those are copied.
     #[inline(always)]
     pub fn end(&mut self) {
         let cpu = self.sys.cpu_mut();
-        cpu.regs = cpu.regd;
+        let mut d = self.dirty;
+        while d != 0 {
+            let r = d.trailing_zeros() as usize;
+            cpu.regs[r] = cpu.regd[r];
+            d &= d - 1;
+        }
         cpu.regs[0] = 0;
         cpu.pc = self.next_pc;
+        self.dirty = 0;
     }
 
     /// Committed program counter.
@@ -141,6 +196,7 @@ impl Rt<'_> {
     #[inline(always)]
     fn delayed(&mut self, rt: u32, v: u32) {
         self.sys.cpu_mut().take_delayed_load(rt as usize, v);
+        self.dirty |= 1 << rt;
     }
 
     /// `lb`.
@@ -263,14 +319,33 @@ impl Rt<'_> {
         self.write::<4>(a, data);
     }
 
-    /// FNV-1a of `words` instruction words at `addr` (entry guard for code in RAM).
+    /// FNV-1a of `words` instruction words at `addr` (entry guard for code in RAM). The hash is
+    /// recomputed only when a write touched the RAM pages of the block since the last check.
     pub fn code_hash(&mut self, addr: u32, words: u32) -> u32 {
+        let generation = self.sys.ram_generation(addr, words * 4);
+        if let Some(g) = generation
+            && let Some(h) = GUARDS.with(|c| {
+                c.borrow()
+                    .get(&addr)
+                    .filter(|(cg, _)| *cg == g)
+                    .map(|(_, h)| *h)
+            })
+        {
+            return h;
+        }
         let mut h: u32 = 0x811c_9dc5;
         for i in 0..words {
-            for b in self.sys.fetch_instruction(addr.wrapping_add(i * 4)).to_le_bytes() {
+            for b in self
+                .sys
+                .fetch_instruction(addr.wrapping_add(i * 4))
+                .to_le_bytes()
+            {
                 h ^= u32::from(b);
                 h = h.wrapping_mul(0x0100_0193);
             }
+        }
+        if let Some(g) = generation {
+            GUARDS.with(|c| c.borrow_mut().insert(addr, (g, h)));
         }
         h
     }

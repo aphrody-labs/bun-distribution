@@ -9,6 +9,7 @@ import { runFrontend, runLibrary } from "./frontend/cli";
 import { launch, trace } from "./launcher";
 import { runNative } from "./nds/cli";
 import { probeHost } from "./probe";
+import { runShell } from "./shell";
 import {
   buildWorkspace,
   compileWorkspace,
@@ -39,7 +40,11 @@ async function main(): Promise<void> {
     ]);
   else if (command === "run" && appId)
     process.exitCode = await runNative(process.argv.slice(2));
-  else if (command === "compile") {
+  else if (command === "recompile") {
+    // One owner: static recompilation lives in `re` (bun-re pipeline over these engine cores).
+    const { recompileMain } = await import("@bun-os/re/pipeline");
+    process.exitCode = await recompileMain(process.argv.slice(3));
+  } else if (command === "compile") {
     const compileTarget = isCompileTarget(appId) ? appId : undefined;
     if (appId && !compileTarget && appId.startsWith("bun-"))
       throw new TypeError(`unsupported compile target: ${appId}`);
@@ -51,6 +56,8 @@ async function main(): Promise<void> {
   } else if (command === "web") await serveWorkspace();
   else if (command === "frontend")
     process.exitCode = await runFrontend(process.argv.slice(3));
+  else if (command === "shell")
+    process.exitCode = await runShell(process.argv.slice(3));
   else if (command === "library")
     process.exitCode = await runLibrary(process.argv.slice(3));
   else if (command === "qualify" && appId)
@@ -60,7 +67,7 @@ async function main(): Promise<void> {
   else if (command === "trace" && appId) process.exitCode = await trace(appId);
   else {
     throw new Error(
-      "reverse engineering (Replica, Ghidra, Magika, pipeline) lives in `re`.\nusage: bun-engine build [--release] | compile [bun-<os>-<arch>] [outfile] [bytecode-order] | test | web | frontend [--port N] [--no-window] [--screenshot PNG] | library <scan|systems|games|routes|sources|add|default|bios|launch|check> | probe | references | formats <identify|header|sections|files|disasm|stream|compile> ... | nds:info <rom.nds> [--json] | run <nds|arm|x86|linux> <image> [--headless] [--frames N] [--out DIR] | qualify <appid> | launch <appid> | trace <appid>",
+      "reverse engineering (Replica, Ghidra, Magika, pipeline) lives in `re`.\nusage: bun-engine build [--release] | compile [bun-<os>-<arch>] [outfile] [bytecode-order] | test | web | shell [--session|status|install-session] | frontend [--port N] [--no-window] [--screenshot PNG] | library <scan|systems|games|routes|sources|add|default|bios|launch|check> | probe | references | formats <identify|header|sections|files|disasm|stream|compile> ... | nds:info <rom.nds> [--json] | run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] | recompile <image> --target <exe|wasm> [--out DIR] (same as `re recompile`) | qualify <appid> | launch <appid> | trace <appid>",
     );
   }
 }

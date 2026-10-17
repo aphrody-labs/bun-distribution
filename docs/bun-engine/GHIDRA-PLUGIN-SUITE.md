@@ -44,7 +44,7 @@ Closing the owner terminates its entire process tree.
 
 ```powershell
 re ghidra-win probe
-bun run ./src/cli.ts ghidra:inspect C:\path\program.exe
+re ghidra-win inspect C:\path\program.exe
 re pipeline adapters
 re ghidra-win build
 ```

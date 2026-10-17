@@ -19,7 +19,11 @@ impl Psx {
 
     /// Same as [`Psx::new`], running statically recompiled code through `runner`
     /// (`crate::recomp::psx`) from the first BIOS instruction on.
-    pub fn with_runner(bios: &[u8], media: &[u8], runner: Option<starpsx_core::Runner>) -> Result<Self, String> {
+    pub fn with_runner(
+        bios: &[u8],
+        media: &[u8],
+        runner: Option<starpsx_core::Runner>,
+    ) -> Result<Self, String> {
         let bios: Box<[u8; 0x80000]> = bios
             .to_vec()
             .into_boxed_slice()
@@ -35,7 +39,14 @@ impl Psx {
             builder = builder.with_media(Media::Binary(media.to_vec()));
         }
         let system = builder.build().map_err(|e| format!("PlayStation: {e}"))?;
-        Ok(Self { system: Box::new(system), screen: Screen { width: 320, height: 240, rgb: vec![0; 320 * 240 * 3] } })
+        Ok(Self {
+            system: Box::new(system),
+            screen: Screen {
+                width: 320,
+                height: 240,
+                rgb: vec![0; 320 * 240 * 3],
+            },
+        })
     }
 }
 
@@ -82,7 +93,11 @@ impl Machine for Psx {
     }
 
     fn screens(&self) -> Vec<Screen> {
-        vec![Screen { width: self.screen.width, height: self.screen.height, rgb: self.screen.rgb.clone() }]
+        vec![Screen {
+            width: self.screen.width,
+            height: self.screen.height,
+            rgb: self.screen.rgb.clone(),
+        }]
     }
 
     fn console(&mut self) -> Vec<u8> {
