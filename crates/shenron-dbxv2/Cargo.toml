@@ -21,6 +21,6 @@ crate-type = ["cdylib", "rlib"]
 workspace = true
 
 [dependencies]
-bun-re = { workspace = true, features = ["dbxv2"] }
+bun-re = { path = "../re", features = ["dbxv2"] }
 serde = { workspace = true }
 serde_json = { workspace = true }

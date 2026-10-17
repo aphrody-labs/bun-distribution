@@ -2,8 +2,8 @@
 //! Settings pages: the cosmic-settings page/section/item model with typed controls, filled by
 //! the shell's built-ins and by plugins (`location: "settings"`), and searchable from the launcher.
 //!
-//! Titles are Fluent message keys (`settings.<page>.title`, resolved by the host); a control's id
-//! is the persisted setting key of `shell.db` / `settings.json`.
+//! Titles are Fluent message keys (`settings.<page>` for pages, resolved by the host); a control's
+//! id is the persisted setting key of `shell.db` / `settings.json`.
 
 use serde::{Deserialize, Serialize};
 
@@ -62,21 +62,12 @@ pub struct SettingsRegistry {
     pages: Vec<SettingsPage>,
 }
 
-fn item(id: &str, control: Control) -> SettingItem {
+fn item(id: &str, title: &str, control: Control) -> SettingItem {
     SettingItem {
         id: id.to_string(),
-        title: format!("settings.{id}"),
-        description: Some(format!("settings.{id}.description")),
+        title: title.to_string(),
+        description: None,
         control,
-    }
-}
-
-fn choice(values: &[&str], prefix: &str) -> Control {
-    Control::Choice {
-        options: values
-            .iter()
-            .map(|v| (v.to_string(), format!("{prefix}.{v}")))
-            .collect(),
     }
 }
 
@@ -84,7 +75,7 @@ fn page(id: &str, icon: &str, order: i32, items: Vec<SettingItem>) -> SettingsPa
     SettingsPage {
         id: id.to_string(),
         icon: icon.to_string(),
-        title: format!("settings.page.{id}"),
+        title: format!("settings.{id}"),
         sections: vec![SettingsSection { title: None, items }],
         order,
         owner: "bun-os".into(),
@@ -92,35 +83,31 @@ fn page(id: &str, icon: &str, order: i32, items: Vec<SettingItem>) -> SettingsPa
 }
 
 impl SettingsRegistry {
-    /// Built-in pages of the console shell.
+    /// Built-in pages of the console shell (setting ids are the `shell.db` keys).
     pub fn bun_os_defaults() -> Self {
         let mut registry = Self::default();
+        let action = |command: &str| Control::Action { command: command.into() };
         for p in [
-            page("appearance", "palette", 0, vec![
-                item("theme", Control::Page { page: "themes".into() }),
-                item("mode", choice(&["system", "dark", "light"], "settings.mode")),
-                item("dynamic-color", Control::Toggle),
-                item("contrast", Control::Slider { min: 0.0, max: 1.0, step: 0.5 }),
-                item("language", Control::Page { page: "language".into() }),
+            page("console", "sports_esports", 0, vec![
+                item("haptics", "settings.haptics", Control::Toggle),
+                item("motion", "settings.motion", Control::Toggle),
+                item("hud", "settings.performance", Control::Toggle),
+                item("rescan", "settings.reload", action("library.rescan")),
             ]),
-            page("controls", "sports_esports", 10, vec![
-                item("haptics", Control::Toggle),
-                item("motion", choice(&["system", "reduced", "full"], "settings.motion")),
+            page("appearance", "palette", 10, vec![
+                item("dynamic-color", "settings.dynamic-color", Control::Toggle),
+                item("theme", "settings.theme", Control::Page { page: "themes".into() }),
+                item("language", "settings.language", Control::Page { page: "language".into() }),
             ]),
-            page("display", "tv", 20, vec![
-                item("hud", Control::Toggle),
-                item("hdr", Control::Info),
-                item("gpu", Control::Info),
-            ]),
-            page("notifications", "notifications", 30, vec![item("do-not-disturb", Control::Toggle)]),
-            page("media", "photo_library", 40, vec![
-                item("capture-format", choice(&["png", "webp"], "settings.capture-format")),
-                item("clip-format", choice(&["mp4", "gif"], "settings.clip-format")),
-            ]),
-            page("library", "video_library", 50, vec![item("rescan", Control::Action { command: "library.rescan".into() })]),
-            page("system", "settings", 60, vec![
-                item("session", Control::Action { command: "shell.session".into() }),
-                item("desktop", Control::Action { command: "shell.desktop".into() }),
+            page("notifications", "notifications", 20, vec![item(
+                "do-not-disturb",
+                "action.do-not-disturb",
+                Control::Toggle,
+            )]),
+            page("media", "photo_library", 30, vec![item("gallery", "media.title", action("shell.gallery"))]),
+            page("system", "settings", 40, vec![
+                item("session", "settings.session", action("shell.session")),
+                item("desktop", "settings.desktop", action("shell.desktop")),
             ]),
         ] {
             registry.register(p);
@@ -143,7 +130,7 @@ impl SettingsRegistry {
             None => self.pages.push(SettingsPage {
                 id: page_id.to_string(),
                 icon: "extension".into(),
-                title: format!("settings.page.{page_id}"),
+                title: format!("settings.{page_id}"),
                 sections: vec![section],
                 order: 1000,
                 owner: owner.to_string(),
