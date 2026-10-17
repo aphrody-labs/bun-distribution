@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 /** `re-steam`: native Bun Steam indexer (scan, stats, sql, api-sync, store, openid, classify, rea, remote-download). */
 import { parseArgs } from "node:util";
-import { openSteamDb } from "./db.ts";
-import { opClassify, opRea, opScan, opSql, opStats } from "./ops.ts";
-import { openIdLoginUrl, openIdVerify, recordAuthSession } from "./openid.ts";
-import { syncApiCatalog, syncAppList, syncStoreApps } from "./webapi.ts";
-import { remoteDownload } from "./remote.ts";
+import { openSteamDb } from "./db.js";
+import { opClassify, opRea, opScan, opSql, opStats } from "./ops.js";
+import { openIdLoginUrl, openIdVerify, recordAuthSession } from "./openid.js";
+import { syncApiCatalog, syncAppList, syncStoreApps } from "./webapi.js";
+import { remoteDownload } from "./remote.js";
 
 const HELP = `re-steam <command> [options]
   scan                       index the local Steam install into SQLite
@@ -43,12 +43,20 @@ const { values, positionals } = parseArgs({
 const common = {
   db: values.db,
   root: values.root,
-  hashMax: values["no-hash"] ? 0 : values["hash-max"] ? Number(values["hash-max"]) : undefined,
+  hashMax: values["no-hash"]
+    ? 0
+    : values["hash-max"]
+      ? Number(values["hash-max"])
+      : undefined,
 };
 const print = (v: unknown) =>
   console.log(
     values.json || typeof v !== "string"
-      ? JSON.stringify(v, (_, x) => (typeof x === "bigint" ? x.toString() : x), 2)
+      ? JSON.stringify(
+          v,
+          (_, x) => (typeof x === "bigint" ? x.toString() : x),
+          2,
+        )
       : v,
   );
 const [cmd, ...rest] = positionals;
@@ -56,7 +64,7 @@ const [cmd, ...rest] = positionals;
 try {
   switch (cmd) {
     case "scan":
-      print(await opScan(common, m => console.error(m)));
+      print(await opScan(common, (m) => console.error(m)));
       break;
     case "stats":
       print(opStats(common));

@@ -158,7 +158,9 @@ export function openSteamDb(path = defaultSteamDbPath()): Database {
   db.run("PRAGMA journal_mode = WAL");
   db.run("PRAGMA synchronous = NORMAL");
   db.run("PRAGMA temp_store = MEMORY");
-  const version = (db.query("PRAGMA user_version").get() as { user_version: number }).user_version;
+  const version = (
+    db.query("PRAGMA user_version").get() as { user_version: number }
+  ).user_version;
   if (version !== 0 && version < SCHEMA_VERSION) {
     // Single schema version so far: older files are rebuilt from scratch.
     for (const t of SCAN_TABLES) db.run(`DROP TABLE IF EXISTS ${t}`);
@@ -187,6 +189,7 @@ export function tableCounts(db: Database): TableCount[] {
     .all() as { name: string }[];
   return names.map(({ name }) => ({
     table: name,
-    rows: (db.query(`SELECT count(*) AS n FROM ${name}`).get() as { n: number }).n,
+    rows: (db.query(`SELECT count(*) AS n FROM ${name}`).get() as { n: number })
+      .n,
   }));
 }

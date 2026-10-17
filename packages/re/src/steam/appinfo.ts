@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /** `appcache/appinfo.vdf` (PICS app info) and `appcache/packageinfo.vdf` readers. */
-import { Cursor, type KvObject, parseBinaryKv } from "./kv.ts";
+import { Cursor, type KvObject, parseBinaryKv } from "./kv.js";
 
 export const APPINFO_MAGIC = {
   v39: 0x07564427,
@@ -33,7 +33,11 @@ const hex = (b: Uint8Array) => Buffer.from(b).toString("hex");
 export function parseAppInfo(bytes: Uint8Array): AppInfoFile {
   const cur = new Cursor(bytes);
   const magic = cur.u32();
-  if (magic !== APPINFO_MAGIC.v39 && magic !== APPINFO_MAGIC.v40 && magic !== APPINFO_MAGIC.v41) {
+  if (
+    magic !== APPINFO_MAGIC.v39 &&
+    magic !== APPINFO_MAGIC.v40 &&
+    magic !== APPINFO_MAGIC.v41
+  ) {
     throw new Error(`appinfo.vdf: unknown magic 0x${magic.toString(16)}`);
   }
   const universe = cur.u32();
@@ -48,7 +52,12 @@ export function parseAppInfo(bytes: Uint8Array): AppInfoFile {
   }
   const apps: AppInfoEntry[] = [];
   const end = stringTable
-    ? Number(new DataView(bytes.buffer, bytes.byteOffset + 8, 8).getBigUint64(0, true))
+    ? Number(
+        new DataView(bytes.buffer, bytes.byteOffset + 8, 8).getBigUint64(
+          0,
+          true,
+        ),
+      )
     : bytes.length;
   while (cur.pos + 4 <= end) {
     const appid = cur.u32();

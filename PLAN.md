@@ -190,7 +190,7 @@
 ## IECODE absorption, RE merge and forge recovery — 2026-10-16
 
 - All IECODE Rust crates (93 packages), Bun packages, apps and scripts are absorbed into the flat root `crates/`, `apps/` and `packages/` layout, one direct child per member, under the root nightly toolchain and Bun 1.4.4 native quality commands. `C:srciecode` is kept untouched until the owner retires it.
-- Reverse engineering is merged into one capability: `packages/re` (Bun-native fork of morluto/rea, `aphrody-labs/rea`) and `crates/re` (Rust core `bun-re` folding `aphrody re`, `shenron-re`, `aphrody-nie-re`, `aphrody-nie-dump` and `aphrody-nie-steam`; features `nie`, `steam-emulator`, `steam-download`, CLI `bunre-steam`). Ghidra bumped to upstream, JDK and Android SDK/cmdline-tools installed and on the user PATH.
+- Reverse engineering is merged into one capability: `packages/re` (Bun-native fork of morluto/rea, `aphrody-labs/rea`, merged with its history on 2026-10-17 together with the Replica skills in `packages/re/replica`) and `crates/re` (Rust core `bun-re` folding `aphrody re`, `shenron-re`, `aphrody-nie-re`, `aphrody-nie-dump` and `aphrody-nie-steam`; features `nie`, `steam-emulator`, `steam-download`, CLI `bunre-steam`). Ghidra bumped to upstream, JDK and Android SDK/cmdline-tools installed and on the user PATH.
 - `packages/kernel-client`, `packages/ovh` and `packages/paths` are inlined; the retired `bun-forge` Gitea (empty data, container stopped on vps) is no longer a source owner. Remaining `bun-forge` submodule URLs must move to GitHub or be inlined.
 - [x] Repair the shared Bun lock for the existing `bun-arch-mcp`, `bun-blender`
       and `bun-loaders` members. Frozen offline installation with lifecycle

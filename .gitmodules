@@ -522,3 +522,18 @@
 [submodule "vendor/re/ida-pro-mcp"]
 	path = vendor/re/ida-pro-mcp
 	url = https://github.com/mrexodia/ida-pro-mcp.git
+[submodule "packages/re/third_party/binwalk"]
+	path = packages/re/third_party/binwalk
+	url = https://github.com/ReFirmLabs/binwalk.git
+[submodule "packages/re/third_party/ghidra-nativeaot"]
+	path = packages/re/third_party/ghidra-nativeaot
+	url = https://github.com/Washi1337/ghidra-nativeaot.git
+[submodule "packages/re/third_party/jadx-headless-mcp"]
+	path = packages/re/third_party/jadx-headless-mcp
+	url = https://github.com/1013503897/jadx-headless-mcp.git
+[submodule "packages/re/third_party/unblob"]
+	path = packages/re/third_party/unblob
+	url = https://github.com/onekey-sec/unblob.git
+[submodule "packages/re/third_party/wakaru"]
+	path = packages/re/third_party/wakaru
+	url = https://github.com/pionxzh/wakaru.git

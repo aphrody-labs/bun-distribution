@@ -18,7 +18,12 @@ interface Sig {
   bytes: number[] | string;
 }
 
-const S = (kind: string, mime: string, bytes: number[] | string, at = 0): Sig => ({ kind, mime, bytes, at });
+const S = (
+  kind: string,
+  mime: string,
+  bytes: number[] | string,
+  at = 0,
+): Sig => ({ kind, mime, bytes, at });
 
 const SIGNATURES: Sig[] = [
   S("pe", "application/vnd.microsoft.portable-executable", "MZ"),
@@ -28,9 +33,21 @@ const SIGNATURES: Sig[] = [
   S("steam-appinfo", "application/x-steam-appinfo", [0x27, 0x44, 0x56, 0x07]),
   S("steam-appinfo", "application/x-steam-appinfo", [0x28, 0x44, 0x56, 0x07]),
   S("steam-appinfo", "application/x-steam-appinfo", [0x29, 0x44, 0x56, 0x07]),
-  S("steam-packageinfo", "application/x-steam-packageinfo", [0x27, 0x55, 0x56, 0x06]),
-  S("steam-packageinfo", "application/x-steam-packageinfo", [0x28, 0x55, 0x56, 0x06]),
-  S("steam-manifest", "application/x-steam-depot-manifest", [0xd0, 0x17, 0xf6, 0x71]),
+  S(
+    "steam-packageinfo",
+    "application/x-steam-packageinfo",
+    [0x27, 0x55, 0x56, 0x06],
+  ),
+  S(
+    "steam-packageinfo",
+    "application/x-steam-packageinfo",
+    [0x28, 0x55, 0x56, 0x06],
+  ),
+  S(
+    "steam-manifest",
+    "application/x-steam-depot-manifest",
+    [0xd0, 0x17, 0xf6, 0x71],
+  ),
   S("cpk", "application/x-criware-cpk", "CPK "),
   S("zip", "application/zip", [0x50, 0x4b, 0x03, 0x04]),
   S("zip", "application/zip", [0x50, 0x4b, 0x05, 0x06]),
@@ -61,7 +78,11 @@ const SIGNATURES: Sig[] = [
   S("class", "application/java-vm", [0xca, 0xfe, 0xba, 0xbe]),
   S("minidump", "application/x-dmp", "MDMP"),
   S("pdb", "application/x-ms-pdb", "Microsoft C/C++ MSF 7.00"),
-  S("lnk", "application/x-ms-shortcut", [0x4c, 0x00, 0x00, 0x00, 0x01, 0x14, 0x02, 0x00]),
+  S(
+    "lnk",
+    "application/x-ms-shortcut",
+    [0x4c, 0x00, 0x00, 0x00, 0x01, 0x14, 0x02, 0x00],
+  ),
   S("ttf", "font/ttf", [0x00, 0x01, 0x00, 0x00]),
   S("otf", "font/otf", "OTTO"),
   S("woff2", "font/woff2", "wOF2"),
@@ -69,7 +90,7 @@ const SIGNATURES: Sig[] = [
   S("vpk", "application/x-valve-vpk", [0x34, 0x12, 0xaa, 0x55]),
   S("steam-dmp", "application/x-steam-crash-dump", "STEAMDMP"),
   S("protobuf-cache", "application/x-protobuf", []),
-].filter(s => s.bytes.length > 0);
+].filter((s) => s.bytes.length > 0);
 
 const TEXT_EXT: Record<string, FileType> = {
   vdf: { kind: "vdf", mime: "text/x-valve-keyvalues" },
@@ -96,7 +117,10 @@ const TEXT_EXT: Record<string, FileType> = {
 };
 
 const matches = (buf: Uint8Array, sig: Sig): boolean => {
-  const b = typeof sig.bytes === "string" ? Array.from(sig.bytes, c => c.charCodeAt(0)) : sig.bytes;
+  const b =
+    typeof sig.bytes === "string"
+      ? Array.from(sig.bytes, (c) => c.charCodeAt(0))
+      : sig.bytes;
   if (buf.length < sig.at + b.length) return false;
   for (let i = 0; i < b.length; i++) if (buf[sig.at + i] !== b[i]) return false;
   return true;
@@ -104,21 +128,38 @@ const matches = (buf: Uint8Array, sig: Sig): boolean => {
 
 function looksText(buf: Uint8Array): "utf8" | "utf16" | null {
   if (buf.length === 0) return null;
-  if (buf.length >= 2 && ((buf[0] === 0xff && buf[1] === 0xfe) || (buf[0] === 0xfe && buf[1] === 0xff))) return "utf16";
+  if (
+    buf.length >= 2 &&
+    ((buf[0] === 0xff && buf[1] === 0xfe) ||
+      (buf[0] === 0xfe && buf[1] === 0xff))
+  )
+    return "utf16";
   let control = 0;
   let zeros = 0;
   const n = Math.min(buf.length, 4096);
   for (let i = 0; i < n; i++) {
     const c = buf[i]!;
     if (c === 0) zeros++;
-    else if (c < 0x20 && c !== 0x09 && c !== 0x0a && c !== 0x0d && c !== 0x0c && c !== 0x1b) control++;
+    else if (
+      c < 0x20 &&
+      c !== 0x09 &&
+      c !== 0x0a &&
+      c !== 0x0d &&
+      c !== 0x0c &&
+      c !== 0x1b
+    )
+      control++;
   }
   if (zeros > n / 3 && zeros < n * 0.6) return "utf16";
   return zeros === 0 && control <= n / 100 ? "utf8" : null;
 }
 
 /** Classifies a file prefix (first 4 KiB is enough) with an optional extension and total size hint. */
-export function detectFileType(prefix: Uint8Array, ext = "", size = prefix.length): FileType {
+export function detectFileType(
+  prefix: Uint8Array,
+  ext = "",
+  size = prefix.length,
+): FileType {
   for (const sig of SIGNATURES) {
     if (matches(prefix, sig)) {
       if (sig.kind === "riff") {
@@ -139,13 +180,22 @@ export function detectFileType(prefix: Uint8Array, ext = "", size = prefix.lengt
   }
   const text = looksText(prefix);
   if (text) {
-    const head = new TextDecoder(text === "utf16" ? "utf-16le" : "utf-8").decode(prefix.subarray(0, 512)).trimStart();
-    if (head.startsWith("{") || head.startsWith("[")) return { kind: "json", mime: "application/json" };
-    if (head.startsWith("<?xml") || head.startsWith("<")) return { kind: "xml", mime: "application/xml" };
-    if (/^"[^"\n]+"\s*\r?\n\s*\{/.test(head) || head.startsWith('"AppState"') || head.startsWith('"libraryfolders"')) {
+    const head = new TextDecoder(text === "utf16" ? "utf-16le" : "utf-8")
+      .decode(prefix.subarray(0, 512))
+      .trimStart();
+    if (head.startsWith("{") || head.startsWith("["))
+      return { kind: "json", mime: "application/json" };
+    if (head.startsWith("<?xml") || head.startsWith("<"))
+      return { kind: "xml", mime: "application/xml" };
+    if (
+      /^"[^"\n]+"\s*\r?\n\s*\{/.test(head) ||
+      head.startsWith('"AppState"') ||
+      head.startsWith('"libraryfolders"')
+    ) {
       return { kind: "vdf", mime: "text/x-valve-keyvalues" };
     }
-    if (/^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]/.test(head)) return { kind: "log", mime: "text/plain" };
+    if (/^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]/.test(head))
+      return { kind: "log", mime: "text/plain" };
     if (head.startsWith("#!")) return { kind: "script", mime: "text/x-script" };
     return (
       TEXT_EXT[ext.toLowerCase()] ?? {
@@ -158,7 +208,8 @@ export function detectFileType(prefix: Uint8Array, ext = "", size = prefix.lengt
   if (byExt && byExt.kind !== "text") return byExt;
   if (size === 0) return { kind: "empty", mime: "application/x-empty" };
   if (ext.toLowerCase() === "tga") return { kind: "tga", mime: "image/x-tga" };
-  if (/^\d{6}$/.test(ext) || ext.toLowerCase() === "ldb") return { kind: "leveldb", mime: "application/x-leveldb" };
+  if (/^\d{6}$/.test(ext) || ext.toLowerCase() === "ldb")
+    return { kind: "leveldb", mime: "application/x-leveldb" };
   return { kind: "binary", mime: "application/octet-stream" };
 }
 
@@ -166,6 +217,8 @@ export function detectFileType(prefix: Uint8Array, ext = "", size = prefix.lengt
 export async function detectFile(path: string, ext = ""): Promise<FileType> {
   const f = Bun.file(path);
   const size = f.size;
-  const bytes = new Uint8Array(await f.slice(0, Math.min(size, 4096)).arrayBuffer());
+  const bytes = new Uint8Array(
+    await f.slice(0, Math.min(size, 4096)).arrayBuffer(),
+  );
   return detectFileType(bytes, ext, size);
 }

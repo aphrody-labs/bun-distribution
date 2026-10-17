@@ -3,7 +3,7 @@
  * `depotcache/<depot>_<gid>.manifest` reader: the Steam content manifest container
  * (payload / metadata / signature protobuf sections) with a minimal protobuf wire decoder.
  */
-import { Cursor } from "./kv.ts";
+import { Cursor } from "./kv.js";
 
 export const MANIFEST_MAGIC = {
   payload: 0x71f617d0,
@@ -61,22 +61,23 @@ export function decodeProto(bytes: Uint8Array): Field[] {
 
 const utf8 = new TextDecoder();
 const num = (f: Field[], n: number): number | null => {
-  const v = f.find(x => x.num === n && typeof x.value === "bigint");
+  const v = f.find((x) => x.num === n && typeof x.value === "bigint");
   return v ? Number(v.value) : null;
 };
 const big = (f: Field[], n: number): bigint | null => {
-  const v = f.find(x => x.num === n && typeof x.value === "bigint");
+  const v = f.find((x) => x.num === n && typeof x.value === "bigint");
   return v ? (v.value as bigint) : null;
 };
 const bytesOf = (f: Field[], n: number): Uint8Array | null => {
-  const v = f.find(x => x.num === n && typeof x.value !== "bigint");
+  const v = f.find((x) => x.num === n && typeof x.value !== "bigint");
   return v ? (v.value as Uint8Array) : null;
 };
 const str = (f: Field[], n: number): string | null => {
   const b = bytesOf(f, n);
   return b ? utf8.decode(b) : null;
 };
-const hex = (b: Uint8Array | null) => (b ? Buffer.from(b).toString("hex") : null);
+const hex = (b: Uint8Array | null) =>
+  b ? Buffer.from(b).toString("hex") : null;
 
 export interface ManifestChunk {
   sha: string | null;
@@ -113,7 +114,10 @@ export interface DepotManifest {
 }
 
 /** Field numbers of `content_manifest.proto` (SteamDatabase/Protobufs, steammessages_content). */
-export function parseDepotManifest(bytes: Uint8Array, { withChunks = false } = {}): DepotManifest {
+export function parseDepotManifest(
+  bytes: Uint8Array,
+  { withChunks = false } = {},
+): DepotManifest {
   const cur = new Cursor(bytes);
   let payload: Uint8Array | null = null;
   let metadata: Uint8Array | null = null;
@@ -127,16 +131,21 @@ export function parseDepotManifest(bytes: Uint8Array, { withChunks = false } = {
     if (magic === MANIFEST_MAGIC.payload) payload = section;
     else if (magic === MANIFEST_MAGIC.metadata) metadata = section;
     else if (magic === MANIFEST_MAGIC.signature) signatureBytes = len;
-    else throw new Error(`manifest: unknown section magic 0x${magic.toString(16)}`);
+    else
+      throw new Error(
+        `manifest: unknown section magic 0x${magic.toString(16)}`,
+      );
   }
   if (!payload) throw new Error("manifest: payload section missing");
   const files: ManifestFile[] = [];
   for (const f of decodeProto(payload)) {
     if (f.num !== 1 || typeof f.value === "bigint") continue;
     const m = decodeProto(f.value);
-    const chunkFields = m.filter(x => x.num === 6 && typeof x.value !== "bigint");
+    const chunkFields = m.filter(
+      (x) => x.num === 6 && typeof x.value !== "bigint",
+    );
     const chunks: ManifestChunk[] = withChunks
-      ? chunkFields.map(c => {
+      ? chunkFields.map((c) => {
           const cf = decodeProto(c.value as Uint8Array);
           return {
             sha: hex(bytesOf(cf, 1)),

@@ -46,7 +46,6 @@
     "apps/desktop/src-tauri",
     "scripts/aphrody",
     "scripts/iecode",
-    "scripts/m3",
-    "packages/replica"
+    "scripts/m3"
   ]
 }

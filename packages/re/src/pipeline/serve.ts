@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { TargetKind } from "./contract.ts";
-import { listAdapters, runPipeline } from "./runner.ts";
+import type { TargetKind } from "./contract.js";
+import { listAdapters, runPipeline } from "./runner.js";
 
 /** Local JSON API: GET /adapters, POST /run {input, target, outdir}. Binds to loopback only. */
 export function servePipeline(port = 0) {

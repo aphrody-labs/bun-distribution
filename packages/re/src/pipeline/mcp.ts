@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // MCP tools for the RE pipeline. Registration into the packages/re MCP server is one line:
 //   registerPipelineTools((tool) => server.registerTool(tool.name, tool, tool.handler));
-import type { Stage, TargetKind } from "./contract.ts";
-import { listAdapters, runPipeline } from "./runner.ts";
+import type { Stage, TargetKind } from "./contract.js";
+import { listAdapters, runPipeline } from "./runner.js";
 
 export interface PipelineTool {
   name: string;
@@ -53,7 +53,7 @@ export const pipelineTools: PipelineTool[] = [
       },
       required: ["input", "outdir"],
     },
-    handler: async a => {
+    handler: async (a) => {
       try {
         return text(
           await runPipeline(String(a.input), {
@@ -73,7 +73,7 @@ export const pipelineTools: PipelineTool[] = [
     description:
       "List registered pipeline stage adapters with live availability (ready, registered, unavailable) and owners.",
     inputSchema: { type: "object", properties: { stage: { type: "string" } } },
-    handler: async a => {
+    handler: async (a) => {
       try {
         return text(await listAdapters(a.stage as Stage | undefined));
       } catch (e) {
@@ -83,6 +83,8 @@ export const pipelineTools: PipelineTool[] = [
   },
 ];
 
-export function registerPipelineTools(register: (tool: PipelineTool) => void): void {
+export function registerPipelineTools(
+  register: (tool: PipelineTool) => void,
+): void {
   for (const t of pipelineTools) register(t);
 }

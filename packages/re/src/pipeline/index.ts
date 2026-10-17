@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-export * from "./contract.ts";
-export * from "./runner.ts";
-export * from "./db.ts";
-export * from "./mcp.ts";
-export * from "./serve.ts";
-export { main as pipelineMain } from "./cli.ts";
+export * from "./contract.js";
+export * from "./runner.js";
+export * from "./db.js";
+export * from "./mcp.js";
+export * from "./serve.js";
+export { main as pipelineMain } from "./cli.js";

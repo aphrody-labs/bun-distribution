@@ -13,7 +13,7 @@ for (const [name, rel] of [
   ["idapython", "vendor/re/ida-pro-mcp/skills/idapython"],
 ] as const)
   if (existsSync(join(root, rel, "SKILL.md"))) sources.push([name, join(root, rel)]);
-const replica = join(root, "packages/replica");
+const replica = join(root, "packages/re/replica");
 for (const d of readdirSync(replica, { withFileTypes: true }))
   if (d.isDirectory() && existsSync(join(replica, d.name, "SKILL.md")))
     sources.push([d.name, join(replica, d.name)]);

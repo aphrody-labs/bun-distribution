@@ -4866,17 +4866,6 @@
     "bin": []
   },
   {
-    "name": "@aphrody/replica",
-    "version": "1.4.4",
-    "description": "Replica skill pack consumed by @aphrody/bun-engine",
-    "dir": "packages/replica",
-    "kind": "package",
-    "workspace": true,
-    "private": true,
-    "exports": 0,
-    "bin": []
-  },
-  {
     "name": "@aphrody/runtime-sdk",
     "version": "1.4.4",
     "description": "Light TypeScript SDK of the YOLO native runtime: loads the precompiled library through its versioned C ABI",
@@ -5008,13 +4997,15 @@
   {
     "name": "@bun-os/re",
     "version": "1.4.4",
-    "description": "Bun OS reverse-engineering tools (pipeline CLI, Steam indexer, MCP tools, local API).",
+    "description": "Bun OS reverse engineering: the rea CLI and MCP server, the RE pipeline, the Steam indexer and the Replica skills.",
     "dir": "packages/re",
     "kind": "package",
     "workspace": true,
     "private": true,
     "exports": 2,
     "bin": [
+      "rea",
+      "rea-agents",
       "re-pipeline",
       "re-steam"
     ]
@@ -5145,7 +5136,7 @@
   {
     "name": "@rosegriffon/config",
     "version": "1.4.4",
-    "description": "Configs partagées : TypeScript, Oxc et Tailwind preset",
+    "description": "Configs partagées : TypeScript, bun lint et Tailwind preset",
     "dir": "packages/rg-config",
     "kind": "package",
     "workspace": true,
@@ -5156,7 +5147,7 @@
   {
     "name": "@rosegriffon/cron",
     "version": "1.4.4",
-    "description": "Daemon de tâches planifiées (cron) pour la maintenance DB, CDN et API",
+    "description": "Tâches planifiées Rose Griffon (maintenance DB, Discord, campagnes, SEO) : registre, route HTTP serverless et CLI",
     "dir": "packages/rg-cron",
     "kind": "package",
     "workspace": true,
