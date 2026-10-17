@@ -5,21 +5,6 @@
   "proxy": "nginx",
   "services": [
     {
-      "id": "nie-site",
-      "application": "nie",
-      "kind": "rust-http",
-      "runtime": "rust",
-      "unit": "nie-site.service",
-      "health": "http://127.0.0.1:8085/healthz",
-      "sourceRepo": "nie",
-      "workingDirectory": "/home/ubuntu/nie",
-      "environmentFile": "/etc/nie/nie.env",
-      "note": "no nie release plane yet: units run from the checkout",
-      "public": true,
-      "status": "retired",
-      "retiredAt": "2026-09-25"
-    },
-    {
       "id": "nie-model-serve",
       "application": "nie",
       "kind": "rust-http",
@@ -27,13 +12,19 @@
       "unit": "nie-model-serve.service",
       "health": "http://127.0.0.1:8792/health",
       "port": 8792,
-      "capabilities": ["3d-assets"],
-      "sourceRepo": "nie",
-      "workingDirectory": "/home/ubuntu/nie",
+      "capabilities": [
+        "3d-assets"
+      ],
+      "sourceRepo": "bun-os",
+      "workingDirectory": "/home/ubuntu/apps/nie",
       "publicProxy": "nginx",
-      "public": false,
-      "status": "retired",
-      "retiredAt": "2026-09-25"
+      "public": true,
+      "status": "active",
+      "publicOrigin": "https://nie.aphrody.app",
+      "consumers": [
+        "iecode-web",
+        "rg-website"
+      ]
     }
   ],
   "policies": {
@@ -45,7 +36,7 @@
       "aphrody-ai": "/home/ubuntu/apps/aphrody/current",
       "rg": "/home/ubuntu/apps/rg/current",
       "shenron": "/home/ubuntu/apps/shenron/current",
-      "nie": "/home/ubuntu/nie"
+      "nie": "/home/ubuntu/apps/nie"
     },
     "secrets": "operator-managed-environment-files",
     "retiredUnits": [
@@ -63,7 +54,12 @@
       "shenron-zswap.service",
       "filebrowser.service"
     ],
-    "sharedRuntimes": ["bun", "postgresql", "redis", "nginx"],
+    "sharedRuntimes": [
+      "bun",
+      "postgresql",
+      "redis",
+      "nginx"
+    ],
     "databasePolicy": "postgresql-primary-with-sqlite-local-cache",
     "authPolicy": "one-better-auth-contract-per-public-origin"
   }

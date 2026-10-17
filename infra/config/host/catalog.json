@@ -142,6 +142,13 @@
       "targetHost": "vps"
     },
     {
+      "service": "nie-model-serve",
+      "unit": "nie-model-serve.service",
+      "path": "systemd/nie/nie-model-serve.service",
+      "ownerRepo": "iecode",
+      "targetHost": "vps"
+    },
+    {
       "service": "aphrody-fonts-proxy",
       "unit": "aphrody-fonts-proxy.service",
       "path": "systemd/aphrody/aphrody-fonts-proxy.service",
@@ -739,10 +746,11 @@
       "service": "aphrody-bun-site"
     },
     {
-      "file": "nginx/nie/aphrody-nie-cdn.conf",
+      "file": "nginx/nie/nie.aphrody.app.conf",
       "ownerRepo": "iecode",
       "targetHost": "vps",
-      "site": "aphrody-nie-cdn"
+      "site": "nie.aphrody.app",
+      "service": "nie-model-serve"
     },
     {
       "file": "nginx/shared/00-default.conf",
