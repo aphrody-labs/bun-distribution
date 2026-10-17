@@ -30,3 +30,6 @@ flate2 = { version = "1", default-features = false, features = ["rust_backend"] 
 vectorcraft-testkit = { path = "../vectorcraft-testkit" }
 proptest = "1"
 vectorcraft-geom = { path = "../vectorcraft-geom" }
+
+[target.'cfg(target_vendor = "apple")'.dependencies]
+rustix = { workspace = true, features = ["std", "fs"] }

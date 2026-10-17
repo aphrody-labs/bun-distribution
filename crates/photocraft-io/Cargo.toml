@@ -48,3 +48,9 @@ flate2 = { version = "1", default-features = false, features = ["rust_backend"] 
 photocraft-psd = { path = "../photocraft-psd", features = ["testgen"] }
 photocraft-raw = { path = "../photocraft-raw", features = ["testgen"] }
 proptest = "1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+resvg = { version = "0.45", default-features = false, features = ["text", "system-fonts", "raster-images"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+resvg = { version = "0.45", default-features = false, features = ["text", "raster-images"] }

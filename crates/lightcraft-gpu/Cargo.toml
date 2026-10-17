@@ -32,3 +32,8 @@ denoise = ["dep:lightcraft-denoise", "lightcraft-denoise/runtime"]
 [dev-dependencies]
 lightcraft-scenes = { path = "../lightcraft-scenes" }
 lightcraft-raw = { path = "../lightcraft-raw" }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+wgpu = { workspace = true }
+pollster = { workspace = true }
+bytemuck = { workspace = true }

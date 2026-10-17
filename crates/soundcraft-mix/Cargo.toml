@@ -26,3 +26,6 @@ dbg_macro = "warn"
 todo = "warn"
 too_many_arguments = "allow"
 type_complexity = "allow"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rayon.workspace = true

@@ -25,3 +25,6 @@ flate2 = { version = "1", default-features = false, features = ["rust_backend"] 
 
 [build-dependencies]
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+parley = { version = "0.11", default-features = false, features = ["std", "complex-scripts"] }

@@ -58,3 +58,6 @@ jxl-oxide = { version = "0.12", default-features = false }
 lightcraft-heif = { path = "../lightcraft-heif", features = ["testdata"] }
 libc = "0.2"
 lightcraft-tiff = { path = "../lightcraft-tiff" }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+lightcraft-fetch = { path = "../lightcraft-fetch" }

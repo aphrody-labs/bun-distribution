@@ -25,3 +25,6 @@ deckcraft-fonts = { path = "../deckcraft-fonts" }
 unicode-linebreak = "0.1"
 unicode-segmentation = "1"
 unicode-bidi = "0.3"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+chrono = { workspace = true }

@@ -42,3 +42,6 @@ tiff = "0.11"
 psd = "0.3"
 proptest = "1"
 serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+vello_cpu = { version = "0.2", features = ["multithreading"] }

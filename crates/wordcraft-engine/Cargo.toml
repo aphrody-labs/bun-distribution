@@ -36,3 +36,7 @@ zeroize = "1"
 
 [dev-dependencies]
 zip = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# The browser clock for `now_iso` (`SystemTime::now()` panics on wasm32).
+js-sys = "0.3"

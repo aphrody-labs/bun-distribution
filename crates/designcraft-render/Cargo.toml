@@ -27,3 +27,6 @@ hayro = "0.7"
 designcraft-images = { path = "../designcraft-images" }
 log = "0.4"
 serde = { version = "1", features = ["derive", "rc"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+vello_cpu = { version = "0.2", features = ["multithreading"] }

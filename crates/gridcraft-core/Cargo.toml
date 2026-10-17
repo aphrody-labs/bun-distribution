@@ -20,3 +20,6 @@ thiserror = "2"
 
 [dev-dependencies]
 serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = "0.3"

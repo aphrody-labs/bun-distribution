@@ -18,3 +18,6 @@ photocraft-geom = { path = "../photocraft-geom" }
 photocraft-color = { path = "../photocraft-color" }
 photocraft-raster = { path = "../photocraft-raster" }
 photocraft-doc = { path = "../photocraft-doc" }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rayon = { workspace = true }

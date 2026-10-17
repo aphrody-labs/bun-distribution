@@ -15,3 +15,10 @@ too_many_arguments = "allow"
 needless_range_loop = "allow"
 type_complexity = "allow"
 excessive_precision = "allow"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+log = { workspace = true }
+rustls = { version = "0.23", default-features = false, features = ["std", "tls12"] }
+rustls-rustcrypto = "0.0.2-alpha"
+webpki-roots = "1"
+sha2 = { version = "0.10", default-features = false, features = ["std"] }

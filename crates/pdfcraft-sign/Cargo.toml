@@ -45,3 +45,19 @@ rc2 = "0.9"
 sha3 = "0.12.0"
 ripemd = "0.2.0"
 ed25519-dalek = "3.0.0"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+aws-lc-rs = { version = "1.18", default-features = false, features = ["aws-lc-sys", "prebuilt-nasm"] }
+getrandom = "0.4"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+# Safe Windows certificate store and CNG signing wrappers (MIT OR Apache-2.0).
+rustls-cng = { version = "0.7.1", default-features = false }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# Signing with Keychain identities (MIT OR Apache-2.0).
+security-framework = "3.7"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# crypto-bigint asks for randomness; in the browser it comes from Web Crypto.
+getrandom = { version = "0.4", features = ["wasm_js"] }

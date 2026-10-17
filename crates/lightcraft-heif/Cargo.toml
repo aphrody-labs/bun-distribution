@@ -22,3 +22,7 @@ too_many_arguments = "allow"
 needless_range_loop = "allow"
 type_complexity = "allow"
 excessive_precision = "allow"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+heic-rs = { version = "=0.1.4", default-features = false, features = ["std", "parallel"] }
+rayon = { workspace = true }
