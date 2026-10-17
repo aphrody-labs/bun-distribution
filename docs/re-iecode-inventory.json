@@ -2352,9 +2352,9 @@
       "migrationState": "merged-copy"
     },
     {
-      "submodule": null,
+      "submodule": "ea112a16f442a4095398e7cc0db079769dfe30b7",
       "component": "iecode-scripts-native",
-      "path": null,
+      "path": "packages/iecode-scripts",
       "type": "scripts",
       "source": {
         "repository": "aphrody-labs/iecode",
@@ -2362,8 +2362,19 @@
         "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
         "path": "scripts/{audit (61 py/ps1/sh), dev (13), forge (6 py), gecko (9 lua), ops (2), ruzu (43), upstream (31)}"
       },
-      "migrationState": "pending",
-      "notes": "Python, PowerShell, shell, Lua, Java and CMake scripts are not yet assigned to a member"
+      "memberRepository": {
+        "repository": "aphrody-labs/iecode-scripts",
+        "visibility": "private",
+        "branch": "os"
+      },
+      "cargoOwner": null,
+      "bunOwner": null,
+      "buildOwner": null,
+      "releaseOwner": null,
+      "qualification": "not run",
+      "migrationState": "submodule",
+      "history": "split with git filter-repo (11 commits, shared with iecode-re-scripts) into the member repository; the scripts/ prefix is removed",
+      "notes": "member layout: audit/uemu (54 uemu oracles) and audit/audit-serving-assets.py, dev, forge, ops, ruzu, upstream. Not carried: proofs, re-health, test-all and verify-computer-use-re-trace (6 files) already live, newer, in scripts/iecode/audit; scripts/gecko (9 lua) is byte-identical to upstream/gecko/scripts"
     },
     {
       "submodule": null,
@@ -2383,30 +2394,86 @@
     {
       "submodule": null,
       "component": "iecode-ghidra-scripts",
-      "path": null,
+      "path": "packages/re/plugin/skills/ghidra-headless/scripts",
       "type": "scripts",
       "source": {
         "repository": "aphrody-labs/iecode",
         "visibility": "private",
         "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
-        "path": "tools/re/scripts (find-ghidra, ghidra-analyze: ps1 and sh), scripts/ghidra (4 java), scripts/re (5 py)"
+        "path": "tools/re/scripts (find-ghidra, ghidra-analyze: ps1 and sh)"
       },
-      "migrationState": "pending",
-      "notes": "candidate owner packages/re; Ghidra discovery already exists in the RE pipeline adapters"
+      "cargoOwner": null,
+      "bunOwner": "packages/re",
+      "buildOwner": null,
+      "releaseOwner": "packages/re plugin",
+      "qualification": "not run (requires Ghidra)",
+      "migrationState": "folded",
+      "history": "source repository (private); content copied unchanged, not grafted",
+      "notes": "generic Ghidra headless wrappers the ghidra-headless skill of the unified RE plugin already documented; they honor the same GHIDRA_INSTALL_DIR/GHIDRA_HOME discovery as the RE pipeline adapters"
+    },
+    {
+      "submodule": "ea112a16f442a4095398e7cc0db079769dfe30b7",
+      "component": "iecode-re-scripts",
+      "path": "packages/iecode-scripts/{ghidra,re}",
+      "type": "scripts",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "scripts/ghidra (4 java), scripts/re (5 py)"
+      },
+      "memberRepository": {
+        "repository": "aphrody-labs/iecode-scripts",
+        "visibility": "private",
+        "branch": "os"
+      },
+      "cargoOwner": null,
+      "bunOwner": null,
+      "buildOwner": null,
+      "releaseOwner": null,
+      "qualification": "not run (requires Ghidra and game binaries)",
+      "migrationState": "submodule",
+      "history": "split with git filter-repo together with iecode-scripts-native",
+      "notes": "IECODE-specific: Ghidra pre/post scripts for nie.exe (@category IECODE) and nie.exe/IEVR PE helpers (extent, vtable, xref, save-editor hooks, Ultimate Team interop); kept private"
+    },
+    {
+      "submodule": "9f088b9f2eaeef43d691200a0d34af0bc9d539fb",
+      "component": "iecode-docs",
+      "path": "packages/iecode-docs",
+      "type": "documentation",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "docs (nie 151, ruzu 23, reference 23, gecko 12, development 12, architecture 10, upstream 10, ...), docs.7z, .agents/skills (18 of 32)"
+      },
+      "memberRepository": {
+        "repository": "aphrody-labs/iecode-docs",
+        "visibility": "private",
+        "branch": "os"
+      },
+      "cargoOwner": null,
+      "bunOwner": null,
+      "buildOwner": null,
+      "releaseOwner": null,
+      "qualification": "not applicable (documentation)",
+      "migrationState": "submodule",
+      "history": "split with git filter-repo (98 commits) into the member repository; the docs/ prefix is removed and the 22 superseded docs.7z blobs are stripped (latest kept)",
+      "notes": "docs.7z is the 991-file archive that holds docs/history and docs/research, ignored in the source tree. Not carried: docs/licenses (in docs/licenses/iecode), .agents/plugins.json (local plugin path), the 12 Ghidra/RE skills identical to tools/re/ghidra-suite (folded into packages/re/plugin) and cpp-cmake-vcpkg (identical to the user skill)"
     },
     {
       "submodule": null,
-      "component": "iecode-docs",
+      "component": "iecode-docs-rg",
       "path": null,
       "type": "documentation",
       "source": {
         "repository": "aphrody-labs/iecode",
         "visibility": "private",
         "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
-        "path": "docs (nie 151, rg 98, ruzu 23, gecko 12, development 12, architecture 10, upstream 10, ...), docs.7z, .agents/skills (68)"
+        "path": "docs/rg (98), .agents/skills/rose-griffon"
       },
-      "migrationState": "pending",
-      "notes": "private reverse-engineering documentation; publication into the public workspace needs an owner visibility decision"
+      "migrationState": "out-of-scope",
+      "notes": "Rose Griffon documentation and skill belong to aphrody-labs/rosegriffon (89 of 98 files present in its docs/); the 9 other files and the skill have no counterpart there and stay in the source repository"
     },
     {
       "submodule": null,

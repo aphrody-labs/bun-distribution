@@ -202,8 +202,16 @@
       `aphrody-homebrew`, the upstream Ruzu GPL-3.0-or-later license and
       edition 2021, and the Ruzu, ds-rom and dsd license texts. The Ruzu
       C/C++ externals now travel with their crates; `common` checks again.
-- [ ] Assign the remaining IECODE native scripts, private documentation and
-      agent skills; qualify the C++ member through `bun msvc vcpkg`.
+- [x] Assign the remaining IECODE native scripts, private documentation and
+      agent skills. Native, Ghidra and RE scripts are split with their history
+      into private `aphrody-labs/iecode-scripts` (`packages/iecode-scripts`);
+      private documentation, `docs.7z` and 18 project skills into private
+      `aphrody-labs/iecode-docs` (`packages/iecode-docs`). The generic Ghidra
+      headless wrappers are folded into the `ghidra-headless` skill of
+      `packages/re/plugin`. Rose Griffon docs stay with `aphrody-labs/rosegriffon`;
+      duplicates of existing owners are not carried. No IECODE component
+      remains pending.
+- [ ] Qualify the IECODE C++ member through `bun msvc vcpkg`.
 
 ## IECODE absorption, RE merge and forge recovery — 2026-10-16
 
