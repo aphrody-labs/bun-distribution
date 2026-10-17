@@ -45,3 +45,4 @@ twitch_secrets.toml
 
 # Workstation diagnostic output
 /.claude-cargo-check.log
+.neon

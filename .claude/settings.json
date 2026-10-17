@@ -1,3 +1,7 @@
 {
-  "enabledPlugins": {}
+  "enabledPlugins": {
+    "supabase@anthropic-plugin-directory": true,
+    "vercel@anthropic-plugin-directory": true,
+    "neon@anthropic-plugin-directory": true
+  }
 }
