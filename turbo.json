@@ -30,6 +30,10 @@
     "//#cargo:nie": {
       "inputs": ["Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".cargo/config.toml", "crates/aphrody-nie-*/**"],
       "outputs": []
+    },
+    "//#cargo:nie:build": {
+      "cache": false,
+      "outputs": []
     }
   }
 }
