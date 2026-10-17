@@ -55,7 +55,7 @@ impl Normal {
                 0..=0xF_FFFF => 0,
                 len @ 0x10_0000..=0xFFF_FFFF => (len >> 20) - 1,
                 len @ 0x1000_0000..=0xFFFF_FFFF => 0x100 - (len >> 28),
-            };
+            } << 8;
         let game_code = contents.game_code();
         Ok(Normal {
             #[cfg(feature = "log")]

@@ -1,0 +1,62 @@
+[package]
+name = "aphrody-nds-sdk"
+description = "Nintendo DS and 3DS SDK: one Handheld trait over the Dust and Zakuro cores, format detection, saves, saved states, debugger access, headless runner and a Bevy plugin."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["nintendo-ds", "nintendo-3ds", "emulator", "bevy", "sdk"]
+categories = ["emulators", "game-development"]
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+default = ["nds", "ctr"]
+# Nintendo DS on Dust (interpreter CPUs, software 2D and 3D renderers, HLE BIOS).
+nds = ["dep:aphrody-dust-core", "dep:aphrody-dust-soft-2d", "dep:aphrody-dust-soft-3d"]
+# Nintendo 3DS on Zakuro through aphrody-ctr-emu (HLE kernel and services, PICA200 renderer).
+ctr = ["dep:aphrody-ctr-emu"]
+# Bevy plugin: `HandheldPlugin`, screen images, input, audio, events.
+bevy = [
+    "dep:bevy",
+    "bevy/std",
+    "bevy/bevy_asset",
+    "bevy/bevy_image",
+    "bevy/bevy_audio",
+    "bevy/bevy_render",
+    "bevy/keyboard",
+    "bevy/mouse",
+]
+# Window for the `viewer` example (winit, sprites, UI camera).
+viewer = [
+    "bevy",
+    "bevy/bevy_log",
+    "bevy/bevy_winit",
+    "bevy/bevy_window",
+    "bevy/bevy_core_pipeline",
+    "bevy/bevy_camera",
+    "bevy/bevy_sprite",
+    "bevy/bevy_sprite_render",
+    "bevy/multi_threaded",
+    "bevy/x11",
+    "bevy/wayland",
+]
+
+[dependencies]
+aphrody-dust-core = { workspace = true, optional = true }
+aphrody-dust-soft-2d = { path = "../aphrody-dust-soft-2d", optional = true }
+aphrody-dust-soft-3d = { path = "../aphrody-dust-soft-3d", optional = true }
+aphrody-ctr-emu = { path = "../aphrody-ctr-emu", optional = true }
+# The key must stay `bevy`: Bevy's derive macros resolve `bevy::ecs` through that name.
+bevy = { workspace = true, optional = true }
+
+[[example]]
+name = "viewer"
+required-features = ["viewer"]
+
+[[bin]]
+name = "nds-sdk"
+path = "src/main.rs"

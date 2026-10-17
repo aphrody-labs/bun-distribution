@@ -637,7 +637,7 @@ machine_plugin!(
 #[cfg(feature = "nds")]
 machine_plugin!(
     /// Nintendo DS on Dust.
-    NdsPlugin(rom: Vec<u8>) => |rom| crate::machine::nds::Nds::from_rom(&rom)
+    NdsPlugin(rom: Vec<u8>) => |rom| crate::machine::handheld::HandheldMachine::from_image("rom", &rom)
 );
 #[cfg(feature = "psx")]
 machine_plugin!(
@@ -662,7 +662,7 @@ machine_plugin!(
 #[cfg(feature = "ctr")]
 machine_plugin!(
     /// Nintendo 3DS on Zakuro.
-    CtrPlugin(path: PathBuf, image: Vec<u8>) => |path, image| crate::machine::ctr::Ctr::from_path(&path, &image)
+    CtrPlugin(path: PathBuf, image: Vec<u8>) => |path, image| crate::machine::handheld::HandheldMachine::from_image(path.file_stem().and_then(|s| s.to_str()).unwrap_or("title"), &image)
 );
 #[cfg(feature = "switch")]
 machine_plugin!(

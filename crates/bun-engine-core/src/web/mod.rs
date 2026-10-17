@@ -121,9 +121,9 @@ fn build_machine(system: &str, rom: &[u8], options: &JsValue) -> Result<Box<dyn 
     let err = |e: String| JsError::new(&e);
     match system {
         #[cfg(feature = "nds")]
-        "nds" | "nintendo-ds" => Ok(Box::new(crate::machine::nds::Nds::from_rom(rom).map_err(err)?)),
+        "nds" | "nintendo-ds" => Ok(Box::new(crate::machine::handheld::HandheldMachine::from_image("rom", rom).map_err(err)?)),
         #[cfg(feature = "ctr")]
-        "3ds" | "ctr" | "nintendo-3ds" => Ok(Box::new(crate::machine::ctr::Ctr::from_image("rom", rom).map_err(err)?)),
+        "3ds" | "ctr" | "nintendo-3ds" => Ok(Box::new(crate::machine::handheld::HandheldMachine::from_image("rom", rom).map_err(err)?)),
         #[cfg(feature = "nes")]
         "nes" | "nintendo-nes" => Ok(Box::new(crate::machine::nes::Nes::from_rom("rom.nes", rom).map_err(err)?)),
         #[cfg(feature = "gba")]

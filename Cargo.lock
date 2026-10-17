@@ -2381,6 +2381,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-nds-sdk"
+version = "1.4.4"
+dependencies = [
+ "aphrody-ctr-emu",
+ "aphrody-dust-core",
+ "aphrody-dust-soft-2d",
+ "aphrody-dust-soft-3d",
+ "bevy",
+]
+
+[[package]]
 name = "aphrody-nie-app"
 version = "1.4.4"
 dependencies = [
@@ -8524,11 +8535,9 @@ version = "0.1.0"
 dependencies = [
  "aes 0.8.4",
  "aes-gcm 0.10.3",
- "aphrody-ctr-emu",
  "aphrody-dust-core",
- "aphrody-dust-soft-2d",
- "aphrody-dust-soft-3d",
  "aphrody-gpu-backend",
+ "aphrody-nds-sdk",
  "aphrody-wii-image",
  "aphrody-wii-runtime",
  "bevy",

@@ -12,8 +12,8 @@ crate-type = ["rlib", "cdylib", "staticlib"]
 # Every consumer selects what it shares; nothing is duplicated in another crate.
 [features]
 default = ["window", "audio", "gamepad", "nds", "nes", "gba", "psx", "host", "arm", "x86", "wii", "cartridge", "stream"]
-# Nintendo DS machine on Dust with software 2D/3D rendering.
-nds = ["dep:aphrody-dust-soft-2d", "dep:aphrody-dust-soft-3d"]
+# Nintendo DS on Dust through aphrody-nds-sdk (software 2D/3D rendering, saves, saved states).
+nds = ["dep:aphrody-nds-sdk", "aphrody-nds-sdk/nds"]
 # Bevy scheduling of the DS core (wasm and desktop hosts).
 host = ["nds", "runtime"]
 bevy-web = ["host", "bevy/web"]
@@ -25,8 +25,8 @@ gba = ["dep:rustboyadvance-core"]
 psx = ["dep:starpsx-core"]
 # NES on TetaNES.
 nes = ["dep:tetanes-core"]
-# Nintendo 3DS on aphrody-ctr-emu (Zakuro, software PICA renderer); boots CXI/CCI/CIA and converted 3DSX.
-ctr = ["dep:aphrody-ctr-emu"]
+# Nintendo 3DS on Zakuro through aphrody-nds-sdk (software PICA renderer); boots CXI/CCI/CIA and converted 3DSX.
+ctr = ["dep:aphrody-nds-sdk", "aphrody-nds-sdk/ctr"]
 # Nintendo Switch on Ruzu (rdynarmic JIT, null renderer with CPU framebuffer readback).
 switch = ["dep:ruzu-core", "dep:ruzu-common", "dep:video_core", "dep:hid_core", "dep:log"]
 # GameCube and Wii on the Gekko/Broadway interpreter.
@@ -95,8 +95,7 @@ cartridge = ["aphrody-dust-core/nds-complete", "dep:serde_json"]
 [dependencies]
 aphrody-dust-core = { workspace = true }
 serde = { workspace = true, features = ["std", "derive"] }
-aphrody-dust-soft-2d = { path = "../aphrody-dust-soft-2d", optional = true }
-aphrody-dust-soft-3d = { path = "../aphrody-dust-soft-3d", optional = true }
+aphrody-nds-sdk = { path = "../aphrody-nds-sdk", default-features = false, optional = true }
 # Bevy 0.20 (wgpu 30, absorbed in crates/bevy*), re-exported as `bun_engine::bevy`. The key must
 # stay `bevy`: Bevy's derive macros resolve `bevy::ecs` through the dependency named `bevy`.
 bevy = { workspace = true, optional = true }
@@ -108,7 +107,6 @@ ruzu-common = { package = "common", path = "../ruzu-common", optional = true }
 video_core = { path = "../ruzu-video-core", default-features = false, optional = true }
 hid_core = { path = "../ruzu-hid-core", optional = true }
 log = { workspace = true, optional = true }
-aphrody-ctr-emu = { path = "../aphrody-ctr-emu", optional = true }
 rustboyadvance-core = { path = "../../vendor/rustboyadvance-ng/core", default-features = false, optional = true }
 aphrody-wii-runtime = { path = "../aphrody-wii-runtime", optional = true }
 aphrody-wii-image = { path = "../aphrody-wii-image", default-features = false, optional = true }

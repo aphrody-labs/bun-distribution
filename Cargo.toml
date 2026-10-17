@@ -527,6 +527,7 @@ members = [
   "crates/aphrody-dust-wgpu",
   "crates/aphrody-ctr-emu",
   "crates/aphrody-ctr-desktop",
+  "crates/aphrody-nds-sdk",
   "crates/aphrody-emu-utils",
   "crates/aphrody-emu-utils-macros",
   "crates/aphrody-homebrew",

@@ -3,7 +3,7 @@ use std::{fs, path::PathBuf, process::ExitCode};
 use std::io::Write;
 
 use bun_engine::cartridge::dust::rom::raw;
-use bun_engine::machine::{Machine, Step, arm::ArmFirmware, nds::Nds};
+use bun_engine::machine::{Machine, Step, arm::ArmFirmware};
 use serde_json::json;
 
 const USAGE: &str = "usage: bun-engine info <rom.nds> [--json] | bun-engine shell [--session|status|install-session] | bun-engine steam <command> (feature steam) | bun-engine stream <host>|--loopback [options] | bun-engine run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux|melonds|dolphin|azahar|kyty> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] [--cmdline ARGS] [--input key@first[-last],...] [--trace FILE.jsonl] [--fsr [--sharpness STOPS]] [--steam [--steam-*]]";
@@ -95,7 +95,8 @@ fn main() -> ExitCode {
         Err(e) => return fail(format!("{path}: {e}")),
     };
     let mut machine: Box<dyn Machine> = match system.as_str() {
-        "nds" => match Nds::from_rom(&rom) {
+        #[cfg(any(feature = "nds", feature = "ctr"))]
+        "nds" | "3ds" => match bun_engine::machine::handheld::HandheldMachine::from_path(std::path::Path::new(&path)) {
             Ok(m) => Box::new(m),
             Err(e) => return fail(e),
         },
@@ -117,11 +118,6 @@ fn main() -> ExitCode {
             Err(e) => return fail(e),
         },
         "wii" => match bun_engine::machine::wii::WiiMachine::wii_dol(&rom) {
-            Ok(m) => Box::new(m),
-            Err(e) => return fail(e),
-        },
-        #[cfg(feature = "ctr")]
-        "3ds" => match bun_engine::machine::ctr::Ctr::from_path(std::path::Path::new(&path), &rom) {
             Ok(m) => Box::new(m),
             Err(e) => return fail(e),
         },
