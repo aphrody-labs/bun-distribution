@@ -10,7 +10,7 @@ const roots = [
   "crates/ui",
   "crates/tauri",
   "crates/web/site",
-  "crates/web/webos-wasm",
+  "crates/aphrody-webos-wasm",
   "m3",
   "packages/web",
 ];
@@ -79,7 +79,7 @@ function classify(path: string): {
     return {
       surface: "desktop artifact",
       role,
-      target: "crates/ui/app + crates/ui/m3 + crates/web/webos-wasm",
+      target: "crates/ui/app + crates/ui/m3 + crates/aphrody-webos-wasm",
       status: "generated active TS frontend artifact; Rust migration pending",
     };
   if (path.startsWith("m3/packages/app-ui/"))
@@ -89,7 +89,7 @@ function classify(path: string): {
       target:
         role === "HTTP server / launcher"
           ? "crates/web/site (HTTP implemented); native CLI entry pending"
-          : "crates/ui/m3 + crates/ui/app + crates/web/webos-wasm",
+          : "crates/ui/m3 + crates/ui/app + crates/aphrody-webos-wasm",
       status: "active TS frontend / tooling; Rust frontend parity pending",
     };
   if (path.startsWith("m3/"))
@@ -112,7 +112,7 @@ function classify(path: string): {
     return {
       surface: "native site / WASM",
       role,
-      target: "crates/web/site + crates/web/webos-wasm",
+      target: "crates/web/site + crates/aphrody-webos-wasm",
       status:
         "JS/HTML/CSS asset or bridge; native HTTP present, frontend parity pending",
     };

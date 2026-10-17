@@ -2,7 +2,7 @@
 /**
  * Browser backend of the OS: outside Tauri (os.aphrody.com, any plain browser) the file explorer,
  * the document search and the terminal are served by the Rust WebAssembly module
- * `crates/web/webos-wasm` (`@aphrody/webos-wasm`), over a file system persisted in OPFS. Nothing
+ * `crates/aphrody-webos-wasm` (`@aphrody/webos-wasm`), over a file system persisted in OPFS. Nothing
  * here implements OS behavior: this file loads the module once and adapts it to the callers.
  */
 import { openWebOs, type WebOs } from "@aphrody/webos-wasm";

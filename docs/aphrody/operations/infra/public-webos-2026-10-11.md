@@ -4,7 +4,7 @@
 Source at publication (2026-10-11): the public-site package in `aphrody-labs/bun`.
 That package path is no longer present in the selected checkout. The current
 WebOS runtime integration is tracked at
-`../bun/packages/web/rust/integrations/m3/packages/app-ui/webos.ts`; it is not
+`packages/app-ui/webos.ts`, which starts the single WebOS server owned by the Bun fork (`apps/desktop/server.ts`, resolved through `APHRODY_BUN_CHECKOUT`); it is not
 the static page source for this historical release. The public page runs its
 example locally in the visitor's browser. The real WebOS server and assistant
 remain separately configured local/private integrations.
@@ -141,3 +141,8 @@ aliases before the desktop route, then atomically restore the105ac static pointe
 if needed. Keep both image artifacts and release directories. Candidate future
 search-proxy scripts are `bun-os-routes-{activate,rollback}.sh`; they require a
 real successful backend probe and must be re-guarded against the active hashes.
+
+## Ownership (single WebOS)
+
+- Bun fork (`apps/desktop`): the WebOS application, server (`startWebOS`), `bun_wasm` runtime and e2e tests.
+- bun-os: the browser backend `crates/aphrody-webos-wasm` + `packages/webos-wasm` (OPFS file system), `packages/app-ui` shell, nginx, Docker and distribution. No second server or UI exists.

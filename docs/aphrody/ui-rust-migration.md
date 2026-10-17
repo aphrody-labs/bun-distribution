@@ -8,7 +8,7 @@ crates du fork Bun vérifiées. Les anciens inventaires Python (M3, lots uirust-
 <!-- BEGIN generated uirust inventory -->
 ## Generated file inventory
 
-Regenerate: `bun scripts/audit/ui/rust-migration.ts`; validate reproducibility: append `--check`. Git-tracked and unignored new source files are enumerated under `apps/web`, `crates/ui`, `crates/tauri`, `crates/web/site`, `crates/web/webos-wasm`, `m3`, `packages/web`; caches and node_modules are excluded. Generated tracked ui-dist files remain explicit artifact rows.
+Regenerate: `bun scripts/audit/ui/rust-migration.ts`; validate reproducibility: append `--check`. Git-tracked and unignored new source files are enumerated under `apps/web`, `crates/ui`, `crates/tauri`, `crates/web/site`, `crates/aphrody-webos-wasm`, `m3`, `packages/web`; caches and node_modules are excluded. Generated tracked ui-dist files remain explicit artifact rows.
 
 Current files: **1496**. Retired TS/TSX/JS/HTML/CSS files: **62**, from **65** checkpointed apps/web files at `6f7b0805f9afb0c92dcb18c091960cdb373345dc`. Retired files had no active consumer in the native site launcher or canonical build. Their deletion does not establish Rust frontend parity.
 

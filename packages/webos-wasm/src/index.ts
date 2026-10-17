@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Typed facade over crates/web/webos-wasm: the Rust file system, explorer backend and terminal of the
+// Typed facade over crates/aphrody-webos-wasm: the Rust file system, explorer backend and terminal of the
 // browser OS, persisted in OPFS. No logic of the OS lives here; this module loads the module, restores
 // and saves the APFS1 image atomically, and exposes the wire transport the explorer client expects.
 import init, { WebOsFs, detectLanguage, version, type InitInput } from "#webos-wasm-glue";
