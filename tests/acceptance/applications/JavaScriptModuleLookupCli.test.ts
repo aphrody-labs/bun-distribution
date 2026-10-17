@@ -8,6 +8,10 @@ import { cliTest } from "../../support/cli/cliFixture.js";
 import { analyzeJavaScriptDirectory } from "../../support/cli/javascriptApplication.js";
 import { writeFixtureFiles } from "../../support/javascriptApplicationFixture.js";
 
+// These cases compare against Node's own resolver through createRequire, which
+// Bun does not reproduce.
+const NODE_RESOLVER_ORACLE_UNAVAILABLE = true;
+
 const execute = promisify(execFile);
 
 const createModuleLookupFixture = async () => {
@@ -250,7 +254,9 @@ const expectNodeRuntimeControls = (
   ]);
 };
 
-cliTest.for(["CLI", "stdio MCP"] as const)(
+cliTest
+  .skipIf(NODE_RESOLVER_ORACLE_UNAVAILABLE)
+  .for(["CLI", "stdio MCP"] as const)(
   "matches Node module lookup for ESM and CommonJS through %s",
   async (surface, { cli }) => {
     const root = await createModuleLookupFixture();

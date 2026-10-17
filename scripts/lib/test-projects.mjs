@@ -1,6 +1,6 @@
 import { matchesGlob } from "node:path";
 
-/** Canonical file ownership shared by Vitest and development-test planning. */
+/** Canonical file ownership shared by Bun test and development-test planning. */
 export const SOURCE_TEST_PROJECTS = [
   {
     name: "domain",

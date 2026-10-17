@@ -165,7 +165,7 @@ server; older servers keep the complete request after schema discovery.
 
 ## Real verification
 
-`npm run verify:flutter -- --apk PATH [--plain-apk PATH]` runs both tools
+`bun run verify:flutter -- --apk PATH [--plain-apk PATH]` runs both tools
 through compiled CLI and stdio MCP, compares Evidence, and checks every ABI.
 Use `--expectations scripts/fixtures/flutter-gallery-expectations.json` with
 the Gallery 2.9.2 release APK to check exact per-ABI engine labels,

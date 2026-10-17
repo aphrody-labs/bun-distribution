@@ -178,8 +178,8 @@ further operations in that provider instance.
 Generate small public, source-derived fixtures into ignored `_reference/`:
 
 ```sh
-npm run fixtures:firmware
-npm run verify:firmware
+bun run fixtures:firmware
+bun run verify:firmware
 ```
 
 Fixture generation requires existing Python 3 and a host C compiler (`cc`);
@@ -198,11 +198,11 @@ Additional lanes are explicit, so the base lane stays small:
 
 ```sh
 # Existing mke2fs and debugfs required; put debugfs on the scoped PATH.
-REA_FIRMWARE_VERIFY_EXT4=1 npm run fixtures:firmware
-REA_FIRMWARE_VERIFY_EXT4=1 npm run verify:firmware
+REA_FIRMWARE_VERIFY_EXT4=1 bun run fixtures:firmware
+REA_FIRMWARE_VERIFY_EXT4=1 bun run verify:firmware
 
 # Existing Ghidra 12.1.x and its declared JDK required.
-REA_FIRMWARE_VERIFY_GHIDRA=1 npm run verify:firmware
+REA_FIRMWARE_VERIFY_GHIDRA=1 bun run verify:firmware
 ```
 
 `REA_FIRMWARE_MKE2FS_COMMAND` selects the optional ext4 fixture producer.

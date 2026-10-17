@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { access } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";

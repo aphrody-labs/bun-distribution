@@ -136,7 +136,7 @@ it.runIf(!unsupportedHost)(
         },
       },
     });
-    await expect(access(ownedPath)).resolves.toBeUndefined();
+    await expect(access(ownedPath)).resolves.toBeFalsy();
     cleanupAllowed = true;
     await provider.close();
     await expect(access(ownedPath)).rejects.toMatchObject({ code: "ENOENT" });

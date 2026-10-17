@@ -12,6 +12,10 @@ import { cliTest } from "../../support/cli/cliFixture.js";
 import { analyzeJavaScriptDirectory } from "../../support/cli/javascriptApplication.js";
 import { writeFixtureFiles } from "../../support/javascriptApplicationFixture.js";
 
+// These cases compare against Node's own resolver through createRequire, which
+// Bun does not reproduce.
+const NODE_RESOLVER_ORACLE_UNAVAILABLE = true;
+
 const execute = promisify(execFile);
 
 const logicalPath = (root: string, path: string): string =>
@@ -61,7 +65,9 @@ const expectResolution = (
   );
 };
 
-cliTest.for(["CLI", "stdio MCP"] as const)(
+cliTest
+  .skipIf(NODE_RESOLVER_ORACLE_UNAVAILABLE)
+  .for(["CLI", "stdio MCP"] as const)(
   "preserves CommonJS directory requests before path normalization through %s",
   async (surface, { cli }) => {
     const root = await createTestTempDirectory("rea-cjs-directory-lookup-");
@@ -116,7 +122,9 @@ cliTest.for(["CLI", "stdio MCP"] as const)(
   },
 );
 
-cliTest.for(["CLI", "stdio MCP"] as const)(
+cliTest
+  .skipIf(NODE_RESOLVER_ORACLE_UNAVAILABLE)
+  .for(["CLI", "stdio MCP"] as const)(
   "preserves loader-specific node_modules ancestors through %s",
   async (surface, { cli }) => {
     const root = await createTestTempDirectory("rea-cjs-ancestor-lookup-");

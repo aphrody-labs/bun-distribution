@@ -58,7 +58,7 @@ retains native identity and unavailable `not-started` phases for
 `parse-local-source-map`, `parse-html-script-references`, and `parse-package-json`.
 Missing source-map original content is distinct from failure to parse the map.
 
-After pinned Node/npm installation, `npm ci` and `npm run build:cached`:
+After pinned Node/npm installation, `npm ci` and `bun run build:cached`:
 
 ```sh
 query='{"kind":"javascript-facts","where":{"paths":["ElectronAppWrapper.js.map","index.html","package.json","node_modules/keytar/build/Release/keytar.node"]},"property_keys":["path","bytes","file_kind","text_status","parse_status","json_parse_status","availability","operation","analysis_status","limitation","name","version","main","renderer"],"offset":0,"limit":64}'
@@ -210,7 +210,7 @@ also mixed true missing original content with unavailable processing phases.
 The API itself preserves node/observation pairs; these are qualified agent
 composition outcomes, not a claim of product provenance corruption.
 
-Pre-integration V2 source validation passed: full `npm run check`, generated metadata/docs
+Pre-integration V2 source validation passed: full `bun run check`, generated metadata/docs
 checks, five documentation consistency cases, test discovery, and 18 MCP cases
 (two expanded facts cases plus 16 SDK schema/presentation cases). Together with
 the unchanged 83 domain/application/MCP cases passed on V2, this establishes
@@ -331,7 +331,7 @@ The fourteen historical real-app answers retain their original versions.
 ```sh
 python3 -m unittest discover -s experiments/analysis-efficiency \
   -p test_javascript_facts_agent.py -v
-npm run test:python
+bun run test:python
 ```
 
 ## Lifecycle-main integration on 2026-10-16

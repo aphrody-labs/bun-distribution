@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import assert from "node:assert/strict";
 import { estimateTokenCount } from "tokenx";
 import { execFile } from "node:child_process";

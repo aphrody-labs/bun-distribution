@@ -73,7 +73,7 @@ rea reconcile-javascript-runtime reconciliation-input.json --json
 For a repeatable local check from operator-provided paths, build first and run:
 
 ```bash
-npm run verify:javascript-runtime -- \
+bun run verify:javascript-runtime -- \
   --application /absolute/path/to/app \
   --cache /absolute/path/to/cache \
   --runtime-evidence /absolute/path/to/electron-evidence.json \

@@ -533,18 +533,18 @@ rename input. Edits retain the existing namespace; other namespace-like text
 remains literal leaf-name text. A qualified name with an empty leaf is rejected
 before any comment or name is changed.
 
-- `npm run verify:ghidra`: host-native debug/stripped targets, native type layout,
+- `bun run verify:ghidra`: host-native debug/stripped targets, native type layout,
   instruction/call facts, value dependencies and process/project cleanup.
-- `npm run verify:ghidra:aarch64-jump-table`: optimized ELF and byte/halfword
+- `bun run verify:ghidra:aarch64-jump-table`: optimized ELF and byte/halfword
   relative tables, plus ARM64 Mach-O on an ARM64 macOS host.
-- `npm run verify:apple-dispatch`: source-built Objective-C protocols, classes,
+- `bun run verify:apple-dispatch`: source-built Objective-C protocols, classes,
   properties and categories, and Swift conformances and vtables. Each is linked
   with legacy `LC_DYLD_INFO` and with chained fixups (and as arm64e on Apple
   silicon), then repeated after stripping local symbols.
-- `npm run verify:native-ui`: one source-owned fixture window, successful
+- `bun run verify:native-ui`: one source-owned fixture window, successful
   selected-window capture and actions, changed-target rejection, and cleanup.
   Missing OS permissions fail this lane.
-- `npm run verify:native-ui:permissions`: permits a permission-denial result and
+- `bun run verify:native-ui:permissions`: permits a permission-denial result and
   reports `positive_e2e: false` when capture is denied. That result verifies the
   OS permission boundary, not successful UI capture or actions.
 

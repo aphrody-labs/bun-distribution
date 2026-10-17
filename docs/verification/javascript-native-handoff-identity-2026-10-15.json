@@ -679,7 +679,7 @@
     "initial_focused": "24 passed in four files including public CLI/stdio MCP, workflow/graph, missing companion imports and erased TypeScript native bindings.",
     "first_static": "Other static gates passed, typecheck rejected architecture:null in test factory. Omitted optional field; all four real-case normalized simulated Evidence inputs proved byte-identical. No product behavior change.",
     "final_public": "2/2 public CLI/stdio MCP cases passed after named summary parsing and optional architecture correction; overlaps initial 24-case selection.",
-    "final_static_docs": "npm run check && npm run docs:check passed on integration base62bf098 plus this final change; typecheck, lint, format, knip, metadata, architecture/module boundaries and docs checks passed, including5 consistency tests. Prior static attempt/failure retained separately.",
+    "final_static_docs": "bun run check && bun run docs:check passed on integration base62bf098 plus this final change; typecheck, lint, format, knip, metadata, architecture/module boundaries and docs checks passed, including5 consistency tests. Prior static attempt/failure retained separately.",
     "synced_cli_workflows": "34 passed in tests/acceptance/applications/applicationWorkflowCli.test.ts after sync to62bf098; adds a fifth file and34 distinct cases to initial24 (58 total distinct focused cases)."
   },
   "interpretation": "Unavailable case previously returned a successful transport response with incorrect identity/linkage; this is not a successful equivalent analyst task and earns no efficiency credit. Available case is the valid completed-equivalence control. Reduced missing-case bytes/tokens reflect removal of unsupported claims, not an independent efficiency gain.",

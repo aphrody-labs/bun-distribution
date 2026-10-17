@@ -4,7 +4,13 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 
+import { Glob } from "bun";
+
 import { compareTestDiscovery } from "./lib/test-discovery.mjs";
+import {
+  BUILT_TEST_PROJECTS,
+  SOURCE_TEST_PROJECTS,
+} from "./lib/test-projects.mjs";
 
 const execute = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
@@ -13,16 +19,18 @@ const temporary = await mkdtemp(join(tmpdir(), "rea-test-discovery-"));
 let discovered;
 try {
   const output = join(temporary, "discovery.json");
-  await execute(
-    process.execPath,
-    [
-      join(root, "node_modules/vitest/vitest.mjs"),
-      "list",
-      "--filesOnly",
-      `--json=${output}`,
-    ],
-    { cwd: root, maxBuffer: 8 * 1024 * 1024 },
-  );
+  const discovery = [];
+  for (const { name, include, exclude = [] } of [
+    ...SOURCE_TEST_PROJECTS,
+    ...BUILT_TEST_PROJECTS,
+  ]) {
+    const excluded = exclude.map((pattern) => new Glob(pattern));
+    for (const pattern of include)
+      for await (const file of new Glob(pattern).scan({ cwd: root }))
+        if (!excluded.some((glob) => glob.match(file)))
+          discovery.push({ file, projectName: name });
+  }
+  await Bun.write(output, JSON.stringify(discovery));
   const files = await execute(
     "git",
     [

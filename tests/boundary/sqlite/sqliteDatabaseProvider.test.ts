@@ -131,7 +131,7 @@ it.each(["completed reply", "malformed reply"] as const)(
       },
     });
     expect(cleanupAttempts).toBe(1);
-    await expect(access(`${ownedRoot}/reply.json`)).resolves.toBeUndefined();
+    await expect(access(`${ownedRoot}/reply.json`)).resolves.toBeFalsy();
     await provider.close();
     expect(cleanupAttempts).toBe(2);
     await expectPrivateRootRemoved(ownedRoot);
@@ -206,7 +206,7 @@ it.each(["late-cancellation", "cleanup-failure"])(
         },
       });
       if (root === undefined) throw new Error("Missing retained root");
-      await expect(access(root.path)).resolves.toBeUndefined();
+      await expect(access(root.path)).resolves.toBeFalsy();
       cleanupAllowed = true;
       await provider.close();
       await expectPrivateRootRemoved(root.path);

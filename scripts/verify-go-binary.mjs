@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import assert from "node:assert/strict";
 import { isUtf8 } from "node:buffer";
 import { execFile } from "node:child_process";

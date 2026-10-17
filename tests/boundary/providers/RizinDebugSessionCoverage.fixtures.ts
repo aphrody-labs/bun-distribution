@@ -217,7 +217,7 @@ export const createRizinCoverageHarness = (
   };
   const makeProvider = async (
     body: string,
-    shebang = "#!/usr/bin/env node",
+    shebang = "#!/usr/bin/env bun",
   ): Promise<string> => {
     const directory = await mkdtemp(join(tmpdir(), "rea-rizin-coverage-"));
     directories.add(directory);

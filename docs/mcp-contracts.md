@@ -853,7 +853,7 @@ Schema does not express those cross-field invariants.
 Custom clients upgrading from 6.1 should follow the
 [6.2 migration guide](migration-6.2.md#mcp-results-and-evidence).
 
-Run `npm run docs:generate` in a source checkout to generate the machine-readable
+Run `bun run docs:generate` in a source checkout to generate the machine-readable
 catalog at `docs/public/product-catalog.json`. Documentation deployments serve
 the same file at [/rea/product-catalog.json](/rea/product-catalog.json). PR CI retains it with the packaged
 skill and portable conformance projections in the `generated-docs` artifact.

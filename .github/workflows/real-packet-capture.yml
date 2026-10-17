@@ -32,7 +32,6 @@ on:
       - "scripts/verify-packet-capture.mjs"
       - ".github/workflows/real-packet-capture.yml"
       - "package*.json"
-      - ".nvmrc"
 permissions:
   contents: read
 concurrency:
@@ -43,18 +42,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version-file: .nvmrc
-      - name: Cache npm package downloads
-        id: npm-cache
-        uses: ./.github/actions/npm-cache
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: setup-bun
+        uses: ./.github/actions/setup-bun
       - run: sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y tshark util-linux python3
-      - run: npm ci
-      - run: npm run build:cached
-      - run: npm run test:focused -- tests/boundary/captures/fieldDiscovery.test.ts src/process/LinuxResourceLimits.test.ts tests/boundary/captures/captureProvider.test.ts tests/boundary/captures/captureDescriptorCleanup.test.ts tests/boundary/pcap/pcapProvider.test.ts tests/boundary/pcap/pcapProviderCrossPlatform.test.ts tests/boundary/captures/resourceLimits.test.ts tests/boundary/captures/packetOutput.test.ts tests/boundary/mcp/packetCaptureMcp.test.ts tests/boundary/cli/captureCleanup.test.ts
-      - run: node scripts/verify-packet-capture.mjs
+      - run: bun run build:cached
+      - run: bun run test:focused -- tests/boundary/captures/fieldDiscovery.test.ts src/process/LinuxResourceLimits.test.ts tests/boundary/captures/captureProvider.test.ts tests/boundary/captures/captureDescriptorCleanup.test.ts tests/boundary/pcap/pcapProvider.test.ts tests/boundary/pcap/pcapProviderCrossPlatform.test.ts tests/boundary/captures/resourceLimits.test.ts tests/boundary/captures/packetOutput.test.ts tests/boundary/mcp/packetCaptureMcp.test.ts tests/boundary/cli/captureCleanup.test.ts
+      - run: bun scripts/verify-packet-capture.mjs
         env:
           REA_TSHARK_COMMAND: /usr/bin/tshark
           REA_CAPINFOS_COMMAND: /usr/bin/capinfos

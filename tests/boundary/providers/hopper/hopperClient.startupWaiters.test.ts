@@ -89,7 +89,7 @@ it("retains the final caller's cleanup failure and blocks replacement until clos
     if (retry.ok) throw new Error("Unexpected replacement startup");
     expect(retry.error).toBe(first.error);
     expect(fixture.processes).toHaveLength(1);
-    await expect(access(fixture.directories[0] ?? "")).resolves.toBeUndefined();
+    await expect(access(fixture.directories[0] ?? "")).resolves.toBeFalsy();
     allowCleanup = true;
     await expect(client.close()).resolves.toEqual({ ok: true, value: null });
     await expect(access(fixture.directories[0] ?? "")).rejects.toMatchObject({

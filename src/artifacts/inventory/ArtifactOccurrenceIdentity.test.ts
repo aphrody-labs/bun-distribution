@@ -159,27 +159,30 @@ describe("content identity and occurrence facts", () => {
     ).toHaveLength(1);
   });
 
-  it("reports only an occurrence permission change for identical content", async () => {
-    const root = await createTestTempDirectory("rea-permission-identity-");
-    const path = join(root, "payload.bin");
-    await writeFile(path, "same content\n", { mode: 0o600 });
-    const before = await inventoryArtifact(root);
-    await chmod(path, 0o700);
-    const after = await inventoryArtifact(root);
-    expect(before.nodes).toEqual(after.nodes);
-    expect(before.manifest.root_artifact_id).toBe(
-      after.manifest.root_artifact_id,
-    );
-    const oldFile = before.occurrences.find(
-      (item) => item.logical_path === "payload.bin",
-    );
-    const newFile = after.occurrences.find(
-      (item) => item.logical_path === "payload.bin",
-    );
-    expect(oldFile?.artifact_id).toBe(newFile?.artifact_id);
-    expect(oldFile?.executable).toBe(false);
-    expect(newFile?.executable).toBe(true);
-  });
+  it.skipIf(process.platform === "win32")(
+    "reports only an occurrence permission change for identical content",
+    async () => {
+      const root = await createTestTempDirectory("rea-permission-identity-");
+      const path = join(root, "payload.bin");
+      await writeFile(path, "same content\n", { mode: 0o600 });
+      const before = await inventoryArtifact(root);
+      await chmod(path, 0o700);
+      const after = await inventoryArtifact(root);
+      expect(before.nodes).toEqual(after.nodes);
+      expect(before.manifest.root_artifact_id).toBe(
+        after.manifest.root_artifact_id,
+      );
+      const oldFile = before.occurrences.find(
+        (item) => item.logical_path === "payload.bin",
+      );
+      const newFile = after.occurrences.find(
+        (item) => item.logical_path === "payload.bin",
+      );
+      expect(oldFile?.artifact_id).toBe(newFile?.artifact_id);
+      expect(oldFile?.executable).toBe(false);
+      expect(newFile?.executable).toBe(true);
+    },
+  );
 });
 
 describe("directly selected executable formats", () => {
@@ -190,7 +193,7 @@ describe("directly selected executable formats", () => {
     return bytes;
   };
 
-  it.each([
+  it.skipIf(process.platform === "win32").each([
     ["755", 0o755],
     ["644", 0o644],
   ] as const)(

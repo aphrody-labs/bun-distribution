@@ -762,7 +762,7 @@ portableTar(
       expect(targetCloseAttempts).toBeGreaterThan(attemptsBeforeClose);
       expect(events).not.toContain("temporary-root-close");
       expect(temporaryRoot).toBeDefined();
-      await expect(access(temporaryRoot!)).resolves.toBeUndefined();
+      await expect(access(temporaryRoot!)).resolves.toBeFalsy();
       failTargetClose = false;
       await f.publisher.close();
       expect(events.slice(-2)).toEqual([

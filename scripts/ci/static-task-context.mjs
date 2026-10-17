@@ -1,11 +1,9 @@
-import { execFile } from "node:child_process";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
 import { z } from "zod";
 
-const execute = promisify(execFile);
 const contextSchema = z.object({
   version: z.literal(1),
   sourceSha: z.string().regex(/^[a-f0-9]{40}$/u),
@@ -15,82 +13,101 @@ const contextSchema = z.object({
     .regex(/^[a-f0-9]{40}$/u)
     .optional(),
   nodeVersion: z.string().min(1),
-  npmVersion: z.string().min(1),
-  turboVersion: z.string().min(1),
+  bunVersion: z.string().min(1),
+  bunRevision: z.string().min(1),
   platform: z.string().min(1),
   architecture: z.string().min(1),
   taskHashes: z.record(z.string(), z.string().regex(/^[a-f0-9]{16}$/u)),
 });
 
+const CONFIGURATION = [
+  ".gitignore",
+  ".oxlintrc.json",
+  "bun.lock",
+  "bunfig.toml",
+  "package.json",
+  "tsconfig.json",
+  "tsconfig.build.json",
+];
+const SOURCES = [
+  "scripts",
+  "src",
+  "tests",
+  "docs",
+  ".github/actions",
+  "website",
+  "experiments",
+];
+
+/** Static tasks and the tracked paths whose content determines their result. */
+export const STATIC_TASK_INPUTS = {
+  typecheck: [...CONFIGURATION, ...SOURCES],
+  "lint:built": [...CONFIGURATION, ...SOURCES],
+  "format:check": ["."],
+  "metadata:check": [
+    ...CONFIGURATION,
+    "scripts/generate-package-metadata.mjs",
+    "scripts/lib/generated-file.mjs",
+    ".agents/skills/reverse-engineer-anything/SKILL.md",
+    "src/generatedPackageMetadata.ts",
+  ],
+  jscpd: [...CONFIGURATION, "src", "tests"],
+  "scan:todos": [...CONFIGURATION, ...SOURCES],
+};
+
 /** Parse the producing check graph's receipt; incomplete provenance is unknown. */
 export const parseStaticTaskContext = (value) => contextSchema.parse(value);
+
+const git = (root, arguments_) => {
+  const result = Bun.spawnSync(["git", ...arguments_], {
+    cwd: root,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  if (result.exitCode !== 0)
+    throw new Error(`git ${arguments_[0]} failed: ${result.stderr.toString()}`);
+  return result.stdout.toString();
+};
+
+/** Hash the tracked index entries of one task's inputs (mode, blob and path). */
+export const hashTaskInputs = (root, paths) =>
+  createHash("sha256")
+    .update(git(root, ["ls-files", "-s", "-z", "--", ...paths]))
+    .digest("hex")
+    .slice(0, 16);
 
 /** Retain only named task hashes and tool/source identity, never the environment. */
 export async function recordStaticTaskContext({
   root = process.cwd(),
-  npmCli = process.env.npm_execpath,
   outputDirectory = join(root, ".cache/static-checks"),
 } = {}) {
-  if (typeof npmCli !== "string" || !npmCli)
-    throw new Error(
-      "Run static context recording through npm run ci:static-context",
-    );
-  const options = {
-    cwd: root,
-    encoding: "utf8",
-    timeout: 30_000,
-    maxBuffer: 32 * 1024 * 1024,
-  };
-  const [graph, source, status, npmVersion, turbo] = await Promise.all([
-    execute(
-      process.execPath,
-      [npmCli, "run", "--silent", "check:ci:tasks", "--", "--dry=json"],
-      options,
-    ),
-    execute("git", ["rev-parse", "HEAD"], options),
-    execute(
-      "git",
-      ["status", "--porcelain", "--untracked-files=normal"],
-      options,
-    ),
-    execute(process.execPath, [npmCli, "--version"], options),
-    readFile(join(root, "node_modules/turbo/package.json"), "utf8"),
-  ]);
-  const tasks = z
-    .object({
-      tasks: z
-        .array(
-          z.object({
-            task: z.string().min(1),
-            hash: z.string().regex(/^[a-f0-9]{16}$/u),
-          }),
-        )
-        .min(1),
-    })
-    .parse(JSON.parse(graph.stdout)).tasks;
-  if (new Set(tasks.map(({ task }) => task)).size !== tasks.length)
-    throw new Error("Static graph contains duplicate task identities");
   const context = parseStaticTaskContext({
     version: 1,
-    sourceSha: source.stdout.trim(),
-    sourceClean: status.stdout.length === 0,
+    sourceSha: git(root, ["rev-parse", "HEAD"]).trim(),
+    sourceClean:
+      git(root, ["status", "--porcelain", "--untracked-files=normal"])
+        .length === 0,
     ...(process.env.CI_PR_HEAD_SHA
       ? { prHeadSha: process.env.CI_PR_HEAD_SHA }
       : {}),
     nodeVersion: process.version,
-    npmVersion: npmVersion.stdout.trim(),
-    turboVersion: z.object({ version: z.string() }).parse(JSON.parse(turbo))
-      .version,
+    bunVersion: Bun.version,
+    bunRevision: Bun.revision,
     platform: process.platform,
     architecture: process.arch,
-    taskHashes: Object.fromEntries(tasks.map(({ task, hash }) => [task, hash])),
+    taskHashes: Object.fromEntries(
+      Object.entries(STATIC_TASK_INPUTS).map(([task, paths]) => [
+        task,
+        hashTaskInputs(root, paths),
+      ]),
+    ),
   });
   if (process.env.GITHUB_SHA && process.env.GITHUB_SHA !== context.sourceSha)
     throw new Error(
       "Static context source does not match the workflow revision",
     );
   await mkdir(outputDirectory, { recursive: true });
-  await writeFile(
+  await Bun.write(
     join(outputDirectory, "static-task-context.json"),
     JSON.stringify(context, null, 2) + "\n",
   );

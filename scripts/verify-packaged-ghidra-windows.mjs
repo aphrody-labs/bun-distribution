@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import {
   WINDOWS_GHIDRA_FIXTURE_FLAGS,
   windowsGhidraFixtureOptions,

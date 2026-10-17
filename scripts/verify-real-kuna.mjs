@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 // Real Kuna provider lane. Requires a caller-supplied kuna (REA_KUNA_COMMAND)
 // and a host C compiler; REA installs neither. The default run builds a
 // source-owned fixture, with symbols and stripped, and verifies the public MCP

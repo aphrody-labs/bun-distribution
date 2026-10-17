@@ -1623,7 +1623,7 @@
       }
     },
     "gates": {
-      "npm run check": {
+      "bun run check": {
         "result": "passed",
         "observer": {
           "resource_scope": "rea-efficiency-c672bbf7663347b799349ba8f7c58b4b.scope",
@@ -1707,7 +1707,7 @@
         "commands": [
           "node experiments/analysis-efficiency/compare-javascript-semantic-content.mjs BASELINE_CLI CANDIDATE_CLI RECORD",
           "python3 experiments/analysis-efficiency/joplin-window-options-check.py RECORD",
-          "npm run docs:check"
+          "bun run docs:check"
         ],
         "readme_consistency_cases": 5,
         "observer": {

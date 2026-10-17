@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import assert from "node:assert/strict";
 import { requireMcpOperationResult } from "./lib/mcp-verifier-results.mjs";
 import { execFile } from "node:child_process";

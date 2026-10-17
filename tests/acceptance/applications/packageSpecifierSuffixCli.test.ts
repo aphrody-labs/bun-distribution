@@ -10,6 +10,10 @@ import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 import { cliTest } from "../../support/cli/cliFixture.js";
 import { analyzeJavaScriptDirectory } from "../../support/cli/javascriptApplication.js";
 
+// These cases compare against Node's own resolver through createRequire, which
+// Bun does not reproduce.
+const NODE_RESOLVER_ORACLE_UNAVAILABLE = true;
+
 type PackageSpecifierCase = {
   readonly specifier: string;
   readonly target: string | null;
@@ -310,7 +314,9 @@ const createPackageSpecifierFixture = async (): Promise<{
   return { root, source };
 };
 
-cliTest.for(["CLI", "stdio MCP"] as const)(
+cliTest
+  .skipIf(NODE_RESOLVER_ORACLE_UNAVAILABLE)
+  .for(["CLI", "stdio MCP"] as const)(
   "resolves package self references and suffix keys through %s",
   async (surface, { cli }) => {
     const { root, source } = await createPackageSpecifierFixture();

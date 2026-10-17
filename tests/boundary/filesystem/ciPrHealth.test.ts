@@ -415,7 +415,7 @@ it("public CLI uses only GET and produces a report from fixture GitHub responses
   );
   await writeFile(
     fakeGh,
-    `#!/usr/bin/env node\nconst fs=require("node:fs");\nconst args=process.argv.slice(2);\nfs.appendFileSync(process.env.CI_GH_CALLS, JSON.stringify(args)+"\\n");\nif(args[0]!=="api"||args[1]!=="--method"||args[2]!=="GET")process.exit(41);\nconst page=Number(new URL("https://fixture.invalid/"+args.at(-1)).searchParams.get("page"));\nconst responses=JSON.parse(fs.readFileSync(process.env.CI_GH_RESPONSE,"utf8"));\nprocess.stdout.write(JSON.stringify(responses[page===1&&args.at(-1).includes("/pulls?")?0:1]));\n`,
+    `#!/usr/bin/env bun\nconst fs=require("node:fs");\nconst args=process.argv.slice(2);\nfs.appendFileSync(process.env.CI_GH_CALLS, JSON.stringify(args)+"\\n");\nif(args[0]!=="api"||args[1]!=="--method"||args[2]!=="GET")process.exit(41);\nconst page=Number(new URL("https://fixture.invalid/"+args.at(-1)).searchParams.get("page"));\nconst responses=JSON.parse(fs.readFileSync(process.env.CI_GH_RESPONSE,"utf8"));\nprocess.stdout.write(JSON.stringify(responses[page===1&&args.at(-1).includes("/pulls?")?0:1]));\n`,
   );
   await chmod(fakeGh, 0o755);
   const outputDirectory = join(fixture.directory, ".cache", "ci-pr-health");

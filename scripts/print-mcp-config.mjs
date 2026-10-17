@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 /**
  * Print a ready-to-paste MCP server config with absolute paths filled in.
  *

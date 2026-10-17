@@ -110,7 +110,7 @@ boundary. Actual Windows/Bun Wireshark execution is unverified here; macOS
 capture support needs a separate enforceable-bound decision.
 
 ```sh
-npm run verify:pcap -- --pcap /absolute/saved-capture.pcapng
+bun run verify:pcap -- --pcap /absolute/saved-capture.pcapng
 ```
 
 This verifier exercises built CLI/stdio MCP, schemas, artifact identity and

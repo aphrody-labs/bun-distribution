@@ -434,7 +434,7 @@ the educational aioquic 1.5.0 experiment (one origin trace, known 32,803-byte
 stream coverage and one 1,169-byte repeated range in the loss case):
 
 ```bash
-npm run verify:web:qlog -- /absolute/control/origin.qlog /absolute/loss/origin.qlog /absolute/new-report.json
+bun run verify:web:qlog -- /absolute/control/origin.qlog /absolute/loss/origin.qlog /absolute/new-report.json
 ```
 
 This lane checks built CLI/stdio MCP parity, SDK-converted JSON Schemas,

@@ -71,17 +71,12 @@ export const developmentTestPlan = (request, baseCommit) => {
       ([task, consumers]) =>
         request.paths.some((path) => consumers.includes(path)) ? [task] : [],
     ),
-    vitestArguments: [
-      "run",
-      ...projects.flatMap((project) => ["--project", project]),
-      ...(explicit
-        ? request.paths
-        : [
-            request.mode === "changed"
-              ? `--changed=${baseCommit}`
-              : "--changed",
-            "--passWithNoTests",
-          ]),
-    ],
+    projects,
+    testArguments: explicit
+      ? request.paths
+      : [
+          request.mode === "changed" ? `--changed=${baseCommit}` : "--changed",
+          "--pass-with-no-tests",
+        ],
   };
 };

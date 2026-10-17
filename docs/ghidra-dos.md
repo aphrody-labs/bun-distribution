@@ -162,7 +162,7 @@ the Windows native PE P0 boundary. macOS x64 DOS verification remains unverified
 ## Real verification
 
 ```bash
-npm run verify:ghidra:dos
+bun run verify:ghidra:dos
 ```
 
 The lane generates a small public fixture from source at runtime. It verifies

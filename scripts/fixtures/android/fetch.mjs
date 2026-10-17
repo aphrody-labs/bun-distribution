@@ -8,7 +8,7 @@ import fixture from "./apidemos.json" with { type: "json" };
 
 const args = process.argv.slice(2);
 if (args.length > 1)
-  throw new Error("Usage: npm run fixtures:android -- [DIRECTORY]");
+  throw new Error("Usage: bun run fixtures:android -- [DIRECTORY]");
 const directory = resolve(
   args[0] ??
     fileURLToPath(

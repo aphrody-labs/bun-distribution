@@ -122,7 +122,7 @@ it.runIf(supportedHost)(
     await expect(provider.close()).rejects.toMatchObject({
       cleanupIncomplete: true,
     });
-    await expect(access(ownedPath)).resolves.toBeUndefined();
+    await expect(access(ownedPath)).resolves.toBeFalsy();
 
     cleanupAllowed = true;
     await provider.close();

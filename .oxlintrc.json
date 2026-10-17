@@ -103,7 +103,6 @@
     "node_modules",
     "docs/api",
     "coverage",
-    ".turbo",
     ".cache",
     ".codex",
     ".devin",

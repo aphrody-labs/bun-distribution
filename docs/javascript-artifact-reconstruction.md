@@ -544,13 +544,13 @@ the CLI/MCP process remains available for control requests.
 Graph and Evidence identifiers hash canonical JSON incrementally, without
 assembling a single string for the whole graph. The canonical bytes and existing
 identifiers remain unchanged. The opt-in regression check is
-`npm run verify:javascript:digests`;
+`bun run verify:javascript:digests`;
 it hashes a value larger than the running Node engine's single-string limit.
 
 Both application CLI routes stream complete JSON and JSONL output in bounded
 chunks, including field filters and `--full-output`. They wait for each stdout
 write instead of constructing or reparsing a document-sized string. The opt-in
-`npm run verify:javascript:output` checks the actual CLI formatting boundary with
+`bun run verify:javascript:output` checks the actual CLI formatting boundary with
 a temporary output file larger than the running engine's string limit, verifies
 its bytes and digest, and removes it. Use `-- jsonl` for the compact JSONL check.
 Each check needs space for one output file plus a 1 GiB free-space reserve.

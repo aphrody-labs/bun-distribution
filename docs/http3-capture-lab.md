@@ -32,7 +32,7 @@ generating traffic. Host trust, routes and installed packages stay unchanged.
 
 Record the image digest, REA source revision and these dependency versions:
 
-- REA's `.nvmrc`, `package.json#packageManager` and locked npm dependencies.
+- REA's `bunfig.toml` and locked `bun.lock` dependencies.
 - Official Linux x86_64 mitmproxy **12.2.3** standalone archive. SHA-256:
   `2e95286b618fa6fd33e5e62a78c2e5112571d85f42ec2bac29b97ee242bdb5c5`.
 - A private Python virtual environment using the complete pinned graph in
@@ -47,8 +47,8 @@ ports 18443 and 19443. These changes belong only to the disposable guest.
 From the guest REA checkout, use its pinned Node/npm toolchain:
 
 ```sh
-npm ci
-npm run build:cached
+bun install --frozen-lockfile
+bun run build:cached
 python3 -m venv /absolute/lab/venv
 /absolute/lab/venv/bin/pip install --no-deps -r scripts/fixtures/http3-lab-requirements.txt
 /absolute/lab/venv/bin/pip check
@@ -69,7 +69,7 @@ tar -xzf /absolute/lab/mitmproxy.tar.gz -C /absolute/lab/tools
 ```
 
 Pin the REA revision with `git rev-parse HEAD` or archive SHA-256. Build using
-the exact `.nvmrc` and npm version; do not copy a different checkout's `dist`.
+the exact Bun version; do not copy a different checkout's `dist`.
 For stronger offline dependency reproduction, preserve downloaded Python
 archives, their digests and built wheels along with the image and toolchain.
 The requirement versions pin the runtime graph, not every transient build tool;
@@ -84,7 +84,7 @@ clients and proxy receive explicit paths to freshly generated test CAs.
 ```sh
 REA_MITMDUMP_COMMAND=/absolute/lab/tools/mitmdump \
 REA_HTTP3_PYTHON_COMMAND=/absolute/lab/venv/bin/python \
-npm run verify:web:http3 -- /absolute/evidence/run-1
+bun run verify:web:http3 -- /absolute/evidence/run-1
 ```
 
 The producer sends three concurrent binary POSTs on one HTTP/3 connection to the
@@ -120,7 +120,7 @@ Capture inputs live in `captures/`. To inspect them again without new traffic:
 
 ```sh
 REA_MITMDUMP_COMMAND=/absolute/lab/tools/mitmdump \
-npm run verify:web:http3 -- /absolute/evidence/run-1 --inspect-existing
+bun run verify:web:http3 -- /absolute/evidence/run-1 --inspect-existing
 ```
 
 Acceptance for the current run:

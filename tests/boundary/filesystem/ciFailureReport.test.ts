@@ -36,8 +36,8 @@ const context = (
   ...(prHeadSha ? { prHeadSha } : {}),
   sourceClean: true,
   nodeVersion: "v24.18.0",
-  npmVersion: "11.16.0",
-  turboVersion: "2.11.7",
+  bunVersion: "1.4.4",
+  bunRevision: "032dd109c",
   platform: "linux",
   architecture: "x64",
   taskHashes: { "lint:built": taskHash },
@@ -101,7 +101,7 @@ it.each([
   ["dirty source", { context: { ...context(sha("a")), sourceClean: false } }],
   [
     "toolchain",
-    { mainContext: { ...context(sha("c")), turboVersion: "other" } },
+    { mainContext: { ...context(sha("c")), bunRevision: "other" } },
   ],
   [
     "source sha",

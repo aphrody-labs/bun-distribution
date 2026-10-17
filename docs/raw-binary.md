@@ -93,7 +93,7 @@ or other console-specific memory layouts. 65C02 and 65816 programs need differen
 processor semantics and are not admitted as those variants. REA does not infer
 the CPU from the file suffix, guess the reset vector, or emulate the target.
 
-`npm run verify:ghidra:6502` assembles and links the source-owned fixture with
+`bun run verify:ghidra:6502` assembles and links the source-owned fixture with
 `ca65` and `ld65` (tested from cc65 tag `V2.19`, whose tools report `V2.18`).
 Set `REA_CA65` and `REA_LD65` to explicit executable paths if needed. The lane
 checks real CLI/MCP load-image parity, mapped bytes, decoded calls, decompilation,

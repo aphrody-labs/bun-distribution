@@ -391,8 +391,8 @@ function validContext(value) {
     SHA.test(value.sourceSha ?? "") &&
     value.sourceClean === true &&
     typeof value.nodeVersion === "string" &&
-    typeof value.npmVersion === "string" &&
-    typeof value.turboVersion === "string" &&
+    typeof value.bunVersion === "string" &&
+    typeof value.bunRevision === "string" &&
     typeof value.platform === "string" &&
     typeof value.architecture === "string" &&
     value.taskHashes &&
@@ -403,8 +403,8 @@ function validContext(value) {
 function sameExecutionContext(left, right) {
   return [
     "nodeVersion",
-    "npmVersion",
-    "turboVersion",
+    "bunVersion",
+    "bunRevision",
     "platform",
     "architecture",
   ].every((key) => left[key] === right[key]);

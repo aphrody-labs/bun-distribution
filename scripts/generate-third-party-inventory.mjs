@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { readBunLock } from "./lib/bun-lock.mjs";
 import { ensureGeneratedFile } from "./lib/generated-file.mjs";
 
 const arguments_ = new Set(process.argv.slice(2));
@@ -10,24 +11,29 @@ for (const argument of arguments_)
   if (argument !== "--check")
     throw new Error(`Unknown inventory option: ${argument}`);
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const lock = JSON.parse(
-  await readFile(join(root, "package-lock.json"), "utf8"),
-);
-const entries = Object.entries(lock.packages)
-  .filter(([path]) => path !== "")
-  .map(([path, record]) => ({
-    path,
-    name: record.name ?? path.slice(path.lastIndexOf("node_modules/") + 13),
-    version: record.version,
-    license: record.license ?? "UNDECLARED",
-    resolved: record.resolved,
-    integrity: record.integrity,
-    dev: record.dev === true,
-    optional: record.optional === true,
-  }))
-  .sort((left, right) =>
-    left.path < right.path ? -1 : left.path > right.path ? 1 : 0,
-  );
+const { entries: locked } = await readBunLock(root);
+const licenseOf = async (key) => {
+  const manifest = Bun.file(join(root, "node_modules", key, "package.json"));
+  if (!(await manifest.exists())) return "UNDECLARED";
+  const { license, licenses } = await manifest.json();
+  if (typeof license === "string") return license;
+  if (license && typeof license.type === "string") return license.type;
+  if (Array.isArray(licenses))
+    return licenses.map((entry) => entry.type ?? "UNDECLARED").join(" OR ");
+  return "UNDECLARED";
+};
+const entries = [];
+for (const entry of locked)
+  entries.push({
+    path: `node_modules/${entry.key}`,
+    name: entry.name,
+    version: entry.version,
+    license: await licenseOf(entry.key),
+    resolved: entry.resolved,
+    integrity: entry.integrity,
+    dev: entry.dev,
+    optional: entry.optional,
+  });
 for (const entry of entries)
   for (const field of ["name", "version", "resolved", "integrity"])
     if (typeof entry[field] !== "string" || entry[field].length === 0)
@@ -38,7 +44,7 @@ const runtimeFingerprint = createHash("sha256")
   .digest("hex");
 const source = [
   "REA npm dependency inventory",
-  "Prepared from the root package-lock.json; refresh this inventory when locked dependencies change.",
+  "Prepared from the root bun.lock; refresh this inventory when locked dependencies change.",
   "License identifiers are upstream lockfile declarations, not a legal assessment.",
   "Runtime includes transitive and optional platform packages; development includes build, test and website tooling.",
   `Locked package entries: ${entries.length}; runtime: ${runtime.length}.`,
@@ -57,7 +63,7 @@ await ensureGeneratedFile({
   path: join(root, "licenses/npm-dependencies.txt"),
   source,
   check: arguments_.has("--check"),
-  generateCommand: "npm run licenses:generate",
+  generateCommand: "bun run licenses:generate",
 });
 
 if (arguments_.has("--check")) {

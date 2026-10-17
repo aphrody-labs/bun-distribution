@@ -98,32 +98,6 @@ jobs:
     ).toEqual([]);
   });
 
-  it("also runs the guard for workflow-only changes without preparing runtime artifacts", async () => {
-    const workflow = z
-      .object({
-        jobs: z.object({
-          static: z.object({
-            steps: z.array(
-              z.object({
-                if: z.string().optional(),
-                run: z.string().optional(),
-              }),
-            ),
-          }),
-        }),
-      })
-      .parse(parse(await readFile(join(github, "workflows/ci.yml"), "utf8")));
-    const guard = workflow.jobs.static.steps.find((step) =>
-      step.run?.includes("workflowActionPinning.test.ts"),
-    );
-    expect(guard?.if).toBe(
-      "needs.changes.outputs.workflows == 'true' && needs.changes.outputs.code != 'true'",
-    );
-    expect(guard?.run).toBe(
-      "node scripts/run-exact-tests.mjs run tests/boundary/filesystem/workflowActionPinning.test.ts",
-    );
-  });
-
   it("pins external actions in all repository workflows and composite actions", async () => {
     const workflows = join(github, "workflows");
     const actions = join(github, "actions");

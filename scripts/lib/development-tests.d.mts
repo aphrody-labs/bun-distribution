@@ -18,5 +18,5 @@ export function developmentTestPlan(
 ): {
   readonly needsBuild: boolean;
   readonly artifactTasks: readonly string[];
-  readonly vitestArguments: readonly string[];
+  readonly testArguments: readonly string[];
 };

@@ -222,7 +222,7 @@ shows the actual native AST scope and phantom module on the baseline. Final
 source and execution-driver versions, source pins, input digests, prior attempts
 and resource receipts are in the [compact JSON record](javascript-interruption-applicability-2026-10-15.json).
 
-Before review, `npm run check && npm run docs:check` passed, including five consistency
+Before review, `bun run check && bun run docs:check` passed, including five consistency
 tests: 165.553 s wall / 150.247257 s CPU /
 4,232,491,008 B peak cgroup memory, clean owned exit and no OOM.
 The first full check stopped on a 172-line test callback exceeding the 150-line

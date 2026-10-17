@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { setTimeout as delay } from "node:timers/promises";
 import { WindowsPrivateRuntime } from "../dist/windows/WindowsPrivateRuntime.js";

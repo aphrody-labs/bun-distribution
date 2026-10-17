@@ -40,7 +40,7 @@ const fixture = async (
   await mkdir(join(javaHome, "bin"), { recursive: true });
   await writeFile(
     join(javaHome, "bin", "java"),
-    `#!/usr/bin/env node
+    `#!/usr/bin/env bun
 const args = process.argv.slice(2);
 const probe = args.at(-1);
 if (probe !== "-envvars" && probe !== "-vmargs") process.exit(64);

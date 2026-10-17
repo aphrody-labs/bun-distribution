@@ -54,16 +54,16 @@ closed on packages whose inventory cannot be authenticated.
 
 ## Verification lane
 
-`npm run fixtures:harmony` downloads the SHA-256-pinned 1.0.1 HAP release
+`bun run fixtures:harmony` downloads the SHA-256-pinned 1.0.1 HAP release
 from the MIT-licensed [harmony-next-pipeline source repository](https://github.com/ohosvscode/harmony-next-pipeline)
 into ignored `_reference/harmony-integration/`. The pin records the source
 revision, release asset ID, size, and digest. The downloaded artifact is not
 redistributed; bundled component licenses have not been independently audited.
 
 ```sh
-npm run fixtures:harmony
+bun run fixtures:harmony
 REA_HARMONY_TEST_HAP=_reference/harmony-integration/entry-default-unsigned.hap \
-  npm run verify:harmony
+  bun run verify:harmony
 ```
 
 The lane exercises the compiled CLI and actual SDK-connected stdio MCP:

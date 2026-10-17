@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import { access } from "node:fs/promises";
 import { verifyBrowserScriptExport } from "./lib/browser-script-export-e2e.mjs";
 import { createVerifierRun, completeVerifierRun } from "./lib/verifier-run.mjs";

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";

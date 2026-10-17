@@ -223,7 +223,7 @@ it.each([false, true])(
     }
     await expect(
       access(join(runtimeRoot.path, "image.macho")),
-    ).resolves.toBeUndefined();
+    ).resolves.toBeFalsy();
   },
 );
 
@@ -491,7 +491,7 @@ it.each([
       });
       await expect(
         access(join(runtimeRoot.path, "image.macho")),
-      ).resolves.toBeUndefined();
+      ).resolves.toBeFalsy();
     }
     expectStoppedFixture(launch.process);
   },

@@ -137,11 +137,11 @@ cross-database queries and live capture are outside this inspection's coverage.
 
 ## Compatibility verification
 
-Run `npm run test:sqlite` after changing the SQLite adapter or its shared
+Run `bun run test:sqlite` after changing the SQLite adapter or its shared
 process, filesystem, CLI or MCP boundaries. It prepares the compiled runtime
 and runs SQLite service, snapshot, inspection, cleanup and public CLI/MCP
 tests. Directory-based selection includes new SQLite service and boundary
-tests automatically. `npm run test:sqlite:run` runs the same cases when the
+tests automatically. `bun run test:sqlite:run` runs the same cases when the
 compiled runtime and generated test artifacts are already current.
 
 The reusable SQLite CI workflow consumes the shared build artifact and tests

@@ -1,9 +1,9 @@
 import { relative, resolve } from "node:path";
 
-/** Compare actual Vitest discovery with repository-owned test paths. */
+/** Compare actual Bun test discovery with repository-owned test paths. */
 export const compareTestDiscovery = (expectedPaths, discovery, root) => {
   if (!Array.isArray(discovery))
-    throw new TypeError("Vitest file discovery must be an array");
+    throw new TypeError("Bun test file discovery must be an array");
   const projectsByFile = new Map();
   for (const entry of discovery) {
     if (
@@ -15,7 +15,7 @@ export const compareTestDiscovery = (expectedPaths, discovery, root) => {
       entry.projectName.length === 0
     )
       throw new TypeError(
-        "Vitest discovery requires file and projectName strings",
+        "Bun test discovery requires file and projectName strings",
       );
     const path = relative(root, resolve(root, entry.file)).replaceAll(
       "\\",

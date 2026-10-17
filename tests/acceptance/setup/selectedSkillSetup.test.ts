@@ -64,7 +64,7 @@ cliTest.for(["root", "references"] as const)(
         code: "skill_install_failed",
         appliedActions: [],
       });
-      expect(result.stdout).toContain(link);
+      expect(result.stdout).toContain(JSON.stringify(link).slice(1, -1));
       expect(result.stdout).toContain("--skill=false");
     }
     const doctor = await run(["doctor", "--client", "claude_code", "--skill"]);
@@ -73,7 +73,7 @@ cliTest.for(["root", "references"] as const)(
       healthy: false,
       identity: { skill: { state: "unmanaged" } },
     });
-    expect(doctor.stdout).toContain(link);
+    expect(doctor.stdout).toContain(JSON.stringify(link).slice(1, -1));
     expect((await lstat(link)).isSymbolicLink()).toBe(true);
   },
 );

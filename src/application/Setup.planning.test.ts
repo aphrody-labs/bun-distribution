@@ -134,7 +134,7 @@ describe("selected skill admission", () => {
   });
 });
 
-describe("skill plan destinations", () => {
+describe.skipIf(process.platform === "win32")("skill plan destinations", () => {
   it("plans a Claude-only skill in its personal location", async () => {
     const host = new FakeSetupHost();
     host.clients = [{ name: "claude_code", configPath: "/claude.json" }];

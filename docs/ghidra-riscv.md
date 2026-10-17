@@ -75,7 +75,7 @@ tree ships no host decompiler binary, so `Decompiler/os/<platform>/decompile` an
 `sleigh` must come from your own build; see
 [installation](installation.md#ghidra).
 
-Run `npm run verify:ghidra:riscv` with an existing Ghidra 12.1.4 installation,
+Run `bun run verify:ghidra:riscv` with an existing Ghidra 12.1.4 installation,
 JDK 21+, and a RISC-V-capable Clang, LLD and LLVM readelf. The verifier acquires
 no tools and never executes target code. Select installed tools explicitly when
 they are not on `PATH`:
@@ -86,7 +86,7 @@ JAVA_HOME=/path/to/jdk-21 \
 REA_RISCV_CLANG=/path/to/llvm/bin/clang \
 REA_RISCV_LLD=/path/to/lld/bin/ld.lld \
 REA_RISCV_READELF=/path/to/llvm/bin/llvm-readelf \
-npm run verify:ghidra:riscv
+bun run verify:ghidra:riscv
 ```
 
 The lane builds the committed freestanding C and assembly sources into RV32 and

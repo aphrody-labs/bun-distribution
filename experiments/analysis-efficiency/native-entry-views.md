@@ -166,7 +166,7 @@ rewritten, and no provider/model runs were repeated for this representation fix.
 
 Relevant validation includes the real workflows above, recorded-reply regression,
 grader negative probes, JavaScript/Python syntax, formatting/diff checks and
-`npm run check:fast`. The cold type/lint gate passed in 112.602 seconds with
+`bun run check:fast`. The cold type/lint gate passed in 112.602 seconds with
 sampled peak 3,220,914,176 bytes and five last-observed `memory.high` events;
 this gate is not a performance-qualified experiment. Unrelated domain suites,
 packaging and earlier model cohorts were not rerun for this experiment-only change.

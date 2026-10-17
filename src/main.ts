@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { snapshotEnvironment } from "./process/snapshotEnvironment.js";
 import { CURRENT_ENTRYPOINT_PATH } from "./process/CurrentEntrypointPath.js";

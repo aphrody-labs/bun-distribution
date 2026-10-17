@@ -102,10 +102,10 @@ Builds publish by one rename, so a reader sees a complete export or none. A sess
 ## Verify with a real Kuna
 
 ```bash
-REA_KUNA_COMMAND=/absolute/path/to/kuna npm run verify:kuna
+REA_KUNA_COMMAND=/absolute/path/to/kuna bun run verify:kuna
 # Compare with Ghidra on caller-built binaries
 REA_KUNA_COMMAND=/absolute/path/to/kuna GHIDRA_INSTALL_DIR=/absolute/path/to/ghidra \
-  npm run verify:kuna -- --targets DIR --functions inflate,crc32 --compare-ghidra
+  bun run verify:kuna -- --targets DIR --functions inflate,crc32 --compare-ghidra
 ```
 
 The lane compiles a small source-owned fixture with the host C compiler and verifies the MCP workflow end to end. `--targets DIR --functions a,b` adds caller-built binaries. `--compare-ghidra` (with `GHIDRA_INSTALL_DIR`) runs those same functions through Ghidra; it requires `--targets` and `--functions` and refuses empty matrices or requested function names missing from every target. See [testing](testing.md#kuna-lane) for coverage.

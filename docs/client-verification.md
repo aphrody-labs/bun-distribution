@@ -131,8 +131,8 @@ The same native client passed full-profile chat and analysis with the actual
 wire model `gpt-4.1` under a distinct BYOK model ID:
 
 ```bash
-REA_VERIFY_COPILOT_MODEL=rea-gpt-4.1 REA_VERIFY_COPILOT_WIRE_MODEL=gpt-4.1 npm run verify:copilot-client -- chat
-REA_VERIFY_COPILOT_MODEL=rea-gpt-4.1 REA_VERIFY_COPILOT_WIRE_MODEL=gpt-4.1 npm run verify:copilot-client -- call
+REA_VERIFY_COPILOT_MODEL=rea-gpt-4.1 REA_VERIFY_COPILOT_WIRE_MODEL=gpt-4.1 bun run verify:copilot-client -- chat
+REA_VERIFY_COPILOT_MODEL=rea-gpt-4.1 REA_VERIFY_COPILOT_WIRE_MODEL=gpt-4.1 bun run verify:copilot-client -- call
 ```
 
 These runs retain full canonical input/output schemas, all tools, installed-skill
@@ -145,8 +145,8 @@ capacity. The effective capacity is unknown. The default verifier preserves
 the complete catalog and full schemas. To verify the existing compact profile:
 
 ```bash
-REA_VERIFY_COPILOT_MODEL=gpt-4.1 REA_VERIFY_COPILOT_SCHEMA_PROFILE=compact npm run verify:copilot-client -- chat
-REA_VERIFY_COPILOT_MODEL=gpt-4.1 REA_VERIFY_COPILOT_SCHEMA_PROFILE=compact npm run verify:copilot-client -- call
+REA_VERIFY_COPILOT_MODEL=gpt-4.1 REA_VERIFY_COPILOT_SCHEMA_PROFILE=compact bun run verify:copilot-client -- chat
+REA_VERIFY_COPILOT_MODEL=gpt-4.1 REA_VERIFY_COPILOT_SCHEMA_PROFILE=compact bun run verify:copilot-client -- call
 ```
 
 Both native workflows passed with the complete tool inventory. The verifier selects the
@@ -449,7 +449,7 @@ Evaluate native, JavaScript, managed and browser investigation tasks through a
 real local Codex CLI with:
 
 ```bash
-npm run verify:agent
+bun run verify:agent
 ```
 
 The lane runs scenarios sequentially in standalone Codex (`--no-daemon`) with a
@@ -557,8 +557,8 @@ Regenerate the managed conformance manifest and Evidence completion ledger from
 live verification results, or check them for drift:
 
 ```bash
-npm run evidence:generate
-npm run evidence:check
+bun run evidence:generate
+bun run evidence:check
 ```
 
 The records preserve unsupported and unverified coverage as explicit unknowns.

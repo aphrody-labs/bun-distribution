@@ -63,7 +63,7 @@ checks do not acquire these tools. `REA_PPC_CLANG` selects Clang and
 prerequisites, not REA runtime providers.
 
 ```bash
-GHIDRA_INSTALL_DIR=/absolute/path/to/ghidra npm run verify:ghidra:ppc
+GHIDRA_INSTALL_DIR=/absolute/path/to/ghidra bun run verify:ghidra:ppc
 ```
 
 The lane compiles the fixture for a 750-family core (`-mcpu=750`) and never

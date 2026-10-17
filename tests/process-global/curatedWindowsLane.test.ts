@@ -34,12 +34,12 @@ const explicitPaths = async (
     lane === "windows"
       ? (workflow.jobs["windows-curated"]?.steps
           ?.map((step) => step.run)
-          .filter((value) => value?.includes("npx vitest run")) ?? [])
+          .filter((value) => value?.includes("bun test --isolate")) ?? [])
       : Object.values(workflow.jobs)
           .flatMap((job) => job.steps ?? [])
           .map((step) => step.run)
           .filter((value) =>
-            value?.trim().startsWith("npm run test:focused -- "),
+            value?.trim().startsWith("bun run test:focused -- "),
           );
   expect(
     runs.length,
@@ -49,7 +49,10 @@ const explicitPaths = async (
     ...new Set(
       runs.flatMap(
         (run) =>
-          run?.split(/\s+/).filter((token) => token.endsWith(".test.ts")) ?? [],
+          run
+            ?.split(/\s+/)
+            .filter((token) => token.endsWith(".test.ts"))
+            .map((token) => token.replace(/^\.\//u, "")) ?? [],
       ),
     ),
   ].sort();
@@ -101,10 +104,10 @@ describe("curated Windows test lane", () => {
       (step) => step.with?.name === "windows-native-controls",
     );
     const verify = steps.findIndex(
-      (step) => step.run === "npm run verify:windows-native:artifact",
+      (step) => step.run === "bun run verify:windows-native:artifact",
     );
     const build = steps.findIndex(
-      (step) => step.run === "npm run build:cached",
+      (step) => step.run === "bun run build:cached",
     );
     expect(download).toBeGreaterThanOrEqual(0);
     expect(verify).toBeGreaterThan(download);

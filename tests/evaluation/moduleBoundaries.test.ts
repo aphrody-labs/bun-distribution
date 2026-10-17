@@ -341,7 +341,7 @@ describe("test lane import boundaries", () => {
     const result = spawnSync(
       process.execPath,
       [
-        resolve("node_modules/oxlint/bin/oxlint"),
+        "lint",
         "-c",
         config,
         "--format",

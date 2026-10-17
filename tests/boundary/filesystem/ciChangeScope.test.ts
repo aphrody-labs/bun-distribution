@@ -302,42 +302,6 @@ it.each([
   },
 );
 
-const reverseToolsVitestConfig = await readFile(
-  new URL("../../../vitest.reverse-tools.config.ts", import.meta.url),
-  "utf8",
-);
-const reverseToolsVitestInputs = [
-  ...reverseToolsVitestConfig.matchAll(/"((?:\.\/)?(?:src|tests)\/[^"]+)"/gu),
-].flatMap((match) =>
-  match[1] === undefined ? [] : [match[1].replace(/^\.\//u, "")],
-);
-const reverseToolsMutationConfig = JSON.parse(
-  await readFile(
-    new URL("../../../tsconfig.reverse-tools-mutation.json", import.meta.url),
-    "utf8",
-  ),
-) as { include: string[] };
-const reverseToolsInputs = [
-  ...new Set([
-    ...reverseToolsVitestInputs,
-    ...reverseToolsMutationConfig.include.map((path) =>
-      path.replace(/^\.\//u, ""),
-    ),
-  ]),
-];
-
-it.each(reverseToolsInputs)(
-  "selects the reverse-tool quality gate for configured input %s",
-  async (path) => {
-    const { directory, base } = await fixture();
-    const head = await change(directory, [path]);
-    expect(await classify(directory, base, head)).toMatchObject({
-      code: true,
-      reverse_tools: true,
-    });
-  },
-);
-
 it.each([
   "src/README.md",
   "README.md.ts",
@@ -557,7 +521,7 @@ it("retains native Inspector verification on every documented package host", asy
     );
   const packageLane = workflow.jobs["package-e2e"];
   const packageInspector = stepSchema.parse(
-    packageLane.steps.find((step) => step.run === "npm run verify:inspector"),
+    packageLane.steps.find((step) => step.run === "bun run verify:inspector"),
   );
   expect(packageInspector.if).toBeUndefined();
   expect(
@@ -573,7 +537,7 @@ it("retains native Inspector verification on every documented package host", asy
   });
   const windowsInspector = stepSchema.parse(
     workflow.jobs["windows-curated"].steps.find(
-      (step) => step.run === "npm run verify:inspector",
+      (step) => step.run === "bun run verify:inspector",
     ),
   );
   expect(windowsInspector.if).toBeUndefined();
@@ -772,7 +736,7 @@ it("scopes package script edits while retaining broad dependency checks", async 
   const { directory } = await fixture();
   const before = {
     name: "fixture",
-    scripts: { "verify:evm": "node scripts/verify-evm-interface.mjs" },
+    scripts: { "verify:evm": "bun scripts/verify-evm-interface.mjs" },
   };
   const base = await change(
     directory,
@@ -782,7 +746,7 @@ it("scopes package script edits while retaining broad dependency checks", async 
   const after = {
     ...before,
     scripts: {
-      "verify:evm": "node scripts/verify-evm-interface.mjs --verbose",
+      "verify:evm": "bun scripts/verify-evm-interface.mjs --verbose",
     },
   };
   const head = await change(directory, ["package.json"], JSON.stringify(after));
@@ -1049,17 +1013,17 @@ it("fails without emitting a plan when package metadata is malformed", async () 
 it.each([
   [
     "verify:keyed-archive",
-    "npm run build:cached && node scripts/verify/apple/keyed-archive.mjs",
+    "bun run build:cached && bun scripts/verify/apple/keyed-archive.mjs",
     { apple: true, package: false, evm: false, browser: false },
   ],
   [
     "verify:inspector",
-    "npm run build:cached && node scripts/verify/inspector/runtime-observation.mjs",
+    "bun run build:cached && bun scripts/verify/inspector/runtime-observation.mjs",
     { package: true, apple: false, evm: false, browser: false },
   ],
   [
     "verify:windows-native",
-    "node scripts/verify-windows-native.mjs",
+    "bun scripts/verify-windows-native.mjs",
     { package: true, apple: false, evm: false, browser: false },
   ],
 ])(
@@ -1086,7 +1050,7 @@ it.each([
 it("retains a broad fallback when a provider script adds shared shell work", async () => {
   const { directory } = await fixture();
   const before = {
-    scripts: { "verify:evm": "node scripts/verify-evm-interface.mjs" },
+    scripts: { "verify:evm": "bun scripts/verify-evm-interface.mjs" },
   };
   const base = await change(
     directory,
@@ -1095,7 +1059,7 @@ it("retains a broad fallback when a provider script adds shared shell work", asy
   );
   const after = {
     scripts: {
-      "verify:evm": "node scripts/verify-evm-interface.mjs && npm run compile",
+      "verify:evm": "bun scripts/verify-evm-interface.mjs && bun run compile",
     },
   };
   const head = await change(directory, ["package.json"], JSON.stringify(after));
@@ -1228,7 +1192,8 @@ it("owns every explicit native-host test path with the lane that runs it", async
   const listed = (job: string) =>
     (ci.jobs[job]?.steps ?? [])
       .flatMap((step) => step.run?.split(/\s+/) ?? [])
-      .filter((token) => token.endsWith(".test.ts"));
+      .filter((token) => token.endsWith(".test.ts"))
+      .map((token) => token.replace(/^\.\//u, ""));
   const unowned = (job: string, scope: string) =>
     listed(job).filter(
       (path) =>
@@ -1272,7 +1237,7 @@ it("never runs a manual-only verifier from an automatic workflow", async () => {
     const command = commands.pop() ?? "";
     for (const [, file] of command.matchAll(/\b(scripts\/[\w./-]+\.mjs)\b/g))
       if (file) files.add(file);
-    for (const [, script] of command.matchAll(/npm run ([\w:.-]+)/g)) {
+    for (const [, script] of command.matchAll(/bun run ([\w:.-]+)/g)) {
       if (!script || seen.has(script)) continue;
       seen.add(script);
       const body = scripts[script];

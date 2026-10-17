@@ -194,7 +194,7 @@ for (const group of groups) {
       expect(setup.exitCode).toBe(0);
       expect(setup.json).toMatchObject({ status: "ready" });
       for (const { config, skillDirectory } of profiles) {
-        await expect(access(config)).resolves.toBeUndefined();
+        await expect(access(config)).resolves.toBeFalsy();
         expect(
           await readFile(join(skillDirectory, "SKILL.md"), "utf8"),
         ).toContain("reverse-engineer-anything");

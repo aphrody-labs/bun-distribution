@@ -7,10 +7,10 @@ The change was reapplied without conflicts and relevant checks rerun.
   8 files / 56 tests passed.
 - After the final partial-uniqueness correction, reran service and compiled
   CLI/MCP boundary tests: 2 files / 5 tests passed.
-- `npm run check`: typecheck, lint, formatting, knip, module boundaries and
+- `bun run check`: typecheck, lint, formatting, knip, module boundaries and
   architecture guards passed. Lint reports warnings; no errors.
-- `npm run docs:generate`, `npm run docs:check` and
-  `npm run verify:test-discovery` passed; every test file was discovered exactly once.
+- `bun run docs:generate`, `bun run docs:check` and
+  `bun run verify:test-discovery` passed; every test file was discovered exactly once.
 - Real WABT 1.0.42 comparison through compiled CLI and stdio MCP passed:
   equivalent padded LEB128 original encodings, function signatures, all admitted
   kinds, custom memory page size, escaped/BOM names, empty interfaces, explicit

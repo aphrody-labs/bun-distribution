@@ -29,7 +29,6 @@ async function metadata(
   await mkdir(join(directory, "src"), { recursive: true });
   const files = {
     "package.json": { name: "rea-agents", version },
-    "package-lock.json": { version, packages: { "": { version } } },
     ".release-please-manifest.json": { ".": version },
     "server.json": {
       version,
@@ -533,37 +532,34 @@ it("validates candidate options before inspecting the working directory", async 
   });
 });
 
-it.each([
-  "package-lock.json",
-  "server.json",
-  "src/generatedPackageMetadata.ts",
-])("rejects inconsistent version metadata in %s", async (path) => {
-  const f = await fixture();
-  await candidate(f, "6.0.0");
-  await writeFile(
-    join(f.directory, path),
-    path.endsWith(".ts")
-      ? 'export const METADATA = {\n  version: "5.1.0",\n};\n'
-      : JSON.stringify(
-          path === "package-lock.json"
-            ? { version: "6.0.0", packages: { "": { version: "5.1.0" } } }
-            : path === "server.json"
+it.each(["server.json", "src/generatedPackageMetadata.ts"])(
+  "rejects inconsistent version metadata in %s",
+  async (path) => {
+    const f = await fixture();
+    await candidate(f, "6.0.0");
+    await writeFile(
+      join(f.directory, path),
+      path.endsWith(".ts")
+        ? 'export const METADATA = {\n  version: "5.1.0",\n};\n'
+        : JSON.stringify(
+            path === "server.json"
               ? {
                   version: "6.0.0",
                   packages: [{ identifier: "rea-agents", version: "5.1.0" }],
                 }
               : { package: { version: "5.1.0" } },
-        ),
-  );
-  await git(f.directory, ["add", "."]);
-  await git(f.directory, ["commit", "-m", "chore: inconsistent metadata"]);
-  await expect(verify(f)).rejects.toMatchObject({
-    code: 1,
-    stderr: expect.stringContaining(
-      "declares 5.1.0; release branch requires 6.0.0",
-    ),
-  });
-});
+          ),
+    );
+    await git(f.directory, ["add", "."]);
+    await git(f.directory, ["commit", "-m", "chore: inconsistent metadata"]);
+    await expect(verify(f)).rejects.toMatchObject({
+      code: 1,
+      stderr: expect.stringContaining(
+        "declares 5.1.0; release branch requires 6.0.0",
+      ),
+    });
+  },
+);
 
 it("checks a publish merge using its pre-release first parent baseline", async () => {
   const f = await fixture();

@@ -42,7 +42,7 @@ uses its separate execution-free provider.
 Raw 6502 imports retain the same native filesystem and process ownership
 requirements. The complete image must fit in the 16-bit address space; no
 console-specific cartridge loader, CPU variant, or bank-switching model is
-implied. Run `npm run verify:ghidra:6502` with caller-installed `ca65`/`ld65`
+implied. Run `bun run verify:ghidra:6502` with caller-installed `ca65`/`ld65`
 to check the source-built fixture through real CLI and MCP workflows.
 
 REA does not install or upgrade Ghidra, Java, Python, npm, Node.js, Hopper, or a
@@ -148,7 +148,7 @@ imports as `ARM:LE:32:v8` (Thumb), ARM64 (`IMAGE_FILE_MACHINE_ARM64`) as
 in the analysis profile and are recorded as explicit imports. The source
 fixture verifier compares the complete observed language ID, not just its CPU
 family prefix. ARM/ARM64 admission is a bounded extension of the x86/x64
-lane. `npm run verify:ghidra:windows -- --arm` or `-- --arm64`, optionally
+lane. `bun run verify:ghidra:windows -- --arm` or `-- --arm64`, optionally
 combined with `--dll`, selects encoded Thumb or ARM64 PE fixtures on a Windows
 x64 host. The packaged verifier accepts the same flags. These fixtures are not
 compiler-produced programs. ARM64EC (machine 0xA641) and ARM64X are not admitted;
@@ -241,17 +241,17 @@ artifact report native controls unavailable; publishing requires the verified
 artifact and manifest.
 
 ```powershell
-npm run verify:windows-native
-npm run verify:ghidra:windows
-npm run verify:ghidra:windows -- --x86
-npm run verify:ghidra:windows -- --dll
-npm run verify:ghidra:windows -- --x86 --dll
-npm run verify:ghidra:windows -- --arm64
-npm run verify:ghidra:windows -- --arm64 --dll
-npm run verify:ghidra:windows:package -- --x86
-npm run verify:ghidra:windows:package -- --dll
-npm run verify:ghidra:windows:package -- --x86 --dll
-npm run verify:ghidra:windows:package -- C:\fixtures\installed-rea C:\fixtures\sample.exe
+bun run verify:windows-native
+bun run verify:ghidra:windows
+bun run verify:ghidra:windows -- --x86
+bun run verify:ghidra:windows -- --dll
+bun run verify:ghidra:windows -- --x86 --dll
+bun run verify:ghidra:windows -- --arm64
+bun run verify:ghidra:windows -- --arm64 --dll
+bun run verify:ghidra:windows:package -- --x86
+bun run verify:ghidra:windows:package -- --dll
+bun run verify:ghidra:windows:package -- --x86 --dll
+bun run verify:ghidra:windows:package -- C:\fixtures\installed-rea C:\fixtures\sample.exe
 ```
 
 The package lane must run with an ordinary, non-elevated user token. It exercises

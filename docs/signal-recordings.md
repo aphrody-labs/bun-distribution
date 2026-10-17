@@ -86,7 +86,7 @@ trusted and its path, digest and arguments are retained in Evidence.
 ## Verification
 
 ```sh
-npm run build:cached
+bun run build:cached
 REA_SIGROK_COMMAND=/absolute/path/to/sigrok-cli node scripts/verify-signal-recording.mjs
 ```
 

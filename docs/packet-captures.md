@@ -122,7 +122,7 @@ No arbitrary process flags are accepted.
 ## Verification
 
 ```sh
-npm run build:cached
+bun run build:cached
 REA_TSHARK_COMMAND=/absolute/path/to/tshark node scripts/verify-packet-capture.mjs
 ```
 

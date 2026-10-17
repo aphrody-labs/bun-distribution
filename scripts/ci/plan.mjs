@@ -74,7 +74,7 @@ function classifyPackage(base, head) {
       continue;
     }
     if (
-      /^(test(?::|$)|check(?::|$)|lint(?::|$)|format(?::|$)|knip$|jscpd$)/.test(
+      /^(test(?::|$)|check(?::|$)|lint(?::|$)|format(?::|$)|jscpd$)/.test(
         script,
       )
     )
@@ -91,7 +91,7 @@ function classifyPackage(base, head) {
     // Verify scripts own provider setup as well as execution. Reuse their
     // existing source-file ownership rather than maintaining a second map.
     const entrypoint = (command) =>
-      /^(?:npm run build:cached && )?node (scripts\/[\w/-]+\.mjs)(?: [\w./=-]+)*$/.exec(
+      /^(?:bun run build:cached && )?bun (scripts\/[\w/-]+\.mjs)(?: [\w./=-]+)*$/.exec(
         command ?? "",
       )?.[1];
     const beforeEntry = entrypoint(beforeScripts?.[script]);

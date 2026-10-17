@@ -12,32 +12,32 @@ behavior, and complete CI evidence before merging.
 
 | Command                           | Scope                                                                                                                   |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `npm run test:local`              | Dirty source tests via the import graph, without build; explicit source paths run regardless of Git status              |
-| `npm run test:focused -- PATH...` | Exact existing test files; compiled boundaries build first, and unmatched paths fail                                    |
-| `npm run test:changed`            | Source tests affected since the merge base with `origin/main`, including committed and dirty changes                    |
-| `npm run test:fast`               | All domain, service, adapter, composition, conformance, and evaluation tests without build                              |
-| `npm run test:boundary`           | Boundary, CLI boundary, MCP boundary, process boundary, and process-global projects                                     |
-| `npm run test:mcp`                | MCP boundary project                                                                                                    |
-| `npm run test:acceptance`         | Complete compiled CLI and MCP acceptance workflows                                                                      |
-| `npm run test:python`             | LLDB and mitmproxy producer contracts plus analysis-efficiency checks; no real debugger or proxy required               |
-| `npm run test:watch`              | Dirty source tests in watch mode, without build                                                                         |
-| `npm run test:watch:all`          | Changed tests from every project; builds at startup, so rebuild after production edits before relying on compiled tests |
-| `npm run check:changed`           | Cached typecheck/lint and branch-related source feedback                                                                |
-| `npm run check:pr`                | Opt-in complete local deterministic gate and generated-file checks                                                      |
-| `npm run docs:check`              | Generated-document validation and fresh onboarding example consistency checks                                           |
+| `bun run test:local`              | Dirty source tests via the import graph, without build; explicit source paths run regardless of Git status              |
+| `bun run test:focused -- PATH...` | Exact existing test files; compiled boundaries build first, and unmatched paths fail                                    |
+| `bun run test:changed`            | Source tests affected since the merge base with `origin/main`, including committed and dirty changes                    |
+| `bun run test:fast`               | All domain, service, adapter, composition, conformance, and evaluation tests without build                              |
+| `bun run test:boundary`           | Boundary, CLI boundary, MCP boundary, process boundary, and process-global projects                                     |
+| `bun run test:mcp`                | MCP boundary project                                                                                                    |
+| `bun run test:acceptance`         | Complete compiled CLI and MCP acceptance workflows                                                                      |
+| `bun run test:python`             | LLDB and mitmproxy producer contracts plus analysis-efficiency checks; no real debugger or proxy required               |
+| `bun run test:watch`              | Dirty source tests in watch mode, without build                                                                         |
+| `bun run test:watch:all`          | Changed tests from every project; builds at startup, so rebuild after production edits before relying on compiled tests |
+| `bun run check:changed`           | Cached typecheck/lint and branch-related source feedback                                                                |
+| `bun run check:pr`                | Opt-in complete local deterministic gate and generated-file checks                                                      |
+| `bun run docs:check`              | Generated-document validation and fresh onboarding example consistency checks                                           |
 
 For example:
 
 ```bash
-npm run test:local -- src/config.test.ts
-npm run test:focused -- tests/acceptance/applications/runtime.test.ts
-npm run test:changed -- --base origin/main
-npm run test:changed -- --dry-run
+bun run test:local -- src/config.test.ts
+bun run test:focused -- tests/acceptance/applications/runtime.test.ts
+bun run test:changed -- --base origin/main
+bun run test:changed -- --dry-run
 ```
 
 `test:focused` accepts exact repository-relative test file paths. Source-only
 paths do not build; boundary, acceptance, process-global, or unfamiliar `tests/`
-paths build conservatively. Tests use Vitest concurrency and isolated
+paths build conservatively. Tests use Bun test concurrency and isolated
 workspaces; commands do not hold a broad test lock. Build and documentation
 writers retain checkout-local locks for their shared output files. Explicit
 selections do not use `--changed` or permit zero-test success.
@@ -46,18 +46,18 @@ without executing tests or building. A missing Git base reports how to fetch
 it or select another revision.
 
 Source typechecking needs no compiled runtime or generated test metadata.
-`npm run build:cached` compiles the CLI/MCP runtime and its packaged skill.
-Turbo's strict task environment preserves caller-selected `GOMAXPROCS`,
+`bun run build:cached` compiles the CLI/MCP runtime and its packaged skill.
+The static task context preserves caller-selected `GOMAXPROCS`,
 `GOMEMLIMIT`, and `UV_THREADPOOL_SIZE` for resource-constrained builds and
 checks. These execution controls do not change artifact content, so changing
 their values retains cache reuse. They control individual runtimes; monitor
 the complete process family separately when enforcing a total memory budget.
-`npm run test:prepare` also generates the MCP contract test catalog, product
+`bun run test:prepare` also generates the MCP contract test catalog, product
 catalog, and portable managed evidence used by the complete suite. Focused
 tests prepare those extra outputs only when their selected files consume them.
 The MCP test catalog is JSON in `.cache/mcp-tool-catalog.json`; the tracked
 test loader supplies its types without making generation a source-check
-prerequisite. Run `npm run mcp-catalog:generate` to refresh it independently.
+prerequisite. Run `bun run mcp-catalog:generate` to refresh it independently.
 Documentation generation and managed conformance run through their separate
 `docs:generate` and `evidence:generate` task graphs.
 
@@ -68,24 +68,24 @@ correctness. Select relevant boundary files and real-provider lanes explicitly.
 Source projects also contain large capacity regressions; `test:fast` promises
 no compiled-runtime prerequisite, not a fixed time budget.
 
-`npm run lint` prints errors and a warning summary; `npm run jscpd` prints
+`bun run lint` prints errors and a warning summary; `bun run jscpd` prints
 duplication statistics. Complete reports remain in `.cache/static-checks/` and
 CI uploads them as `static-check-reports`, including after a failed static gate.
-Use `npm run lint:details` or `npm run jscpd:details` for all console diagnostics.
+Use `bun run lint:details` or `bun run jscpd:details` for all console diagnostics.
 Both duplicate commands scan production and test code with the same 3% limit;
 the summary commands preserve checker failures and restore reports from cached
 static tasks. Both lint caches include the website, documentation configuration,
 and experiment code scanned by the checker; a regression compares the actual
-lint inventory with Turbo's resolved inputs.
+lint inventory with the tracked task inputs.
 
 Routine iterations and rebases need focused regressions and relevant checks.
-Before handing off a PR, run `npm run check` and generated-document checks when
+Before handing off a PR, run `bun run check` and generated-document checks when
 applicable; CI owns the full suite and coverage. Use the full local gate for
 broad changes or diagnosing CI, rather than after every edit. Package/install
 changes additionally need package verification; provider changes need actual
 provider evidence.
 
-Vitest projects use up to two workers, bounded by host parallelism.
+Bun test projects use up to two workers, bounded by host parallelism.
 `process-boundary` runs later with serial files because process-tree sampling
 shares host resources. Acceptance and process-global cases use isolated forks
 without serial scheduling. Pure domain/service, composition, conformance,
@@ -96,7 +96,7 @@ instances or subprocesses. CLI module mocks belong in `tests/process-global/`
 so they keep per-file isolation. Product catalog verification stays with the
 isolated filesystem boundary tests because it loads both source and compiled
 module graphs. Adapter, other boundary, acceptance, and process-global projects
-retain per-file isolation. See `vitest.config.ts` for current settings.
+retain per-file isolation. Pass `--isolate` to `bun test` so each file gets a fresh global object and module mocks cannot leak across files.
 
 Inject producer faults through scoped dependencies in shared workers: a module
 mock cannot replace a consumer that was imported earlier. Check these tests
@@ -114,31 +114,30 @@ The reused CLI boundary workers cap V8 old space at 384 MiB, based on their
 profiled allocation and cleanup behavior. This encourages collection between
 files; spawned REA processes retain their own heap settings.
 
-Vitest worker limits do not bound subprocesses launched within a test. Bound
+Bun test worker limits do not bound subprocesses launched within a test. Bound
 those batches separately so repeated CLI validation cannot oversubscribe the
 runner. Preserve simultaneous launches where concurrency is itself under test.
 
 Build/documentation writers hold checkout-local output locks. Tests do not
 hold a broad command lock; `check:pr` finishes tests before document validation.
-Turbo caches deterministic preparation and static checks, but `test:run` always
-executes. Repository files do not fully describe installed tool contents or host
+`test:run` always executes. Repository files do not fully describe installed tool contents or host
 state. A previous test pass therefore cannot replace current validation, even
 when the source tree is unchanged. `check:pr` also runs the fast Python producer
 suite; CI runs it in the static job for code changes. These producer tests do not
 establish real LLDB engine coverage.
 
-Vitest's persistent compile cache remains disabled. The `cliTest` fixture shares
+Bun test's persistent compile cache remains disabled. The `cliTest` fixture shares
 a temporary Node compile cache among its fresh CLI subprocesses. The worker
 removes it after test-scoped processes finish. Explicit child environment
 settings take precedence; children requesting `NODE_V8_COVERAGE` do not receive
-the fixture cache. These subprocesses are outside aggregate Vitest coverage;
+the fixture cache. These subprocesses are outside aggregate Bun test coverage;
 subprocess coverage attachment remains disabled. Cold-start import checks launch
 independently without this fixture cache.
 
 The Apple artifact verifier step shares a job-temporary bytecode cache among
 its fresh CLI/MCP children via `REA_ARTIFACT_NODE_COMPILE_CACHE`. The artifact
-helper maps this setting to child `NODE_COMPILE_CACHE`; npm, Turbo, and nested
-Vitest runs do not inherit that setting. Explicit `NODE_COMPILE_CACHE` takes
+helper maps this setting to child `NODE_COMPILE_CACHE`; Bun and nested
+test runs do not inherit that setting. Explicit `NODE_COMPILE_CACHE` takes
 precedence, and coverage collection or `NODE_DISABLE_COMPILE_CACHE=1` disables
 the helper's cache. The cache is discarded with the CI job.
 
@@ -146,7 +145,7 @@ To evaluate persistent compile caching for repeated local runs, opt in for both
 cold and warm measurements with an isolated cache:
 
 ```bash
-NODE_COMPILE_CACHE=.cache/node-compile npm test
+NODE_COMPILE_CACHE=.cache/node-compile bun test
 ```
 
 Do not report the warm result as a cold-suite improvement, and do not enable
@@ -157,9 +156,9 @@ instrumentation remains equivalent.
 
 | Change or claim                           | First check                                                   | Additional coverage                                         |
 | ----------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
-| Source semantics                          | `npm run test:local -- PATH...`                               | Relevant boundary cases when the behavior crosses a port    |
-| CLI/MCP workflow                          | `npm run test:focused -- PATH...`                             | Actual public calls; an injected provider has limited scope |
-| Documentation or generated metadata       | `npm run docs:check`                                          | `npm run docs:build` for rendered pages and links           |
+| Source semantics                          | `bun run test:local -- PATH...`                               | Relevant boundary cases when the behavior crosses a port    |
+| CLI/MCP workflow                          | `bun run test:focused -- PATH...`                             | Actual public calls; an injected provider has limited scope |
+| Documentation or generated metadata       | `bun run docs:check`                                          | `bun run docs:build` for rendered pages and links           |
 | Engine adapter                            | Its real-provider lane below                                  | Host, version, target identity, and owned cleanup           |
 | Client configuration or schema conversion | [Native client lane](client-verification.md)                  | Distinguish loopback models from live services              |
 | Agent investigation quality               | [Agent evaluation](#agent-evaluation-and-conformance-records) | Review transcript and scenario-specific evidence            |
@@ -191,7 +190,7 @@ scenario still runs through the public workflow; session-lifecycle scenarios
 need their own sessions and cleanup assertions.
 
 Report unavailable authority as a named skip. Await owned cleanup before a
-verifier reports success. Native process inspectors are released at Vitest
+verifier reports success. Native process inspectors are released at Bun test
 worker teardown; fork termination does not run Node exit hooks, and per-file
 teardown would retire inspectors still needed by other files.
 
@@ -325,16 +324,16 @@ exit-status changes cannot leak between files. Serialize a case only when it
 demonstrably shares an external resource that cannot be isolated. Reusable,
 test-scoped fixtures live under `tests/support/**`; immutable source artifacts
 remain under `tests/fixtures/**`.
-The process-global Vitest configuration contract rejects new direct temporary-root
+The process-global Bun test configuration contract rejects new direct temporary-root
 creation outside the workspace seam and its narrowly documented boundary/package
 exceptions.
 
 Real Hopper, Ghidra, IDA, browser, package, and managed-code claims belong to their
-explicit `npm run verify:*` lanes. The reconstruction-readiness lane also
+explicit `bun run verify:*` lanes. The reconstruction-readiness lane also
 checks deterministic rerun, tamper, and stale-input handling; those checks do
 not execute extracted JavaScript modules. When application runtime behavior is
 needed, exercise the actual target through browser, Electron, or process
-capture. Real model trials are manual; Vitest covers deterministic evaluator
+capture. Real model trials are manual; Bun test covers deterministic evaluator
 logic.
 
 `verify:managed` runs the portable PE byte-fixture conformance entrypoint under
@@ -364,60 +363,17 @@ cleanup before claiming success.
 
 ## Coverage and timing
 
-CI owns coverage; aggregate and domain/contract thresholds are maintained in
-`vitest.config.ts`. They are glob-specific and never updated automatically.
+CI owns coverage; `bun test --coverage` reports aggregate coverage; thresholds are not updated automatically.
 Coverage does not replace named boundary or real-provider scenarios.
 
-The `reverse-tools` commands run the focused tests and report coverage and
-mutation results without an additional percentage requirement. Test failures,
-invalid mutation configuration, and runner failures still fail the check.
-Mutation targets cover reviewed production behavior, including signal-terminated
-commands, Cutter descriptor identity, debugger cleanup ownership, GDB command
-exit and cancellation, and Rizin startup, timeout Evidence, and process exit.
-A second exhaustive pass runs the focused Cutter and Rizin timeout semantics tests against every compilable
-selected mutant to avoid relying on per-test mutation coverage associations;
-Stryker reports compile-error mutants separately because those cannot execute
-tests. Both passes resolve named syntax owners, scoped declarations, guards,
-callbacks, and reviewed expressions from the current TypeScript source; no
-hand-maintained line ranges select mutations. Missing, ambiguous, or malformed
-source targets stop configuration before mutation generation. The selections
-retain their review scope rather than expanding to whole source files. The
-focused suite also exercises affected MCP routes and the Python Cutter bridge.
-Contract, integration, and real-provider lanes complement these focused tests;
-simulated providers do not establish real-provider behavior.
-
-Required CI retains fresh reverse-tools coverage and preflights both canonical
-Stryker configurations with `--dryRunOnly`. These preflights resolve the owned
-targets, instrument the source, and execute the real initial tests. Invalid
-configuration, target resolution, and initial test failures still fail the job.
-Preflights execute no mutants and produce no mutation-outcome report. Both fast
-feedback and full qualification, including exact-revision release qualification,
-require coverage and both preflights. A failed, canceled, skipped or missing
-selected quality job still fails the required gate.
-
-The separate **Mutation sweep** workflow runs both complete configurations daily
-and on manual dispatch, in two isolated jobs. It is a maintenance check outside
-the PR and release publication gates. `ci:full` requests full regression,
-coverage and provider qualification; it does not request a complete mutation
-sweep. Use the Mutation sweep workflow to request that result. Targets,
-checkers, concurrency, deadlines and the existing non-blocking mutation-score
-threshold are unchanged. `npm run test:mutation:reverse-tools` also retains both
-complete passes for local callers.
-
-The two passes write separate JSON and HTML reports under `reports/mutation/`:
-`reverse-tools` and `reverse-tools-semantics`. Required CI retains focused
-coverage; the sweep retains each configuration's JSON/HTML reports separately.
-Both retain available diagnostics for seven days after failure and skip uploads
-on cancellation. Artifact names identify the tier or configuration and run
-attempt. A successful sweep requires both jobs and their nonempty reports;
-partial diagnostics and preflights do not establish complete mutation outcomes
-or qualify the release revision for mutation coverage.
+The `test:reverse-tools` command runs the focused reverse-tooling tests with
+coverage. Test failures and runner failures fail the check.
 
 Fast CI starts the source-only projects after classification, independently of
 build and static checks, and runs five built-dependent shards after the build.
 The six test jobs still select every portable test. Full qualification keeps six
-complete Vitest shards with coverage. Neither tier retries tests. Canonical
-project ownership lives in `scripts/lib/test-projects.mjs`, shared by Vitest,
+complete Bun test shards with coverage. Neither tier retries tests. Canonical
+project ownership lives in `scripts/lib/test-projects.mjs`, shared by Bun test,
 CI group execution, and development-test preparation. A test importing compiled
 verifier code belongs to the built group even if its directory is conformance.
 Source and built blobs have separate labels to prevent merge collisions.
@@ -429,7 +385,7 @@ only. Failed, cancelled, or missing selected shards still fail the required gate
 and aggregate coverage thresholds remain enforced in full qualification.
 Only successful complete full-tier merges publish the small `test-timings` artifact, with
 checkout-relative paths; the build job downloads that artifact for the sequencer
-instead of the coverage/JUnit bundle. Timing weights come from Vitest module
+instead of the coverage/JUnit bundle. Timing weights come from Bun test module
 diagnostics and include tests and hooks, worker preparation, environment,
 imports, and setup. Import timings already include transform waits, which are
 not added again. The weights describe file costs under the measured worker and
@@ -492,7 +448,7 @@ It runs the reporter from the trusted default branch with read-only permissions,
 treating workflow runs as API data. It does not allocate a new reporter job for
 every completed, cancelled, or skipped workflow. Reports separate queue
 waiting (`created_at` to `started_at`) from completed execution and report
-percentiles plus matched `npm ci` and artifact-step durations.
+percentiles plus matched `bun install --frozen-lockfile` and artifact-step durations.
 Queue excludes dependency waiting before job creation and does not establish
 whether account concurrency or runner availability caused the wait. Queued jobs with
 placeholder start times, skipped jobs, and missing or invalid timestamps remain
@@ -502,39 +458,25 @@ memory usage, or billing. Step names identify samples, not complete transfer
 costs. Its queue, execution, and failures are independent of the required gate
 and publication. CPU time and peak process-family memory are not measured by this API.
 
-The build job saves portable Turbo outputs across runs. Eight Linux real-system
-lanes restore this cache without waiting for the build job. The shared action
-derives its key from `test:prepare --dry=json` task hashes, runner OS and
-architecture, `.npmrc`, `.nvmrc`, and the lockfile; test-only changes can reuse compiled outputs. Every
-build and verification command still runs, so Turbo checks task inputs and
-rebuilds misses. A restore prefix with the same platform and toolchain permits
-partial task reuse when one generator's inputs change; Turbo still invalidates
-that generator's entry. Native outputs are not stored in this cache.
-
-Native package jobs, the Windows curated lane, and the Apple artifact lane reuse
-the same workflow's Turbo cache for portable compiled JavaScript, skills, and
-catalogs. The Windows lane relies on the Linux static job for typechecking. They retain the normal build and prepack
-commands, which restore matching outputs or rebuild on a cache miss. Native
-artifacts, dependency installs, package archives, and runtime verification remain
-host-local. Keep platform-dependent outputs out of this shared cache.
+CI caches the Bun package download cache (`bun pm cache`), keyed on `bun.lock` and `bunfig.toml`. Native outputs and `node_modules` are not stored in shared caches; every job still runs `bun install --frozen-lockfile` and the normal build commands.
 
 Record cold and warm preparation separately from fresh test execution when
-benchmarking the optional `npm run check:pr` gate. Compare multiple runs on the
+benchmarking the optional `bun run check:pr` gate. Compare multiple runs on the
 same host, including subprocess and queue costs; a cached pass is not a test
 runtime measurement. A PR that touches packaging or real-system
 behavior requires the applicable `verify:*` lanes; packaging and installation
-changes also require `npm run verify:package`. The full-gate benchmark measures
+changes also require `bun run verify:package`. The full-gate benchmark measures
 that explicit lane, not the routine iteration requirement.
 
 ## Real-toolchain verification lanes
 
 Linux Rizin debugger ownership changes require a separate real-provider gate on
 Rizin 0.7.4. Run
-`npm run test:focused -- tests/boundary/providers/RizinInferiorTty.test.ts`.
+`bun run test:focused -- tests/boundary/providers/RizinInferiorTty.test.ts`.
 This test verifies the caller-selected TTY against the actual inferior's file
 descriptors, confirms `dbg.exitkills=false`, detaches through the `olj`/`o-`
 protocol, and checks that the target survives debugger close and writes to the
-selected TTY. The suite is included in the reverse-tools Vitest and mutation
+selected TTY. The suite is included in the reverse-tools Bun test
 typecheck selections; its real-provider assertions skip when Rizin 0.7.4 is
 unavailable. Run the focused command above on a host with that provider for the
 explicit real-provider verification gate.
@@ -553,14 +495,14 @@ prove behavior on the verified Ghidra 12.1.4 and JDK 21 build.
 
 | Ghidra lane                                | Supported runner/target                                                                         | Additional local tools                                              |
 | ------------------------------------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `npm run verify:ghidra`                    | Linux x64/arm64 ELF or macOS x64/arm64 Mach-O                                                   | Host C compiler, Ghidra 12.1.4, and full JDK 21                     |
-| `npm run verify:ghidra:seeds`              | POSIX; raw x86 fixture; seed ordering, BSS labels, analyzer readback and unknown-name rejection | Ghidra 12.1.4 and full JDK 21                                       |
-| `npm run verify:ghidra:swift`              | macOS x64/arm64 Mach-O                                                                          | Host Swift compiler, Ghidra 12.1.4, and full JDK 21                 |
-| `npm run verify:ghidra:riscv`              | Linux/macOS x64/arm64 host; source-owned RV32/RV64 ELF through CLI and MCP                      | RISC-V Clang, LLD, LLVM readelf, Ghidra 12.1.4, and full JDK 21     |
-| `npm run verify:ghidra:switch`             | Linux x64 ELF; GCC/Clang optimized and stripped switch fixtures                                 | GCC, Clang, GNU nm/objdump/strip, Ghidra 12.1.4, and full JDK 21    |
-| `npm run verify:ghidra:aarch64-jump-table` | Any supported Ghidra host; AArch64 ELF; signed/unsigned byte/halfword tables; host ARM64 Mach-O | Clang with AArch64 target support, Ghidra 12.1.4, and full JDK 21   |
-| `npm run verify:ghidra:cross-format`       | Any supported Ghidra host; also analyzes AArch64 ELF, x86-64 PE, and x86-64 Mach-O              | `clang`, LLD, and `lld-link` in addition to host-lane prerequisites |
-| `npm run verify:ghidra:windows`            | Controlled Windows x64 with native x86-64 PE; `-- --x86` selects native x86 PE                  | Ghidra 12.1.4, full JDK 21, and the matching native artifact        |
+| `bun run verify:ghidra`                    | Linux x64/arm64 ELF or macOS x64/arm64 Mach-O                                                   | Host C compiler, Ghidra 12.1.4, and full JDK 21                     |
+| `bun run verify:ghidra:seeds`              | POSIX; raw x86 fixture; seed ordering, BSS labels, analyzer readback and unknown-name rejection | Ghidra 12.1.4 and full JDK 21                                       |
+| `bun run verify:ghidra:swift`              | macOS x64/arm64 Mach-O                                                                          | Host Swift compiler, Ghidra 12.1.4, and full JDK 21                 |
+| `bun run verify:ghidra:riscv`              | Linux/macOS x64/arm64 host; source-owned RV32/RV64 ELF through CLI and MCP                      | RISC-V Clang, LLD, LLVM readelf, Ghidra 12.1.4, and full JDK 21     |
+| `bun run verify:ghidra:switch`             | Linux x64 ELF; GCC/Clang optimized and stripped switch fixtures                                 | GCC, Clang, GNU nm/objdump/strip, Ghidra 12.1.4, and full JDK 21    |
+| `bun run verify:ghidra:aarch64-jump-table` | Any supported Ghidra host; AArch64 ELF; signed/unsigned byte/halfword tables; host ARM64 Mach-O | Clang with AArch64 target support, Ghidra 12.1.4, and full JDK 21   |
+| `bun run verify:ghidra:cross-format`       | Any supported Ghidra host; also analyzes AArch64 ELF, x86-64 PE, and x86-64 Mach-O              | `clang`, LLD, and `lld-link` in addition to host-lane prerequisites |
+| `bun run verify:ghidra:windows`            | Controlled Windows x64 with native x86-64 PE; `-- --x86` selects native x86 PE                  | Ghidra 12.1.4, full JDK 21, and the matching native artifact        |
 
 The optional Swift lane compiles a source-owned fixture and checks modern and
 provider-demangled procedure names through real stdio MCP, with and without the
@@ -574,7 +516,7 @@ That facet requires Ghidra's matching `demangler_gnu_v2_41` native component in
 native decompiler. The namespace verifier reports missing or non-executable
 components before testing the fixture. REA does not build or install them.
 
-Windows native conformance runs with `npm run verify:windows-native` and does
+Windows native conformance runs with `bun run verify:windows-native` and does
 not require Ghidra or Java. It includes Job Object commit-limit controls (a
 limited child that reaches the limit, a control that does not, and invalid
 limit rejection). An optional independently compiled Windows fixture
@@ -587,7 +529,7 @@ rename, later-query handle-based recovery, successful-admission caching, and
 environment-teardown cleanup. It neither
 establishes the cause of the intermittent #1701 host failure nor replaces
 verification with the shipped production artifact.
-`npm run verify:ghidra:windows:package` additionally packs and installs REA into
+`bun run verify:ghidra:windows:package` additionally packs and installs REA into
 an isolated prefix and runs ordinary-user CLI/MCP operations against their
 canonical schemas. Run the controlled fixture generator before that lane, or
 supply an installed package root and an explicit fixture as arguments.
@@ -681,7 +623,7 @@ fixture. It checks the recovered case values against the source cases and
 requires unresolved table bounds or case mappings to remain visible as
 residual unknowns.
 
-`npm run verify:inspector` requires the supported Node.js runtime and installed
+`bun run verify:inspector` requires the supported Node.js runtime and installed
 REA dependencies. CI runs it on Linux and macOS x64/arm64 and Windows x64. It starts owned loopback
 Node Inspector fixtures and verifies discovery and passive observation through
 the CLI and stdio MCP, including special filenames, unresolved discovery
@@ -701,10 +643,10 @@ termination. The forced Windows exit does not exercise the POSIX SIGTERM
 handler and can leave temporary workspace files. `verify:windows-native`
 separately checks binary input, backpressure, EOF and pending-write job closure.
 
-`npm run verify:android` requires an existing Java 17+ and an explicit
+`bun run verify:android` requires an existing Java 17+ and an explicit
 `REA_JADX_MCP_JAR` for jadx-headless-mcp 0.7.1. Set `REA_ANDROID_TEST_APK` to the
 fixed public ApiDemos v6.0.18 fixture. Obtain both with the explicit
-`npm run fixtures:android` command; files are SHA-256 verified and
+`bun run fixtures:android` command; files are SHA-256 verified and
 kept under ignored `_reference/`. No Gradle build, Android SDK, emulator or
 application execution is required. The lane compares real CLI/MCP package,
 class search, class inventory, method decompilation and incoming references.
@@ -731,9 +673,9 @@ remain GUI-only surfaces in JEB 5.48.0 headless.
 Authenticated IPA and macOS application inventory projection is documented in
 [Apple application analysis](apple-application-analysis.md).
 
-`npm run verify:harmony` requires no SDK or engine. It projects the pinned
+`bun run verify:harmony` requires no SDK or engine. It projects the pinned
 harmony-next-pipeline 1.0.1 release HAP from an MIT-licensed source repository,
-fetched by `npm run fixtures:harmony` into ignored
+fetched by `bun run fixtures:harmony` into ignored
 `_reference/harmony-integration/`, set as `REA_HARMONY_TEST_HAP`.
 The lane exercises `inspect_artifact`, projection determinism, Stage-model
 path hints, exact component sets, signing-entry limitations, and CLI/MCP parity.
@@ -746,12 +688,12 @@ HarmonyOS `.har` libraries are deliberately not suffix-classified because
 Synthetic producer regressions run independently:
 
 ```sh
-npm run test:focused -- tests/boundary/process/jadxIntegration.test.ts tests/boundary/process/androidAnalysisMcp.test.ts
+bun run test:focused -- tests/boundary/process/jadxIntegration.test.ts tests/boundary/process/androidAnalysisMcp.test.ts
 ```
 
 ## Apktool resource decoding
 
-`npm run verify:apktool -- --apk PATH` exercises both Apktool operations
+`bun run verify:apktool -- --apk PATH` exercises both Apktool operations
 against a real launcher (`REA_APKTOOL_COMMAND` or PATH) and one APK. No
 download or build step is involved. Record: apktool 2.7.0-dirty (Debian
 packaging) on Linux with OpenJDK 25, against a signed aapt2-built probe APK
@@ -765,7 +707,7 @@ budgets.
 
 ## Flutter build identification
 
-`npm run verify:flutter -- --apk PATH [--plain-apk PATH]` runs both pure
+`bun run verify:flutter -- --apk PATH [--plain-apk PATH]` runs both pure
 static operations against a real Flutter APK, plus an optional non-Flutter
 APK for the negative check. No engine or external tool is involved. Record:
 Flutter Gallery 2.9.2 (112 MB, arm64-v8a / armeabi-v7a / x86_64) — every
@@ -795,7 +737,7 @@ budgets.
 
 ## ADB device acquisition
 
-`npm run verify:adb` exercises every ADB operation against a live device or
+`bun run verify:adb` exercises every ADB operation against a live device or
 emulator through the caller's adb binary (`REA_ADB_PATH` or PATH). No SDK
 installation or emulator management is involved; the device-mutating tools
 run only in the explicit lifecycle section (`--install-apk` drives a
@@ -844,7 +786,7 @@ On a local Windows host, the .NET 8 ILCompiler finds the linker only through
 Visual Studio 2019 or 2022 (`vswhere -version [16,18)`). With only Visual
 Studio Build Tools 2026 installed, open its x64 Developer Command Prompt.
 In that same `cmd.exe` session, run `set IlcUseEnvironmentalTools=true` and
-then `npm run build:fixtures:nativeaot`. Running `vcvars64.bat` as a child of
+then `bun run build:fixtures:nativeaot`. Running `vcvars64.bat` as a child of
 PowerShell does not preserve its environment in the parent PowerShell session.
 
 Build the clean pinned upstream adapter with `build:ghidra:nativeaot`, then set
@@ -869,7 +811,7 @@ or upgrade Java, Ghidra, .NET or native toolchains. See
 
 ## IDA MCP adapter
 
-`npm run verify:ida -- --target /absolute/path/to/program --procedure main`
+`bun run verify:ida -- --target /absolute/path/to/program --procedure main`
 uses the existing `REA_IDA_MCP_CONFIG` registration. It installs no engine,
 Python package, or compiler. The target must already be open in the GUI for
 the legacy or native attached profile; the database-supervisor headless profile opens
@@ -913,7 +855,7 @@ The initial Linux x64 IDA Free 9.4 run used native MCP 1.1.2 with a local naviga
 
 ## Kuna lane
 
-`npm run verify:kuna` requires a caller-supplied `kuna` in `REA_KUNA_COMMAND`
+`bun run verify:kuna` requires a caller-supplied `kuna` in `REA_KUNA_COMMAND`
 and a host C compiler (`REA_CC`, default `cc`) with `strip` and `nm`. It builds a
 source-owned fixture with non-inlined calls, with symbols and stripped, then verifies through MCP that
 callers, callees and exact incoming xrefs agree with those calls, graph/path
@@ -945,7 +887,7 @@ unverified by this lane.
 
 ## DOS Ghidra analysis
 
-`npm run verify:ghidra:dos` requires the supported Ghidra and JDK installation
+`bun run verify:ghidra:dos` requires the supported Ghidra and JDK installation
 on Linux x64 or macOS x64/arm64. It generates a source-owned MZ fixture without
 a DOS emulator or compiler, then checks real 16-bit decoding, segment
 relocation, near/far calls, decompilation, disjoint function body ranges,
@@ -955,7 +897,7 @@ the stable observation comparison. Linux x64 and macOS arm64 are verified;
 macOS x64 remains unverified. This lane is separate from host-native and optional cross-format
 verification. See [DOS analysis](ghidra-dos.md).
 
-`npm run verify:ghidra:com` uses a generated headerless fixture with no compiler,
+`bun run verify:ghidra:com` uses a generated headerless fixture with no compiler,
 DOS emulator or game data. It exercises explicit admission, BinaryLoader entry
 preparation, measured register context, whole-file byte readback, source offsets,
 unmapped PSP/partial reads, actual decompilation, CLI/MCP parity and owned cleanup.
@@ -966,7 +908,7 @@ truncation constraint, while leading-zero coordinates still resolve correctly.
 It has the same Ghidra/JDK prerequisites as the MZ lane. Neither lane claims DOS
 runtime or PC-98 device execution.
 
-`npm run verify:ghidra:6502` uses `ca65` and `ld65` to build the source-owned
+`bun run verify:ghidra:6502` uses `ca65` and `ld65` to build the source-owned
 NMOS 6502 fixture from `tests/conformance/ghidra/6502.s` and `6502.cfg`. Set
 `REA_CA65` and `REA_LD65` for non-PATH installations (tested with cc65 `V2.19`).
 With an installed Ghidra 12.1.4 and full JDK, it verifies real CLI/stdio MCP
@@ -976,7 +918,7 @@ and runtime cleanup. Windows additionally requires the matching native addon;
 its verifier lineage remains explicitly unavailable outside the provider's
 retained Job Object, as in the other Windows lanes.
 
-`npm run verify:ghidra:raw` uses a generated ARM little-endian headerless image
+`bun run verify:ghidra:raw` uses a generated ARM little-endian headerless image
 through the compiled CLI and stdio MCP server. With the same Ghidra/JDK
 prerequisites, it checks preparation and bridge startup, verified load mappings,
 instruction and byte readback, canonical-entry session reuse, replacement when
@@ -986,7 +928,7 @@ specifications, independent mappings, unchanged bytes, and decompilation of a
 known return value. AArch64 remains covered by deterministic tests rather than
 this real-provider lane. See [raw binary analysis](raw-binary.md).
 
-`npm run verify:ghidra:address-context` runs on Linux with a caller-installed
+`bun run verify:ghidra:address-context` runs on Linux with a caller-installed
 Ghidra, full JDK, and an x86-64 ELF GCC toolchain (`CC` selects another compatible
 compiler). It builds
 `tests/conformance/c/pie-address-context.c` as a PIE ELF without executing it.
@@ -1026,7 +968,7 @@ host behavior or native process-supervision controls.
 
 ## Apple Interface Builder archives
 
-`npm run verify:interface-builder` compiles the source-owned AppKit XIB into a
+`bun run verify:interface-builder` compiles the source-owned AppKit XIB into a
 real `.nib` with Xcode `ibtool`, wraps it in a temporary app bundle, and runs
 the compiled CLI and stdio MCP server with production providers. It compares
 their decoded results and checks the view hierarchy, outlet, action, evidence coverage, and truncation
@@ -1085,7 +1027,7 @@ workflows run static checks and the Linux suite. Website changes run website
 checks. Provider workflow changes validate the workflow and run that provider's
 verifier. Changes under `bridge/ghidra/` also select the `ghidra_bridge` lane,
 which compiles the packaged bridge sources against the pinned Ghidra 12.1.4
-jars with `npm run verify:ghidra:bridge-sources`. It never launches Ghidra or
+jars with `bun run verify:ghidra:bridge-sources`. It never launches Ghidra or
 imports a target, so a missing import fails the PR instead of every Ghidra
 session. The launcher, compiler and package checks share named required source
 roles. The manifest must match the complete Java cohort, so deleting a helper
@@ -1222,7 +1164,7 @@ verifiers, followed by one consolidated focused invocation containing all
 existing native and process-boundary regression paths.
 
 The Linux source-test shards download a shared runtime and generated test
-metadata snapshot produced by the build job with `npm run test:prepare`. The
+metadata snapshot produced by the build job with `bun run test:prepare`. The
 snapshot includes `dist/`, generated skills, the MCP tool catalog, product
 catalog, and managed-conformance metadata. Each shard still installs the locked
 dependencies and runs its assigned tests; full qualification enables coverage. It no longer
@@ -1239,23 +1181,10 @@ discovered file still belongs to exactly one shard; worker limits and project
 ordering remain unchanged. The merge job rejects successful reports with missing,
 unexpected, or duplicate portable files. Coverage instrumentation and aggregate
 thresholds remain enforced in full qualification.
-Missing or unusable history falls back to Vitest's default assignment. Only
-timing data is reused; live provider results are never cached. Turbo outputs are
-restored by task hash, with trusted default-branch runs as cache writers and PRs
-as restore-only consumers. The static job also restores its Turbo snapshot;
-each task revalidates its own input hash before reusing outputs or diagnostics.
-The Node pin and npm install settings are global hash inputs. Knip includes its ignore rules and VitePress
-entry, so changes to those inputs cannot reuse an older successful check.
-
-The shared npm-cache action caches downloads, not `node_modules`, and every
-consumer still runs `npm ci`. Keys cover the runner OS, actual Node architecture,
-root lockfiles, and `.npmrc`. Only push, schedule, and manual events on the
-repository's default branch may save shared npm caches; PRs restore only.
-Static snapshots use the same write authority and are saved only after the
-static job's validation succeeds. Main warms the new cache namespace after
-merge; a cold cache or changed lockfile falls back to the normal install.
-This prevents each PR from saving another branch-scoped copy of the same
-download cache. It does not remove runner assignment waits.
+Missing or unusable history falls back to Bun's default shard assignment. Only
+timing data is reused; live provider results are never cached. The static job
+records a hash of the tracked inputs so that a successful check is not reused after those inputs change. The shared
+`setup-bun` action caches downloads only; keys cover the runner OS, architecture, `bun.lock` and `bunfig.toml`. Only push, schedule and manual events on the default branch may save the cache; PRs restore only.
 
 Portable owner-based test selection remains observational. Its reports compare
 proposed omissions with the full run; incomplete or skipped observations do not
@@ -1290,8 +1219,8 @@ build outputs or dependencies are copied into Android.
 service. Root access is limited to staging files, sending the intent, and reading
 diagnostics; installation, compilation, Node, and Chromium run as Termux's app
 UID. The in-app script installs Termux's Android-linked Node distribution,
-checks its version against `.nvmrc`, pins npm from `packageManager`, runs
-`npm ci`, and builds with `build:termux`. Termux repository packages, including
+installs Bun, runs
+`bun install --frozen-lockfile`, and builds with `build:termux`. Termux repository packages, including
 Chromium, are resolved at run time; their installed versions are logged.
 
 The verifier leaves Playwright's cache environment overrides unset, requires
@@ -1307,7 +1236,7 @@ status, and Android logcat on success or failure. The emulator is disposable.
 
 ## Packet capture analysis
 
-`npm run verify:pcap -- --pcap PATH` exercises caller-supplied tshark and
+`bun run verify:pcap -- --pcap PATH` exercises caller-supplied tshark and
 capinfos against a saved capture. Linux verification uses Wireshark 4.6.6
 and captures containing DNS, TLS and HTTP traffic. Native Windows and macOS
 engine behavior remains unverified; process fixtures do not establish it.
@@ -1315,7 +1244,7 @@ See [Packet capture analysis](pcap-analysis.md) for contracts and budgets.
 
 ## Apple native metadata and UI
 
-`npm run verify:apple-dispatch` compiles the Objective-C fixture (classes,
+`bun run verify:apple-dispatch` compiles the Objective-C fixture (classes,
 protocols, a property and an `NSString` category) and the Swift
 conformance/vtable fixture.
 
@@ -1325,15 +1254,15 @@ conformance/vtable fixture.
 - The lane inspects the bytes and repeats after stripping local symbols.
 - It requires the bound `NSObject` superclass, the external category, and the
   matching `pointer_fixups` coverage. It requires macOS and the host Xcode toolchain; targets are not
-  executed. `npm run verify:native-ui` launches exactly one source-owned fixture
+  executed. `bun run verify:native-ui` launches exactly one source-owned fixture
   window and requires successful selected-window capture and selected actions.
-  An OS permission denial fails the positive lane. `npm run verify:native-ui:permissions`
+  An OS permission denial fails the positive lane. `bun run verify:native-ui:permissions`
   allows a host-permission-boundary-only result and explicitly reports
   `positive_e2e: false`; it must not be reported as capture/action proof.
   Both commands reject a changed executable digest and clean up the fixture
   process and helper. These lanes require an interactive macOS desktop. See [native investigation](native-investigation.md)
 
-`npm run verify:native-calls` needs macOS with Command Line Tools (`clang`,
+`bun run verify:native-calls` needs macOS with Command Line Tools (`clang`,
 `lldb`, `codesign`, `nm`) and actual debugger access to the owned fixtures.
 The lane reports Developer Mode status without treating it as proof of access
 or denial, and does not change host settings. LLDB and target entitlements
@@ -1358,9 +1287,9 @@ Linux-owned provider launches require a procps-compatible `ps` on REA's `PATH`
 so ownership can be inspected before launching a child. A missing or incompatible
 command fails with an actionable capability error before the launch.
 
-`npm run fixtures:firmware` uses existing Python 3 and a host C compiler to make
+`bun run fixtures:firmware` uses existing Python 3 and a host C compiler to make
 an ignored gzip/USTAR firmware fixture and independent offset/hash oracle.
-`npm run verify:firmware` requires caller-supplied Binwalk 3.1.0, Unblob 26.6.4
+`bun run verify:firmware` requires caller-supplied Binwalk 3.1.0, Unblob 26.6.4
 and util-linux prlimit on Linux, with `7z` on `PATH` for the gzip/USTAR
 fixture's Unblob extractor. The provider also accepts other 3.1.x and
 26.6.x builds and reports them as unverified; this lane proves the audited
@@ -1373,7 +1302,7 @@ Neither optional toolchain is a base-lane prerequisite. See
 
 ### JavaScript source recovery
 
-Build once with `npm run build:cached`, then run `npm run verify:javascript:recovery`.
+Build once with `bun run build:cached`, then run `bun run verify:javascript:recovery`.
 This focused lane requires Linux x64, util-linux `prlimit`,
 `REA_WAKARU_COMMAND` pointing to the official Wakaru 1.14.0 Linux x64 binary,
 and `REA_JAVASCRIPT_FIXTURE_TOOLS` pointing to an isolated npm prefix containing
@@ -1392,7 +1321,7 @@ lane uses real Chrome for browser capture and website workflows.
 
 ### Captured website source-map lane
 
-`npm run verify:browser:source-maps` checks actual Chromium capture/export and
+`bun run verify:browser:source-maps` checks actual Chromium capture/export and
 source-map point tracing through CLI and stdio MCP. It requires absolute
 `REA_BROWSER_EXECUTABLE` and `REA_WEB_SOURCE_MAP_COMPILER` pointing to esbuild
 0.25.10's `lib/main.js` in a caller-owned isolated installation. Preflight reports
@@ -1403,7 +1332,7 @@ is required.
 ```bash
 REA_BROWSER_EXECUTABLE=/absolute/path/to/chromium \
 REA_WEB_SOURCE_MAP_COMPILER=/absolute/path/to/fixture-tools/node_modules/esbuild/lib/main.js \
-npm run verify:browser:source-maps
+bun run verify:browser:source-maps
 ```
 
 `scripts/verify-browser-source-maps.mjs /absolute/path/to/installed/rea.mjs`
@@ -1414,19 +1343,19 @@ fixture compiler; static/unit checks do not acquire a browser. See
 
 ### JavaScript large-output lane
 
-`npm run verify:javascript:output` exercises the CLI JSON result surface beyond
+`bun run verify:javascript:output` exercises the CLI JSON result surface beyond
 the running Node engine's single-string limit. Shared input leaves keep the
 fixture's graph small; the verifier writes one temporary output file, checks its
 complete byte count and an independent digest, then removes it. It requires only
 Node and the built REA runtime, with space for the output plus a 1 GiB reserve.
-Run `npm run verify:javascript:output -- jsonl` for compact JSONL coverage. This
+Run `bun run verify:javascript:output -- jsonl` for compact JSONL coverage. This
 opt-in lane is separate from routine tests and the canonical hash check
-`npm run verify:javascript:digests`. It verifies serialization rather than an
+`bun run verify:javascript:digests`. It verifies serialization rather than an
 arbitrary third-party application's parsing cost or MCP client capacity.
 
 ### Website runtime attribution lane
 
-`npm run verify:browser:runtime` uses caller-supplied
+`bun run verify:browser:runtime` uses caller-supplied
 `REA_BROWSER_EXECUTABLE` and an owned synthetic site/profile. It exercises public
 CLI and stdio MCP for precise execution and native listener source locations,
 including actual armed progress, Unicode/CRLF digests, repeated source URLs with
@@ -1442,7 +1371,7 @@ coverage limits.
 
 ### Offline binary layout
 
-`npm run verify:binary:layout` requires Linux x64, GCC/binutils, absolute
+`bun run verify:binary:layout` requires Linux x64, GCC/binutils, absolute
 `REA_PWNTOOLS_PYTHON` with pwntools 4.15.0/pyelftools 0.33/Unicorn 2.1.2 and
 absolute `REA_VERIFY_STRACE_COMMAND`. It compiles ephemeral source-owned ELF
 fixtures and checks public CLI/MCP, lossless addresses/names, file ranges,
@@ -1460,7 +1389,7 @@ MCP fixtures retain the pinned SDK defaults.
 
 ### Offline EVM interface
 
-`npm run verify:evm:interface` requires Linux x64, an absolute
+`bun run verify:evm:interface` requires Linux x64, an absolute
 `REA_VERIFY_STRACE_COMMAND`, caller-supplied util-linux `prlimit` and `REA_VERIFY_SOLC_MODULE` selecting the absolute module path for
 solc 0.8.30. It compiles source-owned plain/optimized/via-IR Cancun fixtures in
 private storage and checks actual CLI/MCP selector evidence, raw/hex identity,
@@ -1470,7 +1399,7 @@ or chain dependency and does not execute a contract on a chain.
 
 ### Recorded crash evidence
 
-`npm run verify:recorded:crash` is a separate Linux x64 lane. It requires GCC,
+`bun run verify:recorded:crash` is a separate Linux x64 lane. It requires GCC,
 GDB, absolute `REA_PWNTOOLS_PYTHON` with the offline ELF profile above,
 `REA_PWNDBG_GDBINIT` and `REA_PWNDBG_VENV_PATH` with unchanged pwndbg 2026.09.15,
 and `REA_VERIFY_STRACE_COMMAND`. Its disposable CI runner installs GDB, checks out the exact upstream
@@ -1492,7 +1421,7 @@ installed package entrypoint as the script's first argument for package coverage
 
 ## Agent evaluation and conformance records
 
-`npm run verify:agent` evaluates investigation scenarios through a real local
+`bun run verify:agent` evaluates investigation scenarios through a real local
 Codex CLI. The lane runs sequentially; select scenarios with
 `REA_AGENT_EVAL_SCENARIOS` and choose the installed client/model with
 `REA_CODEX_CLI` and `REA_AGENT_EVAL_MODEL`. The detailed
@@ -1501,7 +1430,7 @@ contains isolation, authentication cleanup, grading, and conformance boundaries.
 
 ## Frida instrumentation
 
-`npm run verify:frida` builds REA, spawns a short-lived local Node.js fixture,
+`bun run verify:frida` builds REA, spawns a short-lived local Node.js fixture,
 loads a harmless marker script before resuming it, captures the message, and
 detaches. This lane requires Linux on the REA host and the optional Frida
 binding; it does not need a Frida server or a caller-selected process. To run
@@ -1513,7 +1442,7 @@ real device/server compatibility.
 
 ### Offline WASM artifacts
 
-`npm run verify:wasm:artifact -- --require-tools` uses an absolute
+`bun run verify:wasm:artifact -- --require-tools` uses an absolute
 `REA_WABT_BIN_DIRECTORY` containing WABT 1.0.42, including `wat2wasm` for fixture
 generation. It installs nothing. Without configuration, the default invocation
 reports a named skip; `--require-tools` makes missing configuration fail.
@@ -1528,7 +1457,7 @@ SDK, validates advertised schemas, checks identical CLI/MCP Evidence IDs and
 session bundle readback, retains invalid/truncated module diagnostics, preserves
 all inputs and checks workspace cleanup. Pass an installed package's
 `scripts/rea.mjs` as the first argument to run the same lane against the package.
-`npm run verify:wasm:package` packs and installs REA into an isolated temporary
+`bun run verify:wasm:package` packs and installs REA into an isolated temporary
 prefix with lifecycle scripts disabled and runs the same required real-tool lane.
 It requires WABT configuration and makes no host tool installation.
 

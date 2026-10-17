@@ -138,11 +138,11 @@ that only declared Node/prlimit launchers and process ownership inspection run.
 Socket traces permit local stdio socket pairs and reject attempted network requests.
 These observations verify those fixtures; they are not a general network sandbox.
 
-For the independent metadata parser, `npm run verify:solidity:metadata` uses an
+For the independent metadata parser, `bun run verify:solidity:metadata` uses an
 existing caller-selected solc 0.8.30 module:
 
 ```sh
-REA_VERIFY_SOLC_MODULE=/absolute/path/to/solc/index.js npm run verify:solidity:metadata
+REA_VERIFY_SOLC_MODULE=/absolute/path/to/solc/index.js bun run verify:solidity:metadata
 ```
 
 It compiles the owned fixture with unoptimized, viaIR, content-hash-free and

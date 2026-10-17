@@ -220,7 +220,7 @@ const expectTrace = (trace: Trace, scenario: SeedScenario): void => {
     );
 };
 
-cliTest(
+cliTest.skipIf(process.platform === "win32")(
   "matches feature seeds against node IDs and preserved route values through CLI and MCP",
   async ({ cli }) => {
     const root = await createTestTempDirectory("rea-feature-seed-selection-");

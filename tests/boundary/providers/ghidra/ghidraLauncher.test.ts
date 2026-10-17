@@ -628,9 +628,7 @@ describe("Ghidra Windows launcher runtime", () => {
       } finally {
         const cleaned = await launched.value.cleanup?.();
         expect(cleaned).toMatchObject({ cleaned: true });
-        await expect(
-          access(join(runtimeRoot, "project")),
-        ).resolves.toBeUndefined();
+        await expect(access(join(runtimeRoot, "project"))).resolves.toBeFalsy();
       }
     },
   );

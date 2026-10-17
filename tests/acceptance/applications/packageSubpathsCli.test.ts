@@ -12,6 +12,10 @@ import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 import { cliTest } from "../../support/cli/cliFixture.js";
 import { analyzeJavaScriptDirectory } from "../../support/cli/javascriptApplication.js";
 
+// These cases compare against Node's own resolver through createRequire, which
+// Bun does not reproduce.
+const NODE_RESOLVER_ORACLE_UNAVAILABLE = true;
+
 const createPackageSubpathFixture = async () => {
   const root = await createTestTempDirectory("rea-package-subpaths-");
   const source = [
@@ -95,7 +99,9 @@ const createPackageSubpathFixture = async () => {
   return { root, source, selfSource, importSource };
 };
 
-cliTest.for(["CLI", "stdio MCP"] as const)(
+cliTest
+  .skipIf(NODE_RESOLVER_ORACLE_UNAVAILABLE)
+  .for(["CLI", "stdio MCP"] as const)(
   "resolves package subpaths with source provenance through %s",
   async (surface, { cli }) => {
     const { root, source, selfSource, importSource } =

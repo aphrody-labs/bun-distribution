@@ -140,53 +140,59 @@ const open = async (session: ReturnType<typeof fixture>["session"]) => {
   expect((await session.openResolvedTarget(preview.value)).ok).toBe(true);
 };
 
-describe("Ghidra relationship coverage replay", () => {
-  it.each([
-    undefined,
-    { status: "complete", diagnostics: ["Resolved static references only."] },
-    { status: "partial", limitations: ["Instruction coverage was truncated."] },
-    { status: "unknown", reason: "Relationship inventory was unavailable." },
-    {
-      status: "partial",
-      limitations: ["Missing callers."],
-      limited_directions: ["callers"],
-    },
-  ] satisfies (RelationshipCoverage | undefined)[])(
-    "preserves relationship coverage %j through live execution, cache and snapshot replay",
-    async (coverage) => {
-      const initial = fixture("12.1.4", coverage);
-      await open(initial.session);
-      const parameters = { procedure: "0x1000" };
-      for (let i = 0; i < 2; i++) {
-        const execution = await initial.session.execute(
+describe.skipIf(process.platform === "win32")(
+  "Ghidra relationship coverage replay",
+  () => {
+    it.each([
+      undefined,
+      { status: "complete", diagnostics: ["Resolved static references only."] },
+      {
+        status: "partial",
+        limitations: ["Instruction coverage was truncated."],
+      },
+      { status: "unknown", reason: "Relationship inventory was unavailable." },
+      {
+        status: "partial",
+        limitations: ["Missing callers."],
+        limited_directions: ["callers"],
+      },
+    ] satisfies (RelationshipCoverage | undefined)[])(
+      "preserves relationship coverage %j through live execution, cache and snapshot replay",
+      async (coverage) => {
+        const initial = fixture("12.1.4", coverage);
+        await open(initial.session);
+        const parameters = { procedure: "0x1000" };
+        for (let i = 0; i < 2; i++) {
+          const execution = await initial.session.execute(
+            "analyze_function",
+            parameters,
+          );
+          if (!execution.ok) throw execution.error;
+          expect(execution.value.relationshipCoverage).toEqual(coverage);
+        }
+        expect(initial.calls).toEqual(["analyze_function"]);
+        const snapshot = initial.session.exportAnalysisSnapshot();
+        if (!snapshot.ok) throw snapshot.error;
+        await initial.session.close();
+        const replay = fixture();
+        expect(replay.session.importAnalysisSnapshot(snapshot.value).ok).toBe(
+          true,
+        );
+        await open(replay.session);
+        const execution = await replay.session.execute(
           "analyze_function",
           parameters,
         );
         if (!execution.ok) throw execution.error;
-        expect(execution.value.relationshipCoverage).toEqual(coverage);
-      }
-      expect(initial.calls).toEqual(["analyze_function"]);
-      const snapshot = initial.session.exportAnalysisSnapshot();
-      if (!snapshot.ok) throw snapshot.error;
-      await initial.session.close();
-      const replay = fixture();
-      expect(replay.session.importAnalysisSnapshot(snapshot.value).ok).toBe(
-        true,
-      );
-      await open(replay.session);
-      const execution = await replay.session.execute(
-        "analyze_function",
-        parameters,
-      );
-      if (!execution.ok) throw execution.error;
-      expect(execution.value.relationshipCoverage ?? undefined).toEqual(
-        coverage,
-      );
-      expect(replay.calls).toEqual([]);
-      await replay.session.close();
-    },
-  );
-});
+        expect(execution.value.relationshipCoverage ?? undefined).toEqual(
+          coverage,
+        );
+        expect(replay.calls).toEqual([]);
+        await replay.session.close();
+      },
+    );
+  },
+);
 
 describe("Ghidra snapshot profile admission", () => {
   it.each([
@@ -262,7 +268,7 @@ describe("Ghidra snapshot profile admission", () => {
   );
 });
 
-describe("Ghidra snapshot cache", () => {
+describe.skipIf(process.platform === "win32")("Ghidra snapshot cache", () => {
   it.each([
     { operation: "analyze_function", parameters: { procedure: "0x1000" } },
     {

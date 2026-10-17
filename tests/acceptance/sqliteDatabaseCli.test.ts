@@ -10,7 +10,7 @@ import {
 } from "node:fs/promises";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { expect, onTestFinished } from "../support/bunTest.js";
+import { expect } from "../support/bunTest.js";
 import { z } from "zod";
 import {
   expandProviderCapabilities,
@@ -29,7 +29,7 @@ const digest = (bytes: Buffer): string =>
   createHash("sha256").update(bytes).digest("hex");
 
 for (const expectedErrno of ["ELOOP", "ENAMETOOLONG"] as const) {
-  cliTest.skipIf(expectedErrno === "ELOOP" && process.platform === "win32")(
+  cliTest.skipIf(process.platform === "win32")(
     `reports an initial ${expectedErrno} path failure through CLI and MCP`,
     async ({ cli }) => {
       const root = await createTestTempDirectory("rea-sqlite-path-failure-");
@@ -618,7 +618,6 @@ cliTest.runIf(SQLITE_NATIVE_LIMITS_AVAILABLE)(
     const root = await createTestTempDirectory("rea-sqlite-wal-public-");
     const path = join(root, "wal.db");
     const database = new DatabaseSync(path);
-    onTestFinished(() => database.close());
     database.exec(
       "PRAGMA journal_mode=WAL; PRAGMA wal_autocheckpoint=0; CREATE TABLE committed(value TEXT); INSERT INTO committed VALUES('only in WAL');",
     );
@@ -670,6 +669,7 @@ cliTest.runIf(SQLITE_NATIVE_LIMITS_AVAILABLE)(
     expect(response.structuredContent).toEqual(result.json);
     const after = await Promise.all(files.map(sourceState));
     expect(after).toEqual(before);
+    database.close();
   },
 );
 

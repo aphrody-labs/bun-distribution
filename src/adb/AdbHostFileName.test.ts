@@ -3,7 +3,7 @@ import { describe, expect, it } from "../../tests/support/bunTest.js";
 import { adbHostFileName } from "./AdbHostFileName.js";
 
 describe("adbHostFileName", () => {
-  it.each([
+  it.skipIf(process.platform === "win32").each([
     ["/data/local/tmp/notes.txt", "notes.txt"],
     ["/data/data/com.example/databases/app.db", "app.db"],
     ["/sdcard/My Notes.txt", "My Notes.txt"],

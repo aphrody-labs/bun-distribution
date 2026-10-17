@@ -182,7 +182,7 @@ flag and affected callers are repaired in the same pass. Unknown imports and
 genuine no-return imports keep their flags. Analysis profiles version this repair
 so snapshots produced before it are not reused. Windows P0 does not run it.
 
-`npm run verify:ghidra` compiles the versioned C oracle into debug and stripped
+`bun run verify:ghidra` compiles the versioned C oracle into debug and stripped
 host-native targets (x86-64/AArch64 ELF on Linux or Mach-O on macOS), plus a native
 DWARF 4 type-layout object. It proves the admitted operations, external functions, resolved thunks, exports, stripped-name
 behavior, direct and targetless indirect calls, typed references, strings/xrefs,
@@ -192,13 +192,13 @@ process/project cleanup against real Ghidra 12.1.4. Unit fixtures separately
 cover startup deadlines, process exit, queued cancellation, and malformed wire
 output.
 
-`npm run verify:ghidra:cross-format` adds AArch64 ELF, x86-64 PE, and x86-64
+`bun run verify:ghidra:cross-format` adds AArch64 ELF, x86-64 PE, and x86-64
 Mach-O target coverage. It requires `clang`, LLD, and `lld-link`; set
 `REA_CLANG`, `REA_LLD`, or `REA_LLD_LINK` to select them. The verifier checks
 these tools before compilation. Keeping this matrix separate lets Linux
 host/provider acceptance run with only the host compiler.
 
-`npm run verify:ghidra:windows` checks source-owned native x86-64 PE applications;
+`bun run verify:ghidra:windows` checks source-owned native x86-64 PE applications;
 `-- --x86`, `-- --arm`, or `-- --arm64` selects another target architecture;
 `-- --dll` selects DLLs. Choose one architecture and optionally combine it with
 `--dll`. These static fixtures contain source-owned encoded instructions; they
@@ -207,7 +207,7 @@ for real-provider coverage and exclusions.
 These lanes check all 26 read-only operations, target/snapshot/import SHA-256 linkage,
 and project, endpoint, process, and runtime cleanup. The independent native
 lane checks DACLs, handle admission, cancellation, and Job Object lifecycle.
-`npm run verify:ghidra:windows:package` packs and installs REA into an isolated
+`bun run verify:ghidra:windows:package` packs and installs REA into an isolated
 prefix, then checks ordinary-user CLI/MCP operations against canonical contracts.
 It accepts the same architecture and DLL flags and verifies the selected PE role
 in the analysis profile.

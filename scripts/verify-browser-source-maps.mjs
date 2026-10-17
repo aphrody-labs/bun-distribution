@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import { access } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 import { verifyBrowserSourceMap } from "./lib/browser-source-map-e2e.mjs";

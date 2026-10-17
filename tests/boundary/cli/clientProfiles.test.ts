@@ -76,7 +76,7 @@ cliTest(
         rea: expect.any(Object),
       },
     });
-    await expect(access(join(skill, "SKILL.md"))).resolves.toBeUndefined();
+    await expect(access(join(skill, "SKILL.md"))).resolves.toBeFalsy();
     await expect(access(join(cwd, ".claude.json"))).rejects.toMatchObject({
       code: "ENOENT",
     });

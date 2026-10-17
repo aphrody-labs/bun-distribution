@@ -48,7 +48,7 @@ jobs:
             echo "frozen=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         if: steps.editorial.outputs.frozen != 'true'
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
@@ -70,18 +70,14 @@ jobs:
       sha: ${{ steps.release.outputs.sha }}
     steps:
       - name: Check out reviewed release merge
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        with:
-          node-version-file: .nvmrc
-          package-manager-cache: false
-
-      - run: npm ci
+      - id: setup-bun
+        uses: ./.github/actions/setup-bun
 
       - name: Validate reviewed merge before release creation
         env:
@@ -91,7 +87,7 @@ jobs:
             echo "The reviewed merge differs from the workflow source; refusing mismatched publication provenance." >&2
             exit 1
           fi
-          node scripts/verify-release-checkpoint.mjs \
+          bun scripts/verify-release-checkpoint.mjs \
             --phase publish --release-branch main --source-sha "$SOURCE_SHA"
 
       - name: Validate finalized notes before release creation
@@ -101,10 +97,10 @@ jobs:
           RELEASE_PR: ${{ github.event.pull_request.number }}
           SOURCE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
         run: |
-          node scripts/release-notes.mjs publication --repository "$GH_REPO" \
+          bun scripts/release-notes.mjs publication --repository "$GH_REPO" \
             --source "$SOURCE_SHA" --pr "$RELEASE_PR"
 
-      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
@@ -191,20 +187,15 @@ jobs:
           fi
 
       - name: Check out release controller and Git history
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up Node.js for checkpoint validation
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        with:
-          node-version-file: .nvmrc
-          package-manager-cache: false
-
-      - name: Install checkpoint validation dependencies
-        run: npm ci
+      - name: Set up Bun for checkpoint validation
+        id: setup-bun
+        uses: ./.github/actions/setup-bun
 
       - name: Validate checkpoint version and ancestry before release creation
         env:
@@ -212,7 +203,7 @@ jobs:
           RELEASE_BRANCH: ${{ inputs.release_branch }}
           SOURCE_SHA: ${{ steps.branch.outputs.sha }}
         run: >-
-          node scripts/verify-release-checkpoint.mjs
+          bun scripts/verify-release-checkpoint.mjs
           --phase "$RELEASE_PHASE" --release-branch "$RELEASE_BRANCH"
           --source-sha "$SOURCE_SHA"
 
@@ -223,10 +214,10 @@ jobs:
           GH_REPO: ${{ github.repository }}
           SOURCE_SHA: ${{ steps.branch.outputs.sha }}
         run: |
-          node scripts/release-notes.mjs publication --repository "$GH_REPO" \
+          bun scripts/release-notes.mjs publication --repository "$GH_REPO" \
             --source "$SOURCE_SHA"
 
-      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         with:
           # A dedicated credential starts PR CI automatically; the built-in
@@ -255,22 +246,16 @@ jobs:
 
       - name: Check out release pull request
         if: inputs.phase == 'prepare' && steps.release.outputs.prs_created == 'true'
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up Node.js for generated documentation
+      - name: Set up Bun for generated documentation
+        id: setup-bun
         if: inputs.phase == 'prepare' && steps.release.outputs.prs_created == 'true'
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        with:
-          node-version-file: .nvmrc
-          package-manager-cache: false
-
-      - name: Install dependencies
-        if: inputs.phase == 'prepare' && steps.release.outputs.prs_created == 'true'
-        run: npm ci
+        uses: ./.github/actions/setup-bun
 
       - name: Validate prepared release version and migration notes
         if: inputs.phase == 'prepare' && steps.release.outputs.prs_created == 'true'
@@ -278,17 +263,17 @@ jobs:
           RELEASE_BRANCH: ${{ inputs.release_branch }}
           SOURCE_SHA: ${{ steps.branch.outputs.sha }}
         run: >-
-          node scripts/verify-release-checkpoint.mjs
+          bun scripts/verify-release-checkpoint.mjs
           --phase prepare --stage candidate --release-branch "$RELEASE_BRANCH"
           --source-sha "$SOURCE_SHA"
 
       - name: Regenerate release documentation
         if: inputs.phase == 'prepare' && steps.release.outputs.prs_created == 'true'
-        run: npm run docs:generate
+        run: bun run docs:generate
 
       - name: Validate generated release documentation
         if: inputs.phase == 'prepare' && steps.release.outputs.prs_created == 'true'
-        run: npm run docs:check && git diff --exit-code
+        run: bun run docs:check && git diff --exit-code
 
   qualification:
     name: Qualify exact release revision
@@ -315,22 +300,19 @@ jobs:
       contents: read
       actions: read
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.merged-release.outputs.sha || needs.release-please.outputs.sha }}
           persist-credentials: false
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        with:
-          node-version-file: .nvmrc
-          package-manager-cache: false
-      - run: npm ci
+      - id: setup-bun
+        uses: ./.github/actions/setup-bun
       - uses: ./.github/actions/prepare-release-package
         id: package
       - name: Exercise the exact qualified tarball
         env:
           VERIFIED_PACKAGE_TARBALL: ${{ steps.package.outputs.tarball }}
           VERIFIED_PACKAGE_VERSION: ${{ steps.package.outputs.version }}
-        run: node scripts/verify-release-artifact.mjs "$VERIFIED_PACKAGE_TARBALL" "$VERIFIED_PACKAGE_VERSION"
+        run: bun scripts/verify-release-artifact.mjs "$VERIFIED_PACKAGE_TARBALL" "$VERIFIED_PACKAGE_VERSION"
 
   publish:
     name: Publish to npm
@@ -343,18 +325,20 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.merged-release.outputs.sha || needs.release-please.outputs.sha }}
           persist-credentials: false
 
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+      - name: Set up npm registry authentication
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: .nvmrc
+          node-version: 24
           package-manager-cache: false
           registry-url: https://registry.npmjs.org
 
-      - run: npm ci
+      - id: setup-bun
+        uses: ./.github/actions/setup-bun
 
       - uses: ./.github/actions/prepare-release-package
         id: package
@@ -364,7 +348,7 @@ jobs:
         env:
           VERIFIED_PACKAGE_TARBALL: ${{ steps.package.outputs.tarball }}
           VERIFIED_PACKAGE_VERSION: ${{ steps.package.outputs.version }}
-        run: node scripts/ci/npm-release.mjs inspect "$VERIFIED_PACKAGE_TARBALL" "$VERIFIED_PACKAGE_VERSION"
+        run: bun scripts/ci/npm-release.mjs inspect "$VERIFIED_PACKAGE_TARBALL" "$VERIFIED_PACKAGE_VERSION"
 
       - name: Publish
         if: steps.registry.outputs.published == 'false'
@@ -373,19 +357,19 @@ jobs:
           VERIFIED_PACKAGE_TARBALL: ${{ steps.package.outputs.tarball }}
           VERIFIED_PACKAGE_VERSION: ${{ steps.package.outputs.version }}
         run: |
-          tag="$(node scripts/release-npm-tag.mjs "$VERIFIED_PACKAGE_VERSION")"
+          tag="$(bun scripts/release-npm-tag.mjs "$VERIFIED_PACKAGE_VERSION")"
           npm publish "${VERIFIED_PACKAGE_TARBALL}" --access public --tag "${tag}"
 
       - name: Verify published npm bytes and dist-tag
         env:
           VERIFIED_PACKAGE_TARBALL: ${{ steps.package.outputs.tarball }}
           VERIFIED_PACKAGE_VERSION: ${{ steps.package.outputs.version }}
-        run: node scripts/ci/npm-release.mjs verify "$VERIFIED_PACKAGE_TARBALL" "$VERIFIED_PACKAGE_VERSION"
+        run: bun scripts/ci/npm-release.mjs verify "$VERIFIED_PACKAGE_TARBALL" "$VERIFIED_PACKAGE_VERSION"
 
       - name: Verify published CLI from npm
         env:
           VERIFIED_PACKAGE_VERSION: ${{ steps.package.outputs.version }}
-        run: node scripts/verify-published-package.mjs "$VERIFIED_PACKAGE_VERSION"
+        run: bun scripts/verify-published-package.mjs "$VERIFIED_PACKAGE_VERSION"
 
   publish-mcp:
     name: Publish to MCP Registry
@@ -399,12 +383,12 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.merged-release.outputs.sha || needs.release-please.outputs.sha }}
           persist-credentials: false
 
       - name: Verify package and registry metadata versions
-        run: npm run mcp-registry:check
+        run: bun run mcp-registry:check
 
       - uses: ./.github/actions/publish-mcp

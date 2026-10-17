@@ -44,7 +44,7 @@ const writeBlockingCompiler = async (directory: string) => {
   const executable = join(directory, "fake-xcrun");
   const statePath = join(directory, "compile-state.json");
   const releasePath = join(directory, "release-compiler");
-  const source = `#!/usr/bin/env node
+  const source = `#!/usr/bin/env bun
 const fs = process.getBuiltinModule("node:fs");
 const path = process.getBuiltinModule("node:path");
 const statePath = ${JSON.stringify(statePath)};
@@ -77,14 +77,14 @@ if (state.calls === 1) {
 const writeBlockingIdentityCompiler = async (directory: string) => {
   const executable = join(directory, "fake-identity-xcrun");
   const statePath = join(directory, "identity-helper-state.json");
-  const helperSource = `#!/usr/bin/env node
+  const helperSource = `#!/usr/bin/env bun
 const fs = process.getBuiltinModule("node:fs");
 fs.writeFileSync(${JSON.stringify(statePath)}, JSON.stringify({
   root: process.getBuiltinModule("node:path").dirname(fs.realpathSync(process.argv[1])),
 }));
 setInterval(() => {}, 1000);
 `;
-  const compilerSource = `#!/usr/bin/env node
+  const compilerSource = `#!/usr/bin/env bun
 const fs = process.getBuiltinModule("node:fs");
 const outputIndex = process.argv.indexOf("-o");
 const output = process.argv[outputIndex + 1];
@@ -200,7 +200,7 @@ it.skipIf(process.platform === "win32")(
     const executable = join(directory, "failing-xcrun");
     await writeFile(
       executable,
-      '#!/usr/bin/env node\nprocess.stderr.write("module cache is not writable\\n" + "x".repeat(12000)); process.exitCode = 1;\n',
+      '#!/usr/bin/env bun\nprocess.stderr.write("module cache is not writable\\n" + "x".repeat(12000)); process.exitCode = 1;\n',
     );
     await chmod(executable, 0o755);
     const reader = createDarwinProcessRunTokenReader({
@@ -251,7 +251,7 @@ it.skipIf(process.platform === "win32")(
     const executable = join(directory, "hanging-xcrun");
     await writeFile(
       executable,
-      '#!/usr/bin/env node\nprocess.stderr.write("error: PCH was compiled with module cache path that differs\\n", () => { setInterval(() => {}, 1000); });\n',
+      '#!/usr/bin/env bun\nprocess.stderr.write("error: PCH was compiled with module cache path that differs\\n", () => { setInterval(() => {}, 1000); });\n',
     );
     await chmod(executable, 0o755);
     const reader = createDarwinProcessRunTokenReader({
@@ -284,7 +284,7 @@ it.skipIf(process.platform === "win32")(
     const executable = join(directory, "segv-xcrun");
     await writeFile(
       executable,
-      '#!/usr/bin/env node\nprocess.stderr.write("fatal: segmentation fault during type checking\\n");\nprocess.kill(process.pid, "SIGSEGV");\n',
+      '#!/usr/bin/env bun\nprocess.stderr.write("fatal: segmentation fault during type checking\\n");\nprocess.kill(process.pid, "SIGSEGV");\n',
     );
     await chmod(executable, 0o755);
     const reader = createDarwinProcessRunTokenReader({
@@ -316,7 +316,7 @@ it.skipIf(process.platform === "win32")(
     const diagnostic = "x".repeat(600);
     await writeFile(
       executable,
-      `#!/usr/bin/env node\nprocess.stderr.write(${JSON.stringify(`${diagnostic}\n`)}); process.exitCode = 1;\n`,
+      `#!/usr/bin/env bun\nprocess.stderr.write(${JSON.stringify(`${diagnostic}\n`)}); process.exitCode = 1;\n`,
     );
     await chmod(executable, 0o755);
     const reader = createDarwinProcessRunTokenReader({
@@ -404,7 +404,7 @@ it.skipIf(process.platform === "win32")(
 const writeCacheRecordingCompiler = async (directory: string) => {
   const executable = join(directory, "fake-cache-xcrun");
   const statePath = join(directory, "cache-compile-state.json");
-  const source = `#!/usr/bin/env node
+  const source = `#!/usr/bin/env bun
 const fs = process.getBuiltinModule("node:fs");
 const path = process.getBuiltinModule("node:path");
 const flagIndex = process.argv.indexOf("-module-cache-path");
@@ -671,7 +671,7 @@ it.skipIf(process.platform === "win32")(
       await reader.prepare();
       const retry = await waitForCompileState(fakeCompiler.statePath);
       expect(retry).toMatchObject({ calls: 2 });
-      await expect(access(retry.output)).resolves.toBeUndefined();
+      await expect(access(retry.output)).resolves.toBeFalsy();
       await reader.close();
       await expect(access(retry.root)).rejects.toThrow();
     } finally {
@@ -696,7 +696,7 @@ const temporaryStateSchema = z.object({
 const writeTemporaryObjectCompiler = async (directory: string) => {
   const executable = join(directory, "fake-temporary-xcrun");
   const statePath = join(directory, "temporary-state.json");
-  const source = `#!/usr/bin/env node
+  const source = `#!/usr/bin/env bun
 const fs = process.getBuiltinModule("node:fs");
 const os = process.getBuiltinModule("node:os");
 const path = process.getBuiltinModule("node:path");
@@ -806,7 +806,7 @@ it.skipIf(process.platform === "win32").each(["first", "second"] as const)(
       if (firstOutcome.state !== "rejected")
         throw new Error("cancelled compilation waiter unexpectedly succeeded");
       expect(firstOutcome.cause).toMatchObject({ name: "AbortError" });
-      await expect(access(state.root)).resolves.toBeUndefined();
+      await expect(access(state.root)).resolves.toBeFalsy();
       await writeFile(fakeCompiler.releasePath, "release");
       return { state, outcome: await surviving };
     })();
@@ -1005,7 +1005,7 @@ it.skipIf(process.platform === "win32").each(["baseline", "tokens"] as const)(
       expect(
         normalizeCaptureFailure(outcome.cause, controller.signal),
       ).toMatchObject({ reason: "cancelled", userCategory: "cancelled" });
-      await expect(access(helper.root)).resolves.toBeUndefined();
+      await expect(access(helper.root)).resolves.toBeFalsy();
     } finally {
       if (!controller.signal.aborted) controller.abort();
       await baseline;
@@ -1076,7 +1076,7 @@ it.skipIf(process.platform === "win32")(
         error: { reason: "cancelled", userCategory: "cancelled" },
       });
       expect(launchSpy).not.toHaveBeenCalled();
-      await expect(access(helper.root)).resolves.toBeUndefined();
+      await expect(access(helper.root)).resolves.toBeFalsy();
     } finally {
       if (!controller.signal.aborted) controller.abort();
       if (captureOutcome !== undefined) await captureOutcome;

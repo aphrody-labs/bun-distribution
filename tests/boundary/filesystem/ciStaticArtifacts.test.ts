@@ -3,10 +3,13 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { expect, it } from "../../support/bunTest.js";
+import { expect, it as bunIt } from "../../support/bunTest.js";
 
 import { parseStaticArchive } from "../../../scripts/ci/artifacts.mjs";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
+
+// These lanes spawn POSIX-only fake executables (gh, zip).
+const it = process.platform === "win32" ? bunIt.skip : bunIt;
 
 const execute = promisify(execFile);
 const producer = fileURLToPath(
@@ -63,8 +66,8 @@ it.each([3.5, 100, 0])(
         sourceSha: "a".repeat(40),
         sourceClean: true,
         nodeVersion: process.version,
-        npmVersion: "11.16.0",
-        turboVersion: "2.11.7",
+        bunVersion: "1.4.4",
+        bunRevision: "032dd109c",
         platform: process.platform,
         architecture: process.arch,
         taskHashes: { "lint:built": "a".repeat(16), jscpd: "b".repeat(16) },

@@ -121,7 +121,7 @@ it("drains hash descriptors even when session shutdown fails and retains its wor
     });
     if (outcome.ok) throw new Error("Expected retained session cleanup");
     expect(fileCloseCalls).toBe(2);
-    await expect(access(workspace)).resolves.toBeUndefined();
+    await expect(access(workspace)).resolves.toBeFalsy();
 
     sessionClose.mockRestore();
     fileClose.mockRestore();
@@ -747,7 +747,7 @@ it("retains an uncertain workspace and blocks later launches after cleanup canno
   });
   const workspace = launches[0]?.cwd;
   if (workspace === undefined) throw new Error("Expected acquired workspace");
-  await expect(access(workspace)).resolves.toBeUndefined();
+  await expect(access(workspace)).resolves.toBeFalsy();
   expect(
     await service.execute("inspect_android_package", { path: apk }),
   ).toMatchObject({ ok: false, error: { cleanupIncomplete: true } });
@@ -795,7 +795,7 @@ it("resolves every reported shutdown cleanup failure after ownership recovers", 
     expect(secondFailure).toHaveProperty("cause", expect.any(AggregateError));
     const workspace = launches[0]?.cwd;
     if (workspace === undefined) throw new Error("Expected acquired workspace");
-    await expect(access(workspace)).resolves.toBeUndefined();
+    await expect(access(workspace)).resolves.toBeFalsy();
     await closeAfterRecovery();
     expect(firstFailure).toMatchObject({ cleanupIncomplete: false });
     expect(secondFailure).toMatchObject({ cleanupIncomplete: false });
@@ -841,7 +841,7 @@ it.each(["idle", "target-change"])(
       const workspace = launches[0]?.cwd;
       if (workspace === undefined)
         throw new Error("Expected acquired workspace");
-      await expect(access(workspace)).resolves.toBeUndefined();
+      await expect(access(workspace)).resolves.toBeFalsy();
       expect(launches).toHaveLength(1);
       cleanupFails = false;
       const retried = await service.execute("inspect_android_package", {

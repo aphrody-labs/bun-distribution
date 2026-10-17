@@ -87,7 +87,7 @@ select Android's `values-pt-rBR`; Android qualifiers such as `pt-rBR` and
 
 ## Real verification
 
-`npm run verify:apktool -- --apk PATH` exercises both operations against a
+`bun run verify:apktool -- --apk PATH` exercises both operations against a
 real launcher. Record: apktool 2.7.0-dirty (Debian packaging) on Linux with
 OpenJDK 25 against a signed aapt2-built probe APK carrying two resource
 locales — launcher version, on-disk digest agreement, apktool.yml metadata

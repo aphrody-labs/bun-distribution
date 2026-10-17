@@ -207,7 +207,7 @@ it("keeps frozen candidate preparation and publication explicit", async () => {
     (step) => step.name === "Validate generated release documentation",
   );
   expect(catalogValidation?.run).toBe(
-    "npm run docs:check && git diff --exit-code",
+    "bun run docs:check && git diff --exit-code",
   );
 });
 
@@ -320,8 +320,7 @@ it("binds npm and MCP publication to the same immutable release SHA", async () =
   }
   const preparation = [
     "Check out release pull request",
-    "Set up Node.js for generated documentation",
-    "Install dependencies",
+    "Set up Bun for generated documentation",
     "Regenerate release documentation",
     "Validate generated release documentation",
   ];

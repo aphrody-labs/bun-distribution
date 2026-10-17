@@ -412,7 +412,14 @@ describe("tool result projection", () => {
     expect(parseEvidence(parsed)).toEqual(evidence);
   });
 
-  it.each<JsonValue>([null, false, 0, "", [], { nested: [false, null, 7] }])(
+  it.each<[JsonValue]>([
+    [null],
+    [false],
+    [0],
+    [""],
+    [[]],
+    [{ nested: [false, null, 7] }],
+  ])(
     "preserves a complete reusable Evidence record for JSON result %j",
     (value) => {
       const evidence = createEvidence(

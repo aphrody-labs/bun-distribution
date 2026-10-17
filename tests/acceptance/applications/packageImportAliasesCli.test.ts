@@ -9,6 +9,10 @@ import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 import { cliTest } from "../../support/cli/cliFixture.js";
 import { analyzeJavaScriptDirectory } from "../../support/cli/javascriptApplication.js";
 
+// These cases compare against Node's own resolver through createRequire, which
+// Bun does not reproduce.
+const NODE_RESOLVER_ORACLE_UNAVAILABLE = true;
+
 const literalAliases = ["#/x", "#x%2Fy", "#x%2Ey", "#x\\y", "#x\0y"];
 const fallbackAliases = {
   "#tab-escape": ["./.\t./outside.cjs", "./config.cjs"],
@@ -135,7 +139,9 @@ const createPackageImportAliasFixture = async () => {
   return { root, mainSource, moduleSource, nestedSource };
 };
 
-cliTest.for(["CLI", "stdio MCP"] as const)(
+cliTest
+  .skipIf(NODE_RESOLVER_ORACLE_UNAVAILABLE)
+  .for(["CLI", "stdio MCP"] as const)(
   "resolves exact package import aliases with package scope through %s",
   async (surface, { cli }) => {
     const { root, mainSource, moduleSource, nestedSource } =

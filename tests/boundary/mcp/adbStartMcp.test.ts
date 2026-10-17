@@ -29,7 +29,7 @@ const createFakeAdb = async () => {
   const stdoutFile = join(directory, "stdout");
   const stderrFile = join(directory, "stderr");
   const callsFile = join(directory, "calls");
-  const fakeAdbSource = `#!/usr/bin/env node
+  const fakeAdbSource = `#!/usr/bin/env bun
 const fs = require("node:fs");
 const [stdoutPath, stderrPath, callsPath] = ${JSON.stringify([stdoutFile, stderrFile, callsFile])};
 const args = process.argv.slice(2);

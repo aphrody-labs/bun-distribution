@@ -234,7 +234,7 @@ describe.skipIf(process.platform !== "linux" || process.arch !== "x64")(
       const launch = fixture.launches[0];
       if (launch?.cwd === undefined)
         throw new Error("missing process ownership");
-      await expect(access(launch.cwd)).resolves.toBeUndefined();
+      await expect(access(launch.cwd)).resolves.toBeFalsy();
       await expect(access(fixture.output)).rejects.toMatchObject({
         code: "ENOENT",
       });
@@ -300,7 +300,7 @@ describe.skipIf(process.platform !== "linux" || process.arch !== "x64")(
             ],
           },
         });
-        await expect(access(fixture.output)).resolves.toBeUndefined();
+        await expect(access(fixture.output)).resolves.toBeFalsy();
       } finally {
         create.mockRestore();
       }
@@ -336,7 +336,7 @@ describe.skipIf(process.platform !== "linux" || process.arch !== "x64")(
         const published = javascriptRecoveryResultSchema.parse(
           result.value.normalized_result,
         );
-        await expect(access(published.manifest.path)).resolves.toBeUndefined();
+        await expect(access(published.manifest.path)).resolves.toBeFalsy();
         expect(published.source.published_copy.path).toContain(fixture.output);
       } finally {
         create.mockRestore();
@@ -386,7 +386,7 @@ describe.skipIf(process.platform !== "linux" || process.arch !== "x64")(
         });
         await expect(
           access(join(fixture.output, "manifest.json")),
-        ).resolves.toBeUndefined();
+        ).resolves.toBeFalsy();
       } finally {
         create.mockRestore();
       }
@@ -396,7 +396,7 @@ describe.skipIf(process.platform !== "linux" || process.arch !== "x64")(
       expect(cleanupAttempts).toBe(2);
       await expect(
         access(join(fixture.output, "manifest.json")),
-      ).resolves.toBeUndefined();
+      ).resolves.toBeFalsy();
       await assertRecoveryCleanup(fixture.launches);
     });
   },

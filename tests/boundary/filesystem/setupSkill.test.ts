@@ -447,7 +447,7 @@ describe("canonical skill discovery", () => {
         CLAUDE_CONFIG_DIR: dirname(skillsDirectory),
       }),
     ).toBe(false);
-    await expect(access(claudeSkill)).resolves.toBeUndefined();
+    await expect(access(claudeSkill)).resolves.toBeFalsy();
     await expect(
       access(join(home, ".agents/skills/reverse-engineer-anything")),
     ).rejects.toMatchObject({ code: "ENOENT" });

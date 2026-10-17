@@ -415,7 +415,6 @@ export async function verifyInventoryHistory(run, raw, source) {
       "CHANGELOG.md",
       ".release-please-manifest.json",
       "package.json",
-      "package-lock.json",
       "server.json",
       "src/generatedPackageMetadata.ts",
       "docs/installation.md",

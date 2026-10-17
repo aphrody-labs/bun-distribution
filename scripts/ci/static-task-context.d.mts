@@ -4,8 +4,8 @@ export interface StaticTaskContext {
   readonly sourceClean: boolean;
   readonly prHeadSha?: string;
   readonly nodeVersion: string;
-  readonly npmVersion: string;
-  readonly turboVersion: string;
+  readonly bunVersion: string;
+  readonly bunRevision: string;
   readonly platform: string;
   readonly architecture: string;
   readonly taskHashes: Readonly<Record<string, string>>;
@@ -13,6 +13,5 @@ export interface StaticTaskContext {
 export function parseStaticTaskContext(value: unknown): StaticTaskContext;
 export function recordStaticTaskContext(options?: {
   root?: string;
-  npmCli?: string;
   outputDirectory?: string;
 }): Promise<StaticTaskContext>;

@@ -5,7 +5,6 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const vitestPath = resolve(repositoryRoot, "node_modules/vitest/vitest.mjs");
 const OWNED_ENTRY = /^(?:rea-|bb-session-)/u;
 
 const findOwnedEntries = async (root, directory = root) => {
@@ -30,7 +29,7 @@ const isolatedTemporaryRoot = await mkdtemp(
 try {
   const result = spawnSync(
     process.execPath,
-    [vitestPath, "run", "--coverage.enabled=false", ...process.argv.slice(2)],
+    ["test", "--isolate", ...process.argv.slice(2)],
     {
       cwd: repositoryRoot,
       env: {
@@ -48,8 +47,8 @@ try {
   if (result.status !== 0) {
     failures.push(
       result.signal === null
-        ? `Vitest exited with status ${String(result.status)}`
-        : `Vitest exited after signal ${result.signal}`,
+        ? `bun test exited with status ${String(result.status)}`
+        : `bun test exited after signal ${result.signal}`,
     );
   }
 

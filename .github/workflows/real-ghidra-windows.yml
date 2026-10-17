@@ -16,10 +16,9 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version-file: .nvmrc
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: setup-bun
+        uses: ./.github/actions/setup-bun
       - name: Prepare cross compiler
         run: |
           for source in /etc/apt/apt-mirrors.txt /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do
@@ -29,9 +28,9 @@ jobs:
           done
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y g++-mingw-w64-x86-64
-      - run: npm run build:windows-native
-      - run: npm run verify:windows-native:artifact
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - run: bun run build:windows-native
+      - run: bun run verify:windows-native:artifact
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: real-ghidra-windows-native
           path: native/windows/build/
@@ -45,7 +44,7 @@ jobs:
           x86_64-w64-mingw32-g++ -municode -std=c++17 -O2 -static -Wall -Wextra \
             -o .cache/windows-process-boundary/process-boundary.exe \
             tests/fixtures/windows/processBoundary.cc -ladvapi32
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: real-ghidra-windows-process-boundary
           path: .cache/windows-process-boundary/
@@ -56,59 +55,57 @@ jobs:
     if: github.ref == 'refs/heads/main'
     needs: native-artifact
     environment: real-ghidra-windows
-    runs-on: [self-hosted, Windows, x64, ghidra-12-1-2]
+    runs-on: [self-hosted, Windows, x64, ghidra-12-1-4]
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version-file: .nvmrc
-      - run: npm ci
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: setup-bun
+        uses: ./.github/actions/setup-bun
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: real-ghidra-windows-native
           path: native/windows/build/
-      - run: npm run verify:windows-native:artifact
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - run: bun run verify:windows-native:artifact
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: real-ghidra-windows-process-boundary
           path: .cache/windows-process-boundary/
       - run: >-
-          npm run verify:windows-native -- .
+          bun run verify:windows-native -- .
           "${{ github.workspace }}\.cache\windows-process-boundary\process-boundary.exe"
       - name: Verify all admitted Windows Ghidra operations
         env:
           REA_ANALYSIS_PROVIDER: ghidra
-        run: npm run verify:ghidra:windows | Tee-Object -FilePath windows-ghidra-proof.log
+        run: bun run verify:ghidra:windows | Tee-Object -FilePath windows-ghidra-proof.log
       - name: Verify native x86 Windows Ghidra operations
         env:
           REA_ANALYSIS_PROVIDER: ghidra
-        run: npm run verify:ghidra:windows -- --x86 | Tee-Object -FilePath windows-ghidra-x86-proof.log
+        run: bun run verify:ghidra:windows -- --x86 | Tee-Object -FilePath windows-ghidra-x86-proof.log
       - name: Verify native x64 DLL Windows Ghidra operations
         env:
           REA_ANALYSIS_PROVIDER: ghidra
-        run: npm run verify:ghidra:windows -- --dll | Tee-Object -FilePath windows-ghidra-dll-proof.log
+        run: bun run verify:ghidra:windows -- --dll | Tee-Object -FilePath windows-ghidra-dll-proof.log
       - name: Verify native x86 DLL Windows Ghidra operations
         env:
           REA_ANALYSIS_PROVIDER: ghidra
-        run: npm run verify:ghidra:windows -- --x86 --dll | Tee-Object -FilePath windows-ghidra-x86-dll-proof.log
+        run: bun run verify:ghidra:windows -- --x86 --dll | Tee-Object -FilePath windows-ghidra-x86-dll-proof.log
       - name: Verify ordinary-user CLI and MCP operations
         env:
           REA_ANALYSIS_PROVIDER: ghidra
-        run: npm run verify:ghidra:windows:package | Tee-Object -FilePath windows-ghidra-package-proof.log
+        run: bun run verify:ghidra:windows:package | Tee-Object -FilePath windows-ghidra-package-proof.log
       - name: Verify ordinary-user x86 CLI and MCP operations
         env:
           REA_ANALYSIS_PROVIDER: ghidra
-        run: npm run verify:ghidra:windows:package -- --x86 | Tee-Object -FilePath windows-ghidra-x86-package-proof.log
+        run: bun run verify:ghidra:windows:package -- --x86 | Tee-Object -FilePath windows-ghidra-x86-package-proof.log
       - name: Verify ordinary-user x64 DLL CLI and MCP operations
         env:
           REA_ANALYSIS_PROVIDER: ghidra
-        run: npm run verify:ghidra:windows:package -- --dll | Tee-Object -FilePath windows-ghidra-dll-package-proof.log
+        run: bun run verify:ghidra:windows:package -- --dll | Tee-Object -FilePath windows-ghidra-dll-package-proof.log
       - name: Verify ordinary-user x86 DLL CLI and MCP operations
         env:
           REA_ANALYSIS_PROVIDER: ghidra
-        run: npm run verify:ghidra:windows:package -- --x86 --dll | Tee-Object -FilePath windows-ghidra-x86-dll-package-proof.log
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        run: bun run verify:ghidra:windows:package -- --x86 --dll | Tee-Object -FilePath windows-ghidra-x86-dll-package-proof.log
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: windows-ghidra-proof

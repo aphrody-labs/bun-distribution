@@ -84,7 +84,7 @@ observations rather than unique source sites.
 
 ## Reproduce
 
-Use the pinned Node/npm toolchain and `npm ci`, then `npm run build:cached`.
+Use the pinned Node/npm toolchain and `npm ci`, then `bun run build:cached`.
 Download/decompress the versioned application outside the checkout and check its
 digest. Run with an operator-selected absolute artifact path:
 

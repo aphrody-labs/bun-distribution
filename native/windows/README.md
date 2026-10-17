@@ -16,8 +16,8 @@ Node-API headers are reused from the build cache or downloaded from the
 pinned official Node release with its published SHA-256 checked.
 
 ```sh
-npm run build:windows-native
-npm run verify:windows-native:artifact
+bun run build:windows-native
+bun run verify:windows-native:artifact
 npm pack
 ```
 
@@ -161,8 +161,8 @@ requested and final handle coordinates rather than treating them as one identity
 ## Real verification
 
 ```powershell
-npm run verify:windows-native
-npm run verify:ghidra:windows
+bun run verify:windows-native
+bun run verify:ghidra:windows
 ```
 
 An unpublished runtime retains its directory and parent handles if validation,

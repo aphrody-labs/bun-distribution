@@ -176,7 +176,7 @@ malformed/truncated-input and omission checks. Existing clients need no migratio
 ## Reproduction
 
 Acquire the exact corpus outside the repository and verify the pinned hashes.
-Use the pinned Node/npm toolchain, locked dependencies, `npm run build:cached` and
+Use the pinned Node/npm toolchain, locked dependencies, `bun run build:cached` and
 an external resource guard before invoking actual engines/models. Supply explicit
 provider settings in a private JSON file. An example SDK arm is:
 

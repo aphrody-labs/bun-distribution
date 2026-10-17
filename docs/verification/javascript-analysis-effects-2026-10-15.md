@@ -54,7 +54,7 @@ preserve these distinctions without archiving the downloadable application.
 
 ## Reproduce
 
-Use pinned Node/npm, `npm ci`, then `npm run build:cached`. Run the following as
+Use pinned Node/npm, `npm ci`, then `bun run build:cached`. Run the following as
 an ES module from the checkout root (`node --input-type=module < probe.mjs`):
 
 ```javascript

@@ -33,7 +33,7 @@ describe.skipIf(process.platform === "win32")(
       const argsFile = join(directory, "args.json");
       await writeFile(
         provider,
-        `#!/usr/bin/env node
+        `#!/usr/bin/env bun
 const fs = await import("node:fs");
 fs.writeFileSync(${JSON.stringify(argsFile)}, JSON.stringify(process.argv.slice(2)));
 process.stdout.write("\\0");
@@ -103,7 +103,7 @@ process.stdin.on("data", (chunk) => {
       const provider = join(directory, "fake-rizin-stall.mjs");
       await writeFile(
         provider,
-        `#!/usr/bin/env node
+        `#!/usr/bin/env bun
 process.stdout.write("\\0");
 let input = "";
 let stalled = false;
@@ -170,7 +170,7 @@ it.skipIf(process.platform === "win32")(
     try {
       await writeFile(
         provider,
-        `#!/usr/bin/env node
+        `#!/usr/bin/env bun
 process.stdout.write("\\0");
 setTimeout(() => process.stdout.write("\\0".repeat(5000)), 10);
 process.stdin.resume();

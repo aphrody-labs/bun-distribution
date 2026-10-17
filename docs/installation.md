@@ -1082,19 +1082,19 @@ kind, message, and diagnostics, while process and temporary-project cleanup
 continues. These messages redact known bridge authentication tokens and
 preserve local paths and other analysis context.
 
-Run `GHIDRA_INSTALL_DIR=... npm run verify:ghidra` from a source checkout to
+Run `GHIDRA_INSTALL_DIR=... bun run verify:ghidra` from a source checkout to
 compile and analyze debug and stripped host-native fixtures (ELF on Linux x64/arm64
 or Mach-O on macOS), plus a native DWARF 4 type-layout object. This lane needs a
 host C compiler in addition to Ghidra and its JDK.
 
-Run `GHIDRA_INSTALL_DIR=... npm run verify:ghidra:cross-format` to add AArch64
+Run `GHIDRA_INSTALL_DIR=... bun run verify:ghidra:cross-format` to add AArch64
 ELF, x86-64 PE, and x86-64 Mach-O fixture coverage. This separate lane needs
 `clang`, LLD, and `lld-link` on `PATH`; `REA_CLANG` and `REA_LLD_LINK` select
 alternate command paths. Missing cross-target tooling does not block the
 host-native Ghidra acceptance lane.
 
 On a controlled Windows x64 runner, use
-`npm run verify:ghidra:windows`. The verifier generates a deterministic native
+`bun run verify:ghidra:windows`. The verifier generates a deterministic native
 PE fixture from source bytes and requires the Windows native authority before
 opening the provider. The controls are implemented on main; see the
 [release boundary](#released-package-and-main). The lane verifies all 26 admitted

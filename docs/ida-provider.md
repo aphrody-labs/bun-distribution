@@ -149,7 +149,7 @@ Complete body ranges, typed reference edges, CFG, referenced data, source locals
 
 ## Verification
 
-Run `npm run verify:ida -- --target /absolute/path/to/program --procedure main` with a configured upstream server. It exercises production CLI and MCP tools, validates their output contracts and Evidence, checks original-input preservation and session cleanup, and keeps local target data out of its console summary. Supply `--package-root` to verify an extracted or installed package. See [testing](testing.md) for the distinction between adapter tests and real-provider evidence.
+Run `bun run verify:ida -- --target /absolute/path/to/program --procedure main` with a configured upstream server. It exercises production CLI and MCP tools, validates their output contracts and Evidence, checks original-input preservation and session cleanup, and keeps local target data out of its console summary. Supply `--package-root` to verify an extracted or installed package. See [testing](testing.md) for the distinction between adapter tests and real-provider evidence.
 
 Native verification requires `--second-procedure other_function --second-marker unique_second_body_text`; these options remain optional for the other profiles. The marker must occur in the second function's pseudocode and be absent from the first; the verifier also checks that returning to the first restores its text.
 

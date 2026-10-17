@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import { join } from "node:path";
 import { mkdir } from "node:fs/promises";
 import { PrivateRuntimeRoot } from "../dist/process/PrivateRuntimeRoot.js";

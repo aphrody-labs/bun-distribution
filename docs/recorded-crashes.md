@@ -88,7 +88,7 @@ Resource exit statuses need matching private failure-branch markers. Unmarked
 launcher failures retain their actual status/output and unknown resource cause.
 Cancellation, output truncation and independent owned cleanup remain explicit.
 
-`npm run verify:recorded:crash` uses source-owned fixtures and caller-supplied
+`bun run verify:recorded:crash` uses source-owned fixtures and caller-supplied
 GDB/Python/pwndbg/strace. Fixture generation explicitly launches its owned test
 program; subsequent inspection only reads the resulting core. Real acceptance
 checks recorded threads, high registers, missing/malformed notes, opaque owners,

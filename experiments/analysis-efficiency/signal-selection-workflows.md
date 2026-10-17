@@ -168,7 +168,7 @@ saved real Evidence and all eight model transcripts preserves the original
 grades and costs. This is stronger retrospective verification, not a new cohort.
 
 After rebasing onto main `44d98de2367b99808d78db732ec7d72533266233`,
-`npm run build:cached` and the 16 focused comparator/sample-interval/MCP-boundary
+`bun run build:cached` and the 16 focused comparator/sample-interval/MCP-boundary
 tests passed. Two additional real focused MCP workflows independently verified
 UART/I2C bytes and intervals on that base. These integration checks are separate
 from the original cost cohort and do not replace or extend its measurements.

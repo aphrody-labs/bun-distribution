@@ -4,8 +4,8 @@ Run the source-owned native, JavaScript CLI, Electron, Evidence, comparison,
 obligation, replay, and cleanup conformance verifier from a clean checkout:
 
 ```sh
-npm ci
-npm run verify:readiness
+bun install --frozen-lockfile
+bun run verify:readiness
 ```
 
 The command builds the redistributable native conformance fixtures, inventories
@@ -18,7 +18,7 @@ prints one compact JSON summary.
 Set `REA_READINESS_REPORT_PATH` to retain the complete machine-readable report:
 
 ```sh
-REA_READINESS_REPORT_PATH=readiness-report.json npm run verify:readiness
+REA_READINESS_REPORT_PATH=readiness-report.json bun run verify:readiness
 ```
 
 CI runs this command on Linux, publishes the compact summary, and retains the
@@ -26,7 +26,7 @@ full report as the `reconstruction-readiness` artifact.
 
 ## Project conformance contract
 
-The verifier runs as `npm run verify:readiness`; it is not exposed as a public
+The verifier runs as `bun run verify:readiness`; it is not exposed as a public
 CLI command or MCP tool. The synthetic report input and evaluator exist to
 check project-owned conformance fixtures and fail-closed report behavior.
 

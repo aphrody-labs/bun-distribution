@@ -195,7 +195,7 @@ The above performance cohort stays pinned to its original frozen runtimes and
 is not relabeled as a measurement of the larger integrated catalog.
 
 At `cda794fb9d4a5ca2bd661853a899d579fb8a47b2`, all 30 affected EVM/WASM/generic-view
-MCP tests pass again, as do full `npm run check` and `npm run docs:check`. A fresh
+MCP tests pass again, as do full `bun run check` and `bun run docs:check`. A fresh
 real Factory SDK selected-summary/retained-parent/page workflow and the original
 Pool bundle's SDK/CLI migration verifier also pass against the rebuilt integrated
 runtime. The latter still has an explicitly unavailable analysis limiter.

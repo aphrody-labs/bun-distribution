@@ -19,7 +19,7 @@ incompatible-output failures with a healthy WASM peer, cleanup retry, and reques
 cancellation followed by recovery. Their injected ports are recording seams, not
 real EVMole/WABT claims. Nine service and 26 provider-boundary cases also pass;
 two unsupported-host scenarios are skipped on this Linux host. The existing seven
-WASM MCP scenarios pass. Full `npm run check` passes; its approximately 3 GiB
+WASM MCP scenarios pass. Full `bun run check` passes; its approximately 3 GiB
 sampled peak and `memory.high` events are excluded from performance claims.
 Candidate real-artifact/catalog and model observations are recorded below.
 

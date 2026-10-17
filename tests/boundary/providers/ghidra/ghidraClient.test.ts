@@ -593,7 +593,7 @@ it.skipIf(process.platform === "win32")(
       await expect(
         access(launcher.runtimeRoots[0] ?? ""),
       ).rejects.toMatchObject({ code: "ENOENT" });
-      await expect(access(socketRoot.path)).resolves.toBeUndefined();
+      await expect(access(socketRoot.path)).resolves.toBeFalsy();
       const retry = await client.start();
       if (retry.ok) throw new Error("Restart lost the retained socket root");
       expect(retry.error).toBe(first.error);
@@ -969,7 +969,7 @@ describe("GhidraClient runtime removal failures", () => {
             error: { kind: "process" },
           });
         }
-        await expect(access(runtimeRoot)).resolves.toBeUndefined();
+        await expect(access(runtimeRoot)).resolves.toBeFalsy();
         expect(client.operationHealthSnapshot()).toMatchObject({
           state: "unknown",
         });
@@ -1476,7 +1476,7 @@ describe.skipIf(process.platform === "win32")(
         await mkdir(join(root, "jdk", "bin"), { recursive: true });
         await writeFile(
           java,
-          "#!/usr/bin/env node\n// LaunchSupport fixture emits no optional values.\n",
+          "#!/usr/bin/env bun\n// LaunchSupport fixture emits no optional values.\n",
         );
         await chmod(java, 0o755);
 

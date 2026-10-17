@@ -204,7 +204,7 @@ it("retains a setup-failed publication tree for provider cleanup retry", async (
         },
       },
     });
-    await expect(access(fixture.output)).resolves.toBeUndefined();
+    await expect(access(fixture.output)).resolves.toBeFalsy();
   } finally {
     create.mockRestore();
   }

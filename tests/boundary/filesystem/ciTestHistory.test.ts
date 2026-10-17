@@ -2,10 +2,13 @@ import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import { delimiter, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { expect, it } from "../../support/bunTest.js";
+import { expect, it as bunIt } from "../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 import { executeWorkflowFixture } from "../../support/workflowGit.js";
+
+// These lanes spawn POSIX-only fake executables (gh, zip).
+const it = process.platform === "win32" ? bunIt.skip : bunIt;
 
 const script = fileURLToPath(
   new URL("../../../scripts/ci/test-history.mjs", import.meta.url),

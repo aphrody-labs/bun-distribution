@@ -301,7 +301,7 @@ it.runIf(supportedHost).each([
       await readFile(join(stagePath, "descendant.ready"), "utf8"),
     );
     expect(() => process.kill(descendant, 0)).not.toThrow();
-    await expect(access(root.path)).resolves.toBeUndefined();
+    await expect(access(root.path)).resolves.toBeFalsy();
   },
 );
 

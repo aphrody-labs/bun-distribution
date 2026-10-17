@@ -10,6 +10,10 @@ import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 import { cliTest } from "../../support/cli/cliFixture.js";
 import { analyzeJavaScriptDirectory } from "../../support/cli/javascriptApplication.js";
 
+// These cases compare against Node's own resolver through createRequire, which
+// Bun does not reproduce.
+const NODE_RESOLVER_ORACLE_UNAVAILABLE = true;
+
 type SelfNameCase = {
   readonly directory: string;
   readonly packageName: string;
@@ -159,7 +163,9 @@ console.log(JSON.stringify({ esm, require }));`;
   return root;
 };
 
-cliTest.for(["CLI", "stdio MCP"] as const)(
+cliTest
+  .skipIf(NODE_RESOLVER_ORACLE_UNAVAILABLE)
+  .for(["CLI", "stdio MCP"] as const)(
   "matches self references by parsed ESM name and preserves CommonJS prefix matching through %s",
   async (surface, { cli }) => {
     const root = await createSelfNameFixture();

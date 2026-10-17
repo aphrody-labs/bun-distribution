@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 // Compile the packaged Ghidra bridge sources against an existing Ghidra
 // installation's jars. Ghidra's script provider compiles the whole bridge
 // directory when a session starts, so one unresolved symbol disables every

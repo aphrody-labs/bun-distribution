@@ -37,7 +37,7 @@ it.skipIf(process.platform === "win32")(
     const provider = join(directory, "fake-rizin-provenance.mjs");
     await writeFile(
       provider,
-      `#!/usr/bin/env node
+      `#!/usr/bin/env bun
 process.stdout.write("\\0");
 let input = "";
 process.stdin.setEncoding("utf8");
@@ -187,7 +187,7 @@ it.skipIf(process.platform === "win32")(
     const commandPath = join(directory, "command-started");
     await writeFile(
       provider,
-      `#!/usr/bin/env node
+      `#!/usr/bin/env bun
 process.stdout.write("\\0");
 process.stdin.setEncoding("utf8");
 process.stdin.on("data", async (chunk) => {

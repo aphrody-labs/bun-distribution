@@ -1,7 +1,6 @@
 import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { runInNewContext } from "node:vm";
-import { isNativeError } from "node:util/types";
 import { expect } from "../../support/bunTest.js";
 
 import { toolContract } from "../../../src/contracts/toolContracts.js";
@@ -255,6 +254,15 @@ const factorySource = (scenario: (typeof scenarios)[number]) => {
   })();`;
 };
 
+// Errors raised inside the vm context belong to another realm, so duck-type them.
+const isErrorLike = (
+  value: unknown,
+): value is { readonly name: string; readonly message: string } =>
+  typeof value === "object" &&
+  value !== null &&
+  typeof (value as { name?: unknown }).name === "string" &&
+  typeof (value as { message?: unknown }).message === "string";
+
 const runtimeChannels = (source: string, flag: boolean) => {
   const channels: string[] = [];
   try {
@@ -278,13 +286,15 @@ const runtimeChannels = (source: string, flag: boolean) => {
   } catch (error) {
     // A skipped export makes the caller throw before it registers a handler.
     if (
-      !isNativeError(error) ||
+      !isErrorLike(error) ||
       channels.length !== 0 ||
       !(
         error.message === "stop" ||
         (error.name === "TypeError" && error.message.includes("addListener")) ||
         (error.name === "ReferenceError" &&
-          error.message === "Cannot access 'electron' before initialization")
+          error.message.startsWith(
+            "Cannot access 'electron' before initialization",
+          ))
       )
     )
       throw error;

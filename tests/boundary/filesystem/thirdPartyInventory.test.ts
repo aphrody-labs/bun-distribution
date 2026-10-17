@@ -15,6 +15,7 @@ test("generates locked inventory and rejects stale notice metadata or preserved 
   await mkdir(resolve(root, "licenses"));
   for (const file of [
     "scripts/generate-third-party-inventory.mjs",
+    "scripts/lib/bun-lock.mjs",
     "scripts/lib/generated-file.mjs",
   ])
     await copyFile(resolve(file), resolve(root, file));
@@ -25,18 +26,37 @@ test("generates locked inventory and rejects stale notice metadata or preserved 
     resolved:
       "https://registry.npmjs.org/fixture-runtime/-/fixture-runtime-1.0.0.tgz",
     integrity: "sha512-fixture-integrity",
-    optional: true,
   };
+  const record = (name: string): [string, string, object, string] => [
+    `${name}@1.0.0`,
+    "",
+    {},
+    runtime.integrity,
+  ];
   await writeFile(
-    resolve(root, "package-lock.json"),
+    resolve(root, "bun.lock"),
     JSON.stringify({
+      lockfileVersion: 1,
+      workspaces: {
+        "": {
+          name: "fixture",
+          optionalDependencies: { "fixture-runtime": "1.0.0" },
+          devDependencies: { "fixture-dev": "1.0.0" },
+        },
+      },
       packages: {
-        "": { name: "fixture", version: "1.0.0" },
-        "node_modules/fixture-runtime": runtime,
-        "node_modules/fixture-dev": { ...runtime, dev: true, optional: false },
+        "fixture-runtime": record("fixture-runtime"),
+        "fixture-dev": record("fixture-dev"),
       },
     }),
   );
+  for (const name of ["fixture-runtime", "fixture-dev"]) {
+    await mkdir(resolve(root, "node_modules", name), { recursive: true });
+    await writeFile(
+      resolve(root, "node_modules", name, "package.json"),
+      JSON.stringify({ name, version: "1.0.0", license: "MIT" }),
+    );
+  }
   const generated = await processes.run(process.execPath, [script]);
   expect(generated.exitCode, generated.stderr).toBe(0);
   const inventory = await readFile(

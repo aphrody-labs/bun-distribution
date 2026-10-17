@@ -443,7 +443,7 @@ newer skill instructions does not change that schema. See
 For two operator-provided directories or ASARs, run:
 
 ```bash
-npm run verify:application-workflows -- \
+bun run verify:application-workflows -- \
   --left /absolute/path/to/version-a \
   --right /absolute/path/to/version-b
 ```

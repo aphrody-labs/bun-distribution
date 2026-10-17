@@ -87,7 +87,7 @@ Windows/macOS verification are **NOT_ENOUGH_INFO**.
 
 ## Reproduce the public workflow
 
-Use pinned Node 24.18.0/npm 11.16.0, `npm ci`, then `npm run build:cached`.
+Use pinned Node 24.18.0/npm 11.16.0, `npm ci`, then `bun run build:cached`.
 The verifier returns compact records and deletes its private exported parent and
 CLI input after owned cleanup. No downloadable application or large Evidence is
 archived.
@@ -171,7 +171,7 @@ integration base. Canonical byte identity is also used by the related version
 matching/content comparison consumers; no equivalent observation-digest fallback
 was found there.
 
-Final `npm run check && npm run docs:check` passed on the integration base,
+Final `bun run check && bun run docs:check` passed on the integration base,
 including five documentation consistency tests: 128.732 s wall, 115.518920 s CPU,
 4,301,684,736 B peak cgroup memory, clean owned exit and no OOM.
 

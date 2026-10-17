@@ -42,7 +42,7 @@ Verify the downloaded JAR's SHA-256 against
 [REA's pinned release metadata](https://github.com/morluto/rea/blob/main/src/android/JadxRelease.ts)
 before using it. The following download and verification commands work for npm
 package consumers as well as repository checkouts; the repository-only
-`npm run fixtures:android` helper is not included in the npm package.
+`bun run fixtures:android` helper is not included in the npm package.
 
 On macOS or Linux, choose a destination and verify the pinned digest:
 
@@ -314,10 +314,10 @@ as complete. These are memory-safety boundaries, not undocumented result caps.
 Download the explicit public fixtures once; this installs no tools:
 
 ```sh
-npm run fixtures:android
+bun run fixtures:android
 export REA_JADX_MCP_JAR="$PWD/_reference/apk-integration/jadx-headless-mcp-0.7.1-all.jar"
 export REA_ANDROID_TEST_APK="$PWD/_reference/apk-integration/ApiDemos-debug.apk"
-npm run verify:android
+bun run verify:android
 ```
 
 The lane also uses the selected full JDK's `jlink` to create a disposable JRE

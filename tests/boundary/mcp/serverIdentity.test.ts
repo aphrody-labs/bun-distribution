@@ -1,7 +1,9 @@
 import { parseMcpToolError } from "../../fixtures/mcpToolError.js";
 import { ok as resultOk } from "../../../src/domain/result.js";
 import { readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+
+import { lockedVersion } from "../../../scripts/lib/bun-lock.mjs";
 
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { describe, expect, it } from "../../support/bunTest.js";
@@ -95,7 +97,6 @@ const statusCapability = (
 describe("server and catalog identity", () => {
   it("derives package and SDK versions from canonical package metadata", async () => {
     const packageJson = JSON.parse(await readFile("package.json", "utf8"));
-    const packageLock = JSON.parse(await readFile("package-lock.json", "utf8"));
     expect(PACKAGE_METADATA).toMatchObject({
       name: packageJson.name,
       version: packageJson.version,
@@ -103,8 +104,10 @@ describe("server and catalog identity", () => {
         packageJson.dependencies["@modelcontextprotocol/server"],
       clientSdkVersion:
         packageJson.dependencies["@modelcontextprotocol/client"],
-      coreSdkVersion:
-        packageLock.packages["node_modules/@modelcontextprotocol/core"].version,
+      coreSdkVersion: await lockedVersion(
+        process.cwd(),
+        "@modelcontextprotocol/core",
+      ),
     });
     expect(PRODUCT_IDENTITY.packageVersion).toBe(packageJson.version);
     expect(SDK_IDENTITY.server).toBe(
@@ -196,7 +199,7 @@ describe("server and catalog identity", () => {
     expect(unknown.server.command_path).toBeNull();
     const aligned = createServerIdentity({
       startedAt: "2026-07-13T00:00:00.000Z",
-      commandPath: "/packaged/rea.mjs",
+      commandPath: resolve("/packaged/rea.mjs"),
       expected: {
         package_version: PRODUCT_IDENTITY.packageVersion,
         catalog_digest: CATALOG_IDENTITY.digests.combined_sha256,
@@ -206,7 +209,7 @@ describe("server and catalog identity", () => {
     expect(aligned.alignment).toMatchObject({ state: "aligned", reasons: [] });
     const stale = createServerIdentity({
       startedAt: "2026-07-13T00:00:00.000Z",
-      commandPath: "/packaged/rea.mjs",
+      commandPath: resolve("/packaged/rea.mjs"),
       expected: {
         package_version: "1.2.0",
         catalog_digest: "0".repeat(64),

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { readFile, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";

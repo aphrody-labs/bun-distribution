@@ -230,7 +230,7 @@ it.runIf(supportedHost)(
       },
     });
     expect(stops).toBe(2);
-    await expect(access(root.path)).resolves.toBeUndefined();
+    await expect(access(root.path)).resolves.toBeFalsy();
   },
 );
 
@@ -266,7 +266,7 @@ it.runIf(supportedHost)(
       },
     });
     expect(process.exitCode).toBe(1);
-    await expect(access(root.path)).resolves.toBeUndefined();
+    await expect(access(root.path)).resolves.toBeFalsy();
   },
 );
 

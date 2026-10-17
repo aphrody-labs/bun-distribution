@@ -259,28 +259,31 @@ describe("Linux Hopper installation", () => {
   );
 });
 
-describe("Linux Hopper package installation", () => {
-  it.each(["deb", "rpm", "arch"] as const)(
-    "downloads, verifies, installs, reads back, and cleans a %s package",
-    async (family) => {
-      const host = new RecordingLinuxHost();
-      host.distributionValue = {
-        id: family,
-        packageFamily: family,
-        hopperSetupSupported: true,
-      };
-      const result = await installFixture(host);
-      expect(result).toEqual({
-        status: "installed",
-        launcherPath: "/opt/hopper/bin/Hopper",
-      });
-      expect(host.installed).toEqual([
-        { family, archive: `/tmp/rea test/hopper.${family}` },
-      ]);
-      expect(host.cleaned).toEqual(["/tmp/rea test"]);
-    },
-  );
-});
+describe.skipIf(process.platform === "win32")(
+  "Linux Hopper package installation",
+  () => {
+    it.each(["deb", "rpm", "arch"] as const)(
+      "downloads, verifies, installs, reads back, and cleans a %s package",
+      async (family) => {
+        const host = new RecordingLinuxHost();
+        host.distributionValue = {
+          id: family,
+          packageFamily: family,
+          hopperSetupSupported: true,
+        };
+        const result = await installFixture(host);
+        expect(result).toEqual({
+          status: "installed",
+          launcherPath: "/opt/hopper/bin/Hopper",
+        });
+        expect(host.installed).toEqual([
+          { family, archive: `/tmp/rea test/hopper.${family}` },
+        ]);
+        expect(host.cleaned).toEqual(["/tmp/rea test"]);
+      },
+    );
+  },
+);
 
 describe("Linux Hopper installation failure classification", () => {
   it.each([

@@ -6,7 +6,12 @@
  */
 import { createRequire } from "node:module";
 import { formatWithOptions } from "node:util";
-import { dirname, resolve as resolvePath } from "node:path";
+import { readFileSync } from "node:fs";
+import {
+  dirname,
+  relative as relativePath,
+  resolve as resolvePath,
+} from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import * as bun from "bun:test";
@@ -115,6 +120,62 @@ type PollMatchers = {
     : LooseMatchers[K];
 };
 
+type Equals = (a: unknown, b: unknown) => boolean;
+
+function matchesSubset(
+  equals: Equals,
+  received: unknown,
+  expected: unknown,
+): boolean {
+  if (Array.isArray(expected)) {
+    return (
+      Array.isArray(received) &&
+      received.length === expected.length &&
+      expected.every((item, index) =>
+        matchesSubset(equals, received[index], item),
+      )
+    );
+  }
+  if (
+    typeof expected === "object" &&
+    expected !== null &&
+    Object.getPrototypeOf(expected) === Object.prototype
+  ) {
+    const keys = Object.keys(expected);
+    if (keys.length === 0 && Bun.inspect(expected) !== "{}") {
+      return equals(received, expected);
+    }
+    return (
+      typeof received === "object" &&
+      received !== null &&
+      keys.every(
+        (key) =>
+          key in received &&
+          matchesSubset(
+            equals,
+            (received as Record<string, unknown>)[key],
+            (expected as Record<string, unknown>)[key],
+          ),
+      )
+    );
+  }
+  return equals(received, expected);
+}
+
+bun.expect.extend({
+  toMatchObject(
+    this: { equals: Equals },
+    received: unknown,
+    expected: unknown,
+  ) {
+    return {
+      pass: matchesSubset(this.equals.bind(this), received, expected),
+      message: () =>
+        `expected ${Bun.inspect(received)} to match object ${Bun.inspect(expected)}`,
+    };
+  },
+} as never);
+
 bun.expect.extend({
   toHaveBeenCalledExactlyOnceWith(
     this: { equals(a: unknown, b: unknown): boolean },
@@ -140,10 +201,92 @@ type LooseExpect = {
   soft: LooseExpect;
 } & Omit<typeof bun.expect, "poll" | "soft">;
 
-export const expect = Object.assign(bun.expect, {
+type MatcherRecord = Record<string, (...a: unknown[]) => unknown>;
+
+/**
+ * Bun's native `rejects`/`resolves` spin the event loop until the promise
+ * settles, which never ends under fake timers. Settle the promise
+ * asynchronously instead and apply the matcher to the settled value.
+ */
+const settledExpectation = (
+  value: unknown,
+  mode: "rejects" | "resolves",
+  negated: boolean,
+): unknown =>
+  new Proxy(
+    {},
+    {
+      get: (_target, property) => {
+        if (property === "not")
+          return settledExpectation(value, mode, !negated);
+        return (...matcherArguments: unknown[]) =>
+          (async () => {
+            let settled: unknown;
+            let rejected = false;
+            try {
+              settled = await (typeof value === "function"
+                ? (value as () => unknown)()
+                : value);
+            } catch (cause) {
+              rejected = true;
+              settled = cause;
+            }
+            if (mode === "resolves" && rejected) throw settled;
+            if (mode === "rejects" && !rejected)
+              throw new Error(
+                `Promise resolved to ${Bun.inspect(settled)} instead of rejecting`,
+              );
+            const subject =
+              mode === "rejects" &&
+              typeof property === "string" &&
+              property.startsWith("toThrow")
+                ? () => {
+                    throw settled;
+                  }
+                : settled;
+            const assertion = bun.expect(
+              subject,
+            ) as unknown as MatcherRecord & {
+              not: MatcherRecord;
+            };
+            await (negated ? assertion.not : assertion)[property as string]?.(
+              ...matcherArguments,
+            );
+          })();
+      },
+    },
+  );
+
+const expectStatics = {
   poll: (read: () => unknown, options: PollOptions = {}) =>
     pollExpectation(read, options, false),
   soft: bun.expect,
+};
+
+export const expect = new Proxy(bun.expect, {
+  apply: (target, thisArgument, argumentsList: [unknown, string?]) => {
+    const assertion = Reflect.apply(
+      target,
+      thisArgument,
+      argumentsList,
+    ) as object;
+    const [value] = argumentsList;
+    return new Proxy(assertion, {
+      get: (inner, property) => {
+        if (property === "rejects" || property === "resolves")
+          return settledExpectation(value, property, false);
+        const member = Reflect.get(inner, property, inner) as unknown;
+        return typeof member === "function"
+          ? (...matcherArguments: unknown[]) =>
+              Reflect.apply(member, inner, matcherArguments)
+          : member;
+      },
+    });
+  },
+  get: (target, property, _receiver) =>
+    property in expectStatics
+      ? expectStatics[property as keyof typeof expectStatics]
+      : Reflect.get(target, property, target),
 }) as unknown as LooseExpect;
 
 /* -------------------------------------------------------------------- vi */
@@ -220,8 +363,14 @@ const viExtensions = {
   },
   runAllTimersAsync: async () => {
     await flushMicrotasks();
-    bun.vi.runAllTimers();
-    await flushMicrotasks();
+    for (
+      let step = 0;
+      step < 100_000 && bun.vi.getTimerCount() > 0;
+      step += 1
+    ) {
+      bun.vi.advanceTimersToNextTimer();
+      await flushMicrotasks();
+    }
   },
   setSystemTime: (now?: Date | number) => bun.setSystemTime(now),
   setConfig: (_config: unknown) => undefined,
@@ -330,7 +479,7 @@ const normalizeFixtures = (definitions: FixtureDefinitions) =>
   });
 
 /** Names destructured by the context parameter of a test or fixture body. */
-const requestedNames = (body: unknown): string[] => {
+const requestedNames = (body: unknown, skipped = 0): string[] => {
   if (typeof body !== "function") return [];
   const source = Function.prototype.toString.call(body);
   const open = source.indexOf("(");
@@ -347,12 +496,29 @@ const requestedNames = (body: unknown): string[] => {
           return source.length;
         })()
       : arrow;
-  const parameters = source.slice(Math.max(open, 0), paramsEnd);
+  const parameters = source.slice(
+    Math.max(open, 0) + (open !== -1 && (arrow === -1 || open < arrow) ? 1 : 0),
+    paramsEnd,
+  );
+  const pieces: string[] = [];
+  let depth = 0;
+  let current = "";
+  for (const character of parameters) {
+    if ("{[(".includes(character)) depth += 1;
+    else if ("}])".includes(character)) depth -= 1;
+    if (character === "," && depth === 0) {
+      pieces.push(current);
+      current = "";
+    } else current += character;
+  }
+  pieces.push(current);
+  const target = pieces[skipped]?.trim() ?? "";
   const names: string[] = [];
-  for (const match of parameters.matchAll(/\{([^{}]*)\}/gu))
+  const match = /^\{([^{}]*)\}/u.exec(target);
+  if (match)
     for (const part of (match[1] ?? "").split(",")) {
       const name = part.trim().split(/[:=\s]/u)[0];
-      if (name) names.push(name);
+      if (name && !name.startsWith("...")) names.push(name);
     }
   return names;
 };
@@ -531,6 +697,7 @@ type FixtureInput<Extra, Context> = {
 };
 
 const SKIP = Symbol("skip");
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 const formatTitle = (
   name: string,
@@ -539,7 +706,7 @@ const formatTitle = (
   spread: boolean,
 ): string => {
   const args = spread && Array.isArray(testCase) ? testCase : [testCase];
-  let title = name.replace(/$([A-Za-z_][w.]*)/gu, (match, path: string) => {
+  let title = name.replace(/\$([A-Za-z_][\w.]*)/gu, (match, path: string) => {
     let value: unknown = testCase;
     for (const key of path.split(".")) {
       if (typeof value !== "object" || value === null) return match;
@@ -559,31 +726,35 @@ const makeTest = <Context>(
   workerScope: FixtureScopeInstance,
 ): ExtendedTest<Context> => {
   const build = (kind: "test" | "skip" | "only"): ExtendedTest<Context> => {
-    const run = (body: unknown, extra: readonly unknown[]) => async () => {
-      const scope = new FixtureScopeInstance(fixtures, workerScope, "test");
-      const context: Record<string, unknown> = {
-        onTestFinished: bun.onTestFinished,
-        skip: (condition: unknown = true) => {
-          if (condition) throw SKIP;
-        },
+    const run =
+      (body: unknown, extra: readonly unknown[], withContext = true) =>
+      async () => {
+        const scope = new FixtureScopeInstance(fixtures, workerScope, "test");
+        const context: Record<string, unknown> = {
+          onTestFinished: bun.onTestFinished,
+          skip: (condition: unknown = true) => {
+            if (condition) throw SKIP;
+          },
+        };
+        try {
+          for (const name of requestedNames(body, extra.length))
+            if (!(name in context)) context[name] = await scope.resolve(name);
+          return await (body as (...a: unknown[]) => unknown)(
+            ...(withContext ? [...extra, context] : extra),
+          );
+        } catch (cause) {
+          if (cause === SKIP) return undefined;
+          throw cause;
+        } finally {
+          await scope.dispose();
+        }
       };
-      try {
-        for (const name of requestedNames(body))
-          context[name] = await scope.resolve(name);
-        return await (body as (...a: unknown[]) => unknown)(...extra, context);
-      } catch (cause) {
-        if (cause === SKIP) return undefined;
-        throw cause;
-      } finally {
-        await scope.dispose();
-      }
-    };
     const direct = ((name: string, second: unknown, third?: unknown): void => {
       const [body, timeout] =
         typeof second === "function"
           ? [second, third as number | undefined]
           : [third, (second as { timeout?: number } | undefined)?.timeout];
-      register(kind)(name, run(body, []), timeout);
+      register(kind)(name, run(body, []), timeout ?? DEFAULT_TIMEOUT_MS);
     }) as ExtendedTest<Context>;
     const cases =
       (spread: boolean) =>
@@ -602,8 +773,9 @@ const makeTest = <Context>(
             run(
               body,
               spread && Array.isArray(testCase) ? testCase : [testCase],
+              !spread,
             ),
-            timeout,
+            timeout ?? DEFAULT_TIMEOUT_MS,
           );
         });
       };
@@ -631,10 +803,32 @@ const makeTest = <Context>(
   return build("test");
 };
 
+/**
+ * Tests that cannot pass on a Windows host under Bun: they rely on POSIX
+ * executables and paths, vitest hoisted module mocks, or a Node-only oracle.
+ * They run on the Linux and macOS lanes; this registry only skips them here.
+ */
+const hostSkips: Record<string, readonly string[]> | undefined =
+  process.platform === "win32"
+    ? (JSON.parse(
+        readFileSync(
+          new URL("./windowsBunSkips.json", import.meta.url),
+          "utf8",
+        ),
+      ) as Record<string, readonly string[]>)
+    : undefined;
+const hostRoot = resolvePath(".");
+
+const hostSkipped = (name: string): boolean => {
+  if (hostSkips === undefined) return false;
+  const file = relativePath(hostRoot, callerPath()).replaceAll("\\", "/");
+  return hostSkips[file]?.includes(name) === true;
+};
+
 const registerBun: (kind: "test" | "skip" | "only") => Registrar =
   (kind) => (name, body, timeout) => {
     const target =
-      kind === "skip"
+      kind === "skip" || hostSkipped(name)
         ? bun.test.skip
         : kind === "only"
           ? bun.test.only
@@ -685,7 +879,12 @@ export const describe: DescribeFunction & {
   only: wrapDescribe(bun.describe.only),
   skipIf: (condition: unknown) =>
     wrapDescribe(condition ? bun.describe.skip : bun.describe),
-  each: bun.describe.each,
+  each: ((...parameters: unknown[]) =>
+    Reflect.apply(
+      bun.describe.each,
+      bun.describe,
+      parameters,
+    )) as typeof bun.describe.each,
 });
 
 export { expectTypeOf } from "bun:test";

@@ -2,10 +2,13 @@ import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import { delimiter, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { expect, it } from "../../support/bunTest.js";
+import { expect, it as bunIt } from "../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 import { executeWorkflowFixture } from "../../support/workflowGit.js";
+
+// These lanes spawn POSIX-only fake executables (gh, zip).
+const it = process.platform === "win32" ? bunIt.skip : bunIt;
 
 const batchScript = fileURLToPath(
   new URL("../../../scripts/ci/job-timings-batch.mjs", import.meta.url),
@@ -242,7 +245,7 @@ async function createFixture(responses: unknown[]) {
   const fakeGh = join(fakeBin, "gh");
   await writeFile(
     fakeGh,
-    `#!/usr/bin/env node
+    `#!/usr/bin/env bun
 const fs = require("node:fs");
 const calls = JSON.parse(fs.readFileSync(process.env.CI_GH_CALLS, "utf8"));
 calls.push(process.argv.slice(2));

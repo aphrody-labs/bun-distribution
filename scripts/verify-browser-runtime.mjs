@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { verifyBrowserRuntime } from "./lib/browser-runtime-e2e.mjs";

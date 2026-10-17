@@ -503,7 +503,7 @@ by the selected Hopper/Ghidra host and format matrix.
 The current lane uses source-owned byte-built fixtures and malformed-input
 regressions, with optional operator-supplied applications and ILSpy verification.
 
-Run the deterministic lane with `npm run verify:managed`. See
+Run the deterministic lane with `bun run verify:managed`. See
 [testing](testing.md#real-toolchain-verification-lanes) for prerequisites and
 coverage. Generated outputs belong outside tracked fixture directories and must
 not remain after verification or packaging.
@@ -520,7 +520,7 @@ The optional osu! benchmark accepts only paths and expectations supplied by the
 operator. Run it with:
 
 ```sh
-REA_MANAGED_APP_MANIFEST_PATH=/absolute/managed-app-manifest.json npm run verify:managed
+REA_MANAGED_APP_MANIFEST_PATH=/absolute/managed-app-manifest.json bun run verify:managed
 ```
 
 `verify:managed` always runs a source-owned manifest-verifier self-test first.

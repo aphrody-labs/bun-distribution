@@ -111,6 +111,6 @@ those questions require a disassembler.
 
 ## Real producer verification
 
-`npm run verify:go:binary` exercises compiler-built fixtures through the public
+`bun run verify:go:binary` exercises compiler-built fixtures through the public
 CLI and MCP, comparing their metadata with Go's standard `debug/buildinfo`
 reader. The verification lane requires Go; normal inspection does not.

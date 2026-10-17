@@ -94,6 +94,8 @@ const LANGUAGE_BY_EXTENSION = new Map<string, string>([
 const MANIFEST_FILENAMES = new Set([
   "package.json",
   "package-lock.json",
+  "bun.lock",
+  "bun.lockb",
   "yarn.lock",
   "pnpm-lock.yaml",
   "npm-shrinkwrap.json",

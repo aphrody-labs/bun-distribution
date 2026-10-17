@@ -75,7 +75,7 @@ the optional manual path below. It retains explicit prepare and publish phases.
 
 Use [the rea-changelog-update skill](https://github.com/morluto/rea/blob/main/.agents/skills/rea-changelog-update/SKILL.md)
 to turn the bot draft into grouped Highlights, Changes, and Fixes with inline
-`Thanks @...` credit. `npm run release:notes -- inventory` collects the full
+`Thanks @...` credit. `bun run release:notes -- inventory` collects the full
 selected Git range and paginated GitHub PR/author/closing-issue metadata;
 `record --summary` produces a compact provenance link for public notes, while
 `record` produces the full record for review. Credit a contribution once even
@@ -295,9 +295,9 @@ Review and test this synchronization PR, then use a merge commit so the release
 tag remains in main's ancestry. Keep the released tag unchanged.
 
 The synchronization must include `.release-please-manifest.json`,
-`package.json`, both root versions in `package-lock.json`, `CHANGELOG.md`,
+`package.json`, `CHANGELOG.md`,
 `server.json`, and the versioned documentation examples. Run
-`npm run docs:generate`, `npm run docs:check`, and the release configuration
+`bun run docs:generate`, `bun run docs:check`, and the release configuration
 tests against the combined tree. After the merge, verify that the released
 tag is an ancestor of main:
 

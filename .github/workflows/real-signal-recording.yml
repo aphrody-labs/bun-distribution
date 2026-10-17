@@ -25,7 +25,6 @@ on:
       - "scripts/verify-signal-recording.mjs"
       - ".github/workflows/real-signal-recording.yml"
       - "package*.json"
-      - ".nvmrc"
 permissions:
   contents: read
 concurrency:
@@ -36,17 +35,12 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version-file: .nvmrc
-      - name: Cache npm package downloads
-        id: npm-cache
-        uses: ./.github/actions/npm-cache
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: setup-bun
+        uses: ./.github/actions/setup-bun
       - run: sudo apt-get update && sudo apt-get install -y sigrok-cli util-linux python3
-      - run: npm ci
-      - run: npm run build:cached
-      - run: npm run test:focused -- tests/boundary/signals/decoderDiscovery.test.ts src/process/LinuxResourceLimits.test.ts src/domain/signals/annotationTextWindow.test.ts tests/boundary/signals/recordingProvider.test.ts tests/boundary/signals/recordingDescriptorCleanup.test.ts tests/boundary/signals/resourceLimits.test.ts tests/boundary/mcp/signalRecordingMcp.test.ts tests/boundary/cli/signalCleanup.test.ts
-      - run: node scripts/verify-signal-recording.mjs
+      - run: bun run build:cached
+      - run: bun run test:focused -- tests/boundary/signals/decoderDiscovery.test.ts src/process/LinuxResourceLimits.test.ts src/domain/signals/annotationTextWindow.test.ts tests/boundary/signals/recordingProvider.test.ts tests/boundary/signals/recordingDescriptorCleanup.test.ts tests/boundary/signals/resourceLimits.test.ts tests/boundary/mcp/signalRecordingMcp.test.ts tests/boundary/cli/signalCleanup.test.ts
+      - run: bun scripts/verify-signal-recording.mjs
         env:
           REA_SIGROK_COMMAND: /usr/bin/sigrok-cli

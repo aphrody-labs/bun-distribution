@@ -28,7 +28,7 @@ runs:
       id: registry
       shell: bash
       working-directory: ${{ inputs.directory }}
-      run: node "${GITHUB_ACTION_PATH}/registry-state.mjs"
+      run: bun "${GITHUB_ACTION_PATH}/registry-state.mjs"
     - name: Authenticate to MCP Registry
       if: steps.registry.outputs.exists != 'true'
       shell: bash

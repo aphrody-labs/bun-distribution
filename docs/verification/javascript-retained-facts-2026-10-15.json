@@ -7937,9 +7937,9 @@
     }
   ],
   "validation_commands": {
-    "integrated-gates": "npm run docs:generate && npm run check && npm run docs:check && npm run verify:test-discovery && npm run test:focused -- tests/boundary/mcp/javascriptFactsViewMcp.test.ts tests/boundary/mcp/analysisViewMcp.test.ts src/domain/analysisView/analysisView.test.ts src/application/analysisView/AnalysisViewService.test.ts tests/boundary/mcp/toolSchemaValidity.test.ts tests/boundary/mcp/contractPresentation.test.ts",
-    "final-gates": "npm run docs:generate && npm run check && npm run docs:check && npm run verify:test-discovery && npm run test:focused -- tests/boundary/mcp/javascriptFactsViewMcp.test.ts tests/boundary/mcp/toolSchemaValidity.test.ts tests/boundary/mcp/contractPresentation.test.ts",
-    "focused-v2": "npm run test:focused -- tests/boundary/mcp/javascriptFactsViewMcp.test.ts tests/boundary/mcp/analysisViewMcp.test.ts src/domain/analysisView/analysisView.test.ts src/application/analysisView/AnalysisViewService.test.ts",
+    "integrated-gates": "bun run docs:generate && bun run check && bun run docs:check && bun run verify:test-discovery && bun run test:focused -- tests/boundary/mcp/javascriptFactsViewMcp.test.ts tests/boundary/mcp/analysisViewMcp.test.ts src/domain/analysisView/analysisView.test.ts src/application/analysisView/AnalysisViewService.test.ts tests/boundary/mcp/toolSchemaValidity.test.ts tests/boundary/mcp/contractPresentation.test.ts",
+    "final-gates": "bun run docs:generate && bun run check && bun run docs:check && bun run verify:test-discovery && bun run test:focused -- tests/boundary/mcp/javascriptFactsViewMcp.test.ts tests/boundary/mcp/toolSchemaValidity.test.ts tests/boundary/mcp/contractPresentation.test.ts",
+    "focused-v2": "bun run test:focused -- tests/boundary/mcp/javascriptFactsViewMcp.test.ts tests/boundary/mcp/analysisViewMcp.test.ts src/domain/analysisView/analysisView.test.ts src/application/analysisView/AnalysisViewService.test.ts",
     "distinct_focused_cases": 101,
     "focused_files": 6,
     "documentation_consistency_cases": 5
@@ -7984,7 +7984,7 @@
     "command": "set -euo pipefail\nnpm ci\nnpm run docs:generate\nnpm run check\nnpm run docs:check\nnpm run verify:test-discovery\nnpm run test:python\nnpm run test:focused -- tests/boundary/mcp/javascriptFactsViewMcp.test.ts tests/boundary/mcp/analysisViewMcp.test.ts src/domain/analysisView/analysisView.test.ts src/application/analysisView/AnalysisViewService.test.ts tests/boundary/mcp/toolSchemaValidity.test.ts tests/boundary/mcp/contractPresentation.test.ts tests/boundary/cli/adbCli.test.ts",
     "actual_model_retrials": 0,
     "scope": "Latest shared lifecycle/static backend; four fresh real Joplin export/view normal/interrupted controls. Historical model trials and fourteen earlier manual workflows retain their original versions.",
-    "retry_command": "taskset -c 10 <same 8GiB resource wrapper> npm run test:focused -- tests/boundary/mcp/contractPresentation.test.ts",
+    "retry_command": "taskset -c 10 <same 8GiB resource wrapper> bun run test:focused -- tests/boundary/mcp/contractPresentation.test.ts",
     "manual_cpu_affinity": [10],
     "semantic_coverage_note": "Normal selected rows and their complete Evidence match the previous integration. Parent Evidence changes with semantic_unknown_count41161→41162. The specific extra unknown was not individually isolated; both current export/view workflows must agree with current complete Evidence. Do not claim equality of full normal parent or source coverage."
   },

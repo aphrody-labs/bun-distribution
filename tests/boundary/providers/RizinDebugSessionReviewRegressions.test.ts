@@ -123,7 +123,7 @@ const createInferiorInventoryProvider = async (
   const provider = join(directory, "fake-rizin-owned-inferior.mjs");
   await writeFile(
     provider,
-    `#!/usr/bin/env node
+    `#!/usr/bin/env bun
 process.stdout.write("\\0");
 let input = "";
 process.stdin.setEncoding("utf8");
@@ -229,7 +229,7 @@ it.skipIf(process.platform === "win32")(
     const provider = join(directory, "fake-rizin-command-utf8-scope.mjs");
     await writeFile(
       provider,
-      `#!/usr/bin/env node
+      `#!/usr/bin/env bun
 process.stdout.write(Buffer.from([0xff, 0]));
 let input = "";
 process.stdin.setEncoding("utf8");
@@ -364,7 +364,7 @@ it.skipIf(process.platform === "win32")(
     const provider = join(directory, "fake-rizin-unknown-target.mjs");
     await writeFile(
       provider,
-      `#!/usr/bin/env node
+      `#!/usr/bin/env bun
 process.stdout.write("\\0");
 let input = "";
 process.stdin.setEncoding("utf8");
@@ -403,7 +403,7 @@ it.skipIf(process.platform === "win32")(
     const inferiorTty = await rizinTestInferiorTty();
     await writeFile(
       provider,
-      `#!/usr/bin/env node
+      `#!/usr/bin/env bun
 process.stdout.write("\\0");
 let input = "";
 process.stdin.setEncoding("utf8");
@@ -458,7 +458,7 @@ it.skipIf(process.platform === "win32")(
     const overlapPath = join(directory, "overlap");
     await writeFile(
       provider,
-      `#!/usr/bin/env node
+      `#!/usr/bin/env bun
 process.stdout.write("\\0");
 let input = "";
 let firstActive = false;
@@ -502,7 +502,7 @@ it.skipIf(process.platform === "win32")(
     const provider = join(directory, "fake-rizin-frame-overflow.mjs");
     await writeFile(
       provider,
-      `#!/usr/bin/env node
+      `#!/usr/bin/env bun
 process.stdout.write("\\0");
 let input = "";
 let sent = false;
@@ -552,7 +552,7 @@ it.skipIf(process.platform === "win32")(
     const provider = join(directory, "fake-rizin-output-overflow.mjs");
     await writeFile(
       provider,
-      `#!/usr/bin/env node
+      `#!/usr/bin/env bun
 process.stdout.write("\\0");
 let input = "";
 process.stdin.setEncoding("utf8");
@@ -596,7 +596,7 @@ it.skipIf(process.platform === "win32")(
     const provider = join(directory, "fake-rizin-command-timeout.mjs");
     await writeFile(
       provider,
-      `#!/usr/bin/env node
+      `#!/usr/bin/env bun
 await import("node:fs/promises").then((fs) => fs.writeFile(${JSON.stringify(join(directory ?? "", "pid"))}, String(process.pid)));
 process.stdout.write("\\0");
 process.stdin.setEncoding("utf8");
@@ -644,7 +644,7 @@ it.skipIf(process.platform === "win32")(
     const provider = join(directory, "fake-rizin-command-cancel.mjs");
     await writeFile(
       provider,
-      `#!/usr/bin/env node
+      `#!/usr/bin/env bun
 process.stdout.write("\\0");
 let input = "";
 let stalled = false;
@@ -713,7 +713,7 @@ it.skipIf(process.platform === "win32")(
     const provider = join(directory, "fake-rizin-diagnostic-limit.mjs");
     await writeFile(
       provider,
-      `#!/usr/bin/env node
+      `#!/usr/bin/env bun
 process.stderr.write("x".repeat(100000));
 process.stdout.write("\\0");
 process.stdin.resume();
@@ -745,7 +745,7 @@ it.skipIf(process.platform === "win32")(
     const provider = join(directory, "fake-rizin-start-cancel.mjs");
     await writeFile(
       provider,
-      `#!/usr/bin/env node\nprocess.stdin.resume();\nsetInterval(() => {}, 1000);\n`,
+      `#!/usr/bin/env bun\nprocess.stdin.resume();\nsetInterval(() => {}, 1000);\n`,
     );
     await chmod(provider, 0o700);
     const manager = createRizinTestManager({
@@ -772,7 +772,7 @@ it.skipIf(process.platform === "win32")(
     const provider = join(directory, "fake-rizin-stdin-error.mjs");
     await writeFile(
       provider,
-      `#!/usr/bin/env node
+      `#!/usr/bin/env bun
 process.stdout.write("\\0");
 setTimeout(() => import("node:fs").then((fs) => fs.closeSync(0)), 40);
 setInterval(() => {}, 1000);
@@ -806,7 +806,7 @@ it.skipIf(process.platform === "win32")(
     const writerPidPath = join(directory, "writer.pid");
     await writeFile(
       provider,
-      `#!/usr/bin/env node
+      `#!/usr/bin/env bun
 import { spawn } from "node:child_process";
 import { writeFileSync } from "node:fs";
 process.stdout.write("\\0");

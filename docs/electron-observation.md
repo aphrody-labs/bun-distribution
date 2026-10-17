@@ -85,7 +85,7 @@ Payload values are not retained.
 Run the real fixture verifier with an operator-provided Electron runtime:
 
 ```bash
-REA_ELECTRON_EXECUTABLE=/absolute/path/to/electron npm run verify:electron
+REA_ELECTRON_EXECUTABLE=/absolute/path/to/electron bun run verify:electron
 ```
 
 This operation actively launches and interacts with the selected target. It is

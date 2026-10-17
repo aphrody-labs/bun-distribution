@@ -161,7 +161,7 @@ const sources = ["import", "require"].map((mode) => ({
     .join("\n"),
 }));
 
-cliTest.for(["CLI", "stdio MCP"] as const)(
+cliTest.skipIf(process.platform === "win32").for(["CLI", "stdio MCP"] as const)(
   "preserves package target facts under unrepresentable URL paths through %s",
   async (surface, { cli }) => {
     const root = await createTestTempDirectory("rea-package-url-unicode-");

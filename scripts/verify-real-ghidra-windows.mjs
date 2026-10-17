@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import { windowsGhidraFixtureOptions } from "./lib/ghidra-windows-fixture-options.mjs";
 
 import { access, readFile } from "node:fs/promises";

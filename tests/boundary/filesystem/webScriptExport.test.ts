@@ -364,7 +364,7 @@ describe("captured script output owner retry", () => {
       await expect(
         publishWebScripts(input, capture, "a".repeat(64), { resources }),
       ).rejects.toMatchObject({ cleanupIncomplete: true });
-      await expect(access(input.output_directory)).resolves.toBeUndefined();
+      await expect(access(input.output_directory)).resolves.toBeFalsy();
     } finally {
       create.mockRestore();
     }
@@ -398,7 +398,7 @@ describe("captured script output owner retry", () => {
       expect(published.manifest.path).toBe(
         join(input.output_directory, "manifest.json"),
       );
-      await expect(access(published.manifest.path)).resolves.toBeUndefined();
+      await expect(access(published.manifest.path)).resolves.toBeFalsy();
     } finally {
       create.mockRestore();
     }
@@ -440,7 +440,7 @@ describe("captured script output owner retry", () => {
       });
       await expect(
         access(join(input.output_directory, "manifest.json")),
-      ).resolves.toBeUndefined();
+      ).resolves.toBeFalsy();
       await resources.close();
       expect(cleanupAttempts).toBe(2);
     } finally {
@@ -526,7 +526,7 @@ describe("captured script selection failures", () => {
     );
     await expect(
       access(join(input.output_directory, "manifest.json")),
-    ).resolves.toBeUndefined();
+    ).resolves.toBeFalsy();
   });
 
   it

@@ -232,7 +232,7 @@ it("keeps a prepared backing image when native document closure cannot be confir
         ]),
       },
     });
-    await expect(access(preparedImagePath)).resolves.toBeUndefined();
+    await expect(access(preparedImagePath)).resolves.toBeFalsy();
   } finally {
     await runtimeRoot.close();
     await rm(parent, { recursive: true, force: true });

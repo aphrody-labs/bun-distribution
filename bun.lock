@@ -19,7 +19,7 @@
         "@zip.js/zip.js": "2.23.0",
         "ajv": "8.20.0",
         "ajv-formats": "3.0.1",
-        "canonicalize": "5.1.0",
+        "canonicalize": "3.0.0",
         "cborg": "6.1.3",
         "cross-spawn": "7.0.6",
         "diff": "9.0.0",
@@ -382,7 +382,7 @@
 
     "call-bound": ["call-bound@1.0.4", "", { "dependencies": { "call-bind-apply-helpers": "^1.0.2", "get-intrinsic": "^1.3.0" } }, "sha512-+ys997U96po4Kx/ABpBCqhA9EuxJaQWDQg7295H4hBphv3IZg0boBKuwYpt4YXp6MZ5AmZQnU/tyMTlRpaSejg=="],
 
-    "canonicalize": ["canonicalize@5.1.0", "", { "bin": { "canonicalize": "bin/canonicalize.js" } }, "sha512-bab9+WefZljqQ8jT0qRwVmTyzAUU63K97QIQD3agynIBrb6sa5M2eAy8Hv8K3p4V9+ONVYZKtGYl4Dg+/5Gumw=="],
+    "canonicalize": ["canonicalize@3.0.0", "", { "bin": { "canonicalize": "bin/canonicalize.js" } }, "sha512-yYLfHyDMIXRyRqsKBRLX023riFLpXY2YOfdtqKXZRZy9qsfOJ9U+4F9YZL7MEzL5+ziN2x2nlBvY/Voi3EBljA=="],
 
     "cborg": ["cborg@6.1.3", "", { "bin": { "cborg": "lib/bin.js" } }, "sha512-Kb/wD/AFuVcqvVjR+HYNOjNiuhVJ2C+RWxQE2Yqq2WVlVkRjdvVLkkM6QsL3NMsBRh+rgNc+aXmcraA+X0HObQ=="],
 

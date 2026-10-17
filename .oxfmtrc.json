@@ -9,7 +9,6 @@
     "docs/api/**",
     "node_modules/**",
     "CHANGELOG.md",
-    "package-lock.json",
     "_reference/**",
     "third_party/**"
   ]

@@ -74,7 +74,7 @@ on completed output directories. Original replies, catalogs, comparison receipts
 and exact measured driver source stay private. Repeated deliveries in the same
 mode also compare the ordered receipt observations, including limitations, view
 parameters, coverage and unknowns; only receipt/parent IDs are invocation-specific.
-Comparator regressions run with `npm run test:local -- tests/evaluation/analysisEfficiencyComparison.test.ts`
+Comparator regressions run with `bun run test:local -- tests/evaluation/analysisEfficiencyComparison.test.ts`
 using synthetic measurement directories; they do not establish provider behavior.
 
 ## Actual model tasks

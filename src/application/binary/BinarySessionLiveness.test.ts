@@ -218,7 +218,12 @@ it("clears retired runtime availability after cancelled-switch restoration", asy
   const initialRunId = sessionRunId(session.status());
 
   const controller = new AbortController();
-  const switching = session.open("/bin/ls", { signal: controller.signal });
+  const switching = session.open(
+    process.platform === "win32"
+      ? (process.env.ComSpec ?? process.execPath)
+      : "/bin/ls",
+    { signal: controller.signal },
+  );
   await closing;
   controller.abort();
   releaseClose();

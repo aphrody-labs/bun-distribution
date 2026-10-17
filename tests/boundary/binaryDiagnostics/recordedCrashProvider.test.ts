@@ -328,7 +328,7 @@ it
       scenario === "decoder-cleanup-failure" ||
       scenario === "cancelled-exec-foreign"
     ) {
-      await expect(access(owned)).resolves.toBeUndefined();
+      await expect(access(owned)).resolves.toBeFalsy();
       expect(await readFile(snapshotPath)).toEqual(bytes);
       const refused = await provider.inspect({
         path,
@@ -341,7 +341,7 @@ it
       await expect(provider.close()).rejects.toMatchObject({
         cleanupIncomplete: true,
       });
-      await expect(access(owned)).resolves.toBeUndefined();
+      await expect(access(owned)).resolves.toBeFalsy();
       cleanupAllowed = true;
       if (
         scenario === "cancelled-exec-foreign" &&

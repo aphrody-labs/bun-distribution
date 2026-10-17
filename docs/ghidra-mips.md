@@ -144,7 +144,7 @@ functions is not established by these integer controls.
 REA_MIPS_AS=/absolute/path/to/mips-linux-gnu-as \
 REA_MIPS_LD=/absolute/path/to/mips-linux-gnu-ld \
 GHIDRA_INSTALL_DIR=/absolute/path/to/ghidra \
-npm run verify:ghidra:mips-shared
+bun run verify:ghidra:mips-shared
 ```
 
 MIPS header and ABI record facts are committed in the analysis profile so
@@ -226,7 +226,7 @@ do not acquire these tools. `REA_MIPS_CLANG` selects Clang and
 These are test-time prerequisites, not REA runtime providers.
 
 ```bash
-GHIDRA_INSTALL_DIR=/absolute/path/to/ghidra npm run verify:ghidra:mips
+GHIDRA_INSTALL_DIR=/absolute/path/to/ghidra bun run verify:ghidra:mips
 ```
 
 The lane compiles both byte orders with hard-float and soft-float ABIs and never
@@ -271,7 +271,7 @@ run. Report the actual lanes run and leave unexecuted verification pending.
 This lane has its own command and fixture:
 
 ```bash
-GHIDRA_INSTALL_DIR=/absolute/path/to/ghidra npm run verify:ghidra:mips-relocatable
+GHIDRA_INSTALL_DIR=/absolute/path/to/ghidra bun run verify:ghidra:mips-relocatable
 ```
 
 It compiles `tests/conformance/c/mips-relocatable.c` with `-c -G0` in both byte

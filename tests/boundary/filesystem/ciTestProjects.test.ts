@@ -63,13 +63,4 @@ describe("canonical test-project ownership", () => {
     const request = parseDevelopmentTestRequest("focused", [testPath]);
     expect(developmentTestPlan(request)).toMatchObject({ needsBuild: true });
   });
-
-  it("uses canonical selectors in Vitest while retaining independent runner policy", async () => {
-    const config = await readFile(join(repository, "vitest.config.ts"), "utf8");
-    expect(config).toContain(
-      "[...SOURCE_TEST_PROJECTS, ...BUILT_TEST_PROJECTS]",
-    );
-    expect(config).toContain("PROJECT_POLICIES");
-    expect(config).not.toContain('"src/{contracts,domain}/**/*.test.ts"');
-  });
 });

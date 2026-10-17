@@ -302,7 +302,7 @@ A manifest binding names one owner and its exact implementation digest. Both
   "verifier": {
     "verifier_id": "rpc.cancel.conformance",
     "claim_id": "protocol.rpc.cancel.v1",
-    "command": "npm run test:protocol -- cancel",
+    "command": "bun run test:protocol -- cancel",
     "authority": "protocol",
     "status": "pass",
     "result_evidence_id": "ev_5555555555555555555555555555555555555555555555555555555555555555",

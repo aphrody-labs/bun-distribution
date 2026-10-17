@@ -14,8 +14,8 @@ For capability organization and provider composition, use the
 [architecture map](docs/architecture.mermaid). Production factories in
 `src/composition/` construct fresh providers without starting engines or acquiring
 targets; optional adapter failures must preserve successful peers. Run
-`npm run verify:test-discovery` after adding or moving tests. Resolved import
-boundaries are checked by `npm run verify:module-boundaries`, included in lint.
+`bun run verify:test-discovery` after adding or moving tests. Resolved import
+boundaries are checked by `bun run verify:module-boundaries`, included in lint.
 
 For analysis workflows and agent interfaces, follow the
 [performance priorities](AGENTS.md#performance). Explain the selected output
@@ -197,23 +197,22 @@ guarantee.
 
 ## Development setup
 
-Use the development toolchain pinned in `.nvmrc` and
-`package.json#packageManager`. Run `nvm use` before installing dependencies;
-installed-package runtime support is documented in
+Use Bun 1.4.4 (Aphrody runtime) for development; `bunfig.toml` pins install
+and test settings. Installed-package runtime support is documented in
 [installation](docs/installation.md#start-setup).
 
 ```bash
-npm ci
-npm run check:fast
+bun install --frozen-lockfile
+bun run check:fast
 ```
 
-`npm ci` installs the exact dependencies and prepares the Husky hooks without
-building the project. Run `npm run build:cached` when you need the standalone
+`bun install --frozen-lockfile` installs the exact dependencies and prepares the Husky hooks without
+building the project. Run `bun run build:cached` when you need the standalone
 CLI or MCP server; it compiles the runtime and bundles the authored skill.
-`npm run build` forces those tasks to rerun. Neither command generates test
+`bun run build` forces those tasks to rerun. Neither command generates test
 catalogs, documentation projections, or managed verification evidence. Turbo
 caches deterministic builds and static checks across Git worktrees. After a package, lockfile, or managed-skill version change, run
-`npm run metadata:generate` before building.
+`bun run metadata:generate` before building.
 
 Repository invariants live in [AGENTS.md](AGENTS.md). Keep provider-specific
 protocols in adapters and shared CLI/MCP workflows in the application layer.
@@ -222,7 +221,7 @@ protocols in adapters and shared CLI/MCP workflows in the application layer.
 
 The published npm package includes the Windows x64 native addon and its
 manifest. A source checkout does not: `native/windows/build/` is ignored by
-Git, and neither `npm ci` nor `npm run build:cached` (or `npm run build`)
+Git, and neither `bun install --frozen-lockfile` nor `bun run build:cached` (or `bun run build`)
 produces `rea-windows-x64.node` or `manifest.json` in that directory.
 Windows workflows and tests that require native controls need these artifacts;
 this includes `run-exclusive` commands, which use the native Job Object to keep
@@ -238,16 +237,16 @@ verification prerequisites. Keep the generated addon and manifest uncommitted.
 
 ## Documentation website
 
-The VitePress site uses the Markdown files in `docs/`. Run `npm run docs:dev`
-for live editing, `npm run docs:build` to check the production build and
-links, and `npm run docs:preview` to preview that build at `/rea/`.
+The VitePress site uses the Markdown files in `docs/`. Run `bun run docs:dev`
+for live editing, `bun run docs:build` to check the production build and
+links, and `bun run docs:preview` to preview that build at `/rea/`.
 
 Site navigation lives in `docs/.vitepress/config.ts`. Keep links to guides
 relative so they work on GitHub and the website; link to repository files
 outside `docs/` using their full GitHub URLs. Generated reference documents
-use `npm run docs:generate`; `docs:build` generates them before building the website.
+use `bun run docs:generate`; `docs:build` generates them before building the website.
 
-Pull requests run `npm run docs:check`. `.github/workflows/pages.yml` is a
+Pull requests run `bun run docs:check`. `.github/workflows/pages.yml` is a
 manual VitePress build and does not publish. The public site at
 <https://rea.tools/> serves `website/public/` through Cloudflare Workers. See
 the [website README](website/README.md#cloudflare-workers) for previews and
@@ -267,8 +266,8 @@ If `main` is broken, prioritize a focused repair before updating affected PRs.
 Select checks for the behavior changed. For a source edit:
 
 ```bash
-npm run test:focused -- src/config.test.ts
-npm run check:fast
+bun run test:focused -- src/config.test.ts
+bun run check:fast
 ```
 
 `test:local` runs source tests without building. `check:changed` combines cached
@@ -277,12 +276,12 @@ Import-graph selection can miss runtime registration, bridges, and generated dat
 select relevant boundary tests explicitly. See [testing](docs/testing.md#developer-commands)
 for commands, test placement, pruning, and real-provider prerequisites.
 
-Before requesting review, run relevant tests and `npm run check`; add
-`npm run docs:check` when contracts or generated metadata change. Record the
+Before requesting review, run relevant tests and `bun run check`; add
+`bun run docs:check` when contracts or generated metadata change. Record the
 checks and unavailable coverage. CI owns the full deterministic suite and
-coverage. `npm run check:pr` is an optional full local gate for broad changes or
+coverage. `bun run check:pr` is an optional full local gate for broad changes or
 CI diagnosis. Packaging/setup/distribution changes additionally require
-`npm run verify:package` and `npm pack --dry-run`; provider changes require the
+`bun run verify:package` and `npm pack --dry-run`; provider changes require the
 matching real-provider lane. State which host/provider workflows ran.
 
 For CI/test correctness, drift, or performance investigations, use the
@@ -326,7 +325,7 @@ Real-provider execution is uncached.
 
 Tests use `createTestTempDirectory` from `tests/fixtures/temporaryDirectory.ts`
 for exact-path, awaited cleanup, including failures and timeouts.
-`npm run verify:test-temp-hygiene` runs the suite under a fresh `TMPDIR` and
+`bun run verify:test-temp-hygiene` runs the suite under a fresh `TMPDIR` and
 rejects remaining REA-owned paths. Never glob-clean shared `/tmp/rea-*` content.
 
 `REA_LOG_LEVEL` selects `trace`, `debug`, `info`, `warn`, `error`, `fatal`, or
@@ -337,8 +336,8 @@ diagnostic logs.
 
 ## Real Hopper changes
 
-Run `npm run verify:hopper` on a supported macOS host or
-`npm run verify:hopper:linux` on the supported Linux demo runner. These build
+Run `bun run verify:hopper` on a supported macOS host or
+`bun run verify:hopper:linux` on the supported Linux demo runner. These build
 native fixtures and verify the installed engine through CLI/MCP; package or
 simulated-provider checks do not establish engine behavior. See
 [real-toolchain verification](docs/testing.md#end-to-end-integration-and-golden-evidence)

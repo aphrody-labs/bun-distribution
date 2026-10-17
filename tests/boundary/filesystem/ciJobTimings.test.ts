@@ -2,13 +2,16 @@ import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import { delimiter, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { expect, it } from "../../support/bunTest.js";
+import { expect, it as bunIt } from "../../support/bunTest.js";
 
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 import {
   executeWorkflowFixture,
   workflowGit,
 } from "../../support/workflowGit.js";
+
+// These lanes spawn POSIX-only fake executables (gh, zip).
+const it = process.platform === "win32" ? bunIt.skip : bunIt;
 
 const reporter = fileURLToPath(
   new URL("../../../scripts/ci/job-timings.mjs", import.meta.url),
@@ -208,7 +211,7 @@ async function createFixture(
   const fakeGh = join(fakeBin, "gh");
   await writeFile(
     fakeGh,
-    `#!/usr/bin/env node\nconst fs = require("node:fs");\nfs.writeFileSync(process.env.CI_GH_ARGS, JSON.stringify(process.argv.slice(2)));\nprocess.stdout.write(fs.readFileSync(process.env.CI_GH_RESPONSE, "utf8"));\nprocess.exitCode = ${String(exitCode)};\n`,
+    `#!/usr/bin/env bun\nconst fs = require("node:fs");\nfs.writeFileSync(process.env.CI_GH_ARGS, JSON.stringify(process.argv.slice(2)));\nprocess.stdout.write(fs.readFileSync(process.env.CI_GH_RESPONSE, "utf8"));\nprocess.exitCode = ${String(exitCode)};\n`,
   );
   await chmod(fakeGh, 0o755);
   const outputDirectory = join(directory, ".cache", "ci-job-timings");

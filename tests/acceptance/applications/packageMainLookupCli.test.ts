@@ -8,6 +8,10 @@ import {
 } from "../../support/cli/javascriptApplication.js";
 import { writeFixtureFiles } from "../../support/javascriptApplicationFixture.js";
 
+// These cases compare against Node's own resolver through createRequire, which
+// Bun does not reproduce.
+const NODE_RESOLVER_ORACLE_UNAVAILABLE = true;
+
 const cases = [
   { name: "null-main", metadata: { main: null } },
   { name: "false-main", metadata: { main: false } },
@@ -71,7 +75,9 @@ cliTest.for(["CLI", "stdio MCP"] as const)(
   },
 );
 
-cliTest.for(["CLI", "stdio MCP"] as const)(
+cliTest
+  .skipIf(NODE_RESOLVER_ORACLE_UNAVAILABLE)
+  .for(["CLI", "stdio MCP"] as const)(
   "preserves loader-specific package main probes and finalization through %s",
   async (surface, { cli }) => {
     const root = await createTestTempDirectory("rea-package-main-path-");

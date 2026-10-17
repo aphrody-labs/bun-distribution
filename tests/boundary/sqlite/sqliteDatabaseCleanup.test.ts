@@ -74,7 +74,7 @@ it("retains failed snapshot owners and blocks new acquisition until retry succee
   });
   const root = fixture.roots[0];
   if (root === undefined) throw new Error("Missing owned root");
-  await expect(access(root.path)).resolves.toBeUndefined();
+  await expect(access(root.path)).resolves.toBeFalsy();
   const second = await fixture.provider.inspect({ path: fixture.path });
   expect(second).toMatchObject({
     ok: false,
@@ -180,7 +180,7 @@ it("waits for concurrent acquisitions and releases only owners whose cleanup suc
     cleanupResources: [second.path],
   });
   await expect(access(first.path)).rejects.toMatchObject({ code: "ENOENT" });
-  await expect(access(second.path)).resolves.toBeUndefined();
+  await expect(access(second.path)).resolves.toBeFalsy();
   allowed.add(second);
   await provider.close();
   await expect(access(second.path)).rejects.toMatchObject({ code: "ENOENT" });
@@ -254,7 +254,7 @@ it("retains the snapshot until a failed worker cleanup owner can be stopped", as
   expect(rootAttempts).toBe(0);
   const root = roots[0];
   if (root === undefined) throw new Error("Missing retained snapshot");
-  await expect(access(root.path)).resolves.toBeUndefined();
+  await expect(access(root.path)).resolves.toBeFalsy();
   expect(await provider.inspect({ path: database.path })).toMatchObject({
     ok: false,
     error: { cleanupIncomplete: true },

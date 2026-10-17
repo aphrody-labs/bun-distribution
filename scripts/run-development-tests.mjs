@@ -6,6 +6,7 @@ import {
   developmentTestPlan,
   parseDevelopmentTestRequest,
 } from "./lib/development-tests.mjs";
+import { SOURCE_TEST_PROJECTS } from "./lib/test-projects.mjs";
 
 let child;
 let forceTimer;
@@ -55,26 +56,45 @@ try {
         throw new Error(
           "Test prerequisites require the locked dependency installation",
         );
-      const prepared = await run(process.execPath, [
-        "scripts/run-exclusive.mjs",
-        "artifacts",
-        process.execPath,
-        resolve("node_modules/turbo/bin/turbo"),
-        "run",
+      for (const task of [
         ...(plan.needsBuild ? ["artifacts:skills"] : []),
         ...plan.artifactTasks,
-      ]);
-      if (prepared.code !== 0) process.exitCode = prepared.code;
+      ]) {
+        const prepared = await run(process.execPath, [
+          "scripts/run-exclusive.mjs",
+          "artifacts",
+          process.execPath,
+          "run",
+          task,
+        ]);
+        if (prepared.code !== 0) {
+          process.exitCode = prepared.code;
+          break;
+        }
+      }
     }
     if (!process.exitCode && !shutdownSignal) {
-      const tested = await run(process.execPath, [
-        resolve(
-          request.paths.length > 0
-            ? "scripts/run-exact-tests.mjs"
-            : "node_modules/vitest/vitest.mjs",
-        ),
-        ...plan.vitestArguments,
-      ]);
+      const sourceFiles = [];
+      if (request.paths.length === 0)
+        for (const { include, exclude = [] } of SOURCE_TEST_PROJECTS) {
+          const excluded = exclude.map((pattern) => new Bun.Glob(pattern));
+          for (const pattern of include)
+            for await (const file of new Bun.Glob(pattern).scan({ cwd: "." }))
+              if (!excluded.some((glob) => glob.match(file)))
+                sourceFiles.push(`./${file.replaceAll("\\", "/")}`);
+        }
+      const tested =
+        request.paths.length > 0
+          ? await run(process.execPath, [
+              resolve("scripts/run-exact-tests.mjs"),
+              ...plan.testArguments,
+            ])
+          : await run(process.execPath, [
+              "test",
+              "--isolate",
+              ...plan.testArguments,
+              ...sourceFiles.sort(),
+            ]);
       process.exitCode = tested.code;
     }
   }

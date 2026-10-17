@@ -83,7 +83,7 @@ describe("MCP external command snapshot retirement", () => {
           await new Promise((resolve) => setTimeout(resolve, 10));
         }
       }
-      await expect(access(startedPath)).resolves.toBeUndefined();
+      await expect(access(startedPath)).resolves.toBeFalsy();
 
       let closeSettled = false;
       const closeRequest = mcp

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { probeWindowsCapabilities } from "../dist/application/WindowsCapabilities.js";
 

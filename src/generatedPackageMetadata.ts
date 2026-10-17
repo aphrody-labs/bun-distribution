@@ -1,4 +1,4 @@
-/** Generated from package.json and package-lock.json; do not edit. */
+/** Generated from package.json and bun.lock; do not edit. */
 export const PACKAGE_METADATA = {
   name: "rea-agents",
   version: "6.5.0", // x-release-please-version

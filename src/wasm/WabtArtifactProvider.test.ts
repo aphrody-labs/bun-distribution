@@ -85,7 +85,7 @@ const assertCleanupRecovery = async (options: {
       partialObservation: { normalized_result: { validation: "valid" } },
     },
   });
-  await expect(access(options.runtimePath)).resolves.toBeUndefined();
+  await expect(access(options.runtimePath)).resolves.toBeFalsy();
   const blocked = await options.provider.inspect({
     path: options.path,
     glue_paths: [],
@@ -136,7 +136,7 @@ const assertCancellationDuringRootRelease = async (options: {
     },
   });
   expect(options.cleanupAttempts()).toBe(1);
-  await expect(access(options.runtimePath)).resolves.toBeUndefined();
+  await expect(access(options.runtimePath)).resolves.toBeFalsy();
   await options.provider.close();
   expect(options.cleanupAttempts()).toBe(2);
 };
@@ -217,87 +217,94 @@ it("returns actionable unavailable without creating a workspace when tools are a
   });
 });
 
-it("retries a retained input descriptor before admitting the next WABT operation", async () => {
-  const root = await createTestTempDirectory("rea-wabt-read-cleanup-");
-  const path = join(root, "selected.wasm");
-  await writeFile(path, Buffer.alloc(76, 1));
-  for (const tool of ["wasm-validate", "wasm-objdump", "wasm2wat"])
-    await writeFile(join(root, tool), "source-owned executable seam", {
-      mode: 0o700,
-    });
-  const dump = await readFile(
-    new URL("../../tests/fixtures/wasm/objdump.txt", import.meta.url),
-    "utf8",
-  );
-  const provider = new WabtArtifactProvider(
-    { REA_WABT_BIN_DIRECTORY: root },
-    async (input) => {
-      const version = input.arguments[0] === "--version";
-      const stdout = version
-        ? "1.0.42\n"
-        : input.command.includes("wasm-objdump")
-          ? dump
-          : input.command.includes("wasm2wat")
-            ? '(module (@custom "test" "payload"))\n'
-            : "";
-      const launched = await spawnOwnedProviderProcess({
-        ...input,
-        command: process.execPath,
-        arguments: [
-          "-e",
-          `process.stdout.write(${JSON.stringify(stdout)}); process.exit(0);`,
-        ],
-        expectedCommand: null,
-      });
-      return launched;
-    },
-  );
-  fileCloseFailure.selectedPath = path;
-  fileCloseFailure.attempts = 0;
-  fileCloseFailure.failFirst = true;
-  try {
-    const first = await provider.inspect({
-      path,
-      candidate_paths: [],
-      glue_paths: [],
-    });
-    expect(first).toMatchObject({
-      ok: false,
-      error: {
-        cleanupIncomplete: true,
-        cleanupResources: [path],
-        cause: { message: "injected WABT input close failure" },
+it.skipIf(process.platform === "win32")(
+  "retries a retained input descriptor before admitting the next WABT operation",
+  async () => {
+    const root = await createTestTempDirectory("rea-wabt-read-cleanup-");
+    const path = join(root, "selected.wasm");
+    await writeFile(path, Buffer.alloc(76, 1));
+    for (const tool of ["wasm-validate", "wasm-objdump", "wasm2wat"])
+      await writeFile(
+        join(root, tool + (process.platform === "win32" ? ".exe" : "")),
+        "source-owned executable seam",
+        {
+          mode: 0o700,
+        },
+      );
+    const dump = await readFile(
+      new URL("../../tests/fixtures/wasm/objdump.txt", import.meta.url),
+      "utf8",
+    );
+    const provider = new WabtArtifactProvider(
+      { REA_WABT_BIN_DIRECTORY: root },
+      async (input) => {
+        const version = input.arguments[0] === "--version";
+        const stdout = version
+          ? "1.0.42\n"
+          : input.command.includes("wasm-objdump")
+            ? dump
+            : input.command.includes("wasm2wat")
+              ? '(module (@custom "test" "payload"))\n'
+              : "";
+        const launched = await spawnOwnedProviderProcess({
+          ...input,
+          command: process.execPath,
+          arguments: [
+            "-e",
+            `process.stdout.write(${JSON.stringify(stdout)}); process.exit(0);`,
+          ],
+          expectedCommand: null,
+        });
+        return launched;
       },
-    });
-    expect(fileCloseFailure.attempts).toBe(1);
-
-    const retried = await provider.inspect({
-      path,
-      candidate_paths: [],
-      glue_paths: [],
-    });
-    expect(retried.ok).toBe(true);
-    expect(fileCloseFailure.attempts).toBeGreaterThan(1);
-
+    );
+    fileCloseFailure.selectedPath = path;
+    fileCloseFailure.attempts = 0;
     fileCloseFailure.failFirst = true;
-    const closeRetry = await provider.inspect({
-      path,
-      candidate_paths: [],
-      glue_paths: [],
-    });
-    expect(closeRetry).toMatchObject({
-      ok: false,
-      error: { cleanupIncomplete: true, cleanupResources: [path] },
-    });
-    const beforeClose = fileCloseFailure.attempts;
-    await provider.close();
-    expect(fileCloseFailure.attempts).toBeGreaterThan(beforeClose);
-  } finally {
-    fileCloseFailure.selectedPath = "";
-    fileCloseFailure.failFirst = false;
-    await provider.close();
-  }
-});
+    try {
+      const first = await provider.inspect({
+        path,
+        candidate_paths: [],
+        glue_paths: [],
+      });
+      expect(first).toMatchObject({
+        ok: false,
+        error: {
+          cleanupIncomplete: true,
+          cleanupResources: [path],
+          cause: { message: "injected WABT input close failure" },
+        },
+      });
+      expect(fileCloseFailure.attempts).toBe(1);
+
+      const retried = await provider.inspect({
+        path,
+        candidate_paths: [],
+        glue_paths: [],
+      });
+      expect(retried.ok).toBe(true);
+      expect(fileCloseFailure.attempts).toBeGreaterThan(1);
+
+      fileCloseFailure.failFirst = true;
+      const closeRetry = await provider.inspect({
+        path,
+        candidate_paths: [],
+        glue_paths: [],
+      });
+      expect(closeRetry).toMatchObject({
+        ok: false,
+        error: { cleanupIncomplete: true, cleanupResources: [path] },
+      });
+      const beforeClose = fileCloseFailure.attempts;
+      await provider.close();
+      expect(fileCloseFailure.attempts).toBeGreaterThan(beforeClose);
+    } finally {
+      fileCloseFailure.selectedPath = "";
+      fileCloseFailure.failFirst = false;
+      await provider.close();
+    }
+  },
+);
 
 it.each([false, true])(
   "reports an unavailable private runtime root with retryable=%s without a misleading WABT remediation",

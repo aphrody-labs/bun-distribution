@@ -50,15 +50,7 @@ export const SCOPES = {
     "tests/support/reverseEngineering*.ts",
     "tests/support/ownedRizinCommandEvidenceTests.ts",
     "tests/support/reverseDebuggerMcpTestHelpers.ts",
-    "tests/processOwnershipRunner.ts",
     "tests/composition/reverseEngineering*.test.ts",
-    "vitest.reverse-tools.config.ts",
-    "vitest.reverse-tools-semantics.config.ts",
-    "stryker.config.mjs",
-    "stryker.semantics.config.mjs",
-    "tsconfig.reverse-tools-mutation.json",
-    "scripts/prepare-reverse-tools-mutation.mjs",
-    "scripts/lib/reverse-tools-mutation-targets.mjs",
   ],
   // Apple artifact CLI/MCP lane on macOS, including its focused regressions.
   apple: [

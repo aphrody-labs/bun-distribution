@@ -200,7 +200,7 @@ beyond already-connected devices (`adb connect`) are not exposed yet.
 
 ## Real verification
 
-`npm run verify:adb` exercises every operation against a live device. It
+`bun run verify:adb` exercises every operation against a live device. It
 requires `adb` (or `REA_ADB_PATH`) and any attached emulator or phone;
 `--serial` selects one when several are attached, `--pull PACKAGE` pulls a
 real package and verifies the returned digests against the files on disk,

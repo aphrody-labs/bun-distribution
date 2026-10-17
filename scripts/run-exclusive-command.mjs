@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import spawn from "cross-spawn";
 import { mkdir } from "node:fs/promises";

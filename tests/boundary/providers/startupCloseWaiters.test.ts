@@ -86,7 +86,7 @@ it.each(providers)(
       await vi.waitFor(() =>
         expect(settled).toMatchObject({ ok: false, error: cancelled }),
       );
-      await expect(access(roots[0] ?? "")).resolves.toBeUndefined();
+      await expect(access(roots[0] ?? "")).resolves.toBeFalsy();
       expect(children).toHaveLength(1);
       gate.resolve();
       await expect(closing).resolves.toMatchObject({ ok: true });

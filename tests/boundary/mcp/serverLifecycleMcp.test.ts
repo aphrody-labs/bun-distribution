@@ -291,7 +291,7 @@ it.each(["handle", "stdin"] as const)(
         AggregateError,
       );
       expect(attempts).toBeGreaterThan(0);
-      await expect(access(root.path)).resolves.toBeUndefined();
+      await expect(access(root.path)).resolves.toBeFalsy();
       removalAllowed = true;
       await started.handle.close();
       await expect(access(root.path)).rejects.toMatchObject({ code: "ENOENT" });

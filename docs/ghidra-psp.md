@@ -77,12 +77,12 @@ caller-supplied `make`, `psp-config`, `psp-gcc`, `psp-readelf`, `psp-objdump`,
 `PSPDEV`, `GHIDRA_INSTALL_DIR` and a compatible `JAVA_HOME`.
 
 ```bash
-npm run build:cached
+bun run build:cached
 node scripts/verify-real-ghidra-mips.mjs --psp
 # In a disposable installation without Allegrex, test actual public refusals:
 node scripts/verify-real-ghidra-mips.mjs --psp-missing-extension
 # Generic MIPS must remain generic with Allegrex installed:
-npm run verify:ghidra:mips
+bun run verify:ghidra:mips
 ```
 
 The generic verifier also exercises a section-truncated firmware fixture. That
