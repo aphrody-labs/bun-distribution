@@ -93,7 +93,8 @@ await Bun.write(
   ),
 );
 await run([process.execPath, "install", "--frozen-lockfile"]);
-await run([process.execPath, "scripts/node-modules.ts"]);
+// A clean CI checkout has no legacy nested installs to retire; its nested node_modules are fresh workspace links.
+if (!Bun.env.CI) await run([process.execPath, "scripts/node-modules.ts"]);
 const cargo = await inspectCargoWorkspace(await loadConfig(root), {
   root,
   timeoutMs: 60_000,
