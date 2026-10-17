@@ -14,6 +14,7 @@ import {
 } from "@aphrody/bun-steam";
 import { openSync, readSync, closeSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { libraryCacheFile } from "./art";
 import { config } from "./config";
 
 function steamRoot(): string | null {
@@ -39,12 +40,17 @@ export function steamStatus() {
     root,
     libraries: settle(() => listLibraries(root), []),
     games: settle(() => installedGames(root), [])
+      // Games are what the client shows in its library: they have capsule art in the library
+      // cache. Runtimes and redistributables (Proton, Steam Linux Runtime, Steamworks) do not.
       .map(({ appId, name, sizeOnDisk, stateFlags, buildId }) => ({
         appId,
         name,
         sizeOnDisk,
         stateFlags,
         buildId,
+        kind: libraryCacheFile(appId, "library_600x900.jpg")
+          ? ("game" as const)
+          : ("tool" as const),
       }))
       .toSorted((a, b) => a.name.localeCompare(b.name)),
     compatTools: settle(() => listCompatTools(root), []).map(

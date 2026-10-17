@@ -31,8 +31,12 @@ export function moveFocus(direction: Direction): boolean {
       element !== current && visible(element) && !element.closest("[inert]"),
   );
   if (!current) {
-    candidates[0]?.focus();
-    return candidates.length > 0;
+    // Start from the selected rail tile (console home), else the first control of the page.
+    const start =
+      document.querySelector<HTMLElement>('.tile[aria-selected="true"]') ??
+      candidates.find((element) => !element.classList.contains("skip-link"));
+    start?.focus();
+    return start !== undefined;
   }
   const from = current.getBoundingClientRect();
   const fx = from.left + from.width / 2;

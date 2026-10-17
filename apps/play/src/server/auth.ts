@@ -18,6 +18,7 @@ import {
   readFileSync,
   writeFileSync,
 } from "node:fs";
+import { hostname } from "node:os";
 import { join } from "node:path";
 import { config } from "./config";
 
@@ -143,6 +144,7 @@ export function authRoutes() {
             authenticated: session !== null,
             user: session?.sub ?? null,
             via: session?.via ?? null,
+            host: hostname(),
             methods: {
               mesh: `${config.tunnelOrigin}/auth/tunnel`,
               steam: config.steamIds.length > 0 ? "/auth/steam" : null,

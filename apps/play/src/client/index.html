@@ -1,50 +1,63 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <meta name="color-scheme" content="dark" />
-    <meta name="theme-color" content="#141218" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="" />
     <meta
       name="description"
-      content="Bun OS Play: game library, in-browser emulation on WebGPU, Steam and game streaming."
+      content="Bun OS Play: your games, emulation in the browser on WebGPU, Steam and streaming from the gaming host."
     />
     <title>Bun OS Play</title>
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="64x64"
+      href="../../../../packages/identity/assets/icon-64.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="../../../../packages/identity/assets/icon-192.png"
+    />
     <link rel="stylesheet" href="./styles.css" />
     <script type="module" src="./app.ts"></script>
   </head>
   <body>
-    <a class="skip-link" href="#main">Skip to content</a>
+    <a class="skip-link" href="#main" data-i18n="skip-to-content"></a>
     <div class="shell">
-      <nav class="nav" id="nav" aria-label="Primary"></nav>
+      <nav class="nav" id="nav"></nav>
       <div class="frame">
         <header class="top-bar">
-          <a class="brand" href="/" data-link>
-            <span class="brand-mark" aria-hidden="true"></span>
-            <span class="brand-text">Bun OS <strong>Play</strong></span>
-          </a>
-          <div class="top-actions">
-            <span class="live" id="live" hidden>Live</span>
-            <span id="account"></span>
-          </div>
+          <button
+            class="icon-button"
+            id="menu-button"
+            type="button"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="quick-menu"
+          ></button>
+          <a class="brand" href="/" data-link
+            ><img
+              src="../../../../packages/identity/assets/icon-64.png"
+              width="32"
+              height="32"
+              alt="" /><span data-i18n="app-name"></span
+          ></a>
+          <div class="top-actions" id="account"></div>
         </header>
         <main id="main" tabindex="-1"></main>
       </div>
     </div>
-    <dialog id="signin" aria-labelledby="signin-title">
-      <form method="dialog" class="dialog-body">
-        <h2 id="signin-title">Sign in</h2>
-        <p>
-          Steam, the LAN cache, streaming and the engine controls need an
-          Aphrody identity.
-        </p>
-        <div class="dialog-actions" id="signin-methods"></div>
-        <button class="btn text" value="close">Close</button>
-      </form>
-    </dialog>
+    <dialog
+      id="quick-menu"
+      class="side-sheet"
+      aria-labelledby="quick-menu-title"
+    ></dialog>
+    <dialog id="signin" class="modal" aria-labelledby="signin-title"></dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   </body>
 </html>

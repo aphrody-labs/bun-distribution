@@ -7,7 +7,8 @@
  *   dist/public/                         client (Bun.build HTML entry + M3 plugin), hashed /assets/
  *   dist/public/stream-client/index.html the unchanged packages/bun-gamestream client
  *   dist/public/catalog.json, roms/      public catalog: Bun Engine systems + free ROM packs only
- *   dist/public/emulation/               dist/web-emulation/<core>/ when published, else a stub
+ *   dist/public/emulation/               dist/web-emulation/<core>/ when published (else empty)
+ *   dist/public/assets/art/              libretro-thumbnails and Systematic icons (scripts/art.ts)
  *   dist/nginx/engine.conf               bun:nginx engine template (infra/config/host/nginx/play)
  *   dist/packages/bun-engine/plugins/    data files the bundled Bun Engine frontend reads
  *
@@ -18,6 +19,8 @@ import { Database } from "bun:sqlite";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { basename, dirname, extname, join, relative, resolve } from "node:path";
 import { m3Plugin } from "@aphrody/m3/plugin";
+import { isPrivatePath } from "../../../packages/bun-engine/src/owned/guard";
+import { ArtBuilder, displayTitle } from "./art";
 
 const app = resolve(import.meta.dir, "..");
 const repo = resolve(app, "..", "..");
@@ -76,21 +79,26 @@ interface SystemDefinition {
   name: string;
   manufacturer: string;
   year: number;
+  dats: string[];
   native?: { machine: string };
 }
 const consoles = join(repo, "packages", "bun-engine", "plugins", "consoles");
 const { systems } = JSON.parse(
   readFileSync(join(consoles, "systems.json"), "utf8"),
-) as { systems: SystemDefinition[] };
+) as {
+  systems: SystemDefinition[];
+};
 const { packs } = JSON.parse(
   readFileSync(join(consoles, "roms.json"), "utf8"),
-) as { packs: { id: string; license: string }[] };
-const licenses = new Map(packs.map((pack) => [pack.id, pack.license]));
+) as {
+  packs: { id: string; kind: string; license: string }[];
+};
+const packById = new Map(packs.map((pack) => [pack.id, pack]));
 const libraryDb = join(repo, "usr", "var", "lib", "bep", "library.db");
 const rows = existsSync(libraryDb)
   ? (new Database(libraryDb, { readonly: true })
       .query(
-        "SELECT system, path, name, title, size, md5, source, description FROM games WHERE source LIKE 'free:%' AND md5 IS NOT NULL ORDER BY system, COALESCE(title, name)",
+        "SELECT system, path, name, title, size, md5, source, description, dat FROM games WHERE source LIKE 'free:%' AND md5 IS NOT NULL ORDER BY system, COALESCE(title, name)",
       )
       .all() as {
       system: string;
@@ -101,73 +109,87 @@ const rows = existsSync(libraryDb)
       md5: string;
       source: string;
       description: string | null;
+      dat: string | null;
     }[])
   : [];
+const art = new ArtBuilder(join(app, ".cache"), publicDir);
+const playlistOf = (dat: string) => basename(dat).replace(/\.dat$/, "");
 mkdirSync(join(publicDir, "roms"), { recursive: true });
 const games = [];
 for (const row of rows) {
   if (!existsSync(row.path)) continue;
+  // Only free ROMs are published; the owner's private dump store never is.
+  if (isPrivatePath(row.path)) throw new Error(`refusing to publish a private dump: ${row.path}`);
   const rom = `/roms/${row.md5}${extname(row.path).toLowerCase()}`;
   cpSync(row.path, join(publicDir, rom));
-  const pack = row.source.slice("free:".length);
+  const pack = packById.get(row.source.slice("free:".length));
+  // A DAT title when the library matched one; else the first line of the pack's own notes.
+  const notesTitle = row.description?.split("\n")[0]?.trim();
+  const title = row.title
+    ? displayTitle(row.title)
+    : notesTitle && notesTitle.length <= 40 && !/[.:]$/.test(notesTitle)
+      ? notesTitle
+      : row.name;
+  let capsule = null;
+  let hero = null;
+  if (row.title && row.dat) {
+    const playlist = playlistOf(row.dat);
+    const [boxart, snap, titleScreen] = await Promise.all(
+      (["boxart", "snap", "title"] as const).map((kind) =>
+        art.thumbnail(playlist, row.title!, kind, row.md5),
+      ),
+    );
+    capsule = boxart ?? titleScreen ?? snap;
+    hero = snap ?? titleScreen;
+  }
   games.push({
     id: row.md5,
     system: row.system,
-    title:
-      (row.title ?? row.name)
-        .replace(/\s*\((World|USA|Europe|Japan)[^)]*\)\s*\(.*?\)$/, "")
-        .trim() || row.name,
+    title,
     size: row.size,
     rom,
-    source: pack,
-    license: licenses.get(pack) ?? "Freely redistributable",
-    description: row.description?.slice(0, 400) ?? null,
+    source: pack?.id ?? row.source,
+    kind: pack?.kind ?? "homebrew",
+    license: pack?.license ?? null,
+    art: { capsule, hero },
   });
 }
 const counts = new Map<string, number>();
 for (const game of games)
   counts.set(game.system, (counts.get(game.system) ?? 0) + 1);
+const catalogSystems = [];
+for (const system of systems) {
+  // Systematic icons are named after libretro playlists: the system's DATs, else "<maker> - <name>".
+  const names = [
+    ...system.dats.map(playlistOf),
+    `${system.manufacturer} - ${system.name}`,
+  ];
+  const icon = await art.systemIcon(names, system.id);
+  catalogSystems.push({
+    id: system.id,
+    name: system.name,
+    manufacturer: system.manufacturer,
+    year: system.year,
+    native: system.native?.machine ?? null,
+    games: counts.get(system.id) ?? 0,
+    icon: icon?.image ?? null,
+  });
+}
 await Bun.write(
   join(publicDir, "catalog.json"),
   JSON.stringify({
     generatedAt: new Date().toISOString(),
-    systems: systems.map((system) => ({
-      id: system.id,
-      name: system.name,
-      manufacturer: system.manufacturer,
-      year: system.year,
-      native: system.native?.machine ?? null,
-      games: counts.get(system.id) ?? 0,
-    })),
+    systems: catalogSystems,
     games,
   }),
 );
 
 // ---------------------------------------------------------------- web emulation cores
+// Only real cores published by the web emulation owner; none means "no core published yet".
 const emulation = join(repo, "dist", "web-emulation");
 if (existsSync(emulation))
   cpSync(emulation, join(publicDir, "emulation"), { recursive: true });
-else
-  await Bun.write(
-    join(publicDir, "emulation", "bun-engine", "manifest.json"),
-    `${JSON.stringify(
-      {
-        id: "bun-engine",
-        name: "Bun Engine (wgpu 30, WebGPU)",
-        stub: true,
-        note: "Placeholder until the web emulation owner publishes dist/web-emulation/<core>/.",
-        systems: ["nes", "gba", "nds", "psx"],
-        extensions: ["nes", "gba", "nds", "cue", "bin"],
-        module: "bun_engine_web.js",
-        wasm: "bun_engine_web_bg.wasm",
-        start: "start",
-        threads: false,
-        renderer: "webgpu",
-      },
-      null,
-      2,
-    )}\n`,
-  );
+else mkdirSync(join(publicDir, "emulation"), { recursive: true });
 
 // ---------------------------------------------------------------- server
 /** The bundled Bun Engine modules resolve their data next to their own source: PLAY_ROOT mirrors it. */
@@ -222,7 +244,12 @@ console.log(
       server: size(join(dist, "server.js")),
       games: games.length,
       systems: systems.length,
-      emulation: existsSync(emulation) ? "dist/web-emulation" : "stub",
+      emulation: existsSync(emulation)
+        ? "dist/web-emulation"
+        : "none published",
+      avif: art.avif,
+      art: games.filter((game) => game.art.capsule).length,
+      systemIcons: catalogSystems.filter((system) => system.icon).length,
     },
     null,
     2,

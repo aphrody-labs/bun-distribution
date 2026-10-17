@@ -9,6 +9,9 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { frontendRoutes } from "../../../../packages/bun-engine/src/frontend/api";
 import { runningGames } from "../../../../packages/bun-engine/src/frontend/launch";
+import { assertPublicRoot } from "../../../../packages/bun-engine/src/owned/guard";
+import { ownedRoutes } from "../../../../packages/bun-engine/src/owned/http";
+import { artRoutes } from "./art";
 import { authRoutes, guarded, sessionOf, unauthorized } from "./auth";
 import { config } from "./config";
 import { engineState, reloadEngine } from "./nginx";
@@ -44,6 +47,20 @@ const json = (value: unknown, status = 200) =>
 
 /** Web emulation cores published as `<core>/manifest.json` by the emulation build owner. */
 export function emulationCores(): unknown[] {
+  // The owner's index.json lists every published core; per-core manifest.json is the fallback.
+  try {
+    const index = JSON.parse(
+      readFileSync(join(config.emulationDir, "index.json"), "utf8"),
+    ) as {
+      cores: { id: string }[];
+    };
+    return index.cores.map((core) => ({
+      ...core,
+      base: `/emulation/${core.id}/`,
+    }));
+  } catch {
+    /* no index: scan the core directories */
+  }
   let entries: string[];
   try {
     entries = readdirSync(config.emulationDir);
@@ -109,6 +126,8 @@ export function createServer(
   >();
   const last = new Map<Topic, string>();
 
+  // The owner's private dump store is never part of what this server or the engine publishes.
+  assertPublicRoot(config.publicDir, config.emulationDir);
   const server = Bun.serve<SocketData>({
     hostname: config.hostname,
     port: config.port,
@@ -118,6 +137,12 @@ export function createServer(
       ...options.staticRoutes,
       "/healthz": () => json({ ok: true }),
       ...authRoutes(),
+      ...Object.fromEntries(
+        Object.entries(artRoutes()).map(([path, methods]) => [
+          path,
+          { GET: guarded(methods.GET) },
+        ]),
+      ),
       "/api/emulation": { GET: () => json(emulationCores()) },
       "/api/steam": { GET: guarded(() => json(steamStatus())) },
       "/api/steam/downloads": { GET: guarded(() => json(content.snapshot())) },
@@ -155,6 +180,13 @@ export function createServer(
         }),
       },
       ...engineRoutes(),
+      // Owned dumps (packages/bun-engine/src/owned/http.ts): signed-in only, never dump bytes.
+      ...Object.fromEntries(
+        Object.entries(ownedRoutes()).map(([path, methods]) => [
+          path,
+          Object.fromEntries(Object.entries(methods).map(([method, handler]) => [method, guarded(handler)])),
+        ]),
+      ),
       "/ws": (request: Request, srv: Server<SocketData>) => {
         const session = sessionOf(request);
         if (!session) return unauthorized();

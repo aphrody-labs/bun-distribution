@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Bun OS Play client: one M3 single-page app over the merged gaming surfaces.
- *   /            library (public catalog of the Bun Engine frontend, free ROM packs)
- *   /play/<md5>  in-browser emulation (web emulation cores, WebGPU)
- *   /steam       Steam status, downloads, LAN cache and audit (signed in)
- *   /stream      gamestream client (WebRTC + WebCodecs + WebGPU FSR) (signed in)
- *   /engine      Bun Engine machines, jobs and the bun:nginx engine (signed in)
+ * Bun OS Play client (design-system/bun-os-play/DIRECTION.md over MASTER.md).
+ *   /            home: the focused game's real art full-bleed, one rail of capsules
+ *   /play/<md5>  in-browser emulation through published web cores
+ *   /steam       Steam on the gaming host (signed in)
+ *   /stream      gamestream client (signed in)
+ *   /engine      Bun Engine systems, jobs and the bun:nginx engine (signed in)
+ * Strings come from messages.ts, colors from the per-game M3 scheme (theme.ts).
  */
 import { observeWindowClass } from "@aphrody/m3-front/window-class";
 import {
@@ -15,15 +16,31 @@ import {
   type RunningCore,
 } from "./emulator";
 import { icon, type IconName } from "./icons";
+import { locale, type MessageId, t, th } from "./messages";
 import { installSpatialNavigation } from "./spatial";
+import {
+  setThemeMode,
+  type ThemeMode,
+  themeMode,
+  tintFromImage,
+} from "./theme";
 
+interface ArtImage {
+  src: string;
+  srcset: string;
+  avifSrcset: string | null;
+  width: number;
+  height: number;
+  pixelated: boolean;
+}
 interface CatalogSystem {
   id: string;
   name: string;
   manufacturer: string;
   year: number;
-  games: number;
   native: string | null;
+  games: number;
+  icon: ArtImage | null;
 }
 interface CatalogGame {
   id: string;
@@ -32,8 +49,9 @@ interface CatalogGame {
   size: number;
   rom: string;
   source: string;
-  license: string;
-  description: string | null;
+  kind: string;
+  license: string | null;
+  art: { capsule: ArtImage | null; hero: ArtImage | null };
 }
 interface Catalog {
   generatedAt: string;
@@ -44,39 +62,102 @@ interface SessionInfo {
   authenticated: boolean;
   user: string | null;
   via: string | null;
+  host: string;
   methods: { mesh: string; steam: string | null };
 }
+interface SteamGame {
+  appId: number;
+  name: string;
+  sizeOnDisk: number;
+  stateFlags: number;
+  buildId: string | null;
+  kind: "game" | "tool";
+}
+/** One entry of the home rail: an emulated game or a Steam game. */
+interface RailEntry {
+  key: string;
+  title: string;
+  system: string;
+  capsule: {
+    src: string;
+    srcset: string;
+    avifSrcset: string | null;
+    pixelated: boolean;
+  } | null;
+  hero: {
+    src: string;
+    srcset: string;
+    avifSrcset: string | null;
+    pixelated: boolean;
+  } | null;
+  game?: CatalogGame;
+  steam?: SteamGame;
+}
 
-const main = document.getElementById("main") as HTMLElement;
-const nav = document.getElementById("nav") as HTMLElement;
-const account = document.getElementById("account") as HTMLElement;
-const live = document.getElementById("live") as HTMLElement;
-const signin = document.getElementById("signin") as HTMLDialogElement;
-const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const $ = <T extends HTMLElement>(id: string) =>
+  document.getElementById(id) as T;
+const main = $<HTMLElement>("main");
+const nav = $<HTMLElement>("nav");
+const account = $<HTMLElement>("account");
+const quickMenu = $<HTMLDialogElement>("quick-menu");
+const menuButton = $<HTMLButtonElement>("menu-button");
+const signin = $<HTMLDialogElement>("signin");
+const toastEl = $<HTMLElement>("toast");
 
 const esc = (value: unknown) =>
   String(value ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-const bytes = (n: number | null | undefined) => {
-  if (n == null) return "-";
-  const units = ["B", "KB", "MB", "GB", "TB"];
+function bytes(n: number | null | undefined): string {
+  if (n == null) return "";
+  const units = [
+    "byte",
+    "kilobyte",
+    "megabyte",
+    "gigabyte",
+    "terabyte",
+  ] as const;
   let value = n;
   let unit = 0;
   while (value >= 1024 && unit < units.length - 1) {
     value /= 1024;
     unit++;
   }
-  return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
-};
+  return new Intl.NumberFormat(locale, {
+    style: "unit",
+    unit: units[unit],
+    unitDisplay: "short",
+    maximumFractionDigits: value >= 10 ? 0 : 1,
+  }).format(value);
+}
+const dateFormat = new Intl.DateTimeFormat(locale, {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+const clockFormat = new Intl.DateTimeFormat(locale, {
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
     headers: { accept: "application/json", ...init?.headers },
   });
-  if (response.status === 401)
-    throw Object.assign(new Error("authentication required"), { status: 401 });
-  if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
+  if (!response.ok)
+    throw Object.assign(new Error(`HTTP ${response.status}`), {
+      status: response.status,
+    });
   return response.json() as Promise<T>;
+}
+
+let toastTimer = 0;
+function toast(
+  id: MessageId,
+  args: Record<string, string | number> = {},
+): void {
+  toastEl.textContent = t(id, args);
+  toastEl.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => (toastEl.hidden = true), 4000);
 }
 
 // ------------------------------------------------------------------ state
@@ -84,11 +165,14 @@ let session: SessionInfo = {
   authenticated: false,
   user: null,
   via: null,
+  host: "",
   methods: { mesh: "", steam: null },
 };
 let catalog: Catalog | null = null;
 let cores: CoreManifest[] = [];
+let steamGames: SteamGame[] = [];
 let running: RunningCore | null = null;
+let systemFilter = "all";
 const listeners = new Map<string, Set<(data: unknown) => void>>();
 const latest = new Map<string, unknown>();
 
@@ -99,213 +183,397 @@ function on(topic: string, listener: (data: unknown) => void): () => void {
   if (latest.has(topic)) listener(latest.get(topic));
   return () => set.delete(listener);
 }
+function emit(topic: string, data: unknown): void {
+  latest.set(topic, data);
+  for (const listener of listeners.get(topic) ?? []) listener(data);
+}
 
 // ------------------------------------------------------------------ realtime
 let socket: WebSocket | null = null;
 let retry = 0;
 function connectRealtime(): void {
   if (!session.authenticated || socket) return;
-  const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws?topics=steam,downloads,lancache,stream,engine,nginx`;
-  const ws = new WebSocket(url);
+  const ws = new WebSocket(
+    `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws?topics=steam,downloads,lancache,stream,engine,nginx`,
+  );
   socket = ws;
-  ws.onopen = () => {
-    retry = 0;
-    live.hidden = false;
-  };
+  ws.onopen = () => (retry = 0);
   ws.onmessage = (event) => {
     const message = JSON.parse(String(event.data)) as {
       type: string;
       topic: string;
       data: unknown;
     };
-    if (message.type !== "event") return;
-    latest.set(message.topic, message.data);
-    for (const listener of listeners.get(message.topic) ?? [])
-      listener(message.data);
+    if (message.type === "event") emit(message.topic, message.data);
   };
   ws.onclose = () => {
     socket = null;
-    live.hidden = true;
     if (session.authenticated)
       setTimeout(connectRealtime, Math.min(30_000, 1000 * 2 ** retry++));
   };
 }
+on("steam", (data) => {
+  const status = data as { available: boolean; games?: SteamGame[] };
+  if (status.available) steamGames = status.games ?? [];
+});
 
 // ------------------------------------------------------------------ shell
 const ROUTES: {
   path: string;
-  label: string;
+  label: MessageId;
   icon: IconName;
   private?: boolean;
 }[] = [
-  { path: "/", label: "Library", icon: "library" },
-  { path: "/steam", label: "Steam", icon: "download", private: true },
-  { path: "/stream", label: "Stream", icon: "stream", private: true },
-  { path: "/engine", label: "Engine", icon: "memory", private: true },
+  { path: "/", label: "nav-library", icon: "home" },
+  { path: "/steam", label: "nav-steam", icon: "cloud_download", private: true },
+  { path: "/stream", label: "nav-stream", icon: "cast", private: true },
+  { path: "/engine", label: "nav-engine", icon: "memory", private: true },
 ];
 
 function renderShell(): void {
   const current = location.pathname.startsWith("/play/")
     ? "/"
     : location.pathname;
-  nav.innerHTML = ROUTES.map(
-    (
-      route,
-    ) => `<a class="nav-item" href="${route.path}" data-link ${current === route.path ? 'aria-current="page"' : ""}>
-      <span class="indicator">${icon(route.icon)}</span>
-      <span>${route.label}${route.private && !session.authenticated ? ` ${icon("lock").replace('class="icon"', 'class="icon lock"')}` : ""}</span>
-    </a>`,
-  ).join("");
+  nav.setAttribute("aria-label", t("nav-primary"));
+  nav.innerHTML = ROUTES.map((route) => {
+    const selected = current === route.path;
+    const locked = route.private && !session.authenticated;
+    const label = locked
+      ? th("nav-requires-sign-in", { label: t(route.label) })
+      : th(route.label);
+    return `<a class="nav-item" href="${route.path}" data-link aria-label="${label}" ${selected ? 'aria-current="page"' : ""}>
+      <span class="indicator">${icon(locked ? "lock" : route.icon, { filled: selected })}</span>
+      <span aria-hidden="true">${th(route.label)}</span>
+    </a>`;
+  }).join("");
+  menuButton.innerHTML = icon("menu");
+  menuButton.setAttribute("aria-label", t("menu-open"));
   account.innerHTML = session.authenticated
-    ? `<span class="status ok" title="Signed in via ${esc(session.via)}">${esc(session.user)}</span>
-       <button class="btn text" id="logout">${icon("logout")}Sign out</button>`
-    : `<button class="btn tonal" id="login">${icon("login")}Sign in</button>`;
-  document.getElementById("login")?.addEventListener("click", openSignin);
-  document.getElementById("logout")?.addEventListener("click", async () => {
+    ? `<button class="btn text" id="logout" type="button">${icon("logout", { size: "sm" })}${th("account-sign-out")}</button>`
+    : `<button class="btn tonal" id="login" type="button">${icon("login", { size: "sm" })}${th("account-sign-in")}</button>`;
+  $("login")?.addEventListener("click", openSignin);
+  $("logout")?.addEventListener("click", async () => {
     await fetch("/auth/logout", { method: "POST" });
     session = { ...session, authenticated: false, user: null, via: null };
+    steamGames = [];
     socket?.close();
-    route();
+    void route();
   });
+  for (const element of document.querySelectorAll<HTMLElement>("[data-i18n]"))
+    element.textContent = t(element.dataset.i18n as MessageId);
+  document.title = t("app-name");
 }
 
 function openSignin(): void {
-  const methods = document.getElementById("signin-methods") as HTMLElement;
-  methods.innerHTML = `
-    <a class="btn filled" href="${esc(session.methods.mesh)}">${icon("lock")}Aphrody mesh (WireGuard)</a>
-    ${session.methods.steam ? `<a class="btn outlined" href="${esc(session.methods.steam)}">${icon("gamepad")}Sign in through Steam</a>` : ""}
-    <p class="hint">The mesh link works from a device on the Aphrody WireGuard network; the server mints a one-time code there and returns here signed in.</p>`;
+  signin.innerHTML = `<form method="dialog" class="modal-body">
+    <h2 id="signin-title">${th("signin-title")}</h2>
+    <p class="hint">${th("signin-body")}</p>
+    <a class="btn filled" href="${esc(session.methods.mesh)}">${icon("lock", { size: "sm" })}${th("signin-mesh")}</a>
+    ${session.methods.steam ? `<a class="btn outlined" href="${esc(session.methods.steam)}">${icon("login", { size: "sm" })}${th("signin-steam")}</a>` : ""}
+    <p class="hint">${th("signin-mesh-hint")}</p>
+    <button class="btn text" value="close">${th("menu-close")}</button>
+  </form>`;
   signin.showModal();
 }
 
-function locked(title: string): void {
-  main.innerHTML = `<section class="locked">
-    ${icon("lock")}
-    <h1>${esc(title)}</h1>
-    <p class="hint">This surface controls the VPS (Steam, streaming, installs). Sign in with an Aphrody identity.</p>
-    <button class="btn filled" id="locked-signin">${icon("login")}Sign in</button>
+function renderQuickMenu(): void {
+  const systems = (catalog?.systems ?? []).filter((system) => system.games > 0);
+  const mode = themeMode();
+  const steamCount = steamGames.filter((game) => game.kind === "game").length;
+  quickMenu.innerHTML = `<div class="sheet-body">
+    <div class="sheet-head"><h2 id="quick-menu-title">${th("menu-title")}</h2>
+      <button class="icon-button" type="button" id="menu-close" aria-label="${th("menu-close")}">${icon("close")}</button></div>
+    <section class="sheet-section"><h3>${th("menu-systems")}</h3><div class="chips">
+      <button class="chip" type="button" data-system="all" aria-pressed="${systemFilter === "all"}">${th("menu-all-systems")}</button>
+      ${steamCount ? `<button class="chip" type="button" data-system="steam" aria-pressed="${systemFilter === "steam"}">${th("source-steam")}</button>` : ""}
+      ${systems
+        .map(
+          (system) =>
+            `<button class="chip" type="button" data-system="${esc(system.id)}" aria-pressed="${systemFilter === system.id}">${system.icon ? `<img src="${esc(system.icon.src)}" srcset="${esc(system.icon.srcset)}" sizes="24px" width="24" height="24" alt="" />` : ""}${esc(system.name)}</button>`,
+        )
+        .join("")}
+    </div></section>
+    <section class="sheet-section"><h3>${th("menu-theme")}</h3><div class="segmented" role="group" aria-label="${th("menu-theme")}">
+      ${(["system", "light", "dark"] as ThemeMode[])
+        .map(
+          (value) =>
+            `<button class="segment" type="button" data-theme="${value}" aria-pressed="${mode === value}">${icon(value === "system" ? "brightness_auto" : value === "light" ? "light_mode" : "dark_mode", { size: "sm" })}${th(`theme-${value}`)}</button>`,
+        )
+        .join("")}
+    </div></section>
+    ${session.authenticated ? `<section class="sheet-section"><p class="hint">${th("account-signed-in", { user: session.user ?? "" })}</p></section>` : ""}
+    <section class="sheet-section"><h3>${th("menu-credits")}</h3>
+      <p class="hint">${th("credits-icons")}</p><p class="hint">${th("credits-systems")}</p>
+      <p class="hint">${th("credits-thumbnails")}</p><p class="hint">${th("credits-steam")}</p></section>
+  </div>`;
+  $("menu-close")?.addEventListener("click", () => quickMenu.close());
+  for (const chip of quickMenu.querySelectorAll<HTMLButtonElement>(
+    "[data-system]",
+  ))
+    chip.addEventListener("click", () => {
+      systemFilter = chip.dataset.system!;
+      quickMenu.close();
+      if (location.pathname !== "/") navigate("/");
+      else void route();
+    });
+  for (const segment of quickMenu.querySelectorAll<HTMLButtonElement>(
+    "[data-theme]",
+  ))
+    segment.addEventListener("click", () => {
+      setThemeMode(segment.dataset.theme as ThemeMode);
+      renderQuickMenu();
+      quickMenu
+        .querySelector<HTMLElement>(`[data-theme="${segment.dataset.theme}"]`)
+        ?.focus();
+    });
+}
+menuButton.addEventListener("click", () => {
+  renderQuickMenu();
+  quickMenu.showModal();
+  menuButton.setAttribute("aria-expanded", "true");
+});
+quickMenu.addEventListener("close", () =>
+  menuButton.setAttribute("aria-expanded", "false"),
+);
+quickMenu.addEventListener(
+  "click",
+  (event) => event.target === quickMenu && quickMenu.close(),
+);
+
+function locked(page: MessageId): void {
+  main.innerHTML = `<section class="empty">
+    ${icon("lock", { size: "lg" })}
+    <h1>${th("locked-title", { page: t(page) })}</h1>
+    <p class="hint">${th("locked-body")}</p>
+    <button class="btn filled" type="button" id="locked-signin">${icon("login", { size: "sm" })}${th("account-sign-in")}</button>
   </section>`;
-  document
-    .getElementById("locked-signin")
-    ?.addEventListener("click", openSignin);
+  $("locked-signin")?.addEventListener("click", openSignin);
 }
 
-// ------------------------------------------------------------------ library
-const SYSTEM_TINT: Record<string, string> = {
-  nes: "var(--md-sys-color-error)",
-  gba: "var(--md-sys-color-primary)",
-  nds: "var(--md-sys-color-tertiary)",
-  psx: "var(--md-sys-color-secondary)",
-};
-let filter = { system: "all", query: "" };
+function loadError(what: string, error: unknown): string {
+  return `<section class="empty">${icon("error", { size: "lg" })}<p>${th("error-load", { what, error: error instanceof Error ? error.message : String(error) })}</p></section>`;
+}
 
-async function renderLibrary(): Promise<void> {
+// ------------------------------------------------------------------ home
+const steamArt = (appId: number, kind: string, width: number) =>
+  `/art/steam/${appId}/${kind}?w=${width}`;
+
+function railEntries(): RailEntry[] {
+  const systems = new Map(
+    (catalog?.systems ?? []).map((system) => [system.id, system.name]),
+  );
+  const entries: RailEntry[] = [];
+  if (systemFilter === "all" || systemFilter === "steam")
+    for (const game of steamGames.filter((item) => item.kind === "game"))
+      entries.push({
+        key: `steam-${game.appId}`,
+        title: game.name,
+        system: t("source-steam"),
+        capsule: {
+          src: steamArt(game.appId, "capsule", 300),
+          srcset: [200, 300, 600]
+            .map((w) => `${steamArt(game.appId, "capsule", w)} ${w}w`)
+            .join(", "),
+          avifSrcset: null,
+          pixelated: false,
+        },
+        hero: {
+          src: steamArt(game.appId, "hero", 1920),
+          srcset: [960, 1920]
+            .map((w) => `${steamArt(game.appId, "hero", w)} ${w}w`)
+            .join(", "),
+          avifSrcset: null,
+          pixelated: false,
+        },
+        steam: game,
+      });
+  if (systemFilter !== "steam")
+    for (const game of catalog?.games ?? []) {
+      if (
+        game.kind !== "homebrew" ||
+        (systemFilter !== "all" && game.system !== systemFilter)
+      )
+        continue;
+      const { capsule, hero } = game.art;
+      entries.push({
+        key: game.id,
+        title: game.title,
+        system: systems.get(game.system) ?? game.system,
+        capsule: capsule ?? null,
+        hero: hero ?? null,
+        game,
+      });
+    }
+  return entries;
+}
+
+function picture(
+  image: NonNullable<RailEntry["hero"]>,
+  attributes: string,
+): string {
+  return `<picture>${image.avifSrcset ? `<source type="image/avif" srcset="${esc(image.avifSrcset)}" />` : ""}<img src="${esc(image.src)}" srcset="${esc(image.srcset)}" ${attributes} /></picture>`;
+}
+
+function tileHtml(entry: RailEntry, index: number): string {
+  const body = entry.capsule
+    ? `<img src="${esc(entry.capsule.src)}" srcset="${esc(entry.capsule.srcset)}" sizes="200px" width="200" height="300" alt="" loading="${index < 6 ? "eager" : "lazy"}" decoding="async" class="${entry.capsule.pixelated ? "pixelated" : ""}" data-art />`
+    : "";
+  return `<button class="tile state" type="button" role="option" id="tile-${esc(entry.key)}" data-key="${esc(entry.key)}" aria-selected="false" aria-label="${esc(entry.title)}, ${esc(entry.system)}">
+    ${body}<span class="tile-type" ${entry.capsule ? "hidden" : ""}><strong>${esc(entry.title)}</strong><span>${esc(entry.system)}</span></span>
+  </button>`;
+}
+
+let heroLayer = 0;
+async function focusEntry(
+  entry: RailEntry | undefined,
+  first = false,
+): Promise<void> {
+  const copy = $("hero-copy");
+  const art = $("hero-art");
+  if (!copy || !art) return;
+  for (const tile of document.querySelectorAll(".tile"))
+    tile.setAttribute(
+      "aria-selected",
+      String(tile.id === `tile-${entry?.key}`),
+    );
+  if (!entry) {
+    copy.innerHTML = `<h1 class="hero-title">${th("hero-empty-title")}</h1><p class="hero-note">${th("rail-empty")}</p>`;
+    void tintFromImage(null);
+    return;
+  }
+  const core = entry.game ? coreFor(cores, entry.game.system) : undefined;
+  const host = session.host || "VPS";
+  const actions: string[] = [];
+  if (entry.game && core)
+    actions.push(
+      `<a class="btn filled" href="/play/${esc(entry.game.id)}" data-link>${icon("play_arrow", { filled: true })}${th("action-play")}</a>`,
+    );
+  if (session.authenticated)
+    actions.push(
+      `<a class="btn ${actions.length ? "tonal" : "filled"}" href="/stream" data-link data-toast="toast-streaming">${icon("cast")}${th("action-stream", { host })}</a>`,
+    );
+  if (entry.game)
+    actions.push(
+      `<a class="btn text" href="/play/${esc(entry.game.id)}" data-link>${th("action-details")}</a>`,
+    );
+  const note =
+    entry.game && !core ? th("core-none", { system: entry.system, host }) : "";
+  copy.innerHTML = `<p class="hero-system">${esc(entry.system)}</p>
+    <h1 class="hero-title">${esc(entry.title)}</h1>
+    <div class="hero-actions">${actions.join("")}</div>
+    ${note ? `<p class="hero-note">${note}</p>` : ""}`;
+
+  // Cross-fade the hero and re-tint the scheme together.
+  const layers = art.querySelectorAll<HTMLElement>("picture");
+  heroLayer = 1 - heroLayer;
+  const target = layers[heroLayer]!;
+  const other = layers[1 - heroLayer]!;
+  const tile = document.querySelector<HTMLImageElement>(
+    `#tile-${CSS.escape(entry.key)} img[data-art]`,
+  );
+  if (entry.hero) {
+    target.outerHTML = picture(
+      entry.hero,
+      `alt="" sizes="100vw" class="${entry.hero.pixelated ? "pixelated" : ""}" ${first ? 'fetchpriority="high" loading="eager"' : 'loading="eager"'} decoding="async"`,
+    );
+    const fresh = art.querySelectorAll<HTMLElement>("picture")[heroLayer]!;
+    const image = fresh.querySelector("img")!;
+    image.onerror = () => image.classList.remove("shown");
+    await image.decode().catch(() => undefined);
+    image.classList.add("shown");
+  } else target.querySelector("img")?.classList.remove("shown");
+  other.querySelector("img")?.classList.remove("shown");
+  if (tile) await tile.decode().catch(() => undefined);
+  void tintFromImage(tile?.naturalWidth ? tile : null);
+}
+
+async function renderHome(): Promise<() => void> {
   catalog ??= await api<Catalog>("/catalog.json");
-  const systems = catalog.systems;
-  const withGames = systems.filter((system) => system.games > 0);
-  const playable = new Set(
-    catalog.games
-      .filter((game) => coreFor(cores, game.system))
-      .map((game) => game.id),
-  );
-  main.innerHTML = `
-    <section class="hero" id="hero">
-      <div class="layer layer-1"></div><div class="layer layer-2"></div><div class="layer layer-3"></div>
-      <div class="hero-content">
-        <h1>Play <span>anywhere</span> on Bun OS</h1>
-        <p>The Bun Engine library in the browser: emulation on WebGPU, Steam on the gaming host, and low-latency streaming.</p>
-        <a class="btn filled" href="#games">${icon("gamepad")}Browse games</a>
-        <div class="hero-stats">
-          <div><strong>${systems.length}</strong>systems</div>
-          <div><strong>${catalog.games.length}</strong>free games</div>
-          <div><strong>${cores.filter((core) => !core.stub).length}</strong>web cores</div>
-        </div>
-      </div>
-    </section>
-    <div class="section-head" id="games"><h2>Library</h2><span class="hint">${playable.size} playable in the browser</span></div>
-    <div class="toolbar">
-      <label class="search">${icon("search")}<input id="query" type="search" placeholder="Search games" aria-label="Search games" value="${esc(filter.query)}" /></label>
-      <div class="chips" role="group" aria-label="Systems">
-        <button class="chip" data-system="all" aria-pressed="${filter.system === "all"}">All <span class="count">${catalog.games.length}</span></button>
-        ${withGames.map((system) => `<button class="chip" data-system="${esc(system.id)}" aria-pressed="${filter.system === system.id}">${esc(system.name)} <span class="count">${system.games}</span></button>`).join("")}
-      </div>
+  const entries = railEntries();
+  document.body.classList.add("home-active");
+  main.innerHTML = `<section class="home">
+    <div class="hero-art" id="hero-art" aria-hidden="true"><picture><img alt="" /></picture><picture><img alt="" /></picture></div>
+    <div class="hero-scrim"></div>
+    <div class="hero-copy" id="hero-copy" aria-live="polite"></div>
+    <div class="rail-zone">
+      <div class="rail-head"><h2 id="rail-title">${th("rail-games")}</h2>
+        <div class="status-corner"><span id="rail-system"></span><span class="clock" id="clock"></span>
+          <span class="pad" id="pad" role="img"></span></div></div>
+      ${entries.length ? `<div class="rail" id="rail" role="listbox" aria-labelledby="rail-title">${entries.map(tileHtml).join("")}</div>` : `<div class="empty"><p>${th("rail-empty")}</p><button class="btn tonal" type="button" id="empty-signin">${icon("login", { size: "sm" })}${th("account-sign-in")}</button></div>`}
     </div>
-    <div class="grid stagger" id="grid"></div>
-    <div class="section-head"><h2>Systems</h2><span class="hint">Bun Engine frontend: ${systems.length} systems</span></div>
-    <div class="panel table-wrap"><table class="table">
-      <thead><tr><th>System</th><th>Manufacturer</th><th>Year</th><th>Native machine</th><th class="num">Free games</th></tr></thead>
-      <tbody>${systems.map((system) => `<tr><td>${esc(system.name)}</td><td>${esc(system.manufacturer)}</td><td>${system.year}</td><td>${esc(system.native ?? "-")}</td><td class="num">${system.games}</td></tr>`).join("")}</tbody>
-    </table></div>`;
-
-  const grid = document.getElementById("grid") as HTMLElement;
-  const paint = () => {
-    const query = filter.query.trim().toLowerCase();
-    const games = catalog!.games.filter(
-      (game) =>
-        (filter.system === "all" || game.system === filter.system) &&
-        (!query || game.title.toLowerCase().includes(query)),
-    );
-    const systemName = new Map(
-      systems.map((system) => [system.id, system.name]),
-    );
-    grid.innerHTML = games.length
-      ? games
-          .map(
-            (
-              game,
-              index,
-            ) => `<button class="game" style="--i:${index};--tint:${SYSTEM_TINT[game.system] ?? "var(--md-sys-color-primary)"}" data-play="${esc(game.id)}" aria-label="${esc(game.title)}, ${esc(systemName.get(game.system))}">
-          <span class="cover"><span class="badge">${esc(game.system)}</span>${esc(
-            game.title
-              .replace(/[^A-Za-z0-9]/g, "")
-              .slice(0, 2)
-              .toUpperCase(),
-          )}${playable.has(game.id) ? `<span class="playable">${icon("play")}</span>` : ""}</span>
-          <span class="meta"><span class="title">${esc(game.title)}</span><span class="sub">${esc(systemName.get(game.system))} &middot; ${bytes(game.size)}</span></span>
-        </button>`,
-          )
-          .join("")
-      : `<p class="empty">No game matches.</p>`;
-  };
-  paint();
-  document.getElementById("query")?.addEventListener("input", (event) => {
-    filter.query = (event.target as HTMLInputElement).value;
-    grid.classList.remove("stagger");
-    paint();
-  });
-  main.querySelectorAll<HTMLButtonElement>("[data-system]").forEach((chip) =>
-    chip.addEventListener("click", () => {
-      filter.system = chip.dataset.system!;
-      main
-        .querySelectorAll("[data-system]")
-        .forEach((other) =>
-          other.setAttribute("aria-pressed", String(other === chip)),
-        );
-      grid.classList.add("stagger");
-      paint();
-    }),
+  </section>`;
+  $("empty-signin")?.addEventListener(
+    "click",
+    session.authenticated ? () => menuButton.click() : openSignin,
   );
-  grid.addEventListener("click", (event) => {
-    const card = (event.target as HTMLElement).closest<HTMLElement>(
-      "[data-play]",
-    );
-    if (card) navigate(`/play/${card.dataset.play}`);
-  });
-
-  // Parallax on the hero only (pointer position), disabled for reduced motion.
-  const hero = document.getElementById("hero") as HTMLElement;
-  if (!reducedMotion.matches)
-    hero.addEventListener("pointermove", (event) => {
-      const rect = hero.getBoundingClientRect();
-      hero.style.setProperty(
-        "--px",
-        String((event.clientX - rect.left) / rect.width - 0.5),
-      );
-      hero.style.setProperty(
-        "--py",
-        String((event.clientY - rect.top) / rect.height - 0.5),
-      );
+  const rail = $("rail");
+  const byKey = new Map(entries.map((entry) => [entry.key, entry]));
+  for (const image of main.querySelectorAll<HTMLImageElement>("img[data-art]"))
+    image.addEventListener("error", () => {
+      // No art for this entry: the typographic tile of the real title stays.
+      image.remove();
+      image.parentElement
+        ?.querySelector(".tile-type")
+        ?.removeAttribute("hidden");
     });
+  let current = "";
+  const select = (key: string, first = false) => {
+    if (key === current) return;
+    current = key;
+    const entry = byKey.get(key);
+    $("rail-system").textContent = entry?.system ?? "";
+    void focusEntry(entry, first);
+  };
+  rail?.addEventListener("focusin", (event) => {
+    const tile = (event.target as HTMLElement).closest<HTMLElement>(".tile");
+    if (tile) select(tile.dataset.key!);
+  });
+  rail?.addEventListener("pointerover", (event) => {
+    const tile = (event.target as HTMLElement).closest<HTMLElement>(".tile");
+    if (tile && matchMedia("(hover: hover)").matches) select(tile.dataset.key!);
+  });
+  rail?.addEventListener("click", (event) => {
+    const tile = (event.target as HTMLElement).closest<HTMLElement>(".tile");
+    if (!tile) return;
+    const entry = byKey.get(tile.dataset.key!);
+    if (entry?.game) navigate(`/play/${entry.game.id}`);
+    else if (entry?.steam) {
+      toast("toast-streaming", { host: session.host });
+      navigate("/stream");
+    }
+  });
+  select(entries[0]?.key ?? "", true);
+  // Console home: the selected tile holds focus, so the pad and arrow keys act at once.
+  document.querySelector<HTMLElement>(".tile")?.focus({ preventScroll: true });
+  if (!entries.length) void focusEntry(undefined);
+
+  const clock = $("clock");
+  const pad = $("pad");
+  const tick = () => {
+    clock.textContent = clockFormat.format(new Date());
+    const connected = [...navigator.getGamepads()].some(Boolean);
+    pad.dataset.connected = String(connected);
+    pad.setAttribute(
+      "aria-label",
+      t(connected ? "status-gamepad" : "status-no-gamepad"),
+    );
+    pad.innerHTML = icon("sports_esports", { filled: connected });
+  };
+  tick();
+  const timer = setInterval(tick, 15_000);
+  addEventListener("gamepadconnected", tick);
+  addEventListener("gamepaddisconnected", tick);
+  // Steam games arrive with the realtime snapshot after sign-in: rebuild the rail once.
+  const offSteam = on("steam", () => {
+    if (rail === null || railEntries().length !== entries.length) void route();
+  });
+  return () => {
+    clearInterval(timer);
+    removeEventListener("gamepadconnected", tick);
+    removeEventListener("gamepaddisconnected", tick);
+    offSteam();
+    document.body.classList.remove("home-active");
+  };
 }
 
 // ------------------------------------------------------------------ emulator page
@@ -313,65 +581,62 @@ async function renderPlay(id: string): Promise<void> {
   catalog ??= await api<Catalog>("/catalog.json");
   const game = catalog.games.find((item) => item.id === id);
   if (!game) {
-    main.innerHTML = `<p class="empty">Unknown game.</p>`;
+    main.innerHTML = `<section class="empty"><p>${th("not-found")}</p><a class="btn tonal" href="/" data-link>${th("action-back")}</a></section>`;
     return;
   }
   const core = coreFor(cores, game.system);
   const system = catalog.systems.find((item) => item.id === game.system);
-  main.innerHTML = `<section class="player">
-    <div class="player-head">
-      <button class="btn text" id="back" aria-label="Back to the library">${icon("back")}Library</button>
+  const host = session.host || "VPS";
+  if (game.art.hero) {
+    const probe = new Image();
+    probe.src = game.art.capsule?.src ?? game.art.hero.src;
+    void probe.decode().then(
+      () => tintFromImage(probe),
+      () => undefined,
+    );
+  }
+  main.innerHTML = `<div class="page-head">
+      <a class="btn text" href="/" data-link>${icon("arrow_back")}${th("action-back")}</a>
       <h1>${esc(game.title)}</h1>
     </div>
-    <div class="screen" id="screen"><canvas id="canvas" width="256" height="240" tabindex="0" aria-label="${esc(game.title)} game screen"></canvas></div>
-    <div class="panels">
-      <div class="panel"><h3>${icon("memory")}Core</h3><dl class="kv">
-        <dt>System</dt><dd>${esc(system?.name ?? game.system)}</dd>
-        <dt>Core</dt><dd>${esc(core ? `${core.name} ${core.version ?? ""}` : "none published")}</dd>
-        <dt>Renderer</dt><dd>${esc(core?.renderer ?? "-")}</dd>
-        <dt>Isolation</dt><dd>${crossOriginIsolated ? "cross-origin isolated (threads available)" : "not isolated"}</dd>
-        <dt>WebGPU</dt><dd>${"gpu" in navigator ? "available" : "unavailable"}</dd>
-        <dt>Status</dt><dd id="core-status">idle</dd>
+    ${core ? `<div class="screen" id="screen"><canvas id="canvas" width="256" height="240" tabindex="0" aria-label="${esc(game.title)}"></canvas></div>` : `<section class="empty">${game.art.hero ? picture(game.art.hero, `alt="" width="${game.art.hero.width}" height="${game.art.hero.height}" class="preview ${game.art.hero.pixelated ? "pixelated" : ""}"`) : ""}<p>${th("core-none", { system: system?.name ?? game.system, host })}</p>${session.authenticated ? `<a class="btn filled" href="/stream" data-link>${icon("cast")}${th("action-stream", { host })}</a>` : ""}</section>`}
+    <div class="panels" style="margin-top:var(--space-4)">
+      <div class="panel"><h3>${icon("deployed_code", { size: "sm" })}${th("label-core")}</h3><dl class="kv">
+        <dt>${th("label-system")}</dt><dd>${esc(system?.name ?? game.system)}</dd>
+        ${core ? `<dt>${th("label-core")}</dt><dd>${esc(`${core.name} ${core.version ?? ""}`)}</dd>` : ""}
+        <dt>${th("core-webgpu")}</dt><dd>${"gpu" in navigator ? icon("check", { size: "sm" }) : th("core-webgpu-missing")}</dd>
+        <dt>${th("core-isolation")}</dt><dd>${crossOriginIsolated ? icon("check", { size: "sm" }) : th("core-not-isolated")}</dd>
+        ${core ? `<dt>${th("label-status")}</dt><dd id="core-status"></dd>` : ""}
+        ${game.license ? `<dt>${th("label-license")}</dt><dd>${esc(game.license)}</dd>` : ""}
       </dl></div>
-      <div class="panel"><h3>${icon("gamepad")}Controls</h3><p class="controls">
-        <kbd>Arrows</kbd> D-pad &middot; <kbd>X</kbd> A &middot; <kbd>Z</kbd> B &middot; <kbd>Enter</kbd> Start &middot; <kbd>Backspace</kbd> Select &middot; <kbd>A</kbd>/<kbd>S</kbd> L/R. Gamepads use the standard mapping.</p>
-        <p class="hint">${esc(game.license)}</p>
-        <button class="btn tonal" id="fullscreen">${icon("fullscreen")}Fullscreen</button>
-      </div>
-    </div>
-  </section>`;
-  document
-    .getElementById("back")
-    ?.addEventListener("click", () => navigate("/"));
-  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-  document
-    .getElementById("fullscreen")
-    ?.addEventListener(
-      "click",
-      () => void document.getElementById("screen")?.requestFullscreen(),
-    );
-  const status = document.getElementById("core-status") as HTMLElement;
+      <div class="panel"><h3>${icon("sports_esports", { size: "sm" })}${th("controls-title")}</h3><p class="hint">${th("controls-keys")}</p>
+        ${core ? `<button class="btn tonal" type="button" id="fullscreen">${icon("fullscreen", { size: "sm" })}${th("action-fullscreen")}</button>` : ""}</div>
+    </div>`;
+  if (!core) return;
+  const canvas = $<HTMLCanvasElement>("canvas");
+  const status = $("core-status");
+  $("fullscreen")?.addEventListener(
+    "click",
+    () => void $("screen")?.requestFullscreen(),
+  );
   if (game.system === "nds")
-    document
-      .getElementById("screen")
-      ?.style.setProperty("--aspect", String(256 / 384));
-  if (!core) {
-    status.textContent =
-      "No web core for this system is published yet (dist/web-emulation).";
-    return;
-  }
+    $("screen")?.style.setProperty("--aspect", String(256 / 384));
   try {
     const rom = new Uint8Array(await (await fetch(game.rom)).arrayBuffer());
-    running = await runCore(
-      core,
-      canvas,
-      rom,
-      game.system,
-      (text) => (status.textContent = text),
-    );
+    running = await runCore(core, canvas, rom, game.system, (state, detail) => {
+      status.textContent =
+        state === "loading"
+          ? t("core-loading", { core: core.name })
+          : state === "running"
+            ? t("core-running", { core: core.name })
+            : t("core-failed", { core: core.name, error: detail ?? "" });
+    });
     canvas.focus();
   } catch (error) {
-    status.textContent = `Failed: ${error instanceof Error ? error.message : String(error)}`;
+    status.textContent = t("core-failed", {
+      core: core.name,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
@@ -379,19 +644,8 @@ async function renderPlay(id: string): Promise<void> {
 type SteamStatus = {
   available: boolean;
   root?: string;
-  libraries?: {
-    path: string;
-    apps: number;
-    freeBytes: number | null;
-    totalBytes: number | null;
-  }[];
-  games?: {
-    appId: number;
-    name: string;
-    sizeOnDisk: number;
-    stateFlags: number;
-    buildId: string | null;
-  }[];
+  libraries?: { path: string; apps: number; freeBytes: number | null }[];
+  games?: SteamGame[];
   compatTools?: {
     internalName: string;
     displayName: string;
@@ -420,8 +674,6 @@ type Downloads = {
   }[];
 };
 type Lancache = {
-  generatedAt: string;
-  root: string;
   totals: {
     requests: number;
     bytes: number;
@@ -430,85 +682,94 @@ type Lancache = {
     errors: number;
     hitRatio: number;
   };
-  throughput: { missMBps: number | null; hitMBps: number | null };
-  depots: {
-    depot: number;
-    chunks: number;
-    bytes: number;
-    hits: number;
-    misses: number;
-  }[];
+  throughput: { missMBps: number | null };
+  depots: { depot: number; chunks: number; bytes: number }[];
 };
+const rateFormat = new Intl.NumberFormat(locale, {
+  style: "unit",
+  unit: "megabit-per-second",
+  maximumFractionDigits: 1,
+});
+const percentFormat = new Intl.NumberFormat(locale, { style: "percent" });
 
 function renderSteam(): () => void {
   if (!session.authenticated) {
-    locked("Steam");
+    locked("nav-steam");
     return () => {};
   }
+  const host = session.host;
   main.innerHTML = `
-    <div class="section-head"><h2>Steam on the gaming host</h2><span class="status" id="steam-state">loading</span></div>
+    <div class="page-head"><h1>${th("steam-title", { host })}</h1><span class="hint end" id="steam-state"></span></div>
     <div class="panels">
-      <div class="panel" id="downloads"><h3>${icon("download")}Downloads</h3><p class="hint">Waiting for content_log...</p></div>
-      <div class="panel" id="lancache"><h3>${icon("storage")}LAN cache</h3><p class="hint">Waiting for the cache audit...</p></div>
+      <div class="panel" id="downloads"><h3>${icon("cloud_download", { size: "sm" })}${th("steam-downloads")}</h3><p class="hint">${th("steam-no-updates")}</p></div>
+      <div class="panel" id="lancache"><h3>${icon("storage", { size: "sm" })}${th("steam-lancache")}</h3><p class="hint">${th("steam-lancache-wait")}</p></div>
     </div>
-    <div class="section-head"><h2>Installed games</h2></div>
+    <div class="page-head"><h2>${th("steam-installed")}</h2></div>
     <div class="panel table-wrap" id="steam-games"></div>
-    <div class="section-head"><h2>Libraries, Proton and Remote Play</h2></div>
+    <div class="page-head"><h2>${th("steam-libraries")}</h2></div>
     <div class="panels">
       <div class="panel table-wrap" id="steam-libraries"></div>
       <div class="panel table-wrap" id="steam-tools"></div>
       <div class="panel" id="steam-remote"></div>
     </div>
-    <div class="section-head"><h2>Network audit</h2><button class="btn tonal" id="audit">${icon("refresh")}Run audit</button></div>
-    <div class="panel" id="audit-result"><p class="hint">bun-steam audit: content servers, CM servers, resolver and the client logs.</p></div>`;
+    <div class="page-head"><h2>${th("steam-audit")}</h2><button class="btn tonal end" type="button" id="audit">${icon("refresh", { size: "sm" })}${th("action-audit")}</button></div>
+    <div class="panel" id="audit-result"><p class="hint">${th("steam-audit-none")}</p></div>`;
 
   const offSteam = on("steam", (data) => {
     const steam = data as SteamStatus;
-    const state = document.getElementById("steam-state");
+    const state = $("steam-state");
     if (!state) return;
-    state.className = `status ${steam.available ? "ok" : "warn"}`;
     state.textContent = steam.available
-      ? `client at ${steam.root}`
-      : "no Steam client";
+      ? t("steam-client", { root: steam.root ?? "" })
+      : t("steam-missing");
     if (!steam.available) return;
-    (document.getElementById("steam-games") as HTMLElement).innerHTML =
-      `<table class="table"><thead><tr><th>Game</th><th>App ID</th><th class="num">Size</th><th>Build</th></tr></thead><tbody>${(steam.games ?? []).map((game) => `<tr><td>${esc(game.name)}</td><td>${game.appId}</td><td class="num">${bytes(game.sizeOnDisk)}</td><td>${esc(game.buildId ?? "-")}</td></tr>`).join("") || `<tr><td colspan="4">No installed game</td></tr>`}</tbody></table>`;
-    (document.getElementById("steam-libraries") as HTMLElement).innerHTML =
-      `<h3>${icon("storage")}Libraries</h3><table class="table"><tbody>${(steam.libraries ?? []).map((library) => `<tr><td>${esc(library.path)}</td><td class="num">${library.apps} apps</td><td class="num">${bytes(library.freeBytes)} free</td></tr>`).join("")}</tbody></table>`;
-    (document.getElementById("steam-tools") as HTMLElement).innerHTML =
-      `<h3>${icon("memory")}Compatibility tools</h3><table class="table"><tbody>${(steam.compatTools ?? []).map((tool) => `<tr><td>${esc(tool.displayName)}</td><td>${esc(tool.kind)}</td><td>${esc(tool.version ?? "")}</td></tr>`).join("") || "<tr><td>None</td></tr>"}</tbody></table>`;
+    const games = (steam.games ?? []).filter((game) => game.kind === "game");
+    $("steam-games").innerHTML = games.length
+      ? `<table class="table"><thead><tr><th></th><th>${th("col-game")}</th><th class="num">${th("col-size")}</th><th>${th("col-build")}</th></tr></thead><tbody>${games
+          .map(
+            (game) =>
+              `<tr><td><img class="thumb" src="${steamArt(game.appId, "header", 230)}" srcset="${steamArt(game.appId, "header", 230)} 230w, ${steamArt(game.appId, "header", 460)} 460w" sizes="115px" width="115" height="54" alt="" loading="lazy" /></td><td>${esc(game.name)}</td><td class="num">${bytes(game.sizeOnDisk)}</td><td>${esc(game.buildId ?? "")}</td></tr>`,
+          )
+          .join("")}</tbody></table>`
+      : `<p class="hint">${th("steam-none-installed", { host })}</p>`;
+    $("steam-libraries").innerHTML =
+      `<h3>${icon("storage", { size: "sm" })}${th("steam-libraries")}</h3><table class="table"><tbody>${(steam.libraries ?? []).map((library) => `<tr><td>${esc(library.path)}</td><td class="num">${th("steam-apps", { count: library.apps })}</td><td class="num">${th("steam-free", { bytes: bytes(library.freeBytes) })}</td></tr>`).join("")}</tbody></table>`;
+    $("steam-tools").innerHTML =
+      `<h3>${icon("deployed_code", { size: "sm" })}${th("steam-tools")}</h3><table class="table"><tbody>${(steam.compatTools ?? []).map((tool) => `<tr><td>${esc(tool.displayName)}</td><td>${esc(tool.version ?? "")}</td></tr>`).join("")}</tbody></table>`;
     const remote = steam.remotePlay ?? { clients: [], connections: [] };
-    (document.getElementById("steam-remote") as HTMLElement).innerHTML =
-      `<h3>${icon("stream")}Remote Play</h3><dl class="kv">${remote.clients.map((client) => `<dt>${esc(client.hostname ?? client.id)}</dt><dd>${esc(client.lastResult ?? "-")}</dd>`).join("") || "<dt>Peers</dt><dd>none</dd>"}</dl>${remote.connections.length ? `<pre class="log">${esc(remote.connections.join("\n"))}</pre>` : ""}`;
+    $("steam-remote").innerHTML =
+      `<h3>${icon("cast", { size: "sm" })}${th("steam-remote-play")}</h3>${remote.clients.length ? `<dl class="kv">${remote.clients.map((client) => `<dt>${esc(client.hostname ?? client.id)}</dt><dd>${esc(client.lastResult ?? "")}</dd>`).join("")}</dl>` : `<p class="hint">${th("steam-no-peers")}</p>`}${remote.connections.length ? `<pre class="log">${esc(remote.connections.join("\n"))}</pre>` : ""}`;
   });
   const offDownloads = on("downloads", (data) => {
     const downloads = data as Downloads;
-    const panel = document.getElementById("downloads");
+    const panel = $("downloads");
     if (!panel) return;
-    panel.innerHTML = `<h3>${icon("download")}Downloads</h3>
-      <dl class="kv"><dt>Rate</dt><dd>${downloads.rateMbps == null ? "-" : `${downloads.rateMbps.toFixed(2)} Mbps`} <span class="hint">${esc(downloads.rateAt ?? "")}</span></dd></dl>
-      <table class="table"><thead><tr><th>App</th><th>State</th><th>Update</th></tr></thead><tbody>${
-        downloads.apps
-          .slice(0, 8)
-          .map(
-            (app) =>
-              `<tr><td>${esc(app.name ?? app.appId)}</td><td>${esc(app.state)}</td><td>${app.finished ? `<span class="status ok">done</span>` : esc(app.update || "-")}</td></tr>`,
-          )
-          .join("") || `<tr><td colspan="3">No recent update</td></tr>`
-      }</tbody></table>`;
+    panel.innerHTML = `<h3>${icon("cloud_download", { size: "sm" })}${th("steam-downloads")}</h3>
+      <dl class="kv"><dt>${th("steam-rate")}</dt><dd>${downloads.rateMbps == null ? "" : rateFormat.format(downloads.rateMbps)}</dd></dl>
+      ${
+        downloads.apps.length
+          ? `<table class="table"><thead><tr><th>${th("col-game")}</th><th>${th("col-state")}</th><th>${th("col-update")}</th></tr></thead><tbody>${downloads.apps
+              .slice(0, 8)
+              .map(
+                (app) =>
+                  `<tr><td>${esc(app.name ?? app.appId)}</td><td>${esc(app.state)}</td><td>${app.finished ? `<span class="status ok">${icon("check", { size: "sm" })}${th("steam-done")}</span>` : esc(app.update)}</td></tr>`,
+              )
+              .join("")}</tbody></table>`
+          : `<p class="hint">${th("steam-no-updates")}</p>`
+      }`;
   });
   const offLancache = on("lancache", (data) => {
     const cache = data as Lancache;
-    const panel = document.getElementById("lancache");
+    const panel = $("lancache");
     if (!panel || !cache?.totals) return;
-    const ratio = Math.round(cache.totals.hitRatio * 100);
-    panel.innerHTML = `<h3>${icon("storage")}LAN cache</h3>
-      <dl class="kv"><dt>Served</dt><dd>${bytes(cache.totals.bytes)} in ${cache.totals.requests} requests</dd>
-      <dt>Hit ratio</dt><dd>${ratio}% (${bytes(cache.totals.hitBytes)} hit / ${bytes(cache.totals.missBytes)} miss)</dd>
-      <dt>Miss rate</dt><dd>${cache.throughput.missMBps == null ? "-" : `${cache.throughput.missMBps.toFixed(1)} MB/s`}</dd>
-      <dt>Errors</dt><dd>${cache.totals.errors}</dd></dl>
-      <div class="bar" role="progressbar" aria-label="Cache hit ratio" aria-valuenow="${ratio}" aria-valuemin="0" aria-valuemax="100"><span style="width:${ratio}%"></span></div>
-      <table class="table"><thead><tr><th>Depot</th><th class="num">Chunks</th><th class="num">Bytes</th></tr></thead><tbody>${cache.depots
+    const ratio = cache.totals.hitRatio;
+    panel.innerHTML = `<h3>${icon("storage", { size: "sm" })}${th("steam-lancache")}</h3>
+      <dl class="kv"><dt>${th("steam-served")}</dt><dd>${th("steam-served-value", { bytes: bytes(cache.totals.bytes), requests: cache.totals.requests })}</dd>
+      <dt>${th("steam-hit-ratio")}</dt><dd>${percentFormat.format(ratio)}</dd>
+      <dt>${th("steam-miss-rate")}</dt><dd>${cache.throughput.missMBps == null ? "" : rateFormat.format(cache.throughput.missMBps * 8)}</dd>
+      <dt>${th("steam-errors")}</dt><dd>${cache.totals.errors}</dd></dl>
+      <div class="meter" role="meter" aria-label="${th("steam-hit-ratio")}" aria-valuenow="${Math.round(ratio * 100)}" aria-valuemin="0" aria-valuemax="100"><span style="width:${ratio * 100}%"></span></div>
+      <table class="table"><thead><tr><th>${th("col-depot")}</th><th class="num">${th("col-chunks")}</th><th class="num">${th("col-bytes")}</th></tr></thead><tbody>${cache.depots
         .slice(0, 6)
         .map(
           (depot) =>
@@ -516,32 +777,28 @@ function renderSteam(): () => void {
         )
         .join("")}</tbody></table>`;
   });
-  const showAudit = (result: {
+  type Audit = {
     running: boolean;
     last: {
       at: string;
-      report: {
-        findings?: { severity: string; message: string }[];
-        durationMs?: number;
-      };
+      report: { findings?: { severity: string; message: string }[] };
     } | null;
-  }) => {
-    const panel = document.getElementById("audit-result");
-    if (!panel) return;
-    const findings = result.last?.report.findings ?? [];
-    panel.innerHTML = result.last
-      ? `<p class="hint">Last audit ${esc(result.last.at)}${result.running ? " (running again)" : ""}</p><table class="table"><tbody>${findings.map((finding) => `<tr><td>${esc(finding.severity)}</td><td>${esc(finding.message)}</td></tr>`).join("") || "<tr><td>No finding</td></tr>"}</tbody></table>`
-      : `<p class="hint">${result.running ? "Audit running (about a minute)..." : "No audit yet."}</p>`;
   };
-  void api<Parameters<typeof showAudit>[0]>("/api/steam/audit").then(
-    showAudit,
-    () => undefined,
-  );
-  document.getElementById("audit")?.addEventListener("click", async () => {
-    showAudit(await api("/api/steam/audit", { method: "POST" }));
-    const poll = setInterval(async () => {
-      const result =
-        await api<Parameters<typeof showAudit>[0]>("/api/steam/audit");
+  const showAudit = (result: Audit) => {
+    const panel = $("audit-result");
+    if (!panel) return;
+    panel.innerHTML = result.last
+      ? `<p class="hint">${th("steam-audit-last", { at: dateFormat.format(new Date(result.last.at)) })}</p><table class="table"><tbody>${(result.last.report.findings ?? []).map((finding) => `<tr><td>${esc(finding.severity)}</td><td>${esc(finding.message)}</td></tr>`).join("")}</tbody></table>`
+      : `<p class="hint">${th(result.running ? "steam-audit-running" : "steam-audit-none")}</p>`;
+  };
+  void api<Audit>("/api/steam/audit").then(showAudit, () => undefined);
+  let poll = 0;
+  $("audit")?.addEventListener("click", async () => {
+    showAudit(await api<Audit>("/api/steam/audit", { method: "POST" }));
+    toast("toast-audit");
+    clearInterval(poll);
+    poll = window.setInterval(async () => {
+      const result = await api<Audit>("/api/steam/audit");
       showAudit(result);
       if (!result.running) clearInterval(poll);
     }, 5000);
@@ -550,31 +807,36 @@ function renderSteam(): () => void {
     offSteam();
     offDownloads();
     offLancache();
+    clearInterval(poll);
   };
 }
 
 // ------------------------------------------------------------------ stream
 function renderStream(): () => void {
   if (!session.authenticated) {
-    locked("Stream");
+    locked("nav-stream");
     return () => {};
   }
+  const host = session.host;
   main.innerHTML = `
-    <div class="section-head"><h2>Game stream</h2><span class="status" id="stream-state">checking sender</span></div>
-    <div class="screen"><iframe id="stream-frame" title="Game stream" allow="gamepad; fullscreen; autoplay; pointer-lock"></iframe></div>
-    <div class="panels" style="margin-top:var(--space-md)">
-      <div class="panel" id="stream-info"><h3>${icon("stream")}Sender</h3><p class="hint">WebRTC (H.264) to WebCodecs, presented with WebGPU FSR 1. Media flows over the Aphrody mesh (wg1).</p></div>
-      <div class="panel"><h3>${icon("gamepad")}Session</h3><p class="hint">Keyboard, mouse and gamepads are sent over the WebRTC data channel. Click the stream to capture the pointer.</p>
-        <button class="btn tonal" id="stream-full">${icon("fullscreen")}Fullscreen</button> <button class="btn text" id="stream-reconnect">${icon("refresh")}Reconnect</button></div>
+    <div class="page-head"><h1>${th("stream-title", { host })}</h1><span class="hint end" id="stream-state"></span></div>
+    <div class="screen"><iframe id="stream-frame" title="${th("stream-frame")}" allow="gamepad; fullscreen; autoplay"></iframe></div>
+    <div class="panels">
+      <div class="panel" id="stream-info"><h3>${icon("cast", { size: "sm" })}${th("stream-sender")}</h3><p class="hint">${th("stream-path")}</p></div>
+      <div class="panel"><h3>${icon("sports_esports", { size: "sm" })}${th("controls-title")}</h3><p class="hint">${th("stream-input")}</p>
+        <div class="hero-actions"><button class="btn tonal" type="button" id="stream-full">${icon("fullscreen", { size: "sm" })}${th("action-fullscreen")}</button>
+        <button class="btn text" type="button" id="stream-reconnect">${icon("refresh", { size: "sm" })}${th("action-reconnect")}</button></div></div>
     </div>`;
-  const frame = document.getElementById("stream-frame") as HTMLIFrameElement;
+  const frame = $<HTMLIFrameElement>("stream-frame");
   frame.src = "/stream-client/index.html";
-  document
-    .getElementById("stream-full")
-    ?.addEventListener("click", () => void frame.requestFullscreen());
-  document.getElementById("stream-reconnect")?.addEventListener("click", () => {
-    frame.src = "/stream-client/index.html";
-  });
+  $("stream-full")?.addEventListener(
+    "click",
+    () => void frame.requestFullscreen(),
+  );
+  $("stream-reconnect")?.addEventListener(
+    "click",
+    () => (frame.src = "/stream-client/index.html"),
+  );
   document.body.dataset.gamepadCapture = "stream";
   const off = on("stream", (data) => {
     const stream = data as {
@@ -586,22 +848,20 @@ function renderStream(): () => void {
         codec: string;
         bitrateKbps: number;
       } | null;
-      sessions?: { user: string; since: string; ice: string }[];
+      sessions?: { user: string; ice: string }[];
     };
-    const state = document.getElementById("stream-state");
-    const info = document.getElementById("stream-info");
+    const state = $("stream-state");
+    const info = $("stream-info");
     if (!state || !info || stream.reachable === undefined) return;
-    state.className = `status ${stream.sender ? "ok" : "warn"}`;
     state.textContent = !stream.reachable
-      ? "stream server unreachable"
+      ? t("stream-unreachable")
       : stream.sender
-        ? "sender ready"
-        : "no sender running";
+        ? t("stream-ready")
+        : t("stream-no-sender");
     const sender = stream.sender;
-    info.innerHTML = `<h3>${icon("stream")}Sender</h3><dl class="kv">
-      <dt>Server</dt><dd>${stream.reachable ? "reachable" : "down"}</dd>
-      <dt>Video</dt><dd>${sender ? `${sender.width}x${sender.height}@${sender.fps} ${esc(sender.codec)} ${sender.bitrateKbps} kbps` : "-"}</dd>
-      <dt>Sessions</dt><dd>${(stream.sessions ?? []).map((item) => `${esc(item.user)} (${esc(item.ice)})`).join(", ") || "none"}</dd></dl>`;
+    info.innerHTML = `<h3>${icon("cast", { size: "sm" })}${th("stream-sender")}</h3><p class="hint">${th("stream-path")}</p><dl class="kv">
+      ${sender ? `<dt>${th("stream-video")}</dt><dd>${esc(`${sender.width}×${sender.height}, ${sender.fps} fps, ${sender.codec}, ${sender.bitrateKbps} kbps`)}</dd>` : ""}
+      <dt>${th("stream-sessions")}</dt><dd>${(stream.sessions ?? []).map((item) => esc(`${item.user} (${item.ice})`)).join(", ") || th("stream-none")}</dd></dl>`;
   });
   return () => {
     off();
@@ -612,17 +872,17 @@ function renderStream(): () => void {
 // ------------------------------------------------------------------ engine
 function renderEngine(): () => void {
   if (!session.authenticated) {
-    locked("Engine");
+    locked("nav-engine");
     return () => {};
   }
   main.innerHTML = `
-    <div class="section-head"><h2>NGINX engine (bun:nginx)</h2><button class="btn tonal" id="reload">${icon("refresh")}Validate and reload</button></div>
-    <div class="panel" id="nginx"><p class="hint">Loading...</p></div>
-    <div class="section-head"><h2>Running machines</h2></div>
-    <div class="panel" id="running"><p class="hint">Loading...</p></div>
-    <div class="section-head"><h2>Systems and launch routes</h2><button class="btn text" id="scan">${icon("refresh")}Scan library</button></div>
-    <div class="panel table-wrap" id="engine-systems"><p class="hint">Loading...</p></div>
-    <div class="section-head"><h2>Jobs</h2></div>
+    <div class="page-head"><h1>${th("engine-title")}</h1><button class="btn tonal end" type="button" id="reload">${icon("refresh", { size: "sm" })}${th("action-reload-engine")}</button></div>
+    <div class="panel" id="nginx"></div>
+    <div class="page-head"><h2>${th("engine-machines")}</h2></div>
+    <div class="panel" id="running"></div>
+    <div class="page-head"><h2>${th("engine-systems")}</h2><button class="btn text end" type="button" id="scan">${icon("refresh", { size: "sm" })}${th("action-scan")}</button></div>
+    <div class="panel table-wrap" id="engine-systems"></div>
+    <div class="page-head"><h2>${th("engine-jobs")}</h2></div>
     <div class="panel table-wrap" id="jobs"></div>`;
   const offNginx = on("nginx", (data) => {
     const engine = data as {
@@ -630,62 +890,81 @@ function renderEngine(): () => void {
       pid: number | null;
       version: string | null;
       capabilities: Record<string, boolean> | null;
-      module: Record<string, unknown> | null;
+      module: Record<string, string | number> | null;
       lastReload: string | null;
       error: string | null;
     };
-    const panel = document.getElementById("nginx");
+    const panel = $("nginx");
     if (!panel) return;
     panel.innerHTML = `<dl class="kv">
-      <dt>State</dt><dd><span class="status ${engine.running ? "ok" : "warn"}">${engine.running ? `running, master ${engine.pid}` : "stopped"}</span></dd>
-      <dt>Version</dt><dd>${esc(engine.version ?? "-")}</dd>
-      <dt>Capabilities</dt><dd>${esc(
-        Object.entries(engine.capabilities ?? {})
-          .filter(([, value]) => value === true)
-          .map(([key]) => key)
-          .join(", "),
+      <dt>${th("engine-state")}</dt><dd class="status ${engine.running ? "ok" : "warn"}">${engine.running ? th("engine-running", { pid: engine.pid ?? "" }) : th("engine-stopped")}</dd>
+      <dt>${th("engine-version")}</dt><dd>${esc(engine.version ?? "")}</dd>
+      <dt>${th("engine-capabilities")}</dt><dd>${esc(
+        new Intl.ListFormat(locale).format(
+          Object.entries(engine.capabilities ?? {})
+            .filter(([, value]) => value === true)
+            .map(([key]) => key),
+        ),
       )}</dd>
-      <dt>Rust module</dt><dd>${engine.module ? esc(`${engine.module.module} nginx ${engine.module.nginxVersion} worker ${engine.module.workerPID} (${engine.module.eventLoop})`) : "-"}</dd>
-      <dt>Sources</dt><dd>${engine.module ? esc(`nginx ${String(engine.module.nginxSourceRevision).slice(0, 12)} / ngx-rust ${String(engine.module.ngxRustRevision).slice(0, 12)}`) : "-"}</dd>
-      <dt>Last reload</dt><dd>${esc(engine.lastReload ?? "-")}</dd>
-      ${engine.error ? `<dt>Error</dt><dd>${esc(engine.error)}</dd>` : ""}</dl>`;
+      <dt>${th("engine-module")}</dt><dd>${engine.module ? esc(`${engine.module.module}, NGINX ${engine.module.nginxVersion}, worker ${engine.module.workerPID}`) : ""}</dd>
+      <dt>${th("engine-sources")}</dt><dd>${engine.module ? esc(`nginx ${String(engine.module.nginxSourceRevision).slice(0, 12)}, ngx-rust ${String(engine.module.ngxRustRevision).slice(0, 12)}`) : ""}</dd>
+      <dt>${th("engine-last-reload")}</dt><dd>${engine.lastReload ? esc(dateFormat.format(new Date(engine.lastReload))) : ""}</dd>
+      ${engine.error ? `<dt>${th("engine-error")}</dt><dd>${esc(engine.error)}</dd>` : ""}</dl>`;
   });
   const offRunning = on("engine", (data) => {
-    const panel = document.getElementById("running");
+    const panel = $("running");
     const items = (
       data as {
         running: {
           pid: number;
           title?: string;
-          route?: string;
           system?: string;
+          route?: string;
         }[];
       }
     ).running;
     if (panel)
       panel.innerHTML = items.length
-        ? `<table class="table"><tbody>${items.map((item) => `<tr><td>${item.pid}</td><td>${esc(item.title ?? "")}</td><td>${esc(item.system ?? "")}</td><td>${esc(item.route ?? "")}</td></tr>`).join("")}</tbody></table>`
-        : `<p class="hint">No native machine running on the host.</p>`;
+        ? `<table class="table"><tbody>${items.map((item) => `<tr><td>${esc(item.title ?? "")}</td><td>${esc(item.system ?? "")}</td><td>${esc(item.route ?? "")}</td><td class="num">${item.pid}</td></tr>`).join("")}</tbody></table>`
+        : `<p class="hint">${th("engine-no-machines")}</p>`;
   });
-  void api<
-    {
-      id: string;
-      name: string;
-      games: number;
-      routes: { id: string; kind: string; available: boolean }[];
-      defaultRoute: string | null;
-    }[]
-  >("/api/engine/systems").then(
-    (systems) => {
-      const panel = document.getElementById("engine-systems");
-      if (panel)
-        panel.innerHTML = `<table class="table"><thead><tr><th>System</th><th class="num">Games</th><th>Routes</th><th>Default</th></tr></thead><tbody>${systems.map((system) => `<tr><td>${esc(system.name)}</td><td class="num">${system.games}</td><td>${system.routes.map((route) => `<span class="status ${route.available ? "ok" : ""}">${esc(route.id)}</span>`).join(" ")}</td><td>${esc(system.defaultRoute ?? "auto")}</td></tr>`).join("")}</tbody></table>`;
-    },
-    (error) => {
-      const panel = document.getElementById("engine-systems");
-      if (panel) panel.innerHTML = `<p class="hint">${esc(error.message)}</p>`;
-    },
-  );
+  let icons = new Map<string, CatalogSystem>();
+  void (async () => {
+    catalog ??= await api<Catalog>("/catalog.json");
+    icons = new Map(catalog.systems.map((system) => [system.id, system]));
+  })()
+    .catch(() => undefined)
+    .then(() =>
+      api<
+        {
+          id: string;
+          name: string;
+          manufacturer: string;
+          year: number;
+          games: number;
+          routes: { id: string; available: boolean }[];
+          defaultRoute: string | null;
+        }[]
+      >("/api/engine/systems"),
+    )
+    .then(
+      (systems) => {
+        const tests = (catalog?.games ?? []).filter(
+          (game) => game.kind === "test",
+        ).length;
+        $("engine-systems").innerHTML =
+          `<table class="table"><thead><tr><th>${th("col-system")}</th><th>${th("col-maker")}</th><th class="num">${th("col-year")}</th><th>${th("col-routes")}</th><th>${th("col-default")}</th></tr></thead><tbody>${systems
+            .map((system) => {
+              const image = icons.get(system.id)?.icon;
+              return `<tr><td><span class="cell-system">${image ? `<img class="system-icon" src="${esc(image.src)}" srcset="${esc(image.srcset)}" sizes="40px" width="40" height="40" alt="" loading="lazy" />` : ""}${esc(system.name)}</span></td><td>${esc(system.manufacturer)}</td><td class="num">${system.year}</td><td>${esc(new Intl.ListFormat(locale, { style: "narrow" }).format(system.routes.map((route) => route.id)))}</td><td>${esc(system.defaultRoute ?? "")}</td></tr>`;
+            })
+            .join(
+              "",
+            )}</tbody></table>${tests ? `<p class="hint">${th("engine-test-roms", { count: tests })}</p>` : ""}`;
+      },
+      (error) =>
+        ($("engine-systems").innerHTML = loadError(t("engine-systems"), error)),
+    );
   const jobs = async () => {
     const list = await api<
       {
@@ -696,33 +975,29 @@ function renderEngine(): () => void {
         error?: string;
       }[]
     >("/api/engine/jobs").catch(() => []);
-    const panel = document.getElementById("jobs");
+    const panel = $("jobs");
     if (panel)
       panel.innerHTML = list.length
-        ? `<table class="table"><tbody>${list.map((job) => `<tr><td>${job.id}</td><td>${esc(job.title)}</td><td><span class="status ${job.status === "done" ? "ok" : job.status === "failed" ? "warn" : ""}">${esc(job.status)}</span></td><td>${esc(job.error ?? job.startedAt)}</td></tr>`).join("")}</tbody></table>`
-        : `<p class="hint">No job.</p>`;
+        ? `<table class="table"><tbody>${list.map((job) => `<tr><td>${esc(job.title)}</td><td class="status ${job.status === "done" ? "ok" : job.status === "failed" ? "warn" : ""}">${esc(job.status)}</td><td>${esc(job.error ?? dateFormat.format(new Date(job.startedAt)))}</td></tr>`).join("")}</tbody></table>`
+        : `<p class="hint">${th("engine-no-jobs")}</p>`;
   };
   void jobs();
   const timer = setInterval(jobs, 4000);
-  document
-    .getElementById("scan")
-    ?.addEventListener(
-      "click",
-      () => void api("/api/engine/library/scan", { method: "POST" }).then(jobs),
-    );
-  document
-    .getElementById("reload")
-    ?.addEventListener("click", async (event) => {
-      const button = event.currentTarget as HTMLButtonElement;
-      button.disabled = true;
-      try {
-        const engine = await api("/api/nginx/reload", { method: "POST" });
-        latest.set("nginx", engine);
-        for (const listener of listeners.get("nginx") ?? []) listener(engine);
-      } finally {
-        button.disabled = false;
-      }
-    });
+  $("scan")?.addEventListener("click", async () => {
+    await api("/api/engine/library/scan", { method: "POST" });
+    toast("toast-scan");
+    void jobs();
+  });
+  $("reload")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget as HTMLButtonElement;
+    button.disabled = true;
+    try {
+      emit("nginx", await api("/api/nginx/reload", { method: "POST" }));
+      toast("toast-reloaded");
+    } finally {
+      button.disabled = false;
+    }
+  });
   return () => {
     offNginx();
     offRunning();
@@ -734,7 +1009,7 @@ function renderEngine(): () => void {
 let cleanup: () => void = () => {};
 function navigate(path: string): void {
   history.pushState(null, "", path);
-  route();
+  void route();
 }
 
 async function route(): Promise<void> {
@@ -745,17 +1020,22 @@ async function route(): Promise<void> {
   renderShell();
   const path = location.pathname;
   try {
-    if (path === "/") await renderLibrary();
-    else if (path.startsWith("/play/"))
-      await renderPlay(decodeURIComponent(path.slice(6)));
-    else if (path === "/steam") cleanup = renderSteam();
-    else if (path === "/stream") cleanup = renderStream();
-    else if (path === "/engine") cleanup = renderEngine();
-    else main.innerHTML = `<p class="empty">Not found.</p>`;
+    if (path === "/") cleanup = await renderHome();
+    else {
+      document.body.classList.remove("home-active");
+      if (path.startsWith("/play/"))
+        await renderPlay(decodeURIComponent(path.slice(6)));
+      else if (path === "/steam") cleanup = renderSteam();
+      else if (path === "/stream") cleanup = renderStream();
+      else if (path === "/engine") cleanup = renderEngine();
+      else
+        main.innerHTML = `<section class="empty"><p>${th("not-found")}</p><a class="btn tonal" href="/" data-link>${th("action-back")}</a></section>`;
+      if (!path.startsWith("/play/")) void tintFromImage(null);
+    }
   } catch (error) {
-    main.innerHTML = `<p class="empty">${icon("warning")} ${esc(error instanceof Error ? error.message : String(error))}</p>`;
+    main.innerHTML = loadError(path, error);
   }
-  main.focus({ preventScroll: true });
+  if (path !== "/") main.focus({ preventScroll: true });
 }
 
 document.addEventListener("click", (event) => {
@@ -764,16 +1044,27 @@ document.addEventListener("click", (event) => {
   );
   if (!link || event.ctrlKey || event.metaKey || event.shiftKey) return;
   event.preventDefault();
+  if (link.dataset.toast)
+    toast(link.dataset.toast as MessageId, { host: session.host });
   navigate(link.getAttribute("href")!);
 });
 addEventListener("popstate", () => void route());
 
 observeWindowClass();
 installSpatialNavigation();
+document.documentElement.lang = locale;
 [session, cores] = await Promise.all([
   api<SessionInfo>("/api/session").catch(() => session),
   api<CoreManifest[]>("/api/emulation").catch(() => []),
 ]);
+if (session.authenticated)
+  steamGames = await api<SteamStatus>("/api/steam")
+    .then((status) => status.games ?? [])
+    .catch(() => []);
 connectRealtime();
 await route();
-if (new URLSearchParams(location.search).get("auth") === "denied") openSignin();
+const authResult = new URLSearchParams(location.search).get("auth");
+if (authResult === "denied" || authResult === "expired") {
+  toast(authResult === "denied" ? "signin-denied" : "signin-expired");
+  history.replaceState(null, "", location.pathname);
+}

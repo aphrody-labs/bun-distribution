@@ -105,11 +105,11 @@ export async function runCore(
   canvas: HTMLCanvasElement,
   rom: Uint8Array,
   system: string,
-  onStatus: (text: string) => void,
+  onStatus: (state: "loading" | "running" | "failed", detail?: string) => void,
 ): Promise<RunningCore> {
   if (core.threads && !crossOriginIsolated)
     throw new Error("threaded core needs a cross-origin isolated page");
-  onStatus(`Loading ${core.name}`);
+  onStatus("loading");
   const mod = (await import(
     /* @vite-ignore */ `${core.base}${core.module}`
   )) as CoreModule;
@@ -124,7 +124,7 @@ export async function runCore(
   if (typeof start !== "function")
     throw new Error(`${core.id}: missing export ${core.start ?? "start"}`);
   const handle = await start(canvas, rom, { system });
-  onStatus(`${core.name} running`);
+  onStatus("running");
 
   let keyboard = 0;
   let pad = 0;
