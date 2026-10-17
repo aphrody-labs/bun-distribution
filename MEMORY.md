@@ -803,8 +803,7 @@ run. The batch joins the active Bun OS merge and awaits its integration commit.
   six immutable image pins and static Compose validation. No deployment contexts,
   authenticated services, forge registration or runner jobs were qualified.
 
-The [session report](docs/SESSION-REPORT-2026-10-13.md) holds exact artifact
-and receipt references. Consolidation commit identities belong to Git log.
+Artifact, receipt and consolidation commit identities belong to Git log.
 The full OS objective, performance measurements and 9937-389B remain incomplete.
 
 The OS source consolidation was committed/pushed normally at

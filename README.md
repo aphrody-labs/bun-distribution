@@ -1,135 +1,126 @@
+<div align="center">
+
 # Bun OS
 
-Bun OS is the unified Aphrody/Bun product workspace. It combines the OS
-distribution factory, shared Bun packages, desktop application, and pinned
-library/runtime sources under one root Bun workspace. Source repositories are
-kept as revision-locked submodules so their histories and license notices stay
-available.
+**An Arch-based Linux distribution and product workspace built on the Aphrody Bun runtime.**
 
-Bun OS integrates the product capabilities through one workspace, including
-AI, infrastructure, development tools, libraries and applications.
-`bun src/cli.ts workspace` reports scoped source coverage and local state.
-See [source workspace integration](docs/SOURCE-WORKSPACE.md) for migration
-and protected-state boundaries.
+[Docs](docs/index.mdx) ·
+[Quickstart](docs/quickstart.mdx) ·
+[Factory](factory/README.md) ·
+[Architecture](docs/architecture.md) ·
+[Plan](PLAN.md)
 
-## Setup and quality
+[![CI](https://github.com/aphrody-labs/bun-distribution/actions/workflows/ci.yml/badge.svg?branch=os)](https://github.com/aphrody-labs/bun-distribution/actions/workflows/ci.yml)
+[![Bun](https://img.shields.io/badge/bun-1.4.4-black?logo=bun)](toolchains/bun)
+[![Rust](https://img.shields.io/badge/rust-nightly-orange?logo=rust)](rust-toolchain.toml)
+[![License](https://img.shields.io/badge/license-MIT%20%2F%20Apache--2.0-blue)](LICENSE)
 
-Requires Bun 1.4.4, Git, and the native toolchains for the targets being built.
+</div>
 
-```sh
+Bun OS ships the [Aphrody Bun runtime](https://github.com/aphrody-labs/bun) as the system runtime of an
+Arch Linux distribution. One repository holds the image factory, the desktop, the applications
+and every first-party crate and package. The image factory uses pacman/libalpm and runs from
+TypeScript. The desktop is COSMIC, with a Gamescope gaming session. The applications include the
+Craft creative suite, reverse-engineering tools and game tooling.
+
+## Editions
+
+| Composition | Session          | Purpose                                     |
+| ----------- | ---------------- | ------------------------------------------- |
+| `server`    | none             | Headless host: Bun services, nginx, systemd |
+| `desktop`   | `cosmic-session` | COSMIC desktop with the Material 3 shell    |
+| `gaming`    | `gamescope`      | Steam/Proton gaming session                 |
+
+Profiles: `full` (wgpu renderer, every engine) and `perf` (tiny-skia, demand-loaded engines).
+Targets: `linux-x64`, `linux-arm64`, `windows-x64`, `macos-arm64`, `wasm`.
+Package catalogs: Arch, CachyOS, ChimeraOS and Omarchy. APT is a separate compatibility target.
+Source of truth: [`distribution.json`](distribution.json) and [`sources.lock.json`](sources.lock.json).
+
+## Quickstart
+
+Requires Bun 1.4.4, Git, the nightly Rust toolchain from [`rust-toolchain.toml`](rust-toolchain.toml),
+and the native toolchain of each target you build.
+
+```bash
+git clone https://github.com/aphrody-labs/bun-distribution.git bun-os
+```
+
+```bash
 bun run setup
-bun run setup --plan
-bun check -p tsconfig.json --threads=2 --no-pretty
-bun lint --deny-warnings src container factory infra packages apps/desktop scripts
-bun fmt --check --config bun-format.json --ignore-pattern '**/*.html' src container factory infra packages apps/desktop scripts
-bun n2b
 ```
 
-Type checking, lint, formatting and Node-to-Bun migration use Bun's native
-commands directly. They do not invoke external checker binaries or wrapper
-scripts.
-
-`setup` initializes the root locked submodules, installs the single Bun
-workspace from `bun.lock`, and selects the shared Cargo `target` and `install`
-directories. Nested submodules remain pinned but are fetched only when their
-owning component requires them. Run `bun run workspace --help` for library
-inventory and capability commands.
-
-Setup first assembles `build/packages/material-web.tgz` from the pinned fork's
-versioned JavaScript and public declarations. The deterministic archive includes
-its isolated type tree and licenses, so frozen consumers need no lifecycle
-scripts or source compiler. Use `bun run setup` for a fresh checkout; a bare
-install cannot create this required local artifact. Building refreshed Material
-Web source and qualifying native applications remain separate gates.
-
-`setup --plan` inspects source revisions without installing or checking out
-sources. Setup refuses to move initialized sources at different or conflicted
-revisions, preserving active development before any installation begins.
-
-ArtCraft's physical frozen installation and frontend compilation pass on native
-Windows. Nested install retirement still requires dependency alignment; inspect
-`just install-plan` and [install qualification](docs/UNIFIED-INSTALL.md).
-
-```sh
-bun run frontend:build
-```
-
-This delegates to the existing ArtCraft compiler with a fresh output under
-`build/frontend/artcraft`. For a later build, select a fresh root output with
-`bun run frontend:build --output build/frontend/<name>`. Browser execution,
-desktop binaries and deployment require their own qualification.
-
-## Distribution factory
-
-Arch Linux is the primary Linux package model, with pacman/libalpm and one
-root factory. Complete CachyOS, ChimeraOS and Omarchy source/recipe catalogs
-feed separate headless Server, COSMIC Desktop and Gamescope Gaming compositions.
-See [factory usage](factory/README.md) and
-[architecture decisions](docs/architecture/arch-distribution.md).
-
-```sh
-bun run factory --action plan --composition server --snapshot YYYY-MM-DD
-bun run graph --composition server
-```
-
-```sh
-bun src/cli.ts --help
+```bash
 bun src/cli.ts plan --profile full --target linux-x64
-bun src/cli.ts sources --out ./out/full-new --config ./factory.local.json
-bun src/cli.ts stage --out ./out/full-new --profile full --target linux-x64 --runtime ./ARTIFACT --receipt ./RECEIPT.json
-bun src/cli.ts rootfs-stage --out ./out/full-new --receipt ./ROOTFS-RECEIPT.json --composition server
-bun src/cli.ts image --out ./out/full-new --root /ABSOLUTE/FACTORY --profile full --target linux-x64 --composition server --tag bun-os:server
 ```
 
-Profiles and ABIs are in `distribution.json`; source revisions are pinned in
-`sources.lock.json`. Staging requires the exact locked runtime, target, ABI,
-hash, byte count, and native runtime qualification. A local Bun snapshot does
-not qualify a different locked runtime.
-
-The package converter parses ALPM metadata without executing PKGBUILDs.
-Pacman installs the exact signed closure offline through the root factory.
-APT remains a separate compatibility target. `bun run build` assembles the
-staged product image; `bun run desktop:web:build` bundles the desktop frontend.
-
-## Libraries, desktop, and apps
-
-Root packages include the shared workspace/process/hash owners, video adapter,
-artifact compiler, package converter, and desktop application. Library sources
-are flat in `crates/`, `packages/` and `apps/` (docs in `docs/libraries/`); the Bun runtime and Tauri SDK source are
-pinned below `toolchains/bun/`. App builds and shared assets use the
-`@aphrody/bun-artifacts` and `@aphrody/bun-workspace` owners.
-Shared Craft font assets, licenses and optional embedding are integrated under
-`fonts/` and `crates/craft-fonts`; see [font ownership and provenance](docs/fonts.md).
-The two font crates are pinned private forge submodules under the flat
-`crates/` directory. See [crate ownership](docs/crate-submodules.md) for the
-shared nightly, workspace and access contract.
-
-The root owns one Bun `node_modules`, the nightly toolchain, Cargo intermediate
-outputs in `build/rust`, and shared `target` and `install` locations.
-Imported JavaScript packages are selected explicitly through the root build
-owner:
-
-```sh
-just packages-plan paths,ovh,kernel-client
-just packages-build paths,ovh,kernel-client
+```bash
+bun run factory --action plan --composition server --snapshot 2026-10-17
 ```
 
-The plan reports absent or unmigrated workspace members. Successful builds
-write JavaScript and hash receipts under `build/packages/<package>`; those
-receipts do not qualify execution, installation, or deployment.
-The three flat package submodules, private histories and recorded build scope
-are documented in [package ownership](docs/package-submodules.md).
-The runtime's existing build and vendored dependency
-trees have not yet been migrated into root-owned locations. Rust source
-repositories still declare independent Cargo workspaces; the root Cargo
-workspace migration is tracked in [PLAN.md](PLAN.md) and is incomplete until
-crate manifests and workspace inheritance have been migrated.
+`setup` initializes the pinned submodules and installs the single Bun workspace from `bun.lock`.
+It also builds `build/packages/material-web.tgz`. Run `bun run setup --plan` to inspect without
+installing.
 
-## Architecture and evidence
+## Repository
 
-- [Architecture](docs/architecture.md)
-- [App artifacts](docs/artifacts.md)
-- [Video adapter](docs/video.md)
-- [Builds](docs/builds.md)
-- [Deployment control](docs/control-plane.md)
-- [PLAN.md](PLAN.md) and [MEMORY.md](MEMORY.md)
+| Path                | Contents                                                                   |
+| ------------------- | -------------------------------------------------------------------------- |
+| `src/`              | Factory CLI: plan, sources, stage, rootfs, image, msys2, graph, infra, ops |
+| `factory/`          | Arch factory, compositions, `/usr` images, Ubuntu and MSYS2 compatibility  |
+| `crates/` (549)     | First-party Rust crates in one root Cargo workspace                        |
+| `packages/` (544)   | First-party Bun packages in one root Bun workspace                         |
+| `apps/` (61)        | Desktop, web, CLI and Android applications                                 |
+| `vendor/` (113)     | Pinned upstream sources: kernels, Proton, Wine, emulators, toolchains      |
+| `toolchains/bun`    | The Aphrody Bun runtime and Tauri SDK                                      |
+| `infra/`            | Host, nginx, systemd and DNS desired state                                 |
+| `fonts/`, `assets/` | Shared fonts and app assets with their licenses                            |
+| `docs/`             | Documentation site ([`docs/docs.json`](docs/docs.json))                    |
+
+## Products
+
+| Product                       | Where                                                                                              |
+| ----------------------------- | -------------------------------------------------------------------------------------------------- |
+| COSMIC desktop and Material 3 | `apps/desktop`, `packages/m3*`, `packages/app-ui`                                                  |
+| Craft suite                   | `apps/*craft*`: PDF, CAD, film, photo, vector, sound, word, deck, design, grid, light, effect, fig |
+| Reverse engineering (`re`)    | `packages/re`, `crates/re` (`bunre`)                                                               |
+| IECODE and nie game tooling   | `crates/aphrody-nie-*`, `packages/inagle`, `apps/iecode-*`                                         |
+| Rose Griffon                  | `apps/rg-website`, `apps/rg-bot`, `packages/rg-*`                                                  |
+| Aphrody agents, MCP and A2A   | `crates/aphrody-*`, `packages/a2a`, `packages/m3-mcp`                                              |
+| Android                       | `apps/bun-android`, `packages/bun-android`, `crates/android-native`                                |
+
+## Development
+
+```bash
+bun run check
+```
+
+```bash
+bun run lint
+```
+
+```bash
+bun fmt --check
+```
+
+```bash
+bun scripts/cargo.ts check
+```
+
+Type checking, lint, format and Node-to-Bun migration use the native `bun check`, `bun lint`,
+`bun fmt` and `bun n2b`. Cargo runs through the serialized wrapper `scripts/cargo.ts`. Build
+outputs go to `build/` and `target/`, and installed binaries to `install/`.
+The [contributor guide](AGENTS.md) and [CI](.github/workflows) define the gates.
+
+## Documentation
+
+- [Introduction](docs/index.mdx), [installation](docs/installation.mdx), [quickstart](docs/quickstart.mdx)
+- [Architecture](docs/architecture.md) and [Arch distribution](docs/architecture/arch-distribution.md)
+- [Factory](factory/README.md), [native targets](docs/NATIVE-TARGETS.md), [builds](docs/builds.md)
+- [Reverse-engineering pipeline](docs/re-pipeline.md) and [fonts](docs/fonts.md)
+- [Deployment control](docs/control-plane.md) and [qualification](docs/qualification.md)
+
+## License
+
+First-party code is MIT ([`LICENSE`](LICENSE)) or Apache-2.0 ([`LICENSE-APACHE`](LICENSE-APACHE)),
+as each manifest states. Imported and vendored projects keep their own licenses. See
+[`ATTRIBUTION.md`](ATTRIBUTION.md) and [`docs/licenses`](docs/licenses).

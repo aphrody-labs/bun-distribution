@@ -23,7 +23,7 @@ crates/libm3-wasm/ scalar WASM ABI over that owner
 The shared contract follows the Material 3 theme model used by Android
 Compose: color scheme, typography, and shapes. Web packages expose the same
 semantic roles through CSS tokens and web components. See
-[`docs/platform-alignment.md`](docs/platform-alignment.md).
+[`platform-alignment.md`](platform-alignment.md).
 
 Native color generation, typography, shapes, motion, state layers and adaptive
 breakpoints belong to `aphrody-m3-tokens`. `libm3` consumes that crate; it has no
@@ -37,7 +37,7 @@ accessibility, forms, focus and Taffy composition through `aphrody-m3`.
 The Bun WASM loader is exported by `@aphrody/libm3/wasm`. ABI 2 uses the native
 role order and distinguishes collapsed and expanded navigation rails. COSMIC
 controls use the host event loop and must be mounted under the custom Material
-theme. See [the native integration contract](docs/libm3.md).
+theme. See [the native integration contract](libm3.md).
 
 ## Development
 
@@ -66,4 +66,4 @@ backend to workspace scripts or CI.
 Cargo application roots must patch the registry token dependency to the same
 Material Git URL and exact revision used by `libm3` or `aphrody-m3`. Patches in
 dependency workspaces do not apply to the application's dependency graph.
-See [the native integration contract](docs/libm3.md).
+See [the native integration contract](libm3.md).

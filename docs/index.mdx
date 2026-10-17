@@ -1,0 +1,40 @@
+---
+title: Welcome to Bun OS
+description: An Arch-based Linux distribution and product workspace built on the Aphrody Bun runtime.
+mode: center
+---
+
+Bun OS ships the Aphrody Bun runtime as the system runtime of an Arch Linux distribution. One
+repository builds the image, the COSMIC desktop, the Gamescope gaming session and the
+applications, with pacman/libalpm as the package manager.
+
+<CardGroup cols={2}>
+  <Card icon="download" title="Installation" href="/installation">
+    Requirements, clone and workspace setup.
+  </Card>
+  <Card icon="rocket" title="Quickstart" href="/quickstart">
+    Plan and stage a `server` image.
+  </Card>
+  <Card icon="layers" title="Architecture" href="/architecture">
+    Runtime, factory, compositions and source ownership.
+  </Card>
+  <Card icon="factory" title="Factory" href="/architecture/arch-distribution">
+    Arch, CachyOS, ChimeraOS and Omarchy catalogs.
+  </Card>
+</CardGroup>
+
+## Compositions
+
+| Composition | Session          | Purpose                                     |
+| ----------- | ---------------- | ------------------------------------------- |
+| `server`    | none             | Headless host: Bun services, nginx, systemd |
+| `desktop`   | `cosmic-session` | COSMIC desktop with the Material 3 shell    |
+| `gaming`    | `gamescope`      | Steam/Proton gaming session                 |
+
+## Profiles and targets
+
+- `full`: wgpu renderer and every optional engine.
+- `perf`: tiny-skia renderer and demand-loaded engines.
+- Targets: `linux-x64`, `linux-arm64`, `windows-x64`, `macos-arm64`, `wasm`.
+
+`distribution.json` declares profiles, targets and compositions. `sources.lock.json` pins every source revision.

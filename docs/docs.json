@@ -1,0 +1,162 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "aspen",
+  "name": "Bun OS",
+  "seo": {
+    "metatags": {
+      "canonical": "https://aphrody.app/os"
+    }
+  },
+  "colors": {
+    "primary": "#676013",
+    "light": "#d3c972",
+    "dark": "#676013"
+  },
+  "icons": {
+    "library": "lucide"
+  },
+  "appearance": {
+    "default": "system"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/aphrody-labs/bun-distribution",
+        "icon": "github"
+      },
+      {
+        "label": "Install",
+        "href": "/installation",
+        "icon": "download",
+        "primary": true
+      }
+    ]
+  },
+  "styling": {
+    "codeblocks": {
+      "theme": {
+        "light": "github-light",
+        "dark": "dracula"
+      }
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Distribution",
+        "icon": "hard-drive",
+        "groups": [
+          {
+            "group": "Get Started",
+            "icon": "terminal",
+            "pages": ["/index", "/installation", "/quickstart"]
+          },
+          {
+            "group": "Architecture",
+            "icon": "layers",
+            "pages": [
+              "/architecture",
+              "/architecture/arch-distribution",
+              "/architecture/msys2-desktop",
+              "/os-heavy-components",
+              "/provenance"
+            ]
+          },
+          {
+            "group": "Factory",
+            "icon": "factory",
+            "pages": [
+              "/NATIVE-TARGETS",
+              "/SOURCE-EXPORT",
+              "/builds",
+              "/APP-BUILDS",
+              "/artifacts",
+              "/qualification",
+              "/NATIVE-QUALIFICATION",
+              "/coreutils-inventory"
+            ]
+          },
+          {
+            "group": "Operations",
+            "icon": "server",
+            "pages": [
+              "/control-plane",
+              "/DEPLOYMENT-CONTROL",
+              "/PRODUCT-SERVER",
+              "/APP-DOMAINS",
+              "/source-private-network",
+              "/CI-TRANSPORT",
+              "/FORGE-TRANSPORT"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Workspace",
+        "icon": "folder-tree",
+        "groups": [
+          {
+            "group": "Workspace",
+            "icon": "folder-tree",
+            "pages": [
+              "/SOURCE-WORKSPACE",
+              "/UNIFIED-INSTALL",
+              "/owners",
+              "/crate-submodules",
+              "/package-submodules",
+              "/CRATE-MIGRATION",
+              "/DEPENDENCY-ALIGNMENT",
+              "/BUN-NATIVE-DEPENDENCIES",
+              "/migration",
+              "/stub-inventory"
+            ]
+          },
+          {
+            "group": "Conventions",
+            "icon": "book-open",
+            "pages": ["/CODING", "/RUST-SYSTEMS", "/APHRODY-PRIMITIVES"]
+          }
+        ]
+      },
+      {
+        "tab": "Products",
+        "icon": "package",
+        "groups": [
+          {
+            "group": "Reverse Engineering",
+            "icon": "scan-search",
+            "pages": ["/re-pipeline", "/re-tooling", "/steam-community-sources"]
+          },
+          {
+            "group": "Engine",
+            "icon": "cpu",
+            "pages": [
+              "/bun-engine/README",
+              "/bun-engine/ARCHITECTURE",
+              "/bun-engine/EMULATION",
+              "/bun-engine/GPU",
+              "/bun-engine/PACKAGE-MANAGER",
+              "/bun-engine/STEAM-PLATFORM",
+              "/bun-engine-absorption"
+            ]
+          },
+          {
+            "group": "Media and Fonts",
+            "icon": "film",
+            "pages": ["/video", "/fonts", "/integration"]
+          },
+          {
+            "group": "Material",
+            "icon": "palette",
+            "pages": [
+              "/material/README",
+              "/material/libm3",
+              "/material/material-design"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

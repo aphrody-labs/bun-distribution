@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [os]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Bun quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-workspace
+        with:
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+      - name: Type check
+        run: bun run check
+      - name: Lint
+        run: bun run lint
+      - name: Format
+        run: bun fmt --check --config bun-format.json src container factory infra packages apps scripts
+      - name: Workspace manifests
+        run: bun install --frozen-lockfile --lockfile-only
+
+  rust:
+    name: Rust ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - bun-re
+          - aphrody-nie-*
+          - craft-fonts*
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-workspace
+        with:
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+          rust: "true"
+      - name: Manifests
+        run: bun scripts/cargo.ts exec -- metadata --format-version 1 --no-deps --locked > /dev/null
+      - name: Check
+        run: bun scripts/cargo.ts exec -- check --locked -p "${{ matrix.package }}" --all-targets
+
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-bun
+      - name: Navigation and links
+        run: bun run docs:check

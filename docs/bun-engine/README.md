@@ -10,7 +10,7 @@ compatibility or packaging. Targets are PE, ELF, WebAssembly/WASI and Android
 APK through unified owners; see `docs/UNIVERSAL-PORTING.md`.
 
 The reverse-engineering surface is documented in
-[`docs/GHIDRA-PLUGIN-SUITE.md`](docs/GHIDRA-PLUGIN-SUITE.md): the private
+[`docs/GHIDRA-PLUGIN-SUITE.md`](GHIDRA-PLUGIN-SUITE.md): the private
 `aphrody-code/ghidra-suite-plugin` AI orchestrator drives Ghidra, the native Rust
 decompiler and NTRGhidra through one Bun Win32-aware pipeline.
 

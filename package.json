@@ -2,7 +2,7 @@
   "name": "@aphrody/bun-os",
   "version": "1.4.4",
   "private": true,
-  "description": "Aphrody OS unified product and library workspace",
+  "description": "Arch-based Linux distribution and product workspace built on the Aphrody Bun runtime",
   "license": "MIT",
   "bin": {
     "bun-os": "src/cli.ts"
@@ -627,6 +627,7 @@
     "factory:rootfs": "bun src/cli.ts factory --action rootfs",
     "factory:ubuntu": "bun factory/ubuntu.ts",
     "graph": "bun src/cli.ts graph",
+    "docs:check": "bun scripts/docs-check.ts",
     "desktop:web:build": "bun run --cwd apps/desktop build",
     "iecode:setup": "bun scripts/iecode/tools/setup-fresh.ts",
     "iecode:setup:data": "bun scripts/iecode/tools/data/setup-data.ts",

@@ -1,0 +1,48 @@
+---
+title: Installation
+description: Set up a Bun OS checkout.
+---
+
+## Requirements
+
+| Tool        | Version                                     |
+| ----------- | ------------------------------------------- |
+| Bun         | 1.4.4 (Aphrody runtime)                     |
+| Rust        | nightly, from `rust-toolchain.toml`         |
+| Git         | with submodule support                      |
+| Native SDKs | MSVC, Xcode or GCC/Clang for native targets |
+
+Install the runtime:
+
+```bash terminal icon="terminal"
+curl -fsSL https://aphrody.app/install | bash
+```
+
+```powershell PowerShell icon="windows"
+powershell -c "irm aphrody.app/install.ps1 | iex"
+```
+
+## Clone and set up
+
+```bash terminal icon="terminal"
+git clone https://github.com/aphrody-labs/bun-distribution.git bun-os
+cd bun-os
+bun run setup
+```
+
+`setup` initializes the pinned root submodules and installs the single Bun workspace from `bun.lock`.
+It selects the shared Cargo `build/rust`, `target` and `install` directories and builds
+`build/packages/material-web.tgz`. `bun run setup --plan` reports what it would do without changing
+the checkout.
+
+<Note>
+  A bare `bun install` cannot create `material-web.tgz`; use `bun run setup` on a fresh checkout.
+</Note>
+
+## Verify
+
+```bash terminal icon="terminal"
+bun run check
+bun run lint
+bun scripts/cargo.ts check
+```

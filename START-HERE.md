@@ -1,8 +1,6 @@
 # Start here
 
 Read AGENTS.md, GOAL.md, PLAN.md and MEMORY.md.
-The [session report](docs/SESSION-REPORT-2026-10-13.md) records the delivered
-artifacts, correction stages and remaining qualification gaps.
 
 This checkout assembles the distribution. Runtime changes belong to the
 existing Bun checkout; the Material framework belongs to the configured

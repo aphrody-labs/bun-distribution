@@ -1,0 +1,43 @@
+---
+title: Quickstart
+description: Plan, source and stage a Bun OS image.
+---
+
+<Steps>
+  <Step title="Plan">
+    Print the source, runtime and target plan without building.
+
+    ```bash terminal icon="terminal"
+    bun src/cli.ts plan --profile full --target linux-x64
+    ```
+
+  </Step>
+  <Step title="Resolve the composition">
+    Resolve the `server` package closure against a pinned Arch snapshot.
+
+    ```bash terminal icon="terminal"
+    bun run factory --action plan --composition server --snapshot 2026-10-17
+    ```
+
+  </Step>
+  <Step title="Export sources">
+    Copy the committed, pinned sources. Protected stores are never copied.
+
+    ```bash terminal icon="terminal"
+    bun src/cli.ts sources --out ./out/server
+    ```
+
+  </Step>
+  <Step title="Stage and build">
+    Stage the qualified runtime, then build the root filesystem and image.
+
+    ```bash terminal icon="terminal"
+    bun src/cli.ts stage --out ./out/server --profile full --target linux-x64 --runtime ./bun --receipt ./bun.receipt.json
+    bun src/cli.ts image --out ./out/server --root /abs/factory --profile full --target linux-x64 --composition server --tag bun-os:server
+    ```
+
+  </Step>
+</Steps>
+
+Staging requires the exact locked runtime, target, ABI, hash and byte count. See
+[qualification](/qualification) and [native targets](/NATIVE-TARGETS).
