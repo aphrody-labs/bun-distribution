@@ -2201,7 +2201,7 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Opérations Steam — mêmes noms et mêmes variables d'environnement que le binaire `bunre-steam`,
+/// Opérations Steam — mêmes noms et mêmes variables d'environnement que la sous-commande `bunre steam`,
 /// dont c'est la façade en process.
 #[derive(Subcommand, Debug)]
 enum SteamOp {
@@ -2234,7 +2234,7 @@ enum SteamOp {
 
 /// Options partagées par les trois opérations Steam.
 ///
-/// Les noms de variables d'environnement sont ceux de `bunre-steam` et de `scripts/tools/data/sync-gamedata.ts`
+/// Les noms de variables d'environnement sont ceux de `bunre steam` et de `scripts/tools/data/sync-gamedata.ts`
 /// : les changer casserait les appelants existants.
 #[derive(clap::Args, Debug, Clone)]
 struct SteamCommun {

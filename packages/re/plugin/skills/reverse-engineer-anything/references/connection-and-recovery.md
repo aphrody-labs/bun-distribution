@@ -13,7 +13,7 @@ main and an older release expose the same arguments.
 
 | Observation                                                     | Meaning and next step                                                                                                                                                                                                                                                                                                 |
 | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| No REA tools in the active session                              | Inspect registration with `rea doctor --client codex --json`. A skill installation alone does not register MCP.                                                                                                                                                                                                       |
+| No REA tools in the active session                              | Inspect registration with `re doctor --client codex --json`. A skill installation alone does not register MCP.                                                                                                                                                                                                       |
 | Missing, malformed or stale registration                        | Prepare a scoped setup plan; apply only authorized changes with backups.                                                                                                                                                                                                                                              |
 | Aligned registration, but no connected tools                    | Restart/reconnect the client. Doctor checks registration; it cannot establish the current agent's connection. Inspect the client's launch error if reconnection fails.                                                                                                                                                |
 | `MCP tool call requires approval, but approval policy is never` | Codex rejected the call before REA executed it. Do not install an engine or repeat setup to solve this client-policy decision. See the approval section below.                                                                                                                                                        |
@@ -39,8 +39,8 @@ as such; only actual REA output supplies REA Evidence.
 For Codex:
 
 ```bash
-rea doctor --client codex --json
-rea setup --client codex --dry-run --json
+re doctor --client codex --json
+re setup --client codex --dry-run --json
 ```
 
 Use the current supported client's ID: `claude_code`, `claude_desktop`, `codex`,
@@ -52,7 +52,7 @@ For unsupported clients, use version-pinned manual stdio registration or CLI.
 
 Show the plan's exact paths, backups, changes and bundled-skill replacement.
 Obtain approval for writes when that concrete scope is not already authorized,
-then apply the same scope with `rea setup --client codex --yes`. Add
+then apply the same scope with `re setup --client codex --yes`. Add
 `--install-hopper` only when separately needed and explicitly approved. Do not
 install or upgrade unrelated prerequisites. Restart/reconnect, verify tools
 actually appear, and resume the original task. If they remain absent, inspect
@@ -113,9 +113,9 @@ For a user-supplied JavaScript tree or ASAR, select output files in the authoriz
 workspace and save complete Evidence before reading a view:
 
 ```bash
-rea analyze-javascript-application /absolute/path/to/app --json > app-evidence.json
+re analyze-javascript-application /absolute/path/to/app --json > app-evidence.json
 jq -c '{source: {kind: "inline", evidence: .}, view: {kind: "summary"}}' app-evidence.json > app-view.json
-rea inspect-analysis-view app-view.json
+re inspect-analysis-view app-view.json
 ```
 
 These commands do not register MCP or install an analysis engine. CLI JavaScript

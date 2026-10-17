@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 use std::{
     collections::HashSet,
-    env,
     fs::{self, OpenOptions},
     io::Write,
     path::PathBuf,
@@ -16,8 +15,7 @@ use bun_re::game::{
     world::xenoverse3::xenoverse3_prototype_map,
 };
 
-fn main() -> ExitCode {
-    let mut args = env::args_os().skip(1);
+pub fn main(mut args: impl Iterator<Item = std::ffi::OsString>) -> ExitCode {
     match args.next().as_deref() {
         Some(arg) if arg == "map" => {
             let result = xenoverse3_prototype_map();
@@ -43,7 +41,7 @@ fn main() -> ExitCode {
             };
             let input = PathBuf::from(input);
             if !input.extension().is_some_and(|extension| extension.eq_ignore_ascii_case("emb")) {
-                eprintln!("bunre-dbxv2: emb input must have a .emb extension");
+                eprintln!("bunre dbxv2: emb input must have a .emb extension");
                 return ExitCode::FAILURE;
             }
             let Some(option) = args.next() else {
@@ -58,24 +56,24 @@ fn main() -> ExitCode {
             let archive_bytes = match fs::read(&input) {
                 Ok(bytes) => bytes,
                 Err(error) => {
-                    eprintln!("bunre-dbxv2: could not read {}: {error}", input.display());
+                    eprintln!("bunre dbxv2: could not read {}: {error}", input.display());
                     return ExitCode::FAILURE;
                 },
             };
             let archive = match EmbArchive::parse(&archive_bytes) {
                 Ok(archive) => archive,
                 Err(error) => {
-                    eprintln!("bunre-dbxv2: invalid EMB {}: {error}", input.display());
+                    eprintln!("bunre dbxv2: invalid EMB {}: {error}", input.display());
                     return ExitCode::FAILURE;
                 },
             };
             let destination = PathBuf::from(destination);
             if destination.exists() {
-                eprintln!("bunre-dbxv2: output directory already exists: {}", destination.display());
+                eprintln!("bunre dbxv2: output directory already exists: {}", destination.display());
                 return ExitCode::FAILURE;
             }
             if let Err(error) = fs::create_dir(&destination) {
-                eprintln!("bunre-dbxv2: could not create {}: {error}", destination.display());
+                eprintln!("bunre dbxv2: could not create {}: {error}", destination.display());
                 return ExitCode::FAILURE;
             }
             let mut outputs = Vec::with_capacity(archive.entries.len());
@@ -84,7 +82,7 @@ fn main() -> ExitCode {
                 let bytes = match archive.entry_bytes(&archive_bytes, index) {
                     Ok(bytes) => bytes,
                     Err(error) => {
-                        eprintln!("bunre-dbxv2: invalid EMB entry {}: {error}", entry.name);
+                        eprintln!("bunre dbxv2: invalid EMB entry {}: {error}", entry.name);
                         return ExitCode::FAILURE;
                     },
                 };
@@ -95,7 +93,7 @@ fn main() -> ExitCode {
                     .open(&output)
                     .and_then(|mut file| file.write_all(bytes));
                 if let Err(error) = result {
-                    eprintln!("bunre-dbxv2: could not create {}: {error}", output.display());
+                    eprintln!("bunre dbxv2: could not create {}: {error}", output.display());
                     return ExitCode::FAILURE;
                 }
                 total_bytes = total_bytes.saturating_add(bytes.len() as u64);
@@ -115,7 +113,7 @@ fn main() -> ExitCode {
             };
             let input = PathBuf::from(input);
             if !input.extension().is_some_and(|extension| extension.eq_ignore_ascii_case("cpk")) {
-                eprintln!("bunre-dbxv2: cpk input must have a .cpk extension");
+                eprintln!("bunre dbxv2: cpk input must have a .cpk extension");
                 return ExitCode::FAILURE;
             }
             let Some(option) = args.next() else {
@@ -130,14 +128,14 @@ fn main() -> ExitCode {
             let archive_bytes = match fs::read(&input) {
                 Ok(bytes) => bytes,
                 Err(error) => {
-                    eprintln!("bunre-dbxv2: could not read {}: {error}", input.display());
+                    eprintln!("bunre dbxv2: could not read {}: {error}", input.display());
                     return ExitCode::FAILURE;
                 },
             };
             let archive = match CpkArchive::parse(&archive_bytes) {
                 Ok(archive) => archive,
                 Err(error) => {
-                    eprintln!("bunre-dbxv2: invalid CPK {}: {error}", input.display());
+                    eprintln!("bunre dbxv2: invalid CPK {}: {error}", input.display());
                     return ExitCode::FAILURE;
                 },
             };
@@ -146,29 +144,29 @@ fn main() -> ExitCode {
             for entry in &archive.entries {
                 let Some(path) = cpk_output_path(entry) else {
                     eprintln!(
-                        "bunre-dbxv2: unsafe CPK output path: {:?}",
+                        "bunre dbxv2: unsafe CPK output path: {:?}",
                         entry.dir_name.as_deref().unwrap_or("")
                     );
                     return ExitCode::FAILURE;
                 };
                 let key = path.to_string_lossy().replace('\\', "/").to_ascii_lowercase();
                 if key == "cpk_manifest.json" {
-                    eprintln!("bunre-dbxv2: CPK entry reserves cpk_manifest.json");
+                    eprintln!("bunre dbxv2: CPK entry reserves cpk_manifest.json");
                     return ExitCode::FAILURE;
                 }
                 if !unique_paths.insert(key) {
-                    eprintln!("bunre-dbxv2: duplicate CPK output path: {}", path.display());
+                    eprintln!("bunre dbxv2: duplicate CPK output path: {}", path.display());
                     return ExitCode::FAILURE;
                 }
                 paths.push(path);
             }
             let destination = PathBuf::from(destination);
             if destination.exists() {
-                eprintln!("bunre-dbxv2: output directory already exists: {}", destination.display());
+                eprintln!("bunre dbxv2: output directory already exists: {}", destination.display());
                 return ExitCode::FAILURE;
             }
             if let Err(error) = fs::create_dir(&destination) {
-                eprintln!("bunre-dbxv2: could not create {}: {error}", destination.display());
+                eprintln!("bunre dbxv2: could not create {}: {error}", destination.display());
                 return ExitCode::FAILURE;
             }
             let mut outputs = Vec::with_capacity(archive.entries.len());
@@ -177,7 +175,7 @@ fn main() -> ExitCode {
                 let bytes = match archive.extract(&archive_bytes, &entry.name) {
                     Ok(bytes) => bytes,
                     Err(error) => {
-                        eprintln!("bunre-dbxv2: could not extract {}: {error}", entry.name);
+                        eprintln!("bunre dbxv2: could not extract {}: {error}", entry.name);
                         return ExitCode::FAILURE;
                     },
                 };
@@ -185,7 +183,7 @@ fn main() -> ExitCode {
                 if let Some(parent) = output.parent()
                     && let Err(error) = fs::create_dir_all(parent)
                 {
-                    eprintln!("bunre-dbxv2: could not create {}: {error}", parent.display());
+                    eprintln!("bunre dbxv2: could not create {}: {error}", parent.display());
                     return ExitCode::FAILURE;
                 }
                 let result = OpenOptions::new()
@@ -194,7 +192,7 @@ fn main() -> ExitCode {
                     .open(&output)
                     .and_then(|mut file| file.write_all(&bytes));
                 if let Err(error) = result {
-                    eprintln!("bunre-dbxv2: could not create {}: {error}", output.display());
+                    eprintln!("bunre dbxv2: could not create {}: {error}", output.display());
                     return ExitCode::FAILURE;
                 }
                 total_bytes = total_bytes.saturating_add(bytes.len() as u64);
@@ -220,7 +218,7 @@ fn main() -> ExitCode {
                     },
                 )
             {
-                eprintln!("bunre-dbxv2: could not write {}: {error}", manifest_path.display());
+                eprintln!("bunre dbxv2: could not write {}: {error}", manifest_path.display());
                 return ExitCode::FAILURE;
             }
             print_json(&manifest)
@@ -232,7 +230,7 @@ fn main() -> ExitCode {
             let inventory = match inventory_install(&PathBuf::from(root)) {
                 Ok(inventory) => inventory,
                 Err(error) => {
-                    eprintln!("bunre-dbxv2: inventory failed: {error}");
+                    eprintln!("bunre dbxv2: inventory failed: {error}");
                     return ExitCode::FAILURE;
                 },
             };
@@ -265,20 +263,20 @@ fn main() -> ExitCode {
                 let manifest = match extract_msg_tree(&input, &PathBuf::from(destination)) {
                     Ok(manifest) => manifest,
                     Err(error) => {
-                        eprintln!("bunre-dbxv2: text batch failed: {error}");
+                        eprintln!("bunre dbxv2: text batch failed: {error}");
                         return ExitCode::FAILURE;
                     },
                 };
                 return print_json(&manifest);
             }
             if !input.extension().is_some_and(|extension| extension.eq_ignore_ascii_case("msg")) {
-                eprintln!("bunre-dbxv2: text input must have a .msg extension");
+                eprintln!("bunre dbxv2: text input must have a .msg extension");
                 return ExitCode::FAILURE;
             }
             let bytes = match fs::read(&input) {
                 Ok(bytes) => bytes,
                 Err(error) => {
-                    eprintln!("bunre-dbxv2: could not read {}: {error}", input.display());
+                    eprintln!("bunre dbxv2: could not read {}: {error}", input.display());
                     return ExitCode::FAILURE;
                 },
             };
@@ -305,7 +303,7 @@ fn print_json(value: &impl serde::Serialize) -> ExitCode {
             ExitCode::SUCCESS
         },
         Err(error) => {
-            eprintln!("bunre-dbxv2: could not encode JSON: {error}");
+            eprintln!("bunre dbxv2: could not encode JSON: {error}");
             ExitCode::FAILURE
         },
     }
@@ -315,14 +313,14 @@ fn write_json(path: PathBuf, value: &impl serde::Serialize) -> ExitCode {
     let json = match serde_json::to_vec_pretty(value) {
         Ok(json) => json,
         Err(error) => {
-            eprintln!("bunre-dbxv2: could not encode JSON: {error}");
+            eprintln!("bunre dbxv2: could not encode JSON: {error}");
             return ExitCode::FAILURE;
         },
     };
     match fs::write(&path, json) {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
-            eprintln!("bunre-dbxv2: could not write {}: {error}", path.display());
+            eprintln!("bunre dbxv2: could not write {}: {error}", path.display());
             ExitCode::FAILURE
         },
     }
@@ -332,7 +330,7 @@ fn write_json_new(path: PathBuf, value: &impl serde::Serialize) -> ExitCode {
     let json = match serde_json::to_vec_pretty(value) {
         Ok(json) => json,
         Err(error) => {
-            eprintln!("bunre-dbxv2: could not encode JSON: {error}");
+            eprintln!("bunre dbxv2: could not encode JSON: {error}");
             return ExitCode::FAILURE;
         },
     };
@@ -344,7 +342,7 @@ fn write_json_new(path: PathBuf, value: &impl serde::Serialize) -> ExitCode {
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
-            eprintln!("bunre-dbxv2: could not create {}: {error}", path.display());
+            eprintln!("bunre dbxv2: could not create {}: {error}", path.display());
             ExitCode::FAILURE
         },
     }
@@ -377,7 +375,7 @@ fn is_safe_path_component(component: &str) -> bool {
 
 fn usage() -> ExitCode {
     eprintln!(
-        "Usage: bunre-dbxv2 map [--output <file>] | catalog | inventory <game-root> [--output <file>] | text <file.msg> [--output <new-file>] | text <input-dir> --output-dir <new-dir> | emb <file.emb> --output-dir <new-dir> | cpk <file.cpk> --output-dir <new-dir>"
+        "Usage: bunre dbxv2 map [--output <file>] | catalog | inventory <game-root> [--output <file>] | text <file.msg> [--output <new-file>] | text <input-dir> --output-dir <new-dir> | emb <file.emb> --output-dir <new-dir> | cpk <file.cpk> --output-dir <new-dir>"
     );
     ExitCode::from(2)
 }

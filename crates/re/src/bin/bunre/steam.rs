@@ -1,4 +1,4 @@
-//! CLI `bunre-steam` — acquisition Steam native pour IEVR (app 2799860).
+//! `bunre steam` — acquisition Steam native pour IEVR (app 2799860).
 //!
 //! Modélé sur `steamroom-cli`. Sous-commandes :
 //! - `list <appId>` : inspecte depots/tailles sans télécharger
@@ -18,7 +18,7 @@ use tracing_subscriber::EnvFilter;
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "bunre-steam",
+    name = "bunre steam",
     about = "Acquisition Steam native pour nie (IEVR app 2799860)",
     version
 )]
@@ -139,8 +139,25 @@ enum Commands {
     },
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+
+pub fn main(args: Vec<std::ffi::OsString>) -> std::process::ExitCode {
+    let runtime = match tokio::runtime::Runtime::new() {
+        Ok(runtime) => runtime,
+        Err(error) => {
+            eprintln!("bunre steam: {error}");
+            return std::process::ExitCode::FAILURE;
+        },
+    };
+    match runtime.block_on(run(args)) {
+        Ok(()) => std::process::ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("bunre steam: {error:#}");
+            std::process::ExitCode::FAILURE
+        },
+    }
+}
+
+async fn run(args: Vec<std::ffi::OsString>) -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             // `steamroom_client` DOIT figurer explicitement : la directive
@@ -156,7 +173,7 @@ async fn main() -> Result<()> {
         )
         .init();
 
-    let cli = Cli::parse();
+    let cli = Cli::parse_from(std::iter::once(std::ffi::OsString::from("bunre steam")).chain(args));
 
     let token_store_path =
         cli.token_store.unwrap_or_else(bun_re::steam::token_store::default_path);

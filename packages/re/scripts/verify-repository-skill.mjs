@@ -67,7 +67,7 @@ export async function verifyRepositorySkill({ root, workspace }) {
   );
   const authoredRoot = join(
     snapshot,
-    ".agents/skills/reverse-engineer-anything",
+    "plugin/skills/reverse-engineer-anything",
   );
   const installedSkills = join(consumer, ".agents/skills");
   const installedRoot = join(installedSkills, "reverse-engineer-anything");

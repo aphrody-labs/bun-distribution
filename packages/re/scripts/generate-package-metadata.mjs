@@ -15,7 +15,7 @@ const packageJson = JSON.parse(
   await readFile(join(root, "package.json"), "utf8"),
 );
 const skill = await readFile(
-  join(root, ".agents/skills/reverse-engineer-anything/SKILL.md"),
+  join(root, "plugin/skills/reverse-engineer-anything/SKILL.md"),
   "utf8",
 );
 const skillVersion = /^\s{2}version:\s*"([^"]+)"\s*$/mu.exec(skill)?.[1];

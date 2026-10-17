@@ -625,5 +625,5 @@ license and notice with its source. Do not force-push.
 - [x] Typed stage contract (acquire, identify, unpack, analyze, lift, decompile, rebuild, verify) in `crates/re/src/pipeline` with JSON Schemas in `crates/re/schema` and a TypeScript mirror in `packages/re/src/pipeline`; see `docs/re-pipeline.md`.
 - [x] Stage-adapter registry: existing owners (steamcmd, nie-*, wii, bun-engine-nds, ghidra-decompiler, factory, emulators) are referenced by id or command and report `ready`, `registered` or `unavailable`; none are duplicated.
 - [x] Built-in end-to-end path: PE/ELF x86 lift (goblin, iced-x86) to IR, C and Rust emission, clang and rustc rebuild, verification by compiling the emitted code.
-- [x] `bun re pipeline <input> --target <os|bios|firmware>`, MCP tools and a loopback API over the `bunre-pipeline` binary.
+- [x] `bun re pipeline <input> --target <os|bios|firmware>`, MCP tools and a loopback API over `bunre pipeline`.
 - [ ] Qualify Ghidra headless and the external adapters on a host that has them; add lifters for ARM, MIPS and PowerPC through the registry.

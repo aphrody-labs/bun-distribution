@@ -1,38 +1,47 @@
 // SPDX-License-Identifier: Apache-2.0
-/** Installs the merged RE toolkit into Claude: steam + replica skills (user skills) and MCP servers. */
+/** `re install-claude`: installs the RE plugin skills and the one `re` MCP server into Claude. */
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
-const root = resolve(import.meta.dir, "../../..");
-const skillsDir = join(homedir(), ".claude", "skills");
-const sources: [string, string][] = [["steam-re", join(root, "packages/re/plugin/skills/steam")]];
-for (const [name, rel] of [
-  ["steamcmd", "vendor/steam/steam-claude-skills/steamcmd"],
-  ["steamos-maintenance", "vendor/steam/steamos-claude-skill"],
-  ["idapython", "vendor/re/ida-pro-mcp/skills/idapython"],
-] as const)
-  if (existsSync(join(root, rel, "SKILL.md"))) sources.push([name, join(root, rel)]);
-const replica = join(root, "packages/re/replica");
-for (const d of readdirSync(replica, { withFileTypes: true }))
-  if (d.isDirectory() && existsSync(join(replica, d.name, "SKILL.md")))
-    sources.push([d.name, join(replica, d.name)]);
+const packageRoot = resolve(import.meta.dir, "..");
+const root = resolve(packageRoot, "../..");
 
-mkdirSync(skillsDir, { recursive: true });
-for (const [name, src] of sources) {
-  const dest = join(skillsDir, name);
-  rmSync(dest, { recursive: true, force: true });
-  cpSync(src, dest, { recursive: true });
-}
+/** Entry point for `re install-claude`. Returns the process exit code. */
+export async function main(_argv: string[]): Promise<number> {
+  const skillsDir = join(homedir(), ".claude", "skills");
+  const pluginSkills = join(packageRoot, "plugin", "skills");
+  const sources: [string, string][] = readdirSync(pluginSkills, {
+    withFileTypes: true,
+  })
+    .filter(
+      (entry) =>
+        entry.isDirectory() &&
+        existsSync(join(pluginSkills, entry.name, "SKILL.md")),
+    )
+    .map((entry) => [entry.name, join(pluginSkills, entry.name)]);
+  for (const [name, rel] of [
+    ["steamcmd", "vendor/steam/steam-claude-skills/steamcmd"],
+    ["steamos-maintenance", "vendor/steam/steamos-claude-skill"],
+    ["idapython", "vendor/re/ida-pro-mcp/skills/idapython"],
+  ] as const)
+    if (existsSync(join(root, rel, "SKILL.md")))
+      sources.push([name, join(root, rel)]);
 
-const target = process.env.CARGO_TARGET_DIR ?? join(process.env.LOCALAPPDATA ?? "", "Aphrody", "cache", "cargo-target");
-const exe = (n: string) => join(target, "release", `${n}${process.platform === "win32" ? ".exe" : ""}`);
-const servers: [string, string[]][] = [
-  ["steam", ["bun", join(root, "packages/re/src/steam/mcp-server.ts")]],
-];
-if (existsSync(exe("aphrody-nie-mcp"))) servers.push(["nie", [exe("aphrody-nie-mcp")]]);
-for (const [name, cmd] of servers) {
-  await Bun.$`claude mcp remove -s user ${name}`.quiet().nothrow();
-  await Bun.$`claude mcp add -s user ${name} -- ${cmd}`.quiet();
+  mkdirSync(skillsDir, { recursive: true });
+  for (const [name, src] of sources) {
+    const dest = join(skillsDir, name);
+    rmSync(dest, { recursive: true, force: true });
+    cpSync(src, dest, { recursive: true });
+  }
+
+  // The MCP runtime is served from the bundled build.
+  if (!existsSync(join(packageRoot, "dist", "mcp", "main.js")))
+    await Bun.$`bun run build`.cwd(packageRoot);
+  await Bun.$`claude mcp remove -s user re`.quiet().nothrow();
+  await Bun.$`claude mcp add -s user re -- bun ${join(packageRoot, "scripts", "rea.mjs")} mcp`.quiet();
+  console.log(
+    `skills: ${sources.map((source) => source[0]).join(", ")}\nmcp: re`,
+  );
+  return 0;
 }
-console.log(`skills: ${sources.map((s) => s[0]).join(", ")}\nmcp: ${servers.map((s) => s[0]).join(", ")}`);

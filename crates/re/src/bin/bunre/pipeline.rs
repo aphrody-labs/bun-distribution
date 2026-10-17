@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! `bunre-pipeline`: JSON CLI over `bun_re::pipeline`, driven by `bun re pipeline` (packages/re).
+//! `bunre pipeline`: JSON CLI over `bun_re::pipeline`, driven by `re pipeline` (packages/re).
 //!
 //! Subcommands: `run <input> --target os|bios|firmware --out DIR [--external] [--trace]
 //! [--max-functions N] [--max-insns N]`, `adapters [--stage S]`, `schema DIR`.
@@ -14,10 +14,9 @@ fn flag(args: &[String], name: &str) -> Option<String> {
     args.iter().position(|a| a == name).and_then(|i| args.get(i + 1).cloned())
 }
 
-fn main() -> ExitCode {
-    let args: Vec<String> = std::env::args().skip(1).collect();
+pub fn main(args: Vec<String>) -> ExitCode {
     let Some(cmd) = args.first().map(String::as_str) else {
-        eprintln!("usage: bunre-pipeline run|adapters|schema ...");
+        eprintln!("usage: bunre pipeline run|adapters|schema ...");
         return ExitCode::from(2);
     };
     match cmd {

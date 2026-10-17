@@ -300,7 +300,7 @@ Pre-commit formats and lints staged files; pre-push runs `check:fast`.
 `evidence:generate` prepares only the managed commitment and its runtime/skill
 dependencies. The ignored outputs are `docs/public/product-catalog.json`,
 `docs/verification/managed-conformance-*.json`, and `skills/`. Edit authored
-skill instructions in `.agents/skills/reverse-engineer-anything/`, where Skills
+skill instructions in `plugin/skills/reverse-engineer-anything/`, where Skills
 can discover the public bundle directly from a clean checkout. `verify:package`
 installs that bundle with Skills 1.7.2 using default repository-root discovery
 and checks every installed file, alongside the packaged setup checks.

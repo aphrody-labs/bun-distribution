@@ -275,7 +275,7 @@ analysis-profile digest or canonical procedure address. Select its returned
 Evidence ID for the next view instead of requesting the complete bundle.
 `retention: "complete-record"` means the whole record is stored; native
 value-flow truncation and unknown metadata remain separate. For an exported
-portable bundle, use `rea inspect-evidence-bundle` with JSON containing `path`,
+portable bundle, use `re inspect-evidence-bundle` with JSON containing `path`,
 `detail: "summary"` and the same `filters`. Reading that file still requires
 validating its full contents within the local memory budget.
 

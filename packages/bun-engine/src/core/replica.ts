@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-const replicaRoot = join(import.meta.dir, "..", "..", "..", "re", "replica");
+const replicaRoot = join(import.meta.dir, "..", "..", "..", "re", "plugin", "skills");
 
 export const replicaSkillIds = [
   "replica-recon",

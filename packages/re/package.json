@@ -2,7 +2,7 @@
   "name": "@bun-os/re",
   "version": "1.4.4",
   "private": true,
-  "description": "Bun OS reverse engineering: the rea CLI and MCP server, the RE pipeline, the Steam indexer and the Replica skills.",
+  "description": "Bun OS reverse engineering: one re CLI and MCP server (rea toolkit, cross-OS RE pipeline, Steam indexer) and one Claude plugin with the reverse-engineer-anything, Steam, Ghidra and Replica skills.",
   "license": "MIT AND Apache-2.0",
   "type": "module",
   "engines": {
@@ -30,10 +30,7 @@
     "#javascript-analysis-worker": "./dist/composition/javascriptAnalysisWorkerProcess.js"
   },
   "bin": {
-    "rea": "scripts/rea.mjs",
-    "rea-agents": "scripts/rea.mjs",
-    "re-pipeline": "src/pipeline/cli.ts",
-    "re-steam": "src/steam/cli.ts"
+    "re": "scripts/rea.mjs"
   },
   "exports": {
     "./pipeline": "./src/pipeline/index.ts",

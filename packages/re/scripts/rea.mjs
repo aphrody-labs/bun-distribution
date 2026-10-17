@@ -7,6 +7,16 @@ import { fileURLToPath } from "node:url";
 // Route production MCP before importing Incur. Incur owns registration helpers
 // such as `mcp add`, while the MCP runtime serves the stdio tool catalog.
 const args = process.argv.slice(2);
+// Bun OS subcommands run from source, beside the bundled Incur CLI.
+const bunOsCommands = {
+  steam: "../src/steam/cli.ts",
+  pipeline: "../src/pipeline/cli.ts",
+  "install-claude": "./install-claude.ts",
+};
+if (args[0] !== undefined && Object.hasOwn(bunOsCommands, args[0])) {
+  const { main } = await import(bunOsCommands[args[0]]);
+  process.exit(await main(args.slice(1)));
+}
 const { default: packageJson } = await import("../package.json", {
   with: { type: "json" },
 });

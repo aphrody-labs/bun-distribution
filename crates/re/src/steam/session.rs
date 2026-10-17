@@ -253,7 +253,7 @@ async fn login_with_opts(
     let Some(ref password) = opts.password else {
         anyhow::bail!(
             "Aucun refresh token caché pour {username} et aucun mot de passe fourni. \
-             Relancez avec STEAM_PASSWORD ou utilisez un refresh token via bunre-steam login."
+             Relancez avec STEAM_PASSWORD ou utilisez un refresh token via bunre steam login."
         );
     };
 

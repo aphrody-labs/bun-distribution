@@ -48,7 +48,7 @@ export const STATIC_TASK_INPUTS = {
     ...CONFIGURATION,
     "scripts/generate-package-metadata.mjs",
     "scripts/lib/generated-file.mjs",
-    ".agents/skills/reverse-engineer-anything/SKILL.md",
+    "plugin/skills/reverse-engineer-anything/SKILL.md",
     "src/generatedPackageMetadata.ts",
   ],
   jscpd: [...CONFIGURATION, "src", "tests"],

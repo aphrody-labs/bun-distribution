@@ -241,7 +241,10 @@ if (tier === "reused") {
         // full qualification retains every native host.
         selected.runtime = true;
         reasons.push(`Unowned runtime source: ${file}`);
-      } else if (file.startsWith(".agents/skills/")) {
+      } else if (
+        file.startsWith(".agents/skills/") ||
+        file.startsWith("plugin/")
+      ) {
         selected.runtime = true;
         selected.docs = true;
       } else {

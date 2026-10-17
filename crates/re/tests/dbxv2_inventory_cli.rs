@@ -9,7 +9,7 @@ fn inventory_cli_prints_json_and_writes_requested_report() {
     fs::write(root.join("bin/DBXV2.EXE"), b"synthetic executable").unwrap();
     fs::write(root.join("data.cpk"), b"synthetic archive data").unwrap();
 
-    let stdout = Command::new(env!("CARGO_BIN_EXE_bunre-dbxv2"))
+    let stdout = Command::new(env!("CARGO_BIN_EXE_bunre")).arg("dbxv2")
         .arg("inventory")
         .arg(&root)
         .output()
@@ -23,7 +23,7 @@ fn inventory_cli_prints_json_and_writes_requested_report() {
     );
 
     let report_path = temp.path().join("map.json");
-    let written = Command::new(env!("CARGO_BIN_EXE_bunre-dbxv2"))
+    let written = Command::new(env!("CARGO_BIN_EXE_bunre")).arg("dbxv2")
         .arg("inventory")
         .arg(&root)
         .arg("--output")
@@ -47,7 +47,7 @@ fn text_cli_extracts_msg_strings_without_overwriting_existing_files() {
     fs::write(&input, bytes).unwrap();
 
     let printed =
-        Command::new(env!("CARGO_BIN_EXE_bunre-dbxv2")).arg("text").arg(&input).output().unwrap();
+        Command::new(env!("CARGO_BIN_EXE_bunre")).arg("dbxv2").arg("text").arg(&input).output().unwrap();
     assert!(printed.status.success());
     let report: serde_json::Value = serde_json::from_slice(&printed.stdout).unwrap();
     assert_eq!(report["file"], "quest.msg");
@@ -55,7 +55,7 @@ fn text_cli_extracts_msg_strings_without_overwriting_existing_files() {
     assert_eq!(report["strings"], serde_json::json!(["Hello"]));
 
     let output = temp.path().join("quest.msg.json");
-    let written = Command::new(env!("CARGO_BIN_EXE_bunre-dbxv2"))
+    let written = Command::new(env!("CARGO_BIN_EXE_bunre")).arg("dbxv2")
         .arg("text")
         .arg(&input)
         .arg("--output")
@@ -68,7 +68,7 @@ fn text_cli_extracts_msg_strings_without_overwriting_existing_files() {
         report
     );
 
-    let refused = Command::new(env!("CARGO_BIN_EXE_bunre-dbxv2"))
+    let refused = Command::new(env!("CARGO_BIN_EXE_bunre")).arg("dbxv2")
         .arg("text")
         .arg(&input)
         .arg("--output")
@@ -96,7 +96,7 @@ fn text_cli_converts_a_tree_to_a_new_destination_and_rejects_existing_destinatio
     fs::write(root.join("ignored.bin"), b"not an MSG").unwrap();
 
     let output = temp.path().join("converted");
-    let result = Command::new(env!("CARGO_BIN_EXE_bunre-dbxv2"))
+    let result = Command::new(env!("CARGO_BIN_EXE_bunre")).arg("dbxv2")
         .arg("text")
         .arg(&root)
         .arg("--output-dir")
@@ -112,7 +112,7 @@ fn text_cli_converts_a_tree_to_a_new_destination_and_rejects_existing_destinatio
     assert_eq!(report["strings"], serde_json::json!(["Hello World"]));
     assert!(output.join("ja/quest.msg.json").is_file());
 
-    let refused = Command::new(env!("CARGO_BIN_EXE_bunre-dbxv2"))
+    let refused = Command::new(env!("CARGO_BIN_EXE_bunre")).arg("dbxv2")
         .arg("text")
         .arg(&root)
         .arg("--output-dir")
@@ -145,7 +145,7 @@ fn emb_cli_extracts_entries_to_a_new_directory_without_overwriting() {
     fs::write(&input, bytes).unwrap();
 
     let output = temp.path().join("unpacked");
-    let extracted = Command::new(env!("CARGO_BIN_EXE_bunre-dbxv2"))
+    let extracted = Command::new(env!("CARGO_BIN_EXE_bunre")).arg("dbxv2")
         .arg("emb")
         .arg(&input)
         .arg("--output-dir")
@@ -158,7 +158,7 @@ fn emb_cli_extracts_entries_to_a_new_directory_without_overwriting() {
     assert_eq!(report["totalBytes"], 4);
     assert_eq!(fs::read(output.join("texture.dds")).unwrap(), b"DDS!");
 
-    let refused = Command::new(env!("CARGO_BIN_EXE_bunre-dbxv2"))
+    let refused = Command::new(env!("CARGO_BIN_EXE_bunre")).arg("dbxv2")
         .arg("emb")
         .arg(&input)
         .arg("--output-dir")
@@ -177,7 +177,7 @@ fn cpk_cli_extracts_to_a_new_directory_and_rejects_traversal() {
     let input = temp.path().join("sample.cpk");
     fs::write(&input, CpkArchive::create_mock(&[("texture.dds", b"DDS!")])).unwrap();
     let output = temp.path().join("unpacked");
-    let extracted = Command::new(env!("CARGO_BIN_EXE_bunre-dbxv2"))
+    let extracted = Command::new(env!("CARGO_BIN_EXE_bunre")).arg("dbxv2")
         .arg("cpk")
         .arg(&input)
         .arg("--output-dir")
@@ -190,7 +190,7 @@ fn cpk_cli_extracts_to_a_new_directory_and_rejects_traversal() {
     assert_eq!(report["totalBytes"], 4);
     assert_eq!(fs::read(output.join("texture.dds")).unwrap(), b"DDS!");
     assert!(output.join("cpk_manifest.json").is_file());
-    let overwrite = Command::new(env!("CARGO_BIN_EXE_bunre-dbxv2"))
+    let overwrite = Command::new(env!("CARGO_BIN_EXE_bunre")).arg("dbxv2")
         .arg("cpk")
         .arg(&input)
         .arg("--output-dir")
@@ -202,7 +202,7 @@ fn cpk_cli_extracts_to_a_new_directory_and_rejects_traversal() {
 
     let traversal = temp.path().join("traversal.cpk");
     fs::write(&traversal, CpkArchive::create_mock(&[("../escape.bin", b"unsafe")])).unwrap();
-    let refused = Command::new(env!("CARGO_BIN_EXE_bunre-dbxv2"))
+    let refused = Command::new(env!("CARGO_BIN_EXE_bunre")).arg("dbxv2")
         .arg("cpk")
         .arg(&traversal)
         .arg("--output-dir")

@@ -2,6 +2,5 @@
 export * from "./contract.js";
 export * from "./runner.js";
 export * from "./db.js";
-export * from "./mcp.js";
 export * from "./serve.js";
 export { main as pipelineMain } from "./cli.js";

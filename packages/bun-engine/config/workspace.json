@@ -8,7 +8,7 @@
   "consolePlugins": "packages/bun-engine/src/plugins/consoles.ts",
   "formatLoaders": "packages/bun-engine/src/plugins/formats.ts",
   "ml": "vendor/magika",
-  "skills": "packages/re/replica",
+  "skills": "packages/re/plugin/skills",
   "replicaPipeline": "packages/bun-engine/src/pipeline/replica.ts",
   "reverseEngineeringPipeline": "packages/bun-engine/src/pipeline/reverse.ts",
   "cargoWorkspace": "Cargo.toml",
@@ -31,7 +31,7 @@
     "directx12": ["vendor/directx-headers", "vendor/directx-compiler", "vendor/directx-samples"],
     "render": ["vendor/wgpu", "vendor/bevy", "vendor/winit"],
     "fileTypeMl": "vendor/magika",
-    "replicaSkills": "packages/re/replica",
+    "replicaSkills": "packages/re/plugin/skills",
     "reverseEngineering": ["vendor/ghidra", "crates/ghidra-decompiler", "vendor/ntr-ghidra"],
     "toolchains": ["vendor/llvm", "vendor/qemu", "vendor/cmake", "vendor/vcpkg", "vendor/make"]
   }

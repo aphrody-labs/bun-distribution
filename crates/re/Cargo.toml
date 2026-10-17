@@ -33,7 +33,7 @@ wasm = ["dep:wasm-bindgen", "dep:serde-wasm-bindgen"]
 nie = ["dep:aphrody-nie-index", "dep:anyhow", "dep:tracing"]
 # In-process Steamworks API emulator over the nie netcode types.
 steam-emulator = ["dep:aphrody-nie-net"]
-# Native Steam depot download (steamroom) and the `bunre-steam` CLI.
+# Native Steam depot download (steamroom) and the `bunre steam` subcommand.
 steam-download = [
     "dep:anyhow",
     "dep:bytes",
@@ -91,18 +91,8 @@ googletest = "0.14"
 criterion  = { version = "0.8.2", features = ["html_reports"] }
 
 [[bin]]
-name = "bunre-pipeline"
-path = "src/bin/bunre-pipeline.rs"
-required-features = ["pipeline"]
-
-[[bin]]
-name = "bunre-dbxv2"
-path = "src/bin/bunre-dbxv2.rs"
-
-[[bin]]
-name = "bunre-steam"
-path = "src/bin/bunre-steam.rs"
-required-features = ["steam-download"]
+name = "bunre"
+path = "src/bin/bunre/main.rs"
 
 [[example]]
 name = "dump_census"

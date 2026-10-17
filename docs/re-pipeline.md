@@ -15,7 +15,7 @@ and lists candidate adapters; it never fabricates output.
 
 - Rust: `crates/re/src/pipeline/contract.rs` (serde), IR in `ir.rs`.
 - JSON Schemas (draft 2020-12): `crates/re/schema/*.json`, regenerated with
-  `bunre-pipeline schema crates/re/schema` or `bun re pipeline schema <dir>`.
+  `bunre pipeline schema crates/re/schema` or `re pipeline schema <dir>`.
 - TypeScript mirror: `packages/re/src/pipeline/contract.ts`.
 
 ## Adapters
@@ -24,7 +24,7 @@ and lists candidate adapters; it never fabricates output.
 referenced by id or command (never copied): steamcmd and nie-steam (acquire); 7z, UEFIExtract,
 binwalk, unblob, nie-formats (unpack); rea, nie-re, ntr-ghidra, wii-disasm, bun-engine-nds (analyze);
 ghidra-decompiler (decompile); factory-linux/arch, msvc-windows, android-native, libnds, libogc
-(rebuild); nie-emu, dolphin, ares, mame, retroarch, qemu and others (verify). `bun re pipeline adapters`
+(rebuild); nie-emu, dolphin, ares, mame, retroarch, qemu and others (verify). `re pipeline adapters`
 shows live status: `ready`, `registered` (installed, needs `--external`) or `unavailable` with reason.
 
 Built-in end-to-end adapters: fs-acquire, sniff-identify, zip-apk-unpack, triage, x86-lift, emit-c,
@@ -43,14 +43,14 @@ that the Rust compiles, and with `--trace` runs the rebuilt program.
 ## CLI and MCP
 
 ```
-bun re pipeline <input> --target <os|bios|firmware> [--out DIR] [--external] [--trace] [--db]
-bun re pipeline adapters [--stage S]
-bun re pipeline schema <dir>
+re pipeline <input> --target <os|bios|firmware> [--out DIR] [--external] [--trace] [--db]
+re pipeline adapters [--stage S]
+re pipeline schema <dir>
 ```
 
-The CLI drives the `bunre-pipeline` binary (`BUNRE_PIPELINE_BIN`, `target/{release,debug}`, or PATH).
-`--db` records runs in a `bun:sqlite` analysis database. `mcp.ts` exports `re_pipeline_run` and
-`re_pipeline_adapters`; register with `registerPipelineTools(...)`. `serve.ts` exposes a loopback
+The CLI drives `bunre pipeline` (`BUNRE_BIN`, `target/{release,debug}`, or PATH).
+`--db` records runs in a `bun:sqlite` analysis database. The `re` MCP server serves `re_pipeline_run` and
+`re_pipeline_adapters` beside the rea and Steam tools. `serve.ts` exposes a loopback
 `Bun.serve` API.
 
 ## Limits (honest)

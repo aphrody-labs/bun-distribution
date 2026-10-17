@@ -1,11 +1,14 @@
 {
-  "name": "steam",
+  "name": "re",
   "version": "1.4.4",
-  "description": "Native Bun Steam indexer: local install scan, Web API catalogue, userdata/Steam Cloud, RE pipeline, relay download.",
+  "description": "Bun OS reverse engineering: one CLI and MCP server (binaries, firmware, apps, web, Android, Steam, the cross-OS RE pipeline) with the reverse-engineer-anything, Steam, Ghidra and Replica skills.",
+  "license": "MIT AND Apache-2.0",
+  "keywords": ["reverse-engineering", "ghidra", "steam", "mcp", "skills"],
+  "skills": "./skills",
   "mcpServers": {
-    "steam": {
+    "re": {
       "command": "bun",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/../src/steam/mcp-server.ts"]
+      "args": ["${CLAUDE_PLUGIN_ROOT}/../scripts/rea.mjs", "mcp"]
     }
   }
 }

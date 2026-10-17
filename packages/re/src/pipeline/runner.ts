@@ -8,8 +8,7 @@ import type {
   Stage,
 } from "./contract.js";
 
-const EXE =
-  process.platform === "win32" ? "bunre-pipeline.exe" : "bunre-pipeline";
+const EXE = process.platform === "win32" ? "bunre.exe" : "bunre";
 
 /** Bun OS checkout root: BUN_OS_ROOT or the nearest ancestor holding AGENTS.md and crates/. */
 export function findRoot(from = process.cwd()): string | undefined {
@@ -25,9 +24,9 @@ export function findRoot(from = process.cwd()): string | undefined {
   }
 }
 
-/** Locate the Rust pipeline binary: BUNRE_PIPELINE_BIN, then target/{release,debug} via Bun.Glob, then PATH. */
+/** Locate the Rust `bunre` binary: BUNRE_BIN, then target/{release,debug} via Bun.Glob, then PATH. */
 export async function findBinary(): Promise<string> {
-  const env = process.env.BUNRE_PIPELINE_BIN;
+  const env = process.env.BUNRE_BIN;
   if (env && existsSync(env)) return env;
   const root = findRoot();
   const roots = [
@@ -45,11 +44,11 @@ export async function findBinary(): Promise<string> {
     }))
       return hit;
   }
-  const onPath = Bun.which("bunre-pipeline");
+  const onPath = Bun.which("bunre");
   if (onPath) return onPath;
   throw new Error(
-    "bunre-pipeline not found. Build it with scripts/build/rust/cargo-serial.sh build --release -p bun-re --bin bunre-pipeline, " +
-      "or set BUNRE_PIPELINE_BIN.",
+    "bunre not found. Build it with scripts/build/rust/cargo-serial.sh build --release -p bun-re --features pipeline --bin bunre, " +
+      "or set BUNRE_BIN.",
   );
 }
 
@@ -58,7 +57,7 @@ async function exec(
   timeoutMs: number,
 ): Promise<{ code: number; out: string; err: string }> {
   const bin = await findBinary();
-  const proc = Bun.spawn([bin, ...args], {
+  const proc = Bun.spawn([bin, "pipeline", ...args], {
     stdout: "pipe",
     stderr: "pipe",
     env: process.env,
@@ -99,7 +98,7 @@ export async function runPipeline(
     ((opts.timeoutSecs ?? 600) * 8 + 60) * 1000,
   );
   if (!out.trim())
-    throw new Error(`bunre-pipeline exited ${code}: ${err.trim()}`);
+    throw new Error(`bunre pipeline exited ${code}: ${err.trim()}`);
   return JSON.parse(out) as PipelineReport;
 }
 
@@ -109,14 +108,14 @@ export async function listAdapters(stage?: Stage): Promise<AdapterInfo[]> {
     60_000,
   );
   if (code !== 0)
-    throw new Error(`bunre-pipeline adapters exited ${code}: ${err.trim()}`);
+    throw new Error(`bunre pipeline adapters exited ${code}: ${err.trim()}`);
   return JSON.parse(out) as AdapterInfo[];
 }
 
 export async function emitSchemas(dir: string): Promise<void> {
   const { code, err } = await exec(["schema", resolve(dir)], 60_000);
   if (code !== 0)
-    throw new Error(`bunre-pipeline schema exited ${code}: ${err.trim()}`);
+    throw new Error(`bunre pipeline schema exited ${code}: ${err.trim()}`);
 }
 
 /** Run several inputs with bounded concurrency; each run is its own process. */

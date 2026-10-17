@@ -10,10 +10,10 @@ import {
 import { defaultDbPath, openAnalysisDb, recordRun } from "./db.js";
 import { emitSchemas, listAdapters, runPipeline } from "./runner.js";
 
-const USAGE = `bun re pipeline <input> --target <os|bios|firmware> [--out DIR] [--external] [--trace]
+const USAGE = `re pipeline <input> --target <os|bios|firmware> [--out DIR] [--external] [--trace]
                  [--max-functions N] [--max-insns N] [--timeout SECS] [--db] [--json]
-bun re pipeline adapters [--stage <stage>] [--json]
-bun re pipeline schema <dir>`;
+re pipeline adapters [--stage <stage>] [--json]
+re pipeline schema <dir>`;
 
 function printReport(r: PipelineReport): void {
   console.log(`pipeline ${r.summary}: ${r.input} (${r.target}) -> ${r.outdir}`);
@@ -33,7 +33,7 @@ function printAdapters(list: AdapterInfo[]): void {
   }
 }
 
-/** Entry point for `bun re pipeline ...`. Returns the process exit code. */
+/** Entry point for `re pipeline ...`. Returns the process exit code. */
 export async function main(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
     args: argv,
@@ -94,14 +94,4 @@ export async function main(argv: string[]): Promise<number> {
   if (values.json) console.log(JSON.stringify(report, null, 2));
   else printReport(report);
   return report.summary === "failed" ? 1 : 0;
-}
-
-if (import.meta.main) {
-  main(Bun.argv.slice(2)).then(
-    (c) => process.exit(c),
-    (e) => {
-      console.error(e instanceof Error ? e.message : e);
-      process.exit(1);
-    },
-  );
 }

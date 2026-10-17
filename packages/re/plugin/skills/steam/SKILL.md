@@ -3,7 +3,7 @@ name: steam
 description: Index, query and reverse the local Steam install (SQLite), Steam Web API catalogue, userdata/Steam Cloud, and relay game downloads through an SSH host.
 ---
 
-Use the native Bun CLI `bun packages/re/src/steam/cli.ts <command>` (or MCP tools `steam_*`):
+Use `re steam <command>` (`bun packages/re/scripts/rea.mjs steam <command>`) or the `steam_*` tools of the `re` MCP server:
 
 - `scan` indexes install, libraries, appinfo/packageinfo, manifests, PE files, userdata, cloud, logs, registry (whitelist) into `~/.aphrody/db/steam.sqlite`.
 - `stats`, `sql "<SELECT>"` query it (read-only).

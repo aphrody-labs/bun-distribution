@@ -60,7 +60,7 @@ export async function opClassify(path: string) {
   return { path, ...(await detectFile(path, extname(path).slice(1))) };
 }
 
-/** Runs the RE pipeline (`bunre-pipeline`) on the executable of an installed app. */
+/** Runs the RE pipeline (`bunre pipeline`) on the executable of an installed app. */
 export async function opRea(o: CommonOptions, appid: number, outdir?: string) {
   const row = withDb(
     o.db,

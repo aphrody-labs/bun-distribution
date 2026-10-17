@@ -1,4 +1,4 @@
-bun-re (aphrody-labs/aphrody re, Apache-2.0), src/game/*, src/bin/bunre-dbxv2.rs and
+bun-re (aphrody-labs/aphrody re, Apache-2.0), src/game/*, src/bin/bunre/dbxv2.rs and
 tests/dbxv2_inventory_cli.rs from shenron-re (aphrody-labs/shenron, Apache-2.0), src/nie/* from aphrody-nie-re and aphrody-nie-dump,
 and src/steam/{planning,emulator,depot_resolver,downloader,options,session,token_store}.rs
-and src/bin/bunre-steam.rs from aphrody-nie-steam (aphrody-labs, Apache-2.0).
+and src/bin/bunre/steam.rs from aphrody-nie-steam (aphrody-labs, Apache-2.0).
