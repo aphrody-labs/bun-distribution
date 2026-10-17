@@ -3,7 +3,7 @@
 //
 // Generates `index.ts` in each asset folder, exporting every asset of the folder. Raster folders
 // export default-imported URLs; SVG folders export React components (lazy-loaded in the
-// `LAZY_FOLDERS`). Missing folders are skipped. The output is formatted with oxfmt.
+// `LAZY_FOLDERS`). Missing folders are skipped. The output is formatted with `bun fmt`.
 //
 //   bun run gen            # every folder
 //   bun run gen -- icons   # only the listed folders
@@ -22,14 +22,11 @@ const readdir = async (dir: string): Promise<string[] | null> => {
     .stat()
     .catch(() => null);
   if (!info?.isDirectory()) return null;
-  return Array.fromAsync(
-    new Bun.Glob("*").scan({ cwd: dir, onlyFiles: false, dot: true }),
-  ).catch(() => null);
+  return Array.fromAsync(new Bun.Glob("*").scan({ cwd: dir, onlyFiles: false, dot: true })).catch(() => null);
 };
 
 /** `Video-20.png` → `Video20`. */
-const variableName = (fileName: string): string =>
-  fileName.split(".")[0]!.replaceAll("-", "");
+const variableName = (fileName: string): string => fileName.split(".")[0]!.replaceAll("-", "");
 
 /**
  * Canonical icon alias table: maps legacy/duplicate icon names to canonical
@@ -49,7 +46,7 @@ export const ICON_ALIASES: Record<string, string> = {
 };
 
 function render(folder: string, lazy: boolean, fileNames: string[]): string {
-  const imports = fileNames.map((fileName) => {
+  const imports = fileNames.map(fileName => {
     const name = variableName(fileName);
     if (folder.startsWith("svgs")) {
       return lazy
@@ -60,11 +57,7 @@ function render(folder: string, lazy: boolean, fileNames: string[]): string {
   });
 
   const aliases =
-    folder === "icons"
-      ? Object.entries(ICON_ALIASES).map(
-          ([alias, target]) => `const ${alias} = ${target};`,
-        )
-      : [];
+    folder === "icons" ? Object.entries(ICON_ALIASES).map(([alias, target]) => `const ${alias} = ${target};`) : [];
 
   const exportNames = [
     ...fileNames.map(variableName),
@@ -82,7 +75,7 @@ function render(folder: string, lazy: boolean, fileNames: string[]): string {
     ...(aliases.length > 0 ? ["", ...aliases] : []),
     "",
     "export {",
-    ...exportNames.map((name) => `  ${name},`),
+    ...exportNames.map(name => `  ${name},`),
     "};",
     "",
   ].join("\n");
@@ -92,9 +85,7 @@ async function generate(folder: string, lazy: boolean): Promise<string | null> {
   const dir = join(root, folder);
   const entries = await readdir(dir);
   if (!entries) return null;
-  const fileNames = entries
-    .filter((f) => !SKIP.has(f) && !f.startsWith("."))
-    .toSorted();
+  const fileNames = entries.filter(f => !SKIP.has(f) && !f.startsWith(".")).toSorted();
   const out = join(dir, "index.ts");
   await Bun.write(out, render(folder, lazy, fileNames));
   return out;
@@ -108,7 +99,7 @@ async function generateBeardedUrls(): Promise<string | null> {
   const dir = join(root, "svgs/ext/Extras");
   const entries = await readdir(dir);
   if (!entries) return null;
-  const svgs = entries.filter((f) => f.endsWith(".svg")).toSorted();
+  const svgs = entries.filter(f => f.endsWith(".svg")).toSorted();
   const out = join(dir, "urls.ts");
   await Bun.write(
     out,
@@ -139,13 +130,11 @@ const folders: [string, boolean][] = [
 const written = (
   await Promise.all([
     ...folders.map(([f, lazy]) => generate(f, lazy)),
-    ...(only.size === 0 || only.has("svgs/ext/Extras")
-      ? [generateBeardedUrls()]
-      : []),
+    ...(only.size === 0 || only.has("svgs/ext/Extras") ? [generateBeardedUrls()] : []),
   ])
 ).filter((f): f is string => f !== null);
 if (written.length > 0) {
-  const fmt = Bun.spawnSync(["oxfmt", ...written], {
+  const fmt = Bun.spawnSync([process.execPath, "fmt", ...written], {
     windowsHide: true,
     stdout: "inherit",
     stderr: "inherit",

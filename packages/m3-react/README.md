@@ -9,7 +9,7 @@ Ce package réalise le plan que le fork prévoit (`apps/m3-react`) mais ne livre
 (cf. `migration/00-CONVENTIONS.md` §0). Il expose un composant React typé pour chacun des
 **119 tags** listés dans `migration/scripts/md-elements.txt`.
 
-- **Statut compilation : 119 / 119 wrappers générés, `tsc --noEmit` → 0 erreur.**
+- **Statut compilation : 119 / 119 wrappers générés, `bun check --noEmit` → 0 erreur.**
 - 1 wrapper React par élément `md-*`, nom = PascalCase du tag (CONVENTIONS §2).
 - Events natifs réels mappés par élément (vérifiés dans le code Lit, voir plus bas).
 
@@ -22,7 +22,7 @@ Le package est déjà installé dans ce dossier (`migration/wrappers/`) :
 ```bash
 cd migration/wrappers
 bun install            # @lit/react + @material/web (file:../../material-web) + react/react-dom
-bun run typecheck      # tsc --noEmit → 0 erreur
+bun run typecheck      # bun check --noEmit → 0 erreur
 bun run generate       # régénère wrappers/ + index.ts depuis md-elements.txt
 ```
 
@@ -185,7 +185,7 @@ documenté : `events: {}`.
 
 ## Détail compilation
 
-`tsc --noEmit` compile **toute la chaîne** (les wrappers _et_ les sources `.ts` de
+`bun check --noEmit` vérifie **toute la chaîne** (les wrappers _et_ les sources `.ts` de
 `material-web/` qu'ils importent). Trois ajustements ont été nécessaires côté `tsconfig.json` /
 shims, **sans toucher** à `material-web/src` :
 

@@ -3,7 +3,8 @@ import { withM3 } from "@aphrody/m3-next";
 import { resolve } from "node:path";
 
 export default withM3(
-  { poweredByHeader: false },
+  // Types are checked by `bun check` (`typecheck` script), not during `next build`.
+  { poweredByHeader: false, typescript: { ignoreBuildErrors: true } },
   {
     // Next 16: React Compiler and Cache Components are top-level keys; Turbopack is the default bundler.
     reactCompiler: true,

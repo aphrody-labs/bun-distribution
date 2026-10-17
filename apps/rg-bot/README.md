@@ -60,9 +60,9 @@ cp .env.example .env     # remplir les secrets Discord/Supabase et les deux URLs
 bun dev                  # bun --watch
 bun start                # one-shot
 bun run build            # → dist/index.js
-bun run type-check       # tsc --noEmit
+bun run type-check       # bun check --noEmit
 bun run test             # bun test src
-bun run lint             # oxlint src (lint:fix pour corriger)
+bun run lint             # bun lint src (lint:fix pour corriger)
 bun run smoke:admin      # smoke test services + RBAC + audit (requiert DB live)
 bun run smoke:canvas     # smoke test canvas (génère /tmp/rg-{staff,profil,events}.png)
 ```

@@ -4,9 +4,9 @@
  * POURQUOI CE FICHIER EXISTE
  * `@aphrody/x` (alias local de `@aphrody/x`, cf. `node_modules/@aphrody/x`
  * → `.bun/@aphrody+x@1.0.10`) publie sa SOURCE `.ts` brute (`main`/`types` →
- * `./src/index.ts`) sans aucun `.d.ts`. Laisser tsc lire cette source le fait
+ * `./src/index.ts`) sans aucun `.d.ts`. Laisser `bun check` lire cette source le fait
  * échouer sur les réglages stricts du dépôt (`strictNullChecks`,
- * `noImplicitAny`) : `bunx tsc --noEmit -p packages/cron` remonte alors une
+ * `noImplicitAny`) : `bun check --noEmit -p packages/rg-cron` remonte alors une
  * quinzaine d'erreurs dans `src/config/query-ids.ts`, `src/core/client.ts`,
  * `src/services/{crawler,media,news}.ts` — du code tiers qui n'est pas le nôtre.
  * `skipLibCheck` ne couvre PAS ce cas : il ne s'applique qu'aux `.d.ts`.

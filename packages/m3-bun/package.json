@@ -97,8 +97,7 @@
     "@aphrody/m3-next": "workspace:*",
     "@aphrody/m3-next-migrate": "workspace:*",
     "@aphrody/next-bun": "catalog:",
-    "@aphrody/web-inspector-bun": "1.4.3-aphrody.1",
-    "oxlint": "catalog:"
+    "@aphrody/web-inspector-bun": "1.4.3-aphrody.1"
   },
   "peerDependencies": {
     "@aphrody/bun-debug-adapter-protocol": "0.0.1-aphrody.1",
@@ -115,8 +114,7 @@
     "@aphrody/m3-next": "workspace:*",
     "@aphrody/m3-next-migrate": "workspace:*",
     "@aphrody/next-bun": "0.2.0-aphrody.2",
-    "@aphrody/web-inspector-bun": "1.4.3-aphrody.1",
-    "oxlint": ">=1.0.0"
+    "@aphrody/web-inspector-bun": "1.4.3-aphrody.1"
   },
   "peerDependenciesMeta": {
     "@aphrody/bun-debug-adapter-protocol": {
@@ -162,9 +160,6 @@
       "optional": true
     },
     "@aphrody/web-inspector-bun": {
-      "optional": true
-    },
-    "oxlint": {
       "optional": true
     }
   },

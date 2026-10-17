@@ -12,7 +12,7 @@
 //   m3-bun smoke    [executable] [--port n]                     run it (yolo runtime when installed), GET /, /healthz, /api/m3/info
 //   m3-bun workspace <build|typecheck|clean> [--only a,b] [--no-cache]          the repository pipeline (scripts/build.ts)
 //   m3-bun pack     [package-dir] [--out d]                     build a workspace package and `bun pm pack` it
-//   m3-bun lint     [paths..] [--strict] [--fix] [--correctness]     eslint-plugin-m3 rules through oxlint
+//   m3-bun lint     [paths..] [--strict] [--fix] [--correctness]     eslint-plugin-m3 rules through bun lint
 //   m3-bun migrate  [--icons] [--glob g] [--dry-run] | --next <src> <out> [--m3] [--write]   m3-codemods, m3-next-migrate
 //   m3-bun create   <web|app|example> <dir> [--name n] [--target tauri|vite] [--dry-run]   scaffold
 //   m3-bun design   "<brief>" [--color c] [--system s] [--validate] [--out d]       m3-design

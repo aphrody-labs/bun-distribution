@@ -90,7 +90,7 @@ error overlay.
 
 ## Tools
 
-`m3-bun lint` (eslint-plugin-m3 through oxlint), `migrate` (m3-codemods, `--next` for m3-next-migrate), `create`
+`m3-bun lint` (eslint-plugin-m3 through `bun lint`), `migrate` (m3-codemods, `--next` for m3-next-migrate), `create`
 (scaffold), `design` (m3-design), `og` (canvas Open Graph image) and `lib` (m3-config library build). Each tool package
 loads on first use (`src/tools-*.ts`). If a package is missing, the error names it.
 

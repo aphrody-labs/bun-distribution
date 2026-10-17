@@ -482,9 +482,9 @@ au mode extraction/offline explicite.
 
 ```bash
 bun test                    # from packages/azalee
-bun run type-check          # tsc --noEmit (vrais types workspace)
-bun run lint                # oxlint
-bun run build               # tsc -p tsconfig.build.json
+bun run type-check          # bun check --noEmit (vrais types workspace)
+bun run lint                # bun lint
+bun run build               # bun check -p tsconfig.build.json
 bun run compile             # binaire autonome → dist/azalee
 ```
 

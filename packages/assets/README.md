@@ -14,5 +14,5 @@ M3 explorer surfaces, with icon resolution helpers. The set merges the Spacedriv
 | `@aphrody/assets/util`                           | `getIcon`, `getLayeredIcon`, `getBeardedIcon`, `getIcon20`                                |
 | `@aphrody/assets/util/mobile`                    | the same without `beardedIconUrls` (React Native)                                         |
 
-`bun run gen` regenerates the per-folder `index.ts` barrels (`scripts/generate.ts`, oxfmt formatted).
+`bun run gen` regenerates the per-folder `index.ts` barrels (`scripts/generate.ts`, formatted with `bun fmt`).
 `bun run test` checks the generated barrels against the folders; `bun run typecheck` runs `tsc`.

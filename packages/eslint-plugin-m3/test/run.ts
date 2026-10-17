@@ -1,5 +1,5 @@
 /**
- * test/run.ts — exécute oxlint réel avec le plugin m3 sur les fixtures.
+ * test/run.ts — exécute `bun lint` avec le plugin m3 sur les fixtures.
  * Vérifie que CHAQUE règle se déclenche sur bad.tsx et qu'AUCUNE sur good.tsx.
  *
  * Lancer : bun test/run.ts   (depuis packages/eslint-plugin-m3/)
@@ -21,28 +21,17 @@ const RULES = [
   "no-hardcoded-color",
 ];
 
-// The native oxlint on PATH (aphrody-labs/oxc build) silently ignores `jsPlugins`; only the npm
-// `oxlint` package hosts them. Run that package at the native binary's version, or APHRODY_OXLINT.
-function oxlintCommand(): string[] {
-  if (process.env.APHRODY_OXLINT) return [process.env.APHRODY_OXLINT];
-  const native = spawnSync(["oxlint", "--version"]).stdout.toString();
-  const version = /(\d+\.\d+\.\d+)/.exec(native)?.[1] ?? "latest";
-  return [process.execPath, "x", "--bun", `oxlint@${version}`];
-}
-
-const OXLINT = oxlintCommand();
+// The native `bun lint` hosts `jsPlugins`; APHRODY_LINT overrides the Bun executable.
+const LINT = [process.env.APHRODY_LINT ?? process.execPath, "lint", "--format", "json"];
 
 function lint(file: string): string {
-  const r = spawnSync(
-    [...OXLINT, "-c", CONFIG, join(ROOT, "test", "fixtures", file)],
-    {
-      cwd: ROOT,
-    },
-  );
+  const r = spawnSync([...LINT, "-c", CONFIG, join(ROOT, "test", "fixtures", file)], {
+    cwd: ROOT,
+  });
   return r.stdout.toString() + r.stderr.toString();
 }
 
-/** Règles m3 déclenchées (par leur slug) dans une sortie oxlint texte. */
+/** Règles m3 déclenchées (par leur slug) dans le rapport `bun lint`. */
 function firedRules(output: string): Set<string> {
   const fired = new Set<string>();
   for (const m of output.matchAll(/m3\(([a-z-]+)\)/g)) fired.add(m[1]);
@@ -76,6 +65,4 @@ if (failures > 0) {
   console.error(`\n${failures} échec(s).`);
   process.exit(1);
 }
-console.log(
-  `\nToutes les règles m3 vérifiées (${RULES.length}/${RULES.length} sur bad, 0 sur good).`,
-);
+console.log(`\nToutes les règles m3 vérifiées (${RULES.length}/${RULES.length} sur bad, 0 sur good).`);

@@ -6,11 +6,7 @@
 import type { GeneratedFile } from "../util.ts";
 import type { Target, TargetContext } from "./types.ts";
 
-const task = (
-  label: string,
-  args: string,
-  extra: Record<string, unknown> = {},
-) => ({
+const task = (label: string, args: string, extra: Record<string, unknown> = {}) => ({
   label,
   type: "shell",
   command: args,
@@ -42,14 +38,8 @@ export const tasksJson = (c: TargetContext) => ({
     }),
     task("m3-bun: build", `${c.cli} build`),
     task("m3-bun: compile", `${c.cli} compile`),
-    task(
-      "m3-bun: compile (windows-x64)",
-      `${c.cli} compile --target windows-x64`,
-    ),
-    task(
-      "m3-bun: compile (linux-x64-musl)",
-      `${c.cli} compile --target linux-x64-musl`,
-    ),
+    task("m3-bun: compile (windows-x64)", `${c.cli} compile --target windows-x64`),
+    task("m3-bun: compile (linux-x64-musl)", `${c.cli} compile --target linux-x64-musl`),
     task("m3-bun: serve", `${c.cli} serve`, {
       isBackground: true,
       problemMatcher: [],
@@ -58,8 +48,8 @@ export const tasksJson = (c: TargetContext) => ({
     task("m3-bun: package", `${c.cli} package`),
     task("m3-bun: smoke (compiled executable)", `${c.cli} smoke`),
     task("m3-bun: test", "bun test"),
-    task("m3-bun: lint", "bun x oxlint ."),
-    task("m3-bun: typecheck", "bun x tsc --noEmit -p tsconfig.json"),
+    task("m3-bun: lint", "bun lint ."),
+    task("m3-bun: typecheck", "bun check --noEmit -p tsconfig.json"),
   ],
 });
 

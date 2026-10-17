@@ -22,9 +22,7 @@ export interface GeneratePluginOptions {
  * 3. TypeScript 7.0.2 official engine & types (@types/bun + node_modules/typescript)
  * 4. NHITL (Non-Human-In-The-Loop) execution doctrine & subagent autonomy
  */
-export async function generateUnifiedYoloPlugin(
-  options: GeneratePluginOptions,
-): Promise<{
+export async function generateUnifiedYoloPlugin(options: GeneratePluginOptions): Promise<{
   readonly pluginDir: string;
   readonly filesGenerated: readonly string[];
 }> {
@@ -63,12 +61,7 @@ export async function generateUnifiedYoloPlugin(
 
   // 3. Read official TypeScript 7 package information
   let tsVersion = "7.0.2";
-  const tsPkgPath = join(
-    yoloRoot,
-    "node_modules",
-    "typescript",
-    "package.json",
-  );
+  const tsPkgPath = join(yoloRoot, "node_modules", "typescript", "package.json");
   if (existsSync(tsPkgPath)) {
     try {
       const tsPkg = JSON.parse(await Bun.file(tsPkgPath).text()) as {
@@ -85,8 +78,7 @@ export async function generateUnifiedYoloPlugin(
   const manifest: PluginManifest = {
     name: pluginName,
     version: pluginVersion,
-    description:
-      "Unified YOLO autonomous developer runtime & Bun-TS7 native industrial engine",
+    description: "Unified YOLO autonomous developer runtime & Bun-TS7 native industrial engine",
     author: "aphrody-dev <contact@aphrody.com>",
     license: "Apache-2.0",
     repository: "https://github.com/aphrody-labs/yolo.git",
@@ -98,14 +90,8 @@ export async function generateUnifiedYoloPlugin(
   await writeContent("plugin.json", JSON.stringify(manifest, null, 2));
 
   // Generate .claude-plugin/plugin.json & .codex-plugin/plugin.json
-  await writeContent(
-    ".claude-plugin/plugin.json",
-    JSON.stringify(manifest, null, 2),
-  );
-  await writeContent(
-    ".codex-plugin/plugin.json",
-    JSON.stringify(manifest, null, 2),
-  );
+  await writeContent(".claude-plugin/plugin.json", JSON.stringify(manifest, null, 2));
+  await writeContent(".codex-plugin/plugin.json", JSON.stringify(manifest, null, 2));
 
   // Generate hooks.json & hooks/hooks.json (NHITL session-start hook)
   const hooksConfig: PluginHooksManifest = {
@@ -117,8 +103,7 @@ export async function generateUnifiedYoloPlugin(
           hooks: [
             {
               type: "command",
-              command:
-                'bash "${CLAUDE_PLUGIN_ROOT:-.}/hooks/scripts/session-start.sh"',
+              command: 'bash "${CLAUDE_PLUGIN_ROOT:-.}/hooks/scripts/session-start.sh"',
               timeout: 10,
             },
           ],
@@ -207,7 +192,7 @@ Universal Non-Human-In-The-Loop (NHITL) autonomous developer runtime.
 
 ## Core Rules & Gates
 
-1. **NHITL Contract**: Approvals are never awaited from humans. Technical gates (bun test, tsc --noEmit, oxlint, cargo check) are strictly verified.
+1. **NHITL Contract**: Approvals are never awaited from humans. Technical gates (bun test, bun check, bun lint, cargo check) are strictly verified.
 2. **TypeScript ${tsVersion} Baseline**: Type-checking is strictly delegated to \`tsc --noEmit\` (Corsa engine). Tsconfig must define \`"types": ["bun"]\`.
 3. **Bun Native Stack**: Zero external npm dependencies when native Bun primitives exist (\`Bun.file\`, \`Bun.write\`, \`Bun.serve\`, \`bun:sqlite\`, \`Bun.hash\`, \`Bun.Glob\`).
 4. **Docs Indexing**: Version-matched Bun documentation is generated from \`vendor/bun/docs\` (${mdxPages.length} MDX files indexed).
@@ -299,7 +284,7 @@ Dispatches targeted searches across the monorepo.
 
   const testRunnerAgent = `---
 name: test-runner
-description: Autonomous test executor running bun test, tsc and cargo gates with isolated error reporting.
+description: Autonomous test executor running bun test, bun check and cargo gates with isolated error reporting.
 tools: Bash, Read
 model: sonnet
 ---
@@ -308,8 +293,8 @@ model: sonnet
 
 Executes repository gates and returns precise pass/fail diagnostics:
 - \`bun test test/\`
-- \`tsc --noEmit\`
-- \`oxlint\`
+- \`bun check --noEmit\`
+- \`bun lint\`
 `;
   await writeContent("agents/test-runner.md", testRunnerAgent);
 

@@ -54,8 +54,7 @@
     "@sindresorhus/transliterate": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
+    "@types/bun": "catalog:"
   },
   "engines": {
     "bun": "=1.4.4"

@@ -42,8 +42,7 @@
     "@aphrody/scaffold": "workspace:*"
   },
   "devDependencies": {
-    "@aphrody/m3-config": "workspace:*",
-    "@typescript/native-preview": "catalog:"
+    "@aphrody/m3-config": "workspace:*"
   },
   "engines": {
     "bun": "=1.4.4"

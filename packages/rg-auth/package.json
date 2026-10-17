@@ -40,7 +40,6 @@
     "@types/nodemailer": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
-    "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "engines": {

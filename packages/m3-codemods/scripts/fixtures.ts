@@ -3,17 +3,10 @@
  * scripts/fixtures.ts — fixtures des transforms (`__testfixtures__/<nom>.input.tsx` -> `<nom>.output.tsx`).
  *
  * Les fixtures `icons*` passent par `transforms/icons.ts` (hors périmètre de l'orchestrateur), les
- * autres par `transforms/orchestrator.ts`. Les deux côtés sont normalisés par oxfmt avant
+ * autres par `transforms/orchestrator.ts`. Les deux côtés sont normalisés par `bun fmt` avant
  * comparaison : on teste la sémantique du codemod, pas le style d'impression.
  */
-import {
-  existsSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import icons from "../transforms/icons";
@@ -33,11 +26,11 @@ export interface FixtureCase {
 export function fixtureCases(): FixtureCase[] {
   return (
     readdirSync(FIXTURES)
-      .filter((f) => f.endsWith(".input.tsx"))
-      .map((f) => f.slice(0, -".input.tsx".length))
+      .filter(f => f.endsWith(".input.tsx"))
+      .map(f => f.slice(0, -".input.tsx".length))
       // oxlint-disable-next-line unicorn/no-array-sort -- Sorts the fresh array built above (ES2022 target).
       .sort()
-      .map((name) => ({
+      .map(name => ({
         name,
         transform: name.startsWith("icons") ? "icons" : "orchestrator",
         inputPath: join(FIXTURES, `${name}.input.tsx`),
@@ -47,51 +40,41 @@ export function fixtureCases(): FixtureCase[] {
 }
 
 /** Sortie brute du transform de la fixture. */
-export function runCase(
-  c: FixtureCase,
-  source = readFileSync(c.inputPath, "utf8"),
-): string {
+export function runCase(c: FixtureCase, source = readFileSync(c.inputPath, "utf8")): string {
   const transform = c.transform === "icons" ? icons : orchestrator;
   return transform({ path: c.inputPath, source });
 }
 
-/** Normalise un source TSX via oxfmt (style canonique du dépôt). */
+/** Normalise un source TSX via `bun fmt` (style canonique du dépôt). */
 export function format(source: string): string {
-  const oxfmt = Bun.which("oxfmt");
-  if (!oxfmt)
-    throw new Error(
-      "oxfmt introuvable sur PATH (requis pour comparer les fixtures)",
-    );
-  // oxfmt ne lit pas le source sur stdin : formatage d'un fichier temporaire, configuration du dépôt.
+  // Formatage d'un fichier temporaire avec la configuration du dépôt.
   const dir = mkdtempSync(join(tmpdir(), "codemod-fixture-"));
   const file = join(dir, "f.tsx");
   try {
     writeFileSync(file, source);
-    const run = Bun.spawnSync([oxfmt, `--config=${repoConfig()}`, file], {
+    const run = Bun.spawnSync([process.execPath, "fmt", `--config=${repoConfig()}`, file], {
       windowsHide: true,
       cwd: ROOT,
       stdout: "pipe",
       stderr: "pipe",
     });
-    if (!run.success)
-      throw new Error(
-        `oxfmt failed (exit ${run.exitCode}): ${run.stderr.toString()}`,
-      );
+    if (!run.success) throw new Error(`bun fmt failed (exit ${run.exitCode}): ${run.stderr.toString()}`);
     return readFileSync(file, "utf8");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 }
 
-/** Remonte l'arborescence jusqu'au .oxfmtrc.json du dépôt. */
+/** Remonte l'arborescence jusqu'à la configuration `bun fmt` du dépôt. */
 function repoConfig(): string {
   let dir = ROOT;
   for (;;) {
-    const candidate = join(dir, ".oxfmtrc.json");
-    if (existsSync(candidate)) return candidate;
+    for (const name of [".oxfmtrc.json", "bun-format.json"]) {
+      const candidate = join(dir, name);
+      if (existsSync(candidate)) return candidate;
+    }
     const parent = dirname(dir);
-    if (parent === dir)
-      throw new Error("`.oxfmtrc.json` introuvable au-dessus de ROOT");
+    if (parent === dir) throw new Error("configuration `bun fmt` introuvable au-dessus de ROOT");
     dir = parent;
   }
 }

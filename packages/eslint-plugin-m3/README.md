@@ -4,7 +4,7 @@
 
 Règles de lint pour les sites qui **consomment** material-web
 (`@aphrody/m3-react` + Material Symbols). Écrit avec l'API ESLint-compatible :
-tourne **sous oxlint** (champ `jsPlugins`) **et sous ESLint** (champ `plugins`),
+tourne **sous `bun lint`** (champ `jsPlugins` de `.oxlintrc.json`),
 sans transpilation (ESM pur).
 
 Cible les composants `Md*` (wrappers React) et `md-*` (custom elements). Pensé en
@@ -24,7 +24,7 @@ laissent en `MIGRATION-TODO`, ce plugin l'attrape ensuite en continu.
 | `m3/require-icon-button-label` | warn  |  —   | Un bouton-icône (`md-*-icon-button`/`MdIconButton`) sans nom accessible (`aria-label`/`aria-labelledby`/`title`) — a11y, WCAG 4.1.2.                                                                                                                                             |
 | `m3/no-hardcoded-color`        | warn  |  —   | Couleur en dur (`#hex`/`rgb()`) dans `style`/`sx` d'un `md-*` → rôle `var(--md-sys-color-*)` (suit le thème + dark + dynamic-color).                                                                                                                                             |
 
-Deux règles sont **auto-corrigeables** (`oxlint --fix` ou `eslint --fix`) : `valid-icon-name` et `no-mui-prop-on-md` — idéal pour finir un port MUI→M3 en un passage.
+Deux règles sont **auto-corrigeables** (`bun lint --fix`) : `valid-icon-name` et `no-mui-prop-on-md` — idéal pour finir un port MUI→M3 en un passage.
 
 ## Installation
 
@@ -32,7 +32,7 @@ Deux règles sont **auto-corrigeables** (`oxlint --fix` ou `eslint --fix`) : `va
 bun add -D @aphrody/eslint-plugin-m3
 ```
 
-## Usage — oxlint (recommandé, Rust, rapide)
+## Usage — `bun lint`
 
 `.oxlintrc.json` :
 
@@ -51,30 +51,6 @@ bun add -D @aphrody/eslint-plugin-m3
 ```
 
 > Le chemin de `jsPlugins` est résolu **relativement au fichier `.oxlintrc.json`**.
-> Les JS plugins oxlint sont en alpha (oxlint ≥ 1.x) — vérifié sur **oxlint 1.67**.
-
-## Usage — ESLint (flat config)
-
-```js
-// eslint.config.js
-import m3 from "@aphrody/eslint-plugin-m3";
-
-export default [
-  m3.configs.recommended, // ou m3.configs.strict (tout en error)
-];
-```
-
-Ou à la carte :
-
-```js
-import m3 from "@aphrody/eslint-plugin-m3";
-export default [
-  {
-    plugins: { m3 },
-    rules: { "m3/no-sx-prop": "error", "m3/valid-icon-name": "error" },
-  },
-];
-```
 
 ## Presets
 
@@ -84,7 +60,7 @@ export default [
 ## Développement
 
 ```bash
-bun test/run.ts          # lance oxlint réel sur les fixtures (6/6 sur bad, 0 sur good)
+bun test/run.ts          # lance bun lint sur les fixtures (8/8 sur bad, 0 sur good)
 bun scripts/sync-symbol-names.ts   # régénère data/material-symbols-names.js
 ```
 

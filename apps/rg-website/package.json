@@ -186,7 +186,6 @@
     "@types/react-dom": "catalog:",
     "@types/three": "catalog:",
     "@types/web-push": "catalog:",
-    "@typescript/typescript6": "catalog:",
     "@vercel/config": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "@webgpu/types": "catalog:",

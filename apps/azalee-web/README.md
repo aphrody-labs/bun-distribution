@@ -130,8 +130,8 @@ Toutes en **Bun** — jamais `npm`, `pnpm` ni `yarn`.
 | ------------------------- | -------------------------------------------- |
 | `bun run dev`             | serveur de développement (Turbopack)         |
 | `bun run build`           | build de production (standalone)             |
-| `bun run lint`            | oxlint puis eslint                           |
-| `bun run type-check`      | `tsc --noEmit`                               |
+| `bun run lint`            | `bun lint`                                   |
+| `bun run type-check`      | `bun check --noEmit`                         |
 | `bun test src tests`      | tests de l'app                               |
 | `bun run sync:inagle`     | synchronise les données inagle vers Supabase |
 | `bun run backup:supabase` | dump Supabase → SQLite                       |

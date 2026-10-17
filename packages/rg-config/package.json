@@ -2,7 +2,7 @@
   "name": "@rosegriffon/config",
   "version": "1.4.4",
   "private": false,
-  "description": "Configs partagées : TypeScript, Oxc et Tailwind preset",
+  "description": "Configs partagées : TypeScript, bun lint et Tailwind preset",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/aphrody-labs/bun-os.git",
@@ -10,8 +10,6 @@
   },
   "files": [
     "README.md",
-    "eslint-base.mjs",
-    "eslint-nextjs.mjs",
     "oxlintrc.json",
     "public-urls.ts",
     "tailwind-preset.ts",

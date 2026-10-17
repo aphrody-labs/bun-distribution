@@ -96,8 +96,7 @@
     "@happy-dom/global-registrator": "catalog:",
     "@types/bun": "catalog:",
     "@types/node": "catalog:",
-    "@types/pg": "catalog:",
-    "typescript": "catalog:"
+    "@types/pg": "catalog:"
   },
   "engines": {
     "bun": "=1.4.4"

@@ -139,8 +139,9 @@ const nextConfig: NextConfig = {
 
   logging: process.env.NODE_ENV === "production" ? { fetches: { fullUrl: false } } : { fetches: { fullUrl: true } },
 
+  // Types are checked by `bun check` (`typecheck` script), not during `next build`.
   typescript: {
-    ignoreBuildErrors: false,
+    ignoreBuildErrors: true,
   },
 
   compiler: {

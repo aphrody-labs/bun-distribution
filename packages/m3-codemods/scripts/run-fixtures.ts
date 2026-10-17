@@ -3,7 +3,7 @@
  * scripts/run-fixtures.ts — test rapide des transforms sur les fixtures.
  *
  * Pour chaque `<name>.input.tsx` de `__testfixtures__/`, applique son transform (en
- * mémoire, sans sous-processus hors oxfmt) et compare au `<name>.output.tsx` attendu.
+ * mémoire, sans sous-processus hors `bun fmt`) et compare au `<name>.output.tsx` attendu.
  * Sortie non-zero si un écart.
  *
  * Lancer : `bun run scripts/run-fixtures.ts`
@@ -34,9 +34,7 @@ for (const c of fixtureCases()) {
   const e = expected.split("\n");
   for (let i = 0; i < Math.max(a.length, e.length); i++) {
     if (a[i] !== e[i]) {
-      console.log(
-        `  L${i + 1}\n   attendu: ${JSON.stringify(e[i])}\n   obtenu : ${JSON.stringify(a[i])}`,
-      );
+      console.log(`  L${i + 1}\n   attendu: ${JSON.stringify(e[i])}\n   obtenu : ${JSON.stringify(a[i])}`);
     }
   }
 }

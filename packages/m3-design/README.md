@@ -316,5 +316,5 @@ All modules are clean, type-safe ESM exports:
 
 ```bash
 bun test        # unit suites (parser, hct, generator)
-tsc -p tsconfig.json --noEmit
+bun check -p tsconfig.json --noEmit
 ```

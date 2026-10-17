@@ -143,7 +143,7 @@ if (!ok) throw new Error("signature invalide");
 bun run --filter @rosegriffon/achillea-core type-check
 bun run --filter @rosegriffon/achillea-core test   # bun test (tests/core.test.ts + tests/domains.test.ts)
 bun run --filter @rosegriffon/achillea-core lint
-bunx oxfmt packages/achillea-core
+bun fmt packages/achillea-core
 ```
 
 > Consommé **en source** (`main`/`types`/`exports` pointent sur `./src/*.ts`) : pas de build séparé, les consommateurs (web, bot, edge) importent directement le TypeScript.

@@ -73,8 +73,7 @@
     "@rosegriffon/config": "workspace:*",
     "@types/bun": "catalog:",
     "@types/express": "catalog:",
-    "@vercel/config": "catalog:",
-    "typescript": "catalog:"
+    "@vercel/config": "catalog:"
   },
   "engines": {
     "bun": "=1.4.4"

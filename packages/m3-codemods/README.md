@@ -131,7 +131,7 @@ Fixtures avant/après dans `__testfixtures__/` (préfixe `icons-` → transform 
 sinon orchestrateur ; découverte automatique) :
 
 ```bash
-bun test ./test                            # sortie TSX valide, idempotence, égalité oxfmt avec *.output.tsx
+bun test ./test                            # sortie TSX valide, idempotence, égalité `bun fmt` avec *.output.tsx
 bun run scripts/run-fixtures.ts            # même comparaison, en PASS/FAIL
 bun run scripts/run-fixtures.ts --update   # régénère les attendus (après modif volontaire d'un transform)
 ```
@@ -143,7 +143,7 @@ seule exception, `jsx-strings.output.tsx` garde l'espace significatif que recast
 ### État vérifié (dernière exécution)
 
 - `bun test ./test` → 11 fixtures + scanner + rejet TSX invalide, 0 échec.
-- `tsgo --noEmit -p tsconfig.json` → 0 erreur.
+- `bun check --noEmit -p tsconfig.json` → 0 erreur.
 - `ast-grep scan` sur fichier d'épreuve → 4 règles déclenchées (2 imports, 1 gap, 1 sx, 2 divider).
 
 ---

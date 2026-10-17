@@ -21,8 +21,7 @@
   },
   "devDependencies": {
     "@types/bun": "catalog:",
-    "brackets-model": "catalog:",
-    "typescript": "catalog:"
+    "brackets-model": "catalog:"
   },
   "engines": {
     "bun": "=1.4.4"

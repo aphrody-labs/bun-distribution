@@ -39,8 +39,7 @@
     "@types/react-dom": "catalog:",
     "@webgpu/types": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:",
-    "typescript": "catalog:"
+    "react-dom": "catalog:"
   },
   "peerDependencies": {
     "react": "catalog:",
