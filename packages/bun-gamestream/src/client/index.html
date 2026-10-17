@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bun OS Gamestream</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+        color: #d8dee9;
+        font:
+          12px/1.4 ui-monospace,
+          "Cascadia Mono",
+          Consolas,
+          monospace;
+        overflow: hidden;
+      }
+      #stage {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        cursor: crosshair;
+      }
+      #stage > canvas,
+      #stage > video {
+        grid-area: 1 / 1;
+        display: block;
+      }
+      #hud {
+        position: fixed;
+        top: 8px;
+        left: 8px;
+        margin: 0;
+        padding: 6px 8px;
+        background: rgb(0 0 0 / 60%);
+        border-radius: 4px;
+        pointer-events: none;
+        white-space: pre;
+      }
+      #status {
+        position: fixed;
+        bottom: 12px;
+        width: 100%;
+        text-align: center;
+        pointer-events: none;
+      }
+    </style>
+    <script type="module" src="./main.ts"></script>
+  </head>
+  <body>
+    <div id="stage">
+      <canvas id="view"></canvas>
+      <video id="fallback" hidden muted playsinline autoplay></video>
+    </div>
+    <audio id="audio" autoplay></audio>
+    <pre id="hud"></pre>
+    <div id="status">connecting...</div>
+  </body>
+</html>

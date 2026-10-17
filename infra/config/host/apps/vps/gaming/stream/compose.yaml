@@ -1,0 +1,89 @@
+# Bun OS game streaming on the CPU-only VPS. Start with ./up.sh (resolves BUN_BIN and the
+# optional /dev/ntsync overlay); every listener is bound to the wg1 address only.
+#
+#   gamestream  gamescope headless + WebRTC sender + Bun WebGPU client  http://10.200.77.1:8797
+#   wolf        games-on-whales Wolf (Moonlight protocol, x264 software encoding)
+#
+# Both share the cpuset below and leave CPUs 0-3 to production services.
+name: bun-gamestream
+
+x-cpu: &cpu
+  cpuset: "${GAMESTREAM_CPUSET:-4-11}"
+  cpu_shares: 512
+  pids_limit: 4096
+
+services:
+  gamestream:
+    <<: *cpu
+    image: aphrody/bun-gamestream:local
+    build:
+      context: .
+      dockerfile: Containerfile
+      additional_contexts:
+        gamestream: ../../../../../../../packages/bun-gamestream
+    container_name: bun-gamestream
+    profiles: ["webrtc"]
+    # Host networking: ICE needs the real wg1 address; the sender pins libnice to it and the
+    # signalling server binds it, so nothing listens on the public interface.
+    network_mode: host
+    mem_limit: 24g
+    memswap_limit: 24g
+    shm_size: 2g
+    cap_add: [SYS_NICE]
+    device_cgroup_rules:
+      - "c 13:* rmw"
+    devices:
+      - /dev/uinput
+    volumes:
+      - ${BUN_BIN:?run ./up.sh or export BUN_BIN}:/usr/local/bin/bun:ro
+      - /dev/input:/dev/input:ro
+    environment:
+      NODE_ENV: production
+      GAMESTREAM_HOST: ${GAMESTREAM_BIND:-10.200.77.1}
+      GAMESTREAM_PORT: ${GAMESTREAM_PORT:-8797}
+      GAMESTREAM_ICE_ADDRESS: ${GAMESTREAM_BIND:-10.200.77.1}
+      GAMESTREAM_APP: ${GAMESTREAM_APP:-glxgears -fullscreen}
+      GAMESTREAM_WIDTH: 1280
+      GAMESTREAM_HEIGHT: 720
+      GAMESTREAM_FPS: ${GAMESTREAM_FPS:-60}
+      GAMESTREAM_BITRATE_KBPS: ${GAMESTREAM_BITRATE_KBPS:-8000}
+      # 8 CPUs: llvmpipe 4 threads, x264 3 slices/threads, the rest for gamescope, PipeWire, Bun.
+      LP_NUM_THREADS: ${LP_NUM_THREADS:-4}
+      GAMESTREAM_ENCODER_THREADS: ${GAMESTREAM_ENCODER_THREADS:-3}
+    restart: "no"
+
+  wolf:
+    <<: *cpu
+    image: ghcr.io/games-on-whales/wolf:stable
+    container_name: bun-wolf
+    profiles: ["moonlight"]
+    # Wolf binds 0.0.0.0 inside its namespace; publishing on the wg1 address keeps it private.
+    ports:
+      - "${GAMESTREAM_BIND:-10.200.77.1}:47984:47984/tcp"
+      - "${GAMESTREAM_BIND:-10.200.77.1}:47989:47989/tcp"
+      - "${GAMESTREAM_BIND:-10.200.77.1}:48010:48010/tcp"
+      - "${GAMESTREAM_BIND:-10.200.77.1}:47999:47999/udp"
+      - "${GAMESTREAM_BIND:-10.200.77.1}:48100:48100/udp"
+      - "${GAMESTREAM_BIND:-10.200.77.1}:48200:48200/udp"
+    mem_limit: 8g
+    environment:
+      WOLF_RENDER_NODE: software
+      WOLF_CFG_FILE: ${WOLF_STATE:-/games/wolf}/cfg/config.toml
+      WOLF_PRIVATE_KEY_FILE: ${WOLF_STATE:-/games/wolf}/cfg/key.pem
+      WOLF_PRIVATE_CERT_FILE: ${WOLF_STATE:-/games/wolf}/cfg/cert.pem
+      HOST_APPS_STATE_FOLDER: ${WOLF_STATE:-/games/wolf}
+      # Wolf hands this directory (Wayland and PulseAudio sockets) to app containers by host path.
+      XDG_RUNTIME_DIR: ${WOLF_STATE:-/games/wolf}/sockets
+      WOLF_STOP_CONTAINER_ON_EXIT: "TRUE"
+      LP_NUM_THREADS: ${LP_NUM_THREADS:-4}
+    volumes:
+      - ${WOLF_STATE:-/games/wolf}:${WOLF_STATE:-/games/wolf}:rw
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+      - /dev:/dev:rw
+      - /run/udev:/run/udev:rw
+    device_cgroup_rules:
+      - "c 13:* rmw"
+    devices:
+      - /dev/uinput
+      - /dev/uhid
+    restart: "no"

@@ -1,0 +1,5 @@
+# Added by up.sh when the host exposes /dev/ntsync (Wine/Proton NT synchronization primitives).
+services:
+  gamestream:
+    devices:
+      - /dev/ntsync

@@ -598,3 +598,6 @@
 	path = vendor/recalbox
 	url = https://gitlab.com/recalbox/recalbox.git
 	shallow = true
+[submodule "vendor/kytyps5"]
+	path = vendor/kytyps5
+	url = https://github.com/aphrody-labs/kytyps5.git

@@ -1,0 +1,46 @@
+# Bun OS gamestream image: a CPU-only gamescope session streamed to a browser over WebRTC.
+#
+#   gamescope --backend headless (lavapipe/llvmpipe) -> PipeWire node "gamescope"
+#   pipewiresrc -> x264enc (zerolatency) -> rtph264pay -> webrtcbin  (+ opus audio)
+#   Bun.serve (packages/bun-gamestream): page, WebSocket signalling, sender supervision
+#   data channel input -> XTest into gamescope's Xwayland, uinput gamepad
+#
+# The same image is also a Wolf (games-on-whales) app: `GAMESTREAM_MODE=wolf-app` runs the
+# workload on the Wayland compositor Wolf provides and lets Wolf encode for Moonlight.
+#
+# Build through compose.yaml (it provides the `gamestream` additional context).
+FROM docker.io/library/ubuntu:26.10
+
+ARG DEBIAN_FRONTEND=noninteractive
+RUN sed -i 's/^Components:.*/Components: main universe multiverse/' /etc/apt/sources.list.d/ubuntu.sources \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends \
+      ca-certificates tini dbus dbus-bin procps \
+      gamescope xwayland x11-xserver-utils x11-utils \
+      mesa-vulkan-drivers libgl1-mesa-dri libegl-mesa0 libglx-mesa0 vulkan-tools mesa-utils \
+      pipewire pipewire-bin pipewire-pulse wireplumber pulseaudio-utils \
+      gstreamer1.0-tools gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+      gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-pipewire \
+      gstreamer1.0-nice gstreamer1.0-x \
+      gir1.2-gstreamer-1.0 gir1.2-gst-plugins-base-1.0 gir1.2-gst-plugins-bad-1.0 gir1.2-nice-0.1 \
+      python3 python3-gi python3-xlib python3-evdev \
+ && rm -rf /var/lib/apt/lists/*
+
+# CPU-only defaults; compose.yaml sizes them for the cpuset it grants.
+ENV XDG_RUNTIME_DIR=/run/gamestream \
+    LIBGL_ALWAYS_SOFTWARE=1 \
+    GALLIUM_DRIVER=llvmpipe \
+    VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json \
+    VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json \
+    LP_NUM_THREADS=4 \
+    GAMESTREAM_WIDTH=1280 \
+    GAMESTREAM_HEIGHT=720 \
+    GAMESTREAM_FPS=60 \
+    GAMESTREAM_MODE=webrtc
+
+COPY pipewire/ /etc/pipewire/
+COPY sender.py entrypoint.sh /opt/gamestream/
+COPY --from=gamestream . /opt/bun-gamestream/
+RUN chmod 0755 /opt/gamestream/entrypoint.sh /opt/gamestream/sender.py
+
+ENTRYPOINT ["/usr/bin/tini", "-g", "--", "/opt/gamestream/entrypoint.sh"]
