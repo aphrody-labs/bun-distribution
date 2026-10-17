@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/bun-engine-android",
-  "version": "0.1.0",
+  "version": "1.4.4",
   "type": "module",
   "license": "MIT",
   "exports": "./src/index.ts",

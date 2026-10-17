@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/identity",
-  "version": "1.4.5",
+  "version": "1.4.4",
   "description": "Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, the animated pet (React component and <aphrody-pet> Custom Element, Codex-composed tracks, 16-way gaze) drawn from crates/ui/identity.",
   "keywords": [
     "aphrody",

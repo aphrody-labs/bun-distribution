@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/web-to-tauri",
-  "version": "1.0.0-canary",
+  "version": "1.4.4",
   "description": "Converts a website, web app or built web bundle into a native Tauri 3 app: probes the target, plans a regression-free mode (remote, bundle, sidecar), generates the project and checks parity against the original.",
   "keywords": [
     "parity",

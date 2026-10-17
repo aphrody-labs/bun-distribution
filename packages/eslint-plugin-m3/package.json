@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/eslint-plugin-m3",
-  "version": "1.4.5",
+  "version": "1.4.4",
   "description": "Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under the native bun lint (jsPlugins).",
   "keywords": [
     "eslint",
