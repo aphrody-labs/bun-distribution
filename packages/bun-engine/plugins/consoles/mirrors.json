@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "note": "Seed index of every endpoint, CDN and mirror bep downloads from. `bep mirrors index` adds the dynamic lists (Arch, CachyOS, Libreboot) and `bep mirrors probe` measures them; downloads try the fastest healthy mirror first.",
+  "services": {
+    "github-api": { "kind": "api", "urls": ["https://api.github.com"] },
+    "github-releases": { "kind": "cdn", "urls": ["https://github.com", "https://objects.githubusercontent.com", "https://release-assets.githubusercontent.com", "https://codeload.github.com"] },
+    "gitlab-api": { "kind": "api", "urls": ["https://gitlab.com/api/v4"] },
+    "libretro-buildbot": {
+      "kind": "cdn",
+      "urls": ["https://buildbot.libretro.com"],
+      "paths": {
+        "nightly-core": "/nightly/{os}/{arch}/latest/{core}_libretro.{ext}.zip",
+        "stable-retroarch": "/stable/{version}/{os}/{arch}/RetroArch.7z",
+        "assets": "/assets/frontend/",
+        "core-info": "/assets/frontend/info.zip",
+        "database": "/assets/frontend/database-rdb.zip",
+        "cheats": "/assets/frontend/cheats.zip",
+        "shaders": "/assets/frontend/shaders_slang.zip"
+      }
+    },
+    "libreboot": {
+      "kind": "mirror",
+      "path": "/stable/{version}/roms/playstation/openbios.bin",
+      "urls": [
+        "https://www.mirrorservice.org/sites/libreboot.org/release",
+        "https://mirrors.mit.edu/libreboot",
+        "https://mirror.math.princeton.edu/pub/libreboot",
+        "https://mirror.cyberbits.eu/libreboot",
+        "https://mirror.koddos.net/libreboot",
+        "https://mirror-hk.koddos.net/libreboot",
+        "https://au.mirrors.cicku.me/libreboot",
+        "https://ca.mirrors.cicku.me/libreboot",
+        "https://in.mirrors.cicku.me/libreboot",
+        "https://za.mirrors.cicku.me/libreboot",
+        "https://mirror.shapovalov.website/libreboot",
+        "https://mirror.diyarciftci.xyz/libreboot"
+      ],
+      "list": "https://libreboot.org/download.html"
+    },
+    "archlinux": { "kind": "mirror", "path": "/{repo}/os/{arch}", "urls": ["https://geo.mirror.pkgbuild.com"], "list": "https://archlinux.org/mirrors/status/json/" },
+    "archlinux-archive": { "kind": "mirror", "urls": ["https://archive.archlinux.org"] },
+    "aur": { "kind": "api", "urls": ["https://aur.archlinux.org"] },
+    "cachyos": {
+      "kind": "mirror",
+      "path": "/repo/$arch/$repo",
+      "urls": ["https://cdn77.cachyos.org", "https://mirror.cachyos.org"],
+      "list": "https://raw.githubusercontent.com/CachyOS/CachyOS-PKGBUILDS/master/cachyos-mirrorlist/cachyos-mirrorlist"
+    },
+    "flathub": { "kind": "cdn", "urls": ["https://dl.flathub.org", "https://flathub.org/api/v2"] },
+    "dolphin": { "kind": "api", "urls": ["https://dolphin-emu.org/update/latest/beta", "https://dl.dolphin-emu.org"] },
+    "ppsspp": { "kind": "cdn", "urls": ["https://www.ppsspp.org/files", "https://builds.ppsspp.org"] },
+    "recalbox": { "kind": "cdn", "urls": ["https://download.recalbox.com", "https://upgrade.recalbox.com", "https://gitlab.com/recalbox/recalbox"] },
+    "kernel": { "kind": "api", "urls": ["https://www.kernel.org/releases.json", "https://cdn.kernel.org/pub/linux/kernel"] },
+    "firecracker-ci": { "kind": "cdn", "urls": ["https://s3.amazonaws.com/spec.ccfc.min/firecracker-ci"] }
+  }
+}

@@ -5,16 +5,19 @@ import { basename, dirname, join, resolve } from "node:path";
 import { type ConsoleCatalogComponent, loadConsoleCatalog } from "./console/catalog";
 import { defaultFirmwareStore, type FirmwareManifest, importFirmware, listFirmware } from "./firmware/import";
 import { installRelease, releaseCatalog, uninstallRelease, usrRoot } from "./usr";
+import { installCore, libretroCatalog, removeCore } from "./libretro";
+import { fetchFromMirrors } from "./mirrors";
 
 const repoRoot = resolve(import.meta.dir, "..", "..", "..");
 const lockName = "bep.lock";
 
-export type PackageKind = "core" | "bin" | "firmware" | "rom";
+export type PackageKind = "core" | "bin" | "libretro" | "firmware" | "rom";
 
 /** The `bunEngine` field of package.json. */
 export interface EngineManifest {
   cores: string[];
   binaries: string[];
+  libretro: string[];
   firmware: Record<string, string[]>;
   roms: Record<string, { console: string; sha256: string }>;
 }
@@ -38,6 +41,7 @@ export interface EngineLock {
   lockfileVersion: 1;
   cores: Record<string, LockedCore>;
   binaries: Record<string, LockedBinary>;
+  libretro: Record<string, { url: string; sha256: string; file: string }>;
   firmware: Record<string, FirmwareManifest>;
   roms: Record<string, FirmwareManifest>;
 }
@@ -49,7 +53,7 @@ interface Project {
 }
 
 function emptyManifest(): EngineManifest {
-  return { cores: [], binaries: [], firmware: {}, roms: {} };
+  return { cores: [], binaries: [], libretro: [], firmware: {}, roms: {} };
 }
 
 /** Finds the nearest package.json, like bun does. */
@@ -72,6 +76,7 @@ async function saveManifest(project: Project): Promise<void> {
   const manifest = project.manifest;
   manifest.cores = [...new Set(manifest.cores)].sort();
   manifest.binaries = [...new Set(manifest.binaries)].sort();
+  manifest.libretro = [...new Set(manifest.libretro)].sort();
   project.packageJson.bunEngine = manifest;
   await Bun.write(join(project.dir, "package.json"), `${JSON.stringify(project.packageJson, null, 2)}\n`);
 }
@@ -115,7 +120,7 @@ export async function install(options: { frozen?: boolean; sources?: boolean; la
   const project = await findProject();
   const catalog = await catalogById();
   const previous = await readLock(project.dir);
-  const lock: EngineLock = { lockfileVersion: 1, cores: {}, binaries: {}, firmware: {}, roms: {} };
+  const lock: EngineLock = { lockfileVersion: 1, cores: {}, binaries: {}, libretro: {}, firmware: {}, roms: {} };
   const missing: string[] = [];
 
   for (const id of project.manifest.cores) {
@@ -150,6 +155,20 @@ export async function install(options: { frozen?: boolean; sources?: boolean; la
     try {
       const record = await installRelease(id, pinned && { version: pinned.version, sha256: pinned.sha256 });
       lock.binaries[id] = { version: record.version, asset: record.asset, url: record.url, sha256: record.sha256 };
+    } catch (error) {
+      missing.push(error instanceof Error ? error.message : String(error));
+    }
+  }
+  const libretroIds = new Set((await libretroCatalog()).map(core => core.id));
+  for (const id of project.manifest.libretro) {
+    if (!libretroIds.has(id)) {
+      missing.push(`libretro core ${id} is not in libretro-core-info`);
+      continue;
+    }
+    const pinned = options.latest?.includes(id) ? undefined : previous?.libretro?.[id];
+    const installed = pinned && existsSync(join(usrRoot(), pinned.file));
+    try {
+      lock.libretro[id] = installed ? pinned : await installCore(id, options.frozen ? pinned?.sha256 : undefined);
     } catch (error) {
       missing.push(error instanceof Error ? error.message : String(error));
     }
@@ -190,7 +209,39 @@ export async function init(): Promise<string> {
 export async function add(args: string[]): Promise<void> {
   const project = await findProject();
   const [kind, consoleName, path, name] = args;
-  if (kind === "bin") {
+  if (kind === "free-firmware") {
+    const { firmware } = (await Bun.file(join(import.meta.dir, "..", "plugins", "consoles", "free-firmware.json")).json()) as {
+      firmware: Record<string, { console: string; file: string; url?: string; mirror?: { service: string; path: string }; path?: string; sha512?: string }>;
+    };
+    for (const id of args.slice(1)) {
+      const entry = firmware[id];
+      if (!entry) throw new Error(`no free firmware ${id}; known: ${Object.keys(firmware).join(", ")}`);
+      const source = entry.path ? join(repoRoot, entry.path) : join(usrRoot(), "var", "cache", "bep", entry.file);
+      if (entry.path && !existsSync(source))
+        Bun.spawnSync(["git", "-C", repoRoot, "submodule", "update", "--init", "--recursive", "--depth", "1", "--", entry.path.split("/").slice(0, 2).join("/")]);
+      if ((entry.url || entry.mirror) && !existsSync(source)) {
+        const response = entry.mirror
+          ? await fetchFromMirrors(entry.mirror.service, entry.mirror.path)
+          : await fetch(entry.url!, { headers: { "user-agent": "bep" } });
+        if (!response.ok) throw new Error(`${id}: download failed with ${response.status}`);
+        await Bun.write(source, response);
+      }
+      if (entry.sha512) {
+        const digest = new Bun.CryptoHasher("sha512").update(await Bun.file(source).bytes()).digest("hex");
+        if (digest !== entry.sha512) throw new Error(`${id}: sha512 ${digest} does not match the registry`);
+      }
+      if (!existsSync(source)) throw new Error(`${id}: ${source} is missing`);
+      const manifest = await importFirmware(entry.console, source);
+      const hashes = (project.manifest.firmware[manifest.console] ??= []);
+      if (!hashes.includes(manifest.sha256)) hashes.push(manifest.sha256);
+    }
+  } else if (kind === "libretro") {
+    const known = new Set((await libretroCatalog()).map(core => core.id));
+    for (const id of args.slice(1).map(name => name.replace(/_libretro$/, ""))) {
+      if (!known.has(id)) throw new Error(`${id} is not a libretro core; see bep search`);
+      project.manifest.libretro.push(id);
+    }
+  } else if (kind === "bin") {
     const releases = await releaseCatalog();
     for (const id of args.slice(1)) {
       if (!releases[id]) throw new Error(`${id} has no upstream release package; see bep search`);
@@ -225,6 +276,8 @@ export async function remove(names: string[]): Promise<void> {
     project.manifest.cores = project.manifest.cores.filter(id => id !== name);
     if (project.manifest.binaries.includes(name)) await uninstallRelease(name);
     project.manifest.binaries = project.manifest.binaries.filter(id => id !== name);
+    if (project.manifest.libretro.includes(name)) await removeCore(name);
+    project.manifest.libretro = project.manifest.libretro.filter(id => id !== name);
     delete project.manifest.roms[name];
     delete project.manifest.firmware[name];
     for (const [consoleName, hashes] of Object.entries(project.manifest.firmware)) {
@@ -241,6 +294,7 @@ export async function list(): Promise<Array<{ kind: PackageKind; name: string; c
   const lock = (await readLock(project.dir)) ?? (await install());
   return [
     ...Object.entries(lock.cores).map(([name, core]) => ({ kind: "core" as const, name, console: core.console, version: core.sourceRev.slice(0, 12) })),
+    ...Object.entries(lock.libretro ?? {}).map(([name, core]) => ({ kind: "libretro" as const, name, console: "", version: core.sha256.slice(0, 12) })),
     ...Object.entries(lock.binaries ?? {}).map(([name, bin]) => ({ kind: "bin" as const, name, console: "", version: bin.version })),
     ...Object.entries(lock.firmware).map(([name, image]) => ({ kind: "firmware" as const, name, console: image.console, version: image.sha256.slice(0, 12) })),
     ...Object.entries(lock.roms).map(([name, image]) => ({ kind: "rom" as const, name, console: image.console, version: image.sha256.slice(0, 12) })),
@@ -279,7 +333,10 @@ export async function search(term = ""): Promise<Array<{ id: string; kind: Packa
   const bins = Object.entries(await releaseCatalog())
     .filter(([id, pkg]) => id.includes(needle) || pkg.console.includes(needle) || pkg.repo.toLowerCase().includes(needle))
     .map(([id, pkg]) => ({ id, kind: "bin" as const, console: pkg.console, runtime: `release ${pkg.repo}` }));
-  return [...cores, ...bins];
+  const libretro = (await libretroCatalog())
+    .filter(core => [core.id, core.name, core.system, core.database].some(field => field.toLowerCase().includes(needle)))
+    .map(core => ({ id: core.id, kind: "libretro" as const, console: core.system, runtime: `libretro ${core.name}` }));
+  return [...cores, ...bins, ...libretro];
 }
 
 /** Compares each submodule pin with its fork's default branch. */
@@ -360,7 +417,7 @@ export async function freeRoms(consoleName?: string): Promise<Array<{ pack: stri
   for (const pack of packs.filter(item => !consoleName || item.console === consoleName)) {
     const dir = join(repoRoot, pack.source);
     if (!existsSync(join(dir, ".git")))
-      Bun.spawnSync(["git", "-C", repoRoot, "submodule", "update", "--init", "--depth", "1", "--", pack.source]);
+      Bun.spawnSync(["git", "-C", repoRoot, "submodule", "update", "--init", "--recursive", "--depth", "1", "--", pack.source]);
     for await (const path of new Bun.Glob(pack.glob).scan({ cwd: dir, onlyFiles: true }))
       rows.push({ pack: pack.id, console: pack.console, kind: pack.kind, path: join(pack.source, path) });
   }

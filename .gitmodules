@@ -365,7 +365,7 @@
 	url = https://github.com/profi200/open_agb_firm.git
 [submodule "vendor/retroarch"]
 	path = vendor/retroarch
-	url = https://github.com/libretro/RetroArch.git
+	url = https://github.com/aphrody-labs/retroarch.git
 [submodule "vendor/retroboy"]
 	path = vendor/retroboy
 	url = https://github.com/aphrody-labs/retroboy.git
@@ -586,3 +586,9 @@
 [submodule "vendor/chipi-spec"]
 	path = vendor/chipi-spec
 	url = https://github.com/aphrody-labs/chipi-spec.git
+[submodule "vendor/libretro-core-info"]
+	path = vendor/libretro-core-info
+	url = https://github.com/aphrody-labs/libretro-core-info.git
+[submodule "vendor/libretro-database"]
+	path = vendor/libretro-database
+	url = https://github.com/aphrody-labs/libretro-database.git

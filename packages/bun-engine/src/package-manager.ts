@@ -4,16 +4,18 @@ import { loadConsoleCatalog } from "./console/catalog";
 import { runNative } from "./nds/cli";
 import * as pm from "./pm";
 import { listInstalled } from "./usr";
+import { biosReport } from "./libretro";
+import { indexMirrors, listMirrors, probeMirrors } from "./mirrors";
 import { probeMedia, probeNativeCapabilities } from "./native-capabilities";
 import { NintendoDsFirmware } from "./nds/loader";
 
 const usage = [
   "bep init",
   "bep install [--frozen-lockfile] [--sources]",
-  "bep add <core...> | add bin <emulator...> | add firmware <console> <dump> | add rom <console> <image> [name]",
+  "bep add <core...> | add bin <emulator...> | add libretro <core...> | add free-firmware <id...> | add firmware <console> <dump> | add rom <console> <image> [name]",
   "bep remove <name...>",
   "bep ls | why <core> | info <core|console> | search [term] | outdated [core...] | update [core...]",
-  "bep cache [prune [project-dir...]] | usr (installed release binaries) | roms [console] (free ROMs)",
+  "bep cache [prune [project-dir...]] | usr (installed release binaries) | roms [console] (free ROMs) | bios [libretro-core...] (BIOS status by MD5) | mirrors [index|probe [service]|service]",
   "bep consoles | firmware:index | firmware:list [console] | run <system> <image> [options]",
   "bep ds:load [dir] | system:probe [path] | media:probe <file> | bun <bun-arguments>",
 ].join("\n  ");
@@ -118,6 +120,14 @@ export async function runEnginePackageManager(args: string[]): Promise<number> {
       return print(await pm.outdated(rest));
     case "update":
       return print(await pm.update(rest));
+    case "mirrors": {
+      const [action, service] = rest;
+      if (action === "index") return print(await indexMirrors());
+      if (action === "probe") return print((await probeMirrors(service)).map(({ service: s, url, ok, status, latencyMs }) => ({ service: s, url, ok, status, latencyMs })));
+      return print(listMirrors(action));
+    }
+    case "bios":
+      return print(await biosReport(rest));
     case "roms":
       return print(await pm.freeRoms(rest[0]));
     case "usr":

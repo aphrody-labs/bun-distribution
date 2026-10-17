@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "note": "Open-source BIOS and firmware replacements only. `bep add free-firmware <id>` verifies the digest and imports the file into the firmware store; proprietary dumps stay user-supplied.",
+  "firmware": {
+    "openbios": {
+      "console": "sony-playstation",
+      "file": "openbios.bin",
+      "url": "https://www.mirrorservice.org/sites/libreboot.org/release/stable/26.10/roms/playstation/openbios.bin",
+      "sha512": "4037a9569f57d0a88818f311efeb088fedd556f38593fc4e3c551112b47f99ca8b06fc8c5ca4c600e4457681bff3b9988411507c8c84f9befd05cc885f846e1e",
+      "license": "MIT (PCSX-Redux OpenBIOS, built by Libreboot 26.10)",
+      "source": "https://github.com/grumpycoders/pcsx-redux/tree/main/src/mips/openbios",
+      "mirror": {
+        "service": "libreboot",
+        "path": "/stable/26.10/roms/playstation/openbios.bin"
+      }
+    },
+    "normmatt-gba-bios": {
+      "console": "nintendo-game-boy-advance",
+      "file": "normatt_gba_bios.bin",
+      "path": "vendor/rustboyadvance-ng/core/benches/roms/normatt_gba_bios.bin",
+      "license": "Normmatt's open-source GBA BIOS replacement, vendored by RustBoyAdvance-NG",
+      "source": "https://github.com/Nebuleon/ReGBA/tree/master/bios"
+    }
+  }
+}
