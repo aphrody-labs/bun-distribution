@@ -67,7 +67,7 @@ bun-engine (ctr)      Machine adapter used by `bun-engine run 3ds` and the Bevy 
 | --- | --- |
 | ARM11 MPCore (ARMv6K + VFP11), memory, MMU, bus | Provided by Zakuro (`zakuro-cpu`, `zakuro-core::memory`). |
 | ARM9 (ARMv5TE) and firmware | Not emulated. The HLE kernel and services replace the firmware, so no ARM9 core, boot ROM or key material is required. A low-level ARM9 core is future work if native firmware boot becomes a goal. |
-| 3DSX, CIA, CCI/3DS, CXI boot | Done. Encrypted retail images need external decryption; no keys are shipped. |
+| 3DSX, CIA, CCI/3DS, CXI boot | Done. Encrypted retail images are decrypted by `bun-engine 3ds cia decrypt` over our Azahar fork with owner-supplied keys (see [CIA.md](CIA.md)); no keys are shipped. |
 | HLE kernel and services | Done by Zakuro (see audit). |
 | PICA200 GPU, 400x240 / 320x240, stereo | Software rasteriser and shader interpreter/JIT, right-eye output, anaglyph presentation. Presentation is wgpu; rasterisation on wgpu is future work. |
 | DSP audio, HID, saves, saved states | Done through Zakuro; HID covers buttons, circle pad, C-stick, touch and tilt. |
