@@ -572,3 +572,6 @@
 [submodule "crates/apkeep"]
 	path = crates/apkeep
 	url = https://github.com/aphrody-labs/apkeep.git
+[submodule "apps/pcsx2"]
+	path = apps/pcsx2
+	url = https://github.com/aphrody-labs/pcsx2.git
