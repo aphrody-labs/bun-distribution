@@ -112,6 +112,7 @@
     "packages/scaffold",
     "packages/shenron-auth",
     "packages/shenron-db",
+    "packages/shenron-dbxv2",
     "packages/shenron-ui",
     "packages/shell-web",
     "packages/sql",

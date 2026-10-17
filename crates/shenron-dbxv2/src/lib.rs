@@ -2,7 +2,7 @@
 //! # shenron-dbxv2 - DBXV2 reverse engineering as a C ABI.
 //!
 //! Every function takes borrowed input bytes and returns an owned [`ShBuf`] through an out
-//! parameter; free it with [`shenron_dbxv2_buf_free`]. Status is `0` on success, `-1` on error
+//! parameter; free it with [`shenron_dbxv2_buf_free`] (`ptr`, `len`). Status is `0` on success, `-1` on error
 //! (message in [`shenron_dbxv2_last_error`], thread-local, never freed by the caller) and `-2`
 //! when the call panicked. JSON results are UTF-8 without a trailing NUL.
 //!
@@ -124,14 +124,15 @@ pub extern "C" fn shenron_dbxv2_last_error() -> *const c_char {
 /// Free a buffer returned by this library. Safe on an empty or already-reset buffer.
 ///
 /// # Safety
-/// `buf` must come from this library and must not be freed twice.
+/// `ptr`/`len` must be the pair of a buffer returned by this library, freed at most once. The
+/// pair is passed unpacked because `bun:ffi` cannot pass structs by value.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn shenron_dbxv2_buf_free(buf: ShBuf) {
-    if buf.ptr.is_null() {
+pub unsafe extern "C" fn shenron_dbxv2_buf_free(ptr: *mut u8, len: usize) {
+    if ptr.is_null() {
         return;
     }
     // SAFETY: `ptr`/`len` describe the boxed slice leaked by `give`.
-    drop(unsafe { Box::from_raw(ptr::slice_from_raw_parts_mut(buf.ptr, buf.len)) });
+    drop(unsafe { Box::from_raw(ptr::slice_from_raw_parts_mut(ptr, len)) });
 }
 
 /// Identify a buffer; `name` (optional) supplies the extension fallback.

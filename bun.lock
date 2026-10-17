@@ -597,7 +597,7 @@
     },
     "packages/android-pipeline": {
       "name": "@aphrody/bun-engine-android",
-      "version": "0.1.0",
+      "version": "1.4.4",
       "devDependencies": {
         "@types/bun": "catalog:",
       },
@@ -621,7 +621,7 @@
     },
     "packages/app-ui": {
       "name": "@aphrody/app-ui",
-      "version": "1.4.5",
+      "version": "1.4.4",
       "dependencies": {
         "@aphrody/assets": "workspace:*",
         "@aphrody/bun-m3": "1.4.4",
@@ -771,7 +771,7 @@
     },
     "packages/assets": {
       "name": "@aphrody/assets",
-      "version": "1.4.5",
+      "version": "1.4.4",
       "devDependencies": {
         "@types/react": "catalog:",
         "react": "catalog:",
@@ -3546,7 +3546,7 @@
     },
     "packages/canvas": {
       "name": "@aphrody/canvas",
-      "version": "1.4.5",
+      "version": "1.4.4",
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
       },
@@ -3641,7 +3641,7 @@
     },
     "packages/eslint-plugin-m3": {
       "name": "@aphrody/eslint-plugin-m3",
-      "version": "1.4.5",
+      "version": "1.4.4",
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
       },
@@ -3660,7 +3660,7 @@
     },
     "packages/identity": {
       "name": "@aphrody/identity",
-      "version": "1.4.5",
+      "version": "1.4.4",
       "devDependencies": {
         "@aphrody/m3": "workspace:*",
         "@aphrody/paths": "workspace:*",
@@ -4192,7 +4192,7 @@
     },
     "packages/material-design-icons": {
       "name": "@aphrody/material-design-icons",
-      "version": "1.4.5",
+      "version": "1.4.4",
       "bin": {
         "m3-svg-to-ico": "./scripts/svg-to-ico.ts",
       },
@@ -4547,7 +4547,7 @@
     },
     "packages/scaffold": {
       "name": "@aphrody/scaffold",
-      "version": "1.4.5",
+      "version": "1.4.4",
       "bin": {
         "aphrody-scaffold": "./src/cli.ts",
       },
@@ -4597,6 +4597,13 @@
       "devDependencies": {
         "@aphrody/bun-types": "catalog:",
         "@aphrody/bun-workspace": "workspace:*",
+      },
+    },
+    "packages/shenron-dbxv2": {
+      "name": "@shenron/dbxv2",
+      "version": "1.4.4",
+      "devDependencies": {
+        "@aphrody/bun-types": "catalog:",
       },
     },
     "packages/shenron-ui": {
@@ -4908,7 +4915,7 @@
     },
     "packages/web-to-tauri": {
       "name": "@aphrody/web-to-tauri",
-      "version": "1.0.0-canary",
+      "version": "1.4.4",
       "bin": {
         "web-to-tauri": "./src/cli.ts",
       },
@@ -7870,6 +7877,8 @@
     "@shenron/auth": ["@shenron/auth@workspace:packages/shenron-auth"],
 
     "@shenron/db": ["@shenron/db@workspace:packages/shenron-db"],
+
+    "@shenron/dbxv2": ["@shenron/dbxv2@workspace:packages/shenron-dbxv2"],
 
     "@shenron/ui": ["@shenron/ui@workspace:packages/shenron-ui"],
 
