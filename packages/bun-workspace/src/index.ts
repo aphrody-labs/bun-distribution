@@ -1,3 +1,4 @@
+import { availableParallelism } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import {
   assertRuntimeFacts,
@@ -105,6 +106,8 @@ export type RuntimePolicy = "release" | "development";
 
 export interface RuntimeExecutionOptions extends ExecutionOptions {
   runtimePolicy?: RuntimePolicy;
+  /** `flat-submodules` enforces the owner contract (every crate a pinned `crates/<name>` submodule); `members` only checks identity. */
+  cargoContract?: "flat-submodules" | "members";
 }
 
 export interface NativeExecutionOptions extends RuntimeExecutionOptions {
@@ -819,7 +822,7 @@ export async function runNativeResult(
     ...Bun.env,
     ...options.env,
     // The native worker splits the host's cores between the admitted build slots.
-    CARGO_BUILD_JOBS: options.env?.CARGO_BUILD_JOBS ?? "auto",
+    CARGO_BUILD_JOBS: options.env?.CARGO_BUILD_JOBS ?? String(availableParallelism()),
     CARGO_TARGET_DIR: join(root, "target"),
     CARGO_INSTALL_ROOT: join(root, "install"),
   };
@@ -970,7 +973,8 @@ export async function inspectCargoWorkspace(
     true,
     options.runtimePolicy,
   );
-  if (result.code !== 0) throw new Error("Root Cargo workspace metadata failed.");
+  if (result.code !== 0)
+    throw new Error(`Root Cargo workspace metadata failed: ${result.stderr.trim().split("\n").slice(-3).join(" ")}`);
   const value: unknown = JSON.parse(result.stdout);
   if (
     !object(value) ||
@@ -997,9 +1001,13 @@ export async function inspectCargoWorkspace(
     if (
       typeof entry.name !== "string" ||
       typeof entry.manifest_path !== "string" ||
-      entry.version !== product.version
+      typeof entry.version !== "string"
     ) {
       throw new Error("Cargo workspace member lacks its package identity.");
+    }
+    if (options.cargoContract === "members") {
+      packageNames.push(entry.name);
+      continue;
     }
     const cratePath = `crates/${entry.name}`;
     if (resolve(entry.manifest_path) !== join(root, cratePath, "Cargo.toml"))

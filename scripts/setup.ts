@@ -99,5 +99,6 @@ const cargo = await inspectCargoWorkspace(await loadConfig(root), {
   root,
   timeoutMs: 60_000,
   runtimePolicy: "development",
+  cargoContract: "members",
 });
 console.log(`Cargo workspace: ${cargo.packageNames.length} packages in ${cargo.workspaceRoot}`);
