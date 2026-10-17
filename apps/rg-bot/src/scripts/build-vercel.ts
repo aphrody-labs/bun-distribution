@@ -44,6 +44,9 @@ await Bun.write(
       shouldAddSourcemapSupport: false,
       supportsResponseStreaming: true,
       maxDuration: 60,
+      // Same region as Supabase and Neon (eu-central-1), carried by the function
+      // itself so the prebuilt output never falls back to the default region.
+      regions: ["fra1"],
     },
     null,
     2,

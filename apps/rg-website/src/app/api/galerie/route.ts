@@ -17,6 +17,7 @@
  * une seule forme à maintenir.
  */
 import { GALERIE_PAR_PAGE } from "@rosegriffon/ui";
+import { cachePublic } from "@/lib/cache-public";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +49,7 @@ export async function GET(requete: Request): Promise<Response> {
     if (!reponse.ok) {
       return Response.json({ error: `La galerie du wiki a répondu ${reponse.status}.` }, { status: 502 });
     }
-    return Response.json(await reponse.json());
+    return Response.json(await reponse.json(), { headers: cachePublic(3600) });
   } catch (erreur) {
     console.error("[galerie] wiki injoignable", erreur);
     return Response.json({ error: "Galerie momentanément injoignable." }, { status: 502 });

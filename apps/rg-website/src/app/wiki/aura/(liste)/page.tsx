@@ -1,4 +1,5 @@
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 import { ChevronRight } from "lucide-react";
 import type { Metadata } from "next";

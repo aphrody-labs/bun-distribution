@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 };
 
 // Page statique : tout le travail est client-side (wasm). Pas de revalidation DB.
+export const dynamic = "force-static";
 export const revalidate = 86_400;
 
 export default function SavePage() {

@@ -4,10 +4,10 @@ import { getPgPool } from "@/lib/db/pg";
 import { SITE_URL } from "@/lib/site-url";
 
 // Le plan de site doit refléter les chroniques publiées, qui changent sans
-// redéploiement. Généré à la demande par le service, pas au build : figé au
-// build, il repartait sans aucune chronique (la base n'est pas jointe depuis
-// l'étape de build) et le service n'avait plus aucune occasion de le corriger.
-export const dynamic = "force-dynamic";
+// redéploiement : régénéré au plus toutes les heures (ISR). Même si le build
+// le produisait sans chronique, la première visite après une heure le refait ;
+// le servir à la demande faisait une invocation par passage de robot.
+export const revalidate = 3600;
 
 // Routes publiques réelles (hors auth/dashboard/admin/profil). Les chemins doivent exister
 // — un sitemap qui pointe vers des 404 dégrade le crawl. Priorités/fréquences indicatives.

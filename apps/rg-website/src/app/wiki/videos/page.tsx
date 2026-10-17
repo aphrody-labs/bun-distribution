@@ -33,6 +33,8 @@ import { videoLabel } from "@/lib/cpk/media-names";
 import { lsOrNull } from "@rosegriffon/azalee/cpk/live";
 import { aDuSon, type FilmDto, fetchVideoCatalogueOrNull, type LangueDto } from "@rosegriffon/azalee/cpk/video";
 
+// Rendu à la requête : le prerender interroge le catalogue CPK en direct et dépasse
+// le délai de génération statique du build.
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 

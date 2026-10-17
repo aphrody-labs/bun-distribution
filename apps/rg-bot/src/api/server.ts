@@ -10,6 +10,7 @@ import { inagleModule } from "./modules/inagle";
 import { azaleeBridgeModule } from "./modules/azalee-bridge";
 import { authController } from "./modules/auth";
 import { dbPlugin } from "./plugins/db";
+import { publicCache } from "./plugins/public-cache";
 import { elysiaAuth } from "@rosegriffon/auth/elysia";
 import { handleAnnounceHttp, handleCronHttp } from "@rosegriffon/cron";
 
@@ -39,6 +40,8 @@ export const app = new Elysia()
       credentials: true,
     }),
   )
+  // CDN caching of the anonymous public reads (free-tier guardrail).
+  .use(publicCache)
   .use(
     swagger({
       path: "/docs",

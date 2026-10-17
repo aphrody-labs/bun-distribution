@@ -7,6 +7,7 @@ import { Award, Eye, Handshake, Palette, Scale, Users } from "@/lib/icons-config
 import { absoluteUrl } from "@/lib/site-url";
 
 // Page statique avec ISR - Revalidate toutes les semaines (charte rarement modifiée)
+export const dynamic = "force-static";
 export const revalidate = 604_800; // 1 semaine
 
 export const metadata: Metadata = {

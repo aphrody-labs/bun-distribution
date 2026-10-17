@@ -5,7 +5,8 @@ import { Icon } from "@/components/ui/Icon";
 import { ShopItemsGrid } from "@/components/wiki/ShopItemsGrid";
 import { SHOP_CATEGORY_FR, getShop } from "@/lib/wiki/shops";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 /**
  * Un identifiant de boutique est un entier décimal, rien d'autre.

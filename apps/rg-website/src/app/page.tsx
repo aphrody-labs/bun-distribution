@@ -15,8 +15,11 @@ import { SITE_URL } from "@/lib/site-url";
 const ProjectsSection = dynamicImport(() => import("@/components/shared/ProjectsSection"));
 const DiscordSection = dynamicImport(() => import("@/components/shared/DiscordSection"));
 
-// ISR : HTML mis en cache, régénéré toutes les 60 s en arrière-plan.
-export const revalidate = 60;
+// ISR : HTML mis en cache, régénéré au plus toutes les 5 min en arrière-plan (et à la publication).
+// `force-static` est requis : le layout racine lit cookies()/headers() pour la langue, ce qui rendait
+// la page dynamique malgré `revalidate`.
+export const dynamic = "force-static";
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   alternates: { canonical: SITE_URL },

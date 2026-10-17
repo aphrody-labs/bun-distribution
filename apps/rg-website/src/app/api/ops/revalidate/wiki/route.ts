@@ -5,15 +5,12 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-/** Pages dont le contenu provient exclusivement du miroir `inagle_*`. */
-const WIKI_DETAIL_PATHS = [
-  "/chara/[id]",
-  "/skill/[id]",
-  "/item/[id]",
-  "/passive/[id]",
-  "/tactic/[id]",
-  "/aura/[category]/[id]",
-] as const;
+/**
+ * Tout le wiki lit le miroir `inagle_*` : fiches, listes ISR et index. Les
+ * anciens chemins (`/chara/[id]`…) ne correspondaient à aucune route depuis le
+ * passage sous `/wiki`, si bien qu'une republication n'invalidait rien.
+ */
+const WIKI_LAYOUT = "/wiki";
 
 function hasValidToken(request: Request): boolean {
   const expected = process.env.AZALEE_REVALIDATE_SECRET?.trim();
@@ -43,12 +40,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  for (const path of WIKI_DETAIL_PATHS) {
-    revalidatePath(path, "page");
-  }
+  // Une seule invalidation de layout : stale-while-revalidate sur chaque page
+  // du wiki, régénérée à sa prochaine visite (Neon ne se réveille qu'alors).
+  revalidatePath(WIKI_LAYOUT, "layout");
 
   return NextResponse.json({
-    paths: WIKI_DETAIL_PATHS,
+    paths: [WIKI_LAYOUT],
     revalidated: true,
   });
 }

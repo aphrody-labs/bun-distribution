@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { getPatchNoteDetail } from "@/app/actions/news";
 import { PatchNoteViewer } from "@/components/wiki/patch-notes/PatchNoteViewer";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;

@@ -1,5 +1,6 @@
 import { getPgPool } from "@/lib/db/pg";
 import { absoluteUrl } from "@/lib/site-url";
+import { cachePublic } from "@/lib/cache-public";
 
 export const dynamic = "force-dynamic";
 
@@ -82,10 +83,13 @@ export async function GET(request: Request) {
 			};
 		});
 
-		return Response.json({
-			articles: formattedArticles,
-			count: formattedArticles.length,
-		});
+		return Response.json(
+			{
+				articles: formattedArticles,
+				count: formattedArticles.length,
+			},
+			{ headers: cachePublic(300) }
+		);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Erreur inconnue";
 		return Response.json({ error: message }, { status: 500 });

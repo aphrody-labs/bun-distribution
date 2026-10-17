@@ -1,4 +1,5 @@
 import { getPgPool } from "@/lib/db/pg";
+import { cachePublic } from "@/lib/cache-public";
 
 export const dynamic = "force-dynamic";
 
@@ -293,5 +294,5 @@ export async function GET(request: Request) {
       next: nextStream,
     },
     updated_at: new Date().toISOString(),
-  });
+  }, { headers: cachePublic(60, 300) });
 }

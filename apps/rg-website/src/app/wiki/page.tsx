@@ -32,7 +32,8 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 300; // Cache for 5 minutes
+export const dynamic = "force-static";
+export const revalidate = 900; // 15 min, et à la publication
 
 type WikiCountRow = { key: keyof WikiSectionStats; count: number };
 

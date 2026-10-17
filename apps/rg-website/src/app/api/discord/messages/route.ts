@@ -8,9 +8,11 @@ import {
   listerMessages,
   salonEstSuivi,
 } from "@/lib/discord/queries";
+import { cachePublic } from "@/lib/cache-public";
 
 // Fil public en lecture seule : le contenu bouge en permanence, on ne met
-// jamais cette réponse en cache côté Next.
+// jamais cette réponse en cache côté Next. Le CDN la garde 15 s : tous les
+// lecteurs d'un même salon partagent une seule invocation.
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -57,6 +59,6 @@ export async function GET(request: NextRequest) {
       encore: messages.length === limit,
       messages,
     },
-    { headers: { "cache-control": "no-store" } },
+    { headers: cachePublic(15, 60) },
   );
 }

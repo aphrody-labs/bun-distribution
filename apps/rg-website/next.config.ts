@@ -34,10 +34,18 @@ const nextConfig: NextConfig = {
       ".cjs": [".cjs", ".cts"],
       ...config.resolve.extensionAlias,
     };
+    // Garde-fou du quota d'optimisation d'images (Vercel Hobby : 5 000
+    // transformations/mois) : `next/image` passe par `src/lib/image-cdn.tsx`,
+    // qui sert tels quels les assets de jeu du CDN VPS et les CDN tiers.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "next/image$": path.resolve(process.cwd(), "src/lib/image-cdn.tsx"),
+    };
     return config;
   },
 
   compress: false,
+  poweredByHeader: false,
   ...(CDN_URL && { assetPrefix: CDN_URL }),
   transpilePackages: [
     "@rosegriffon/inagle",
@@ -364,6 +372,13 @@ const nextConfig: NextConfig = {
             key: "Cross-Origin-Opener-Policy",
             value: "same-origin-allow-popups",
           },
+          // Anti-clickjacking : seuls le site et ses sous-domaines (Azalée,
+          // Achilléa) peuvent l'encadrer. `frame-ancestors` prime sur
+          // X-Frame-Options dans les navigateurs qui le comprennent.
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self' https://*.rosegriffon.fr" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         ],
         source: "/(.*)",
       },
@@ -395,7 +410,8 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    formats: ["image/avif", "image/webp"],
+    // Un seul format : chaque format est une transformation distincte.
+    formats: ["image/webp"],
     // Next 16 : seules les valeurs `quality` listées ici sont acceptées par
     // l'optimiseur (défaut = [75]). Les composants utilisent q=70/90/95/100 ;
     // sans cette liste l'optimiseur renvoie 400 INVALID_IMAGE_OPTIMIZE_REQUEST
@@ -408,8 +424,9 @@ const nextConfig: NextConfig = {
     // le cache disque du CDN.
     deviceSizes: [768, 1024, 1920],
     imageSizes: [96, 256, 384, 512],
-    // 24h au lieu des 60s par défaut : le CDN sert des assets versionnés.
-    minimumCacheTTL: 86400,
+    // 31 jours : une variante expirée est re-transformée et recomptée dans le
+    // quota Hobby. Les fichiers téléversés reçoivent un nom unique.
+    minimumCacheTTL: 2_678_400,
     ...(CDN_LOADER && {
       loader: "custom",
       loaderFile: "./cdn-loader.ts",

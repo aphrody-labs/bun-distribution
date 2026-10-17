@@ -8,7 +8,8 @@ import { ArrowRight, PlayCircle, Video } from "lucide-react";
 import type { ParticipantDTO, Tournament } from "@rosegriffon/achillea-types";
 import { TournamentState } from "@rosegriffon/achillea-types";
 
-export const revalidate = 60;
+export const dynamic = "force-static";
+export const revalidate = 300;
 
 export const metadata = metadonneesAchillea({
   titre: "Accueil E-Sport & Tournois",

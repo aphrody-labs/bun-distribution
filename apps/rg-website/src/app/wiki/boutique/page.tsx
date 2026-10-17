@@ -4,7 +4,8 @@ import { Icon } from "@/components/ui/Icon";
 import { ShopCard } from "@/components/wiki/ShopCard";
 import { getShopsList } from "@/lib/wiki/shops";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   alternates: { canonical: "/boutique" },

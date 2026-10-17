@@ -1,5 +1,6 @@
 import { getPgPoolOrNull } from "@/lib/db/pg";
 import { absoluteUrl } from "@/lib/site-url";
+import { cachePublic } from "@/lib/cache-public";
 
 export const dynamic = "force-dynamic";
 
@@ -44,5 +45,5 @@ export async function GET() {
 		website_url: getVal("home_achillea_link"),
 	};
 
-	return Response.json(info);
+	return Response.json(info, { headers: cachePublic(3600) });
 }

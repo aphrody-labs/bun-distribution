@@ -45,8 +45,9 @@ export const metadata: Metadata = {
   title: "Notre Équipe | Rose Griffon",
 };
 
-// Lecture à la requête pour refléter immédiatement les modifications de la base de données
-export const dynamic = "force-dynamic";
+// ISR : régénérée par les actions du staff (`revalidatePath`), au plus tard toutes les heures.
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 interface MembreRaw {
   display_index: number | null;

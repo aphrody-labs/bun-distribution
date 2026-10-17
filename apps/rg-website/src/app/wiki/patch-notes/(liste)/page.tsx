@@ -1,7 +1,8 @@
 import { getPatchNotes } from "@/app/actions/news";
 import PatchNotesDashboard from "@/components/wiki/patch-notes/PatchNotesDashboard";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 export const metadata = {
   alternates: { canonical: "/patch-notes" },

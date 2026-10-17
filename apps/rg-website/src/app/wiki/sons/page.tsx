@@ -19,6 +19,8 @@ import { audioBankKind } from "@rosegriffon/azalee/cpk/audio";
 import { lsOrNull } from "@rosegriffon/azalee/cpk/live";
 import { bankOwner, ownerIndex } from "@/lib/cpk/audio-names";
 
+// Rendu à la requête : le prerender liste ~20 000 entrées CPK en direct et dépasse
+// le délai de génération statique du build.
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 

@@ -40,6 +40,7 @@ import { absoluteUrl } from "@/lib/site-url";
 
 import { ResultatsSondage } from "../_components/ResultatsSondage";
 
+export const dynamic = "force-static";
 export const revalidate = 3600;
 
 // Un sondage importé après le build reste servi : la page se rend à la demande
