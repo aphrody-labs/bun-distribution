@@ -435,9 +435,14 @@ fn usm_error(error: FormatError) -> ReError {
 pub fn usm_to_video(bytes: &[u8]) -> Result<(Vec<u8>, &'static str)> {
     use aphrody_nie_formats::usm;
     let usm = usm::demuxer(bytes).map_err(usm_error)?;
-    match usm.en_mp4() {
-        Ok((out, _)) => Ok((out, "mp4")),
-        Err(_) => usm.en_webm().map(|(out, _)| (out, "webm")).map_err(usm_error),
+    use aphrody_nie_formats::usm::CodecVideo;
+    match usm.codec {
+        CodecVideo::H264 => usm.en_mp4().map(|(out, _)| (out, "mp4")).map_err(usm_error),
+        CodecVideo::Vp9 => usm.en_webm().map(|(out, _)| (out, "webm")).map_err(usm_error),
+        other => Err(ReError::ParseError {
+            context: "usm",
+            details: format!("video codec `{}` cannot be remuxed (H.264 and VP9 only)", other.nom()),
+        }),
     }
 }
 
