@@ -5,6 +5,8 @@
 //! catalog, Steam install inspection, text extraction and the unified state; plus the
 //! game-agnostic asset pipeline ([`assets`], feature `assets`) that mounts, indexes and
 //! exports any installed game (CPK through the canonical `aphrody-nie-formats` readers).
+#[cfg(any(feature = "wasm", feature = "dbxv2"))]
+pub mod api;
 #[cfg(feature = "assets")]
 pub mod assets;
 pub mod catalog;

@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+# Thin C ABI over the DBXV2 in-memory surface of bun-re (`bun_re::game::api`) for the Shenron
+# product: `bun:ffi` (packages/shenron-dbxv2) or any C host. No logic of its own.
+[package]
+name = "shenron-dbxv2"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+license = "Apache-2.0"
+description = "C ABI of the DBXV2 reverse-engineering surface for Shenron: identify, CPK list/extract, EMB/EMD/ESK/gameplay JSON, ACB/AWB to WAV."
+publish = false
+
+[lib]
+name = "shenron_dbxv2"
+# cdylib for bun:ffi dlopen, rlib so the crate can be checked and linked in-process.
+crate-type = ["cdylib", "rlib"]
+
+[lints]
+workspace = true
+
+[dependencies]
+bun-re = { workspace = true, features = ["dbxv2"] }
+serde = { workspace = true }
+serde_json = { workspace = true }

@@ -4,6 +4,7 @@
 //! Exposes CPK archive triage, CRILAYLA decompression, CUS skill decoding,
 //! AOB memory scanning, and Dragon Ball game catalog discovery to JS/WASM runtimes.
 
+use crate::game::api;
 use crate::game::catalog::get_dragon_ball_catalog;
 use crate::game::formats::{
     bac::BacFile, bdm::BdmFile, cus::CusFile, emb_archive::EmbArchive, msg::MsgFile, pup::PupFile,
@@ -117,6 +118,28 @@ pub fn wasm_parse_emb(emb_bytes: &[u8]) -> Result<JsValue, JsValue> {
 pub fn wasm_extract_msg_text(file_name: &str, msg_bytes: &[u8]) -> Result<JsValue, JsValue> {
     let report = extract_msg_text(std::path::Path::new(file_name), msg_bytes);
     serde_wasm_bindgen::to_value(&report).map_err(to_js_err)
+}
+
+/// Identify a buffer by magic then by `file_name` extension; returns `{format, category, parsable}`.
+#[wasm_bindgen]
+pub fn wasm_identify_format(bytes: &[u8], file_name: &str) -> Result<JsValue, JsValue> {
+    serde_wasm_bindgen::to_value(&api::identify(bytes, file_name)).map_err(to_js_err)
+}
+
+/// JSON summary of an EMB/EMD/ESK/EMM/BAC/BCM/BCS/BDM/BSA/EAN/CMS/CUS/PUP/MSG buffer.
+#[wasm_bindgen]
+pub fn wasm_summarize(bytes: &[u8], file_name: &str) -> Result<JsValue, JsValue> {
+    let value = api::summarize(bytes, file_name).map_err(to_js_err)?;
+    value.serialize(&serde_wasm_bindgen::Serializer::json_compatible()).map_err(to_js_err)
+}
+
+/// Decode an HCA/ADX/AWB/ACB buffer to WAV images (one `Uint8Array` per subsong). Requires the
+/// `dbxv2` feature in addition to `wasm`.
+#[cfg(feature = "dbxv2")]
+#[wasm_bindgen]
+pub fn wasm_audio_to_wav(bytes: &[u8]) -> Result<js_sys::Array, JsValue> {
+    let waves = api::audio_to_wav(bytes).map_err(to_js_err)?;
+    Ok(waves.iter().map(|wave| js_sys::Uint8Array::from(wave.as_slice())).collect())
 }
 
 /// Scan a buffer for an Array-of-Bytes (AOB) pattern with wildcards (e.g. "48 89 5C 24 ??").

@@ -30,7 +30,7 @@ magika = ["dep:magika"]
 leveldb = ["dep:rusty-leveldb", "dep:tempfile"]
 yara = ["dep:yara-x"]
 # CPK triage and CRILAYLA bindings run over the canonical `aphrody-nie-formats` CRI readers.
-wasm = ["dep:wasm-bindgen", "dep:serde-wasm-bindgen", "dep:aphrody-nie-formats", "aphrody-nie-formats/serde"]
+wasm = ["dep:wasm-bindgen", "dep:js-sys", "dep:serde-wasm-bindgen", "dep:aphrody-nie-formats", "aphrody-nie-formats/serde"]
 # nie RE engine: SQLite indexing, MSVC RTTI/vtable recovery, call-graph disassembly and labelling.
 nie = ["dep:aphrody-nie-index", "dep:anyhow", "dep:tracing"]
 # Game-agnostic asset pipeline of `bunre game` (`game::assets`): engine detection, profiles,
@@ -74,6 +74,7 @@ rusty-leveldb = { version = "4", optional = true, default-features = false, feat
 tempfile   = { version = "3.27.0", optional = true }
 walkdir    = "2.5.0"
 wasm-bindgen = { workspace = true, optional = true }
+js-sys     = { workspace = true, optional = true }
 serde-wasm-bindgen = { version = "0.6", optional = true }
 hashbrown  = { version = "0.17", default-features = false, features = ["default-hasher", "inline-more"] }
 yara-x     = { version = "1.7.0", optional = true, default-features = false }
