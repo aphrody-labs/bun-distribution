@@ -1,11 +1,12 @@
 import { Database, type SQLQueryBindings } from "bun:sqlite";
-import { configuredDataSource, localMirrorPath, selectDataSource } from "../core/data-source.js";
+import { configuredDataSource, localMirrorPath, postgresConfigured, selectDataSource } from "../core/data-source.js";
 
 export function projectionSource() {
   const selected = configuredDataSource();
   return selectDataSource({
     explicit: selected,
     sqliteAvailable: selected === "vfs" || selected === "postgres" ? false : !!localMirrorPath(),
+    postgresAvailable: postgresConfigured(),
     postgresDisabled: process.env.IEVR_CFGBIN_POSTGRES === "0",
   });
 }

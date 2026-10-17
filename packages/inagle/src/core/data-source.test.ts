@@ -7,6 +7,13 @@ test("automatic selection uses an existing owned SQLite projection or native VFS
   expect(selectDataSource({ explicit: "auto", sqliteAvailable: true })).toBe("sqlite");
 });
 
+test("automatic selection prefers the configured Neon database over the local mirror", () => {
+  expect(selectDataSource({ postgresAvailable: true, sqliteAvailable: true })).toBe("postgres");
+  expect(selectDataSource({ postgresAvailable: true, postgresDisabled: true, sqliteAvailable: true })).toBe(
+    "sqlite",
+  );
+});
+
 test("explicit adapters win over automatic availability", () => {
   for (const explicit of ["vfs", "sqlite", "postgres"] as const)
     expect(selectDataSource({ explicit, sqliteAvailable: true })).toBe(explicit);

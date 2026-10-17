@@ -7,6 +7,7 @@ import type { loadInagleServiceData } from "./sql/service-data.js";
 import {
   configuredDataSource,
   localMirrorPath,
+  postgresConfigured,
   selectDataSource,
   type InagleDataSourceOption,
 } from "./core/data-source.js";
@@ -28,6 +29,7 @@ export async function createInagleService(config?: InagleServiceConfig) {
   const source = selectDataSource({
     explicit: requested,
     sqliteAvailable: !!mirror,
+    postgresAvailable: postgresConfigured(),
     postgresDisabled: process.env.IEVR_CFGBIN_POSTGRES === "0",
   });
   process.env.INAGLE_DATA_SOURCE = source;

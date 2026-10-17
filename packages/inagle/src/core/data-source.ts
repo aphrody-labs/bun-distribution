@@ -31,10 +31,19 @@ export function localMirrorPath(): string | undefined {
   return undefined;
 }
 
-/** Capability-owner launchers qualify PostgreSQL before explicitly selecting it. */
+/** Whether the Neon gameplay database (INAGLE_DATABASE_URL or its alias NIE_PG_URL) is configured. */
+export function postgresConfigured(): boolean {
+  return Boolean((process.env.INAGLE_DATABASE_URL ?? process.env.NIE_PG_URL)?.trim());
+}
+
+/**
+ * `auto` prefers the Neon gameplay database when it is configured, then a local SQLite mirror
+ * (offline development), then the native VFS.
+ */
 export function selectDataSource(options: {
   explicit?: string;
   sqliteAvailable?: boolean;
+  postgresAvailable?: boolean;
   postgresDisabled?: boolean;
 }): InagleDataSource {
   const explicit = options.explicit?.trim() || "auto";
@@ -43,6 +52,7 @@ export function selectDataSource(options: {
   if (explicit === "postgres" && options.postgresDisabled)
     throw new Error("PostgreSQL was selected but IEVR_CFGBIN_POSTGRES=0 disables it");
   if (explicit !== "auto") return explicit as InagleDataSource;
+  if (options.postgresAvailable && !options.postgresDisabled) return "postgres";
   return options.sqliteAvailable ? "sqlite" : "vfs";
 }
 import { statSync } from "node:fs";
