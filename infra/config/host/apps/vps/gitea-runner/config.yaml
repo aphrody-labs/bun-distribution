@@ -10,7 +10,7 @@ runner:
   timeout: 720m
   shutdown_timeout: 30s
   labels:
-    - aphrody-bun-linux:docker://sha256:0d1de271d32fdaf226b683c3178667d469194fc7a724bd8c60dda8ecbb1c5eec
+    - aphrody-bun-linux:docker://sha256:c61efd9c0858cd031c40caabb5d72bac9620c2ce4032663099745bc48673d2f2
   envs:
     BUN_EXECUTABLE: /usr/local/bin/bun
     GIT_SSH_COMMAND: ssh -F /run/aphrody/git-ssh/config
