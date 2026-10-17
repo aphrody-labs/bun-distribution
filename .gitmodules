@@ -342,6 +342,7 @@
 [submodule "vendor/jgenesis"]
 	path = vendor/jgenesis
 	url = https://github.com/aphrody-labs/jgenesis.git
+	branch = bun-os
 [submodule "vendor/libnds"]
 	path = vendor/libnds
 	url = https://github.com/devkitPro/libnds.git

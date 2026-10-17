@@ -419,7 +419,7 @@
       "license": "GPL-3.0-only",
       "publicationGate": "deferred-review",
       "integration": "submodule",
-      "sourceRev": "9fcfd9c9495ae6a65c3a9354599665d3bf62a047",
+      "sourceRev": "be19d563ce07e4d8a2bcc80d24c07bf6b77cd31c",
       "buildOwner": "docs/RUST-EMULATORS.md#jgenesis",
       "sources": [
         {
