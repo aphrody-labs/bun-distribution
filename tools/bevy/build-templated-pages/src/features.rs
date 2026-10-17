@@ -124,12 +124,12 @@ pub(crate) fn check(what_to_run: Command) {
         let mut context = Context::new();
         context.insert("features", &features);
         context.insert("sorted_features", &sorted_features);
-        Tera::new("docs-template/*.md.tpl")
+        Tera::new("../../docs/bevy/docs-template/*.md.tpl")
             .expect("error parsing template")
             .render_to(
                 "features.md.tpl",
                 &context,
-                File::create("docs/cargo_features.md").expect("error creating file"),
+                File::create("../../docs/bevy/cargo_features.md").expect("error creating file"),
             )
             .expect("error rendering template");
     }

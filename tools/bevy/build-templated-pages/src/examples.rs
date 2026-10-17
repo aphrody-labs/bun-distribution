@@ -130,7 +130,7 @@ pub(crate) fn check(what_to_run: Command) {
 
         let mut context = Context::new();
         context.insert("all_examples", &examples_by_category);
-        Tera::new("docs-template/*.md.tpl")
+        Tera::new("../../docs/bevy/docs-template/*.md.tpl")
             .expect("error parsing template")
             .render_to(
                 "EXAMPLE_README.md.tpl",

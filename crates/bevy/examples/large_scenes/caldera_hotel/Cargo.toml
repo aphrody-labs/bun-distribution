@@ -13,3 +13,7 @@ bevy = { path = "../../../", features = [
 mipmap_generator = { path = "../mipmap_generator" }
 
 argh = "0.1.12"
+
+# Upstream Bevy does not lint this crate; an explicit empty table keeps it out of the root
+# [workspace.lints].
+[lints]

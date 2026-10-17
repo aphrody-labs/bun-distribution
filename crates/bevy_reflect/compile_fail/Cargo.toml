@@ -11,7 +11,7 @@ publish = false
 bevy_reflect = { path = "../", features = ["functions"] }
 
 [dev-dependencies]
-compile_fail_utils = { path = "../../../tools/compile_fail_utils" }
+compile_fail_utils = { path = "../../../tools/bevy/compile_fail_utils" }
 
 [[test]]
 name = "derive"
@@ -24,3 +24,7 @@ harness = false
 [[test]]
 name = "remote"
 harness = false
+
+# Upstream Bevy does not lint this crate; an explicit empty table keeps it out of the root
+# [workspace.lints].
+[lints]

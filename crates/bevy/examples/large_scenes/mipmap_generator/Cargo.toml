@@ -38,3 +38,7 @@ pbr_anisotropy_texture = ["bevy/pbr_anisotropy_texture"]
 pbr_specular_textures = ["bevy/pbr_specular_textures"]
 bevy_zstd_rust = ["bevy/zstd_rust"]
 bevy_zstd_c = ["bevy/zstd_c"]
+
+# Upstream Bevy does not lint this crate; an explicit empty table keeps it out of the root
+# [workspace.lints].
+[lints]

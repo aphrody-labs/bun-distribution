@@ -4,7 +4,7 @@ version = "0.20.0"
 edition = "2024"
 categories = ["game-engines", "graphics", "gui", "rendering"]
 description = "A refreshingly simple data-driven game engine and app framework"
-exclude = ["assets/", "tools/", ".github/", "crates/", "examples/wasm/assets/"]
+exclude = ["assets/", "examples/wasm/assets/"]
 homepage = "https://bevy.org"
 keywords = ["game", "engine", "gamedev", "graphics", "bevy"]
 license = "MIT OR Apache-2.0"
@@ -12,80 +12,8 @@ repository = "https://github.com/bevyengine/bevy"
 documentation = "https://docs.rs/bevy"
 rust-version = "1.97.1"
 
-[workspace]
-resolver = "3"
-members = [
-  # All of Bevy's official crates are within the `crates` folder!
-  "crates/*",
-  # Several crates with macros have "compile fail" tests nested inside them, also known as UI
-  # tests, that verify diagnostic output does not accidentally change.
-  # TODO: Use a glob pattern once they are fixed in `dependabot-core`
-  # TODO: See https://github.com/bevyengine/bevy/issues/17876 for context.
-  "crates/bevy_derive/compile_fail",
-  "crates/bevy_ecs/compile_fail",
-  "crates/bevy_reflect/compile_fail",
-  # Examples of compiling Bevy for mobile platforms.
-  "examples/mobile",
-  # Examples of using Bevy on no_std platforms.
-  "examples/no_std/*",
-  # Examples of compiling Bevy with automatic reflect type registration for platforms without `inventory` support.
-  "examples/reflection/auto_register_static",
-  # Examples of large bevy scenes.
-  "examples/large_scenes/bistro",
-  "examples/large_scenes/caldera_hotel",
-  "examples/large_scenes/bevy_city",
-  # Mipmap generator for testing large bevy scenes with mips and texture compression.
-  "examples/large_scenes/mipmap_generator",
-  # Benchmarks
-  "benches",
-  # Internal tools that are not published.
-  "tools/*",
-  # Bevy's error codes. This is a crate so we can automatically check all of the code blocks.
-  "errors",
-]
-exclude = [
-  # Integration tests are not part of the workspace
-  "tests-integration",
-]
-
-[workspace.lints.clippy]
-doc_markdown = "warn"
-manual_let_else = "warn"
-match_same_arms = "warn"
-redundant_closure_for_method_calls = "warn"
-redundant_else = "warn"
-semicolon_if_nothing_returned = "warn"
-type_complexity = "allow"
-undocumented_unsafe_blocks = "warn"
-unwrap_or_default = "warn"
-needless_lifetimes = "allow"
-too_many_arguments = "allow"
-nonstandard_macro_braces = "warn"
-print_stdout = "warn"
-print_stderr = "warn"
-
-ptr_as_ptr = "warn"
-ptr_cast_constness = "warn"
-ref_as_ptr = "warn"
-
-# see: https://github.com/bevyengine/bevy/pull/15375#issuecomment-2366966219
-too_long_first_doc_paragraph = "allow"
-
-# currently falsely fires on std::io, even tho core::io is unstable
-# https://github.com/rust-lang/rust-clippy/issues/13158#issuecomment-4373196346
-std_instead_of_core = "allow"
-std_instead_of_alloc = "warn"
-alloc_instead_of_core = "warn"
-
-allow_attributes = "warn"
-allow_attributes_without_reason = "warn"
-
-[workspace.lints.rust]
-missing_docs = "warn"
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(docsrs_dep)'] }
-unsafe_code = "deny"
-unsafe_op_in_unsafe_fn = "warn"
-unused_qualifications = "warn"
+# Bun OS: Bevy's own [workspace] (members, [workspace.lints]) is merged into the root Cargo.toml.
+# Its crates carry the merged lint set explicitly; see BUN-OS-PROVENANCE.md.
 
 # Unfortunately, cargo does not currently support overriding workspace lints
 # inside a particular crate. See https://github.com/rust-lang/cargo/issues/13157
@@ -124,13 +52,20 @@ alloc_instead_of_core = "allow"
 
 allow_attributes = "warn"
 allow_attributes_without_reason = "warn"
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
 
 [lints.rust]
 missing_docs = "warn"
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(docsrs_dep)'] }
 unsafe_code = "deny"
-unsafe_op_in_unsafe_fn = "warn"
+unsafe_op_in_unsafe_fn = "deny"
 unused_qualifications = "warn"
+unused_must_use = "deny"
+non_ascii_idents = "warn"
 
 [features]
 default = ["2d", "3d", "ui", "audio"]
@@ -754,12 +689,12 @@ hotpatching = ["bevy_internal/hotpatching"]
 debug = ["bevy_internal/debug"]
 
 [dependencies]
-bevy_internal = { path = "crates/bevy_internal", version = "0.20.0", default-features = false }
+bevy_internal = { path = "../bevy_internal", version = "0.20.0", default-features = false }
 tracing = { version = "0.1", default-features = false, optional = true }
 
 # Wasm does not support dynamic linking.
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
-bevy_dylib = { path = "crates/bevy_dylib", version = "0.20.0", default-features = false, optional = true }
+bevy_dylib = { path = "../bevy_dylib", version = "0.20.0", default-features = false, optional = true }
 
 [dev-dependencies]
 rand = "0.10.0"
@@ -770,17 +705,17 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1.0.140"
 bytemuck = "1"
 # The following explicit dependencies are needed for proc macros to work inside of examples as they are part of the bevy crate itself.
-bevy_animation = { path = "crates/bevy_animation", version = "0.20.0", default-features = false }
-bevy_asset = { path = "crates/bevy_asset", version = "0.20.0", default-features = false }
-bevy_ecs = { path = "crates/bevy_ecs", version = "0.20.0", default-features = false }
-bevy_extract = { path = "crates/bevy_extract", version = "0.20.0", default-features = false }
-bevy_gizmos = { path = "crates/bevy_gizmos", version = "0.20.0", default-features = false }
-bevy_image = { path = "crates/bevy_image", version = "0.20.0", default-features = false }
-bevy_reflect = { path = "crates/bevy_reflect", version = "0.20.0", default-features = false }
-bevy_render = { path = "crates/bevy_render", version = "0.20.0", default-features = false }
-bevy-settings = { path = "crates/bevy_settings", version = "0.20.0", default-features = false }
-bevy_state = { path = "crates/bevy_state", version = "0.20.0", default-features = false }
-bevy_scene = { path = "crates/bevy_scene", version = "0.20.0", default-features = false }
+bevy_animation = { path = "../bevy_animation", version = "0.20.0", default-features = false }
+bevy_asset = { path = "../bevy_asset", version = "0.20.0", default-features = false }
+bevy_ecs = { path = "../bevy_ecs", version = "0.20.0", default-features = false }
+bevy_extract = { path = "../bevy_extract", version = "0.20.0", default-features = false }
+bevy_gizmos = { path = "../bevy_gizmos", version = "0.20.0", default-features = false }
+bevy_image = { path = "../bevy_image", version = "0.20.0", default-features = false }
+bevy_reflect = { path = "../bevy_reflect", version = "0.20.0", default-features = false }
+bevy_render = { path = "../bevy_render", version = "0.20.0", default-features = false }
+bevy-settings = { path = "../bevy_settings", version = "0.20.0", default-features = false }
+bevy_state = { path = "../bevy_state", version = "0.20.0", default-features = false }
+bevy_scene = { path = "../bevy_scene", version = "0.20.0", default-features = false }
 # Needed to poll Task examples
 futures-lite = "2.0.1"
 futures-timer = { version = "3", features = ["wasm-bindgen", "gloo-timers"] }
@@ -5311,20 +5246,8 @@ hidden = true
 # Requires compute shaders and WGPU extensions, not supported by WebGL nor WebGPU.
 wasm = false
 
-[profile.wasm-release]
-inherits = "release"
-opt-level = "z"
-lto = "fat"
-codegen-units = 1
-
-[profile.stress-test]
-inherits = "release"
-lto = "fat"
-panic = "abort"
-
-# Keep mobile dev artifacts small enough for emulator and simulator installs.
-[profile.dev.package.bevy_mobile_example]
-strip = true
+# Bun OS: profiles live in the root Cargo.toml (stress-test, bevy_mobile_example; the root
+# wasm-release is kept).
 
 [package.metadata.docs.rs]
 # This cfg is needed so that #[doc(fake_variadic)] is correctly propagated for
@@ -5807,8 +5730,8 @@ edition = "2026_pre"
 root = "assets/shaders"
 
 [package.metadata.wgsl-analyzer.dependencies]
-bevy_render = { path = "crates/bevy_render" }
-bevy_pbr = { path = "crates/bevy_pbr" }
-bevy_core_pipeline = { path = "crates/bevy_core_pipeline" }
-bevy_sprite_render = { path = "crates/bevy_sprite_render" }
-bevy_ui_render = { path = "crates/bevy_ui_render" }
+bevy_render = { path = "../bevy_render" }
+bevy_pbr = { path = "../bevy_pbr" }
+bevy_core_pipeline = { path = "../bevy_core_pipeline" }
+bevy_sprite_render = { path = "../bevy_sprite_render" }
+bevy_ui_render = { path = "../bevy_ui_render" }

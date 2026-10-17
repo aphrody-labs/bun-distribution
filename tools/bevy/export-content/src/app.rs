@@ -1,4 +1,4 @@
-use std::{env, fs, io::Write, path::PathBuf};
+use std::{fs, io::Write, path::PathBuf};
 
 use miette::{diagnostic, Context, Diagnostic, IntoDiagnostic, NamedSource, Result};
 use ratatui::{
@@ -34,15 +34,9 @@ pub struct Content {
 
 impl Content {
     pub fn load() -> Result<Self> {
-        let exe_dir = env::current_exe()
-            .into_diagnostic()
-            .wrap_err("failed to determine path to binary")?;
-
-        let content_dir = exe_dir
-            .ancestors()
-            .nth(3)
-            .ok_or(diagnostic!("failed to determine path to repo root"))?
-            .join("_release-content");
+        // Bun OS layout: the release content lives in docs/bevy/release-content.
+        let content_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../docs/bevy/release-content");
 
         let release_notes_dir = content_dir.join("release-notes");
         let release_notes = load_content(release_notes_dir, "release note")?;

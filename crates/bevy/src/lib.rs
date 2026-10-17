@@ -42,7 +42,7 @@
 //! If you prefer, you can also use the individual Bevy crates directly.
 //! Each module in the root of this crate, except for the prelude, can be found on crates.io
 //! with `bevy_` appended to the front, e.g., `app` -> [`bevy_app`](https://docs.rs/bevy_app/*/bevy_app/).
-#![doc = include_str!("../docs/cargo_features.md")]
+#![doc = include_str!("../../../docs/bevy/cargo_features.md")]
 #![doc(
     html_logo_url = "https://bevy.org/assets/icon.png",
     html_favicon_url = "https://bevy.org/assets/icon.png"
