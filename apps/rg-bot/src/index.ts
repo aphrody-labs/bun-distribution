@@ -36,7 +36,12 @@ import {
 
 import { MODULE_LOADERS } from "./modules";
 import { closeCache } from "./lib/cache";
-import { DISCORD_TOKEN, GUILD_IDS, PROFIL, PROFIL_ANNONCEUR } from "./lib/config";
+import {
+  DISCORD_TOKEN,
+  GUILD_IDS,
+  PROFIL,
+  PROFIL_ANNONCEUR,
+} from "./lib/config";
 import { sql } from "./lib/db";
 import { demarrerServeurAdmin, type ServeurAdmin } from "./lib/serveur-admin";
 import { startApiServer } from "./api/server";
@@ -59,17 +64,26 @@ const isAllMode = process.argv.includes("all") || (!isApiMode && !isBotMode);
 let apiServerInstance: ReturnType<typeof startApiServer> | null = null;
 
 if (isApiMode) {
-  console.log(`[rg-backend] Démarrage du serveur API unifié Rose Griffon (ElysiaJS + WebSockets)...`);
+  console.log(
+    `[rg-backend] Démarrage du serveur API unifié Rose Griffon (ElysiaJS + WebSockets)...`,
+  );
   apiServerInstance = startApiServer();
 } else {
-  if (isAllMode && (process.env.START_API === "1" || process.env.API_PORT || !DISCORD_TOKEN)) {
-    console.log(`[rg-backend] Démarrage des services d'API unifiés (port ${process.env.API_PORT ?? 8800})...`);
+  if (
+    isAllMode &&
+    (process.env.START_API === "1" || process.env.API_PORT || !DISCORD_TOKEN)
+  ) {
+    console.log(
+      `[rg-backend] Démarrage des services d'API unifiés (port ${process.env.API_PORT ?? 8800})...`,
+    );
     apiServerInstance = startApiServer();
   }
 }
 
 if (!isApiMode && !DISCORD_TOKEN && !isBotMode) {
-  console.log(`[rg-backend] Aucun DISCORD_TOKEN spécifié, le serveur API tourne de manière autonome.`);
+  console.log(
+    `[rg-backend] Aucun DISCORD_TOKEN spécifié, le serveur API tourne de manière autonome.`,
+  );
 } else if (!isApiMode) {
   const intents = await resolveGrantedIntents(DISCORD_TOKEN, {
     desiredIntents: PROFIL.intents,
@@ -83,7 +97,12 @@ if (!isApiMode && !DISCORD_TOKEN && !isBotMode) {
     ...createProductionCacheOptions(),
     ...(PROFIL.porteeCommandes === "guildes"
       ? {
-          botGuilds: [(bot: Client) => bot.guilds.cache.map(g => g.id).filter(id => GUILD_IDS.includes(id))],
+          botGuilds: [
+            (bot: Client) =>
+              bot.guilds.cache
+                .map((g) => g.id)
+                .filter((id) => GUILD_IDS.includes(id)),
+          ],
         }
       : {}),
   });
@@ -153,15 +172,18 @@ if (!isApiMode && !DISCORD_TOKEN && !isBotMode) {
       `✓ Profil « ${PROFIL.nom} » (${PROFIL.titre}) — ${PROFIL.modules.length} module(s) de commandes chargé(s).`,
     );
     if (PROFIL.porteeCommandes === "globale") {
-      const rejointes = client.guilds.cache.map(g => g.name).join(", ") || "aucun";
+      const rejointes =
+        client.guilds.cache.map((g) => g.name).join(", ") || "aucun";
       console.log(
         `✓ Commandes publiées GLOBALEMENT — servies sur les ${client.guilds.cache.size} serveur(s) rejoint(s) (${rejointes}) et sur tout serveur qui invitera le bot. Discord propage une modification globale en quelques minutes.`,
       );
     } else {
-      const servies = client.guilds.cache.filter(g => GUILD_IDS.includes(g.id));
-      const absentes = GUILD_IDS.filter(id => !client.guilds.cache.has(id));
+      const servies = client.guilds.cache.filter((g) =>
+        GUILD_IDS.includes(g.id),
+      );
+      const absentes = GUILD_IDS.filter((id) => !client.guilds.cache.has(id));
       console.log(
-        `✓ Commandes enregistrées sur ${servies.size} serveur(s) : ${servies.map(g => g.name).join(", ") || "aucun"}`,
+        `✓ Commandes enregistrées sur ${servies.size} serveur(s) : ${servies.map((g) => g.name).join(", ") || "aucun"}`,
       );
       if (absentes.length > 0) {
         console.warn(
@@ -188,34 +210,37 @@ if (!isApiMode && !DISCORD_TOKEN && !isBotMode) {
   });
 
   /**
- * Filet de dernier recours des interactions.
- *
- * Deux situations très différentes arrivaient ici avec le MÊME message :
- *   - la commande n'existe plus côté serveur (client Discord avec une liste
- *     périmée) : `executeInteraction` ne trouve rien et ne répond rien ;
- *   - la commande a levé : le membre lisait « commande inconnue ou expirée »,
- *     un diagnostic faux qui envoyait chercher au mauvais endroit.
- *
- * Et quand la commande avait déjà fait `deferReply()` avant de lever, personne
- * ne reprenait la main : l'interaction restait sur « réfléchit… » pour
- * toujours. `editReply` est le seul chemin possible dans cet état — `reply()`
- * lèverait `InteractionAlreadyReplied`.
-client.on("interactionCreate", async (interaction) => {
-	await safeExecuteInteraction(client, interaction, {
-		failureMessage: "❌ La commande a échoué. Le détail est dans le journal du service.",
-		unhandledMessage: "Commande inconnue ou expirée. Recharge Discord (Ctrl+R) pour rafraîchir la liste.",
-	});
-});
+   * Filet de dernier recours des interactions.
+   *
+   * Deux situations très différentes arrivaient ici avec le MÊME message :
+   *   - la commande n'existe plus côté serveur (client Discord avec une liste
+   *     périmée) : `executeInteraction` ne trouve rien et ne répond rien ;
+   *   - la commande a levé : le membre lisait « commande inconnue ou expirée »,
+   *     un diagnostic faux qui envoyait chercher au mauvais endroit.
+   *
+   * Et quand la commande avait déjà fait `deferReply()` avant de lever, personne
+   * ne reprenait la main : l'interaction restait sur « réfléchit… » pour
+   * toujours. `editReply` est le seul chemin possible dans cet état — `reply()`
+   * lèverait `InteractionAlreadyReplied`.
+   */
+  client.on("interactionCreate", async (interaction) => {
+    await safeExecuteInteraction(client, interaction, {
+      failureMessage:
+        "❌ La commande a échoué. Le détail est dans le journal du service.",
+      unhandledMessage:
+        "Commande inconnue ou expirée. Recharge Discord (Ctrl+R) pour rafraîchir la liste.",
+    });
+  });
 
-/**
- * Arrêt propre.
- *
- * `systemctl stop/restart` envoie SIGTERM : sans écouteur, Bun tue le processus
- * en laissant la passerelle Discord se faire couper à chaud (le bot reste
- * affiché « en ligne » plusieurs minutes) et la connexion Postgres ouverte
- * côté serveur jusqu'à son expiration. On coupe donc dans l'ordre : minuteurs,
- * passerelle, cache Redis, pool Postgres.
- */
+  /**
+   * Arrêt propre.
+   *
+   * `systemctl stop/restart` envoie SIGTERM : sans écouteur, Bun tue le processus
+   * en laissant la passerelle Discord se faire couper à chaud (le bot reste
+   * affiché « en ligne » plusieurs minutes) et la connexion Postgres ouverte
+   * côté serveur jusqu'à son expiration. On coupe donc dans l'ordre : minuteurs,
+   * passerelle, cache Redis, pool Postgres.
+   */
   let arretEnCours = false;
 
   async function arreter(signal: string): Promise<void> {
@@ -237,7 +262,10 @@ client.on("interactionCreate", async (interaction) => {
     try {
       await client.destroy();
     } catch (err) {
-      console.error("✗ fermeture de la passerelle Discord :", err instanceof Error ? err.message : err);
+      console.error(
+        "✗ fermeture de la passerelle Discord :",
+        err instanceof Error ? err.message : err,
+      );
     }
 
     closeCache();
@@ -247,7 +275,10 @@ client.on("interactionCreate", async (interaction) => {
       // bloquer l'arrêt du service au-delà de ce délai.
       await sql.close({ timeout: 5 });
     } catch (err) {
-      console.error("✗ fermeture de la connexion Postgres :", err instanceof Error ? err.message : err);
+      console.error(
+        "✗ fermeture de la connexion Postgres :",
+        err instanceof Error ? err.message : err,
+      );
     }
 
     if (apiServerInstance) {

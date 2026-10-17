@@ -1,0 +1,58 @@
+# Rose Griffon serverless edge, deployed as Vercel Rust Functions (one `[[bin]]`
+# per handler under `api/`), following the nie family layout: a portable
+# library (no I/O, wasm32-safe with `--no-default-features`) plus a `vercel`
+# feature that owns the HTTP handlers, like `aphrody-nie-model-serve`'s `host`.
+#
+# Member of the root Cargo workspace, but self-contained: Vercel uploads and
+# builds only this directory, without the root manifest, so no field may use
+# `workspace = true`. Versions are pinned by hand to the root
+# `[workspace.package]` / `[workspace.dependencies]` values.
+[package]
+name = "aphrody-rg-server"
+description = "Rose Griffon Vercel Rust Functions: Discord HTTP interactions endpoint and health probe"
+version = "1.4.4"
+edition = "2024"
+license = "MIT"
+publish = false
+repository = "https://github.com/aphrody-labs/bun-distribution"
+authors = ["aphrody-dev <contact@aphrody.com>"]
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "discord"
+path = "api/discord.rs"
+required-features = ["vercel"]
+
+[[bin]]
+name = "health"
+path = "api/health.rs"
+required-features = ["vercel"]
+
+[features]
+default = ["vercel"]
+# HTTP handlers: Vercel runtime bridge, Tokio and the executor client.
+vercel = ["dep:http-body-util", "dep:reqwest", "dep:tokio", "dep:vercel_runtime"]
+
+[dependencies]
+ed25519-dalek = { version = "2.1", default-features = false, features = ["std"] }
+hex = "0.4"
+serde_json = "1.0.154"
+http-body-util = { version = "0.1.3", optional = true }
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls"], optional = true }
+tokio = { version = "1.53.2", features = ["macros", "rt-multi-thread", "time"], optional = true }
+vercel_runtime = { version = "2.4.1", optional = true }
+
+# Mirrors the root `[workspace.lints]` (inheritance would break the standalone Vercel build).
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "warn"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }

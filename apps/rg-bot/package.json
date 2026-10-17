@@ -55,6 +55,7 @@
     "@rosegriffon/inagle": "workspace:*",
     "@rosegriffon/types": "workspace:*",
     "@rosegriffon/ui": "workspace:*",
+    "@vercel/functions": "catalog:",
     "brackets-manager": "catalog:",
     "brackets-model": "catalog:",
     "discord.js": "catalog:",

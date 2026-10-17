@@ -11,6 +11,7 @@ import { azaleeBridgeModule } from "./modules/azalee-bridge";
 import { authController } from "./modules/auth";
 import { dbPlugin } from "./plugins/db";
 import { elysiaAuth } from "@rosegriffon/auth/elysia";
+import { handleAnnounceHttp, handleCronHttp } from "@rosegriffon/cron";
 
 const allowedOrigins = new Set(
   [
@@ -64,6 +65,9 @@ export const app = new Elysia()
     uptime: process.uptime(),
     timestamp: Date.now(),
   }))
+  // Tâches planifiées (appelées par pg_cron) et annonces Discord du site : Bearer, corps lu par le handler.
+  .all("/v1/cron/*", ({ request }) => handleCronHttp(request), { parse: "none" })
+  .post("/v1/discord/announce", ({ request }) => handleAnnounceHttp(request), { parse: "none" })
   .group("/v1", v1 =>
     v1
       .use(achilleaModule)
@@ -73,7 +77,14 @@ export const app = new Elysia()
       .use(billingController)
       .use(inagleModule)
       .use(azaleeBridgeModule)
-      .use(authController),
+      .use(authController)
+      // Discord HTTP interactions forwarded by crates/aphrody-rg-server. Lazy:
+      // the executor reads the bot token and loads the command modules.
+      .post(
+        "/discord/interactions/execute",
+        async ({ request }) => (await import("../interactions/executor")).executerInteractionDiscord(request),
+        { parse: "none" },
+      ),
   );
 
 const PORT = Number(process.env.API_PORT ?? 8800);
