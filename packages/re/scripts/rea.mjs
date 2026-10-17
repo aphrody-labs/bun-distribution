@@ -14,6 +14,7 @@ const bunOsCommands = {
   replica: ["../src/replica/cli.ts", "main"],
   "ghidra-win": ["../src/replica/cli.ts", "ghidraMain"],
   magika: ["../src/replica/cli.ts", "magikaMain"],
+  dbxv2: ["../src/bunre.ts", "main"],
   install: ["./install.ts", "main"],
 };
 if (args[0] !== undefined && Object.hasOwn(bunOsCommands, args[0])) {

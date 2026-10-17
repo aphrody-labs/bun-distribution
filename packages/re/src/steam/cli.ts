@@ -6,8 +6,10 @@ import { opClassify, opRea, opScan, opSql, opStats } from "./ops.js";
 import { openIdLoginUrl, openIdVerify, recordAuthSession } from "./openid.js";
 import { syncApiCatalog, syncAppList, syncStoreApps } from "./webapi.js";
 import { remoteDownload } from "./remote.js";
+import { runBunre } from "../bunre.js";
 
 const HELP = `re steam <command> [options]
+  list|download|sync|audit <appid> [dir]   depot operations through the Rust bunre steam client
   scan                       index the local Steam install into SQLite
   stats                      row counts per table
   sql "<SELECT ...>"         read-only query
@@ -22,6 +24,8 @@ options: --db <path> --root <steam dir> --hash-max <bytes> --no-hash --json`;
 
 /** Entry point for `re steam ...`. Returns the process exit code. */
 export async function main(argv: string[]): Promise<number> {
+  // Depot listing, download, sync and audit are owned by the Rust `bunre steam` client.
+  if (["list", "download", "sync", "audit"].includes(argv[0] ?? "")) return runBunre(["steam", ...argv]);
   const { values, positionals } = parseArgs({
     args: argv,
     allowPositionals: true,
