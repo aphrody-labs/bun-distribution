@@ -26,7 +26,6 @@ gpu = ["dep:aphrody-gpu-backend", "aphrody-gpu-backend/hub", "dep:base64"]
 cuda = ["gpu", "aphrody-gpu-backend/cuda"]
 
 [dependencies]
-aphrody-proc = { path = "../aphrody-proc", features = [] }
 obscura-browser = { path = "../../toolchains/bun/src/browser/crates/browser", package = "bun_browser_browser", features = ["render"], optional = true }
 obscura-net = { path = "../../toolchains/bun/src/browser/crates/net", package = "bun_browser_net", optional = true }
 aphrody-gpu-backend = { path = "../aphrody-gpu-backend", optional = true }
