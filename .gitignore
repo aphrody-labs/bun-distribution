@@ -37,6 +37,7 @@ apps/desktop/src-tauri/gen/
 __pycache__/
 venv/
 secrets/
+!crates/aphrody-infra/src/secrets/
 secrets.yaml
 secrets.toml
 twitch_secrets.toml
