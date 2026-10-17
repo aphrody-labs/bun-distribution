@@ -95,4 +95,6 @@ tools beside the rea toolkit. `serve.ts` exposes a loopback
 - Indirect jumps and jump tables go through a dispatcher and trap when unresolved.
 - Guest memory is a flat arena at the preferred image base; no relocation or OS loader emulation.
 - Imports are stubs that trap; system calls are not emulated.
-- Ghidra and the external c
+- Ghidra and the external command adapters are registered but unverified on this workstation.
+- BIOS and firmware images are identified and unpacked (external tools) but not lifted unless the
+  payload is x86, AArch64 or a supported console image (GBA BIOS with a cartridge, PlayStation BIOS).

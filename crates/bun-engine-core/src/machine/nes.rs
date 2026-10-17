@@ -2,8 +2,9 @@
 //! cartridges, one 256x240 screen.
 
 use tetanes_core::{
-    control_deck::ControlDeck,
+    control_deck::{Config, ControlDeck},
     input::{JoypadBtn, Player},
+    memory::RamState,
 };
 
 use super::{Input, Machine, Screen, Step, keys};
@@ -15,7 +16,10 @@ pub struct Nes {
 
 impl Nes {
     pub fn from_rom(name: &str, rom: &[u8]) -> Result<Self, String> {
-        let mut deck = ControlDeck::new();
+        // Power-on RAM is zeroed, not random: runs are reproducible, so the interpreter, the
+        // recompiled executable and WebAssembly builds and `re replica` replays compare frame by frame
+        // (a bare wasm32 module also has no entropy source).
+        let mut deck = ControlDeck::with_config(Config::default().with_ram_state(RamState::AllZeros));
         deck.load_rom(name, &mut std::io::Cursor::new(rom))
             .map_err(|e| format!("NES ROM: {e}"))?;
         Ok(Self {

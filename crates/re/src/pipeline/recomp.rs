@@ -473,12 +473,22 @@ pub fn build(ctx: &mut Ctx) -> StageReport {
             "wasm32-unknown-unknown".into(),
         ]),
     }
+    // A bare wasm32 module has no entropy source and no JavaScript glue: getrandom (pulled in by
+    // TetaNES through rand) uses its `unsupported` backend there. Recompiled machines start from
+    // deterministic memory, so the random path is linked but never taken.
+    let env: Vec<(String, String)> = match rc.target {
+        RecompTarget::Wasm => vec![(
+            "CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS".into(),
+            r#"--cfg getrandom_backend="unsupported""#.into(),
+        )],
+        RecompTarget::Exe => Vec::new(),
+    };
     let timeout = Duration::from_secs(ctx.opts.timeout_secs.max(3600));
     // The serialized wrapper refuses to start while another native build owns the host: wait
     // for the slot instead of failing.
     let started = std::time::Instant::now();
     let res = loop {
-        let r = run_cmd(&program, &args, Some(&root), &[], timeout);
+        let r = run_cmd(&program, &args, Some(&root), &env, timeout);
         let busy = r.as_ref().is_ok_and(|x| {
             !x.ok() && format!("{}{}", x.stdout, x.stderr).contains("build owns this Windows host")
         });

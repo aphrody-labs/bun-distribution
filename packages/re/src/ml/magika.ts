@@ -33,7 +33,15 @@ export async function setupMagika(): Promise<number> {
   // MSVC environment (LIB, INCLUDE) of the pinned toolset.
   const command =
     process.platform === "win32"
-      ? ["bun", "msvc", "exec", "--toolset", "14.44", "--", ...magikaSetupCommand()]
+      ? [
+          "bun",
+          "msvc",
+          "exec",
+          "--toolset",
+          "14.44",
+          "--",
+          ...magikaSetupCommand(),
+        ]
       : magikaSetupCommand();
   const child = Bun.spawn(command, {
     cwd: root,

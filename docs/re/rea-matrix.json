@@ -1,0 +1,723 @@
+{
+  "schema": 1,
+  "generated": "2026-10-17T17:34:28.798Z",
+  "host": "Windows 11 (RTX 4070) + vps (read-only)",
+  "commands": {
+    "steam": "@aphrody/bun-steam CLI (in process)",
+    "steam-rea": "packages/re/src/steamRea.ts",
+    "pipeline": "packages/re/src/pipeline/cli.ts -> bunre pipeline",
+    "recompile": "packages/re/src/pipeline/recompile.ts -> bunre recompile",
+    "engine": "packages/re/src/engine/machine.ts -> bun-engine",
+    "formats": "packages/re/src/engine/formats.ts -> @aphrody/bun-engine/formats (in process)",
+    "bin": "packages/re/src/binary/inspect.ts -> bunre pipeline triage + bun:windows",
+    "replica": "packages/re/src/replica/cli.ts",
+    "ghidra-win": "packages/re/src/ghidra/windows.ts",
+    "magika": "packages/re/src/ml/magika.ts -> bun:python",
+    "dbxv2": "packages/re/src/bunre.ts -> bunre dbxv2",
+    "game": "packages/re/src/game/cli.ts (other owner)",
+    "install": "packages/re/scripts/install.ts"
+  },
+  "mcp": {
+    "tools": 228,
+    "bunOs": [
+      "re_recompile",
+      "engine_run",
+      "engine_info",
+      "steam_scan",
+      "steam_stats",
+      "steam_sql",
+      "steam_api_sync",
+      "steam_classify",
+      "steam_rea",
+      "re_pipeline_run",
+      "re_pipeline_adapters",
+      "formats_inspect",
+      "formats_disasm",
+      "binary_inspect",
+      "ghidra_probe",
+      "magika_identify",
+      "replica_record",
+      "replica_replay",
+      "replica_nds",
+      "steam_appinfo",
+      "steam_manifest"
+    ],
+    "calls": [
+      "formats_inspect",
+      "binary_inspect",
+      "steam_appinfo",
+      "steam_manifest",
+      "engine_info",
+      "ghidra_probe",
+      "formats_disasm"
+    ]
+  },
+  "needs": [
+    {
+      "id": "engine.rom-identify",
+      "area": "Bun Engine",
+      "need": "Identify ROMs and parse their headers (NES, GBA, NDS/DSi, ...)",
+      "command": "re formats identify|header|sections|files <file> [--json]",
+      "mcp": [
+        "formats_inspect"
+      ],
+      "owner": "packages/bun-engine/src/formats (called in process)",
+      "before": "partial",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "formats-nes",
+          "command": "re formats header C:/src/bun-os/vendor/tetanes/tetanes/assets/roms/alter_ego.nes",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.1,
+          "output": "var/rea-matrix/proof/formats-nes.out"
+        },
+        {
+          "id": "formats-gba",
+          "command": "re formats header C:/src/bun-os/vendor/rustboyadvance-ng/external/gba-tests/arm/arm.gba",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.102,
+          "output": "var/rea-matrix/proof/formats-gba.out"
+        },
+        {
+          "id": "formats-nds",
+          "command": "re formats header C:/src/bun-os/usr/var/cache/bep/roms/godmode9i/GodMode9i.nds",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.172,
+          "output": "var/rea-matrix/proof/formats-nds.out"
+        },
+        {
+          "id": "formats-nds-files",
+          "command": "re formats files C:/src/bun-os/usr/var/cache/bep/roms/godmode9i/GodMode9i.nds --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.213,
+          "output": "var/rea-matrix/proof/formats-nds-files.out"
+        }
+      ],
+      "note": "Before: only `re replica nds` (DS) and the coarse crates/re sniff (`raw`/`rom`)."
+    },
+    {
+      "id": "engine.bios-identify",
+      "area": "Bun Engine",
+      "need": "Identify BIOS/firmware dumps and match free replacements",
+      "command": "re formats header <bios>",
+      "mcp": [
+        "formats_inspect"
+      ],
+      "owner": "packages/bun-engine/src/formats + plugins/consoles/{firmware,free-firmware}.json",
+      "before": "missing",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "formats-openbios",
+          "command": "re formats header C:/src/bun-os/usr/share/bun-engine/firmware/sony-playstation/da0bf3d3e0bf75d4bea49c037f9d0639d75c3ff4a569659965e04b9809b707c5.bin",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.108,
+          "output": "var/rea-matrix/proof/formats-openbios.out"
+        },
+        {
+          "id": "formats-normmatt",
+          "command": "re formats header C:/src/bun-os/vendor/rustboyadvance-ng/core/benches/roms/normatt_gba_bios.bin",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.1,
+          "output": "var/rea-matrix/proof/formats-normmatt.out"
+        }
+      ],
+      "note": "Owner fixed: OpenBIOS was `unknown` (no Sony string); PlayStation reset-vector heuristic and free-firmware.json SHA-256 matching added."
+    },
+    {
+      "id": "engine.disasm",
+      "area": "Bun Engine",
+      "need": "Disassemble console code (6502, ARM/Thumb, R3000, PPC, AArch64, ...)",
+      "command": "re formats disasm <file> [--arch] [--at] [--count] [--json]",
+      "mcp": [
+        "formats_disasm"
+      ],
+      "owner": "packages/bun-engine/src/formats/disasm",
+      "before": "missing",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "formats-disasm-nes",
+          "command": "re formats disasm C:/src/bun-os/vendor/tetanes/tetanes/assets/roms/alter_ego.nes --count 8 --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.133,
+          "output": "var/rea-matrix/proof/formats-disasm-nes.out"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "engine.run",
+      "area": "Bun Engine",
+      "need": "Run a machine headless and capture screens and console output",
+      "command": "re engine run <system> <image> [--frames] [--bios] [--out] [--input] [--trace] [--json]",
+      "mcp": [
+        "engine_run"
+      ],
+      "owner": "crates/bun-engine-core (bun-engine binary)",
+      "before": "partial",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "engine-run-nes",
+          "command": "re engine run nes C:/src/bun-os/vendor/tetanes/tetanes/assets/roms/alter_ego.nes --frames 120 --out C:/src/bun-os/var/rea-matrix/proof/engine-nes --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 13.774,
+          "output": "var/rea-matrix/proof/engine-run-nes.out"
+        },
+        {
+          "id": "engine-run-gba",
+          "command": "re engine run gba C:/src/bun-os/vendor/rustboyadvance-ng/external/gba-tests/arm/arm.gba --frames 300 --out C:/src/bun-os/var/rea-matrix/proof/engine-gba --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 10.308,
+          "output": "var/rea-matrix/proof/engine-run-gba.out"
+        },
+        {
+          "id": "engine-run-psx-openbios",
+          "command": "re engine run psx C:/src/bun-os/usr/share/bun-engine/firmware/sony-playstation/da0bf3d3e0bf75d4bea49c037f9d0639d75c3ff4a569659965e04b9809b707c5.bin --bios C:/src/bun-os/usr/share/bun-engine/firmware/sony-playstation/da0bf3d3e0bf75d4bea49c037f9d0639d75c3ff4a569659965e04b9809b707c5.bin --frames 120 --out C:/src/bun-os/var/rea-matrix/proof/engine-psx --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 14.133,
+          "output": "var/rea-matrix/proof/engine-run-psx-openbios.out"
+        }
+      ],
+      "note": "Before: MCP only, no CLI verb. The CLI and the MCP tool now share runMachine()."
+    },
+    {
+      "id": "engine.ds-header",
+      "area": "Bun Engine",
+      "need": "Validate a DS/DSi cartridge header natively (CRCs, regions)",
+      "command": "re engine info <rom.nds> [--json]",
+      "mcp": [
+        "engine_info"
+      ],
+      "owner": "crates/bun-engine-core (bun-engine info)",
+      "before": "missing",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "engine-info-nds",
+          "command": "re engine info C:/src/bun-os/usr/var/cache/bep/roms/godmode9i/GodMode9i.nds --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.701,
+          "output": "var/rea-matrix/proof/engine-info-nds.out"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "engine.recompile-wasm",
+      "area": "Bun Engine",
+      "need": "Statically recompile a ROM to WebAssembly and run it",
+      "command": "re recompile <rom> --target wasm --out DIR [--json]",
+      "mcp": [
+        "re_recompile"
+      ],
+      "owner": "crates/re pipeline::recomp + crates/bun-engine-core/src/recomp",
+      "before": "partial",
+      "status": "pending-build",
+      "proofs": [
+        {
+          "id": "recompile-nes-wasm",
+          "command": "re recompile alter_ego.nes --target wasm --out var/rea-matrix/proof/recompile-nes-wasm --frames 300 --json",
+          "exit": 1,
+          "ok": false,
+          "seconds": 267.51,
+          "output": "var/rea-matrix/proof/recompile-nes-wasm/report.json",
+          "detail": "lift/emit ok; cargo-recompile failed: getrandom 0.4 (rand 0.10 in TetaNES) has no wasm32-unknown-unknown backend. Fixed in code (recomp.rs unsupported backend for wasm builds, zeroed NES power-on RAM); rebuild pending on the VPS"
+        }
+      ],
+      "note": "The NES wasm build failed for real here (getrandom 0.4 from rand 0.10 in TetaNES has no wasm32-unknown-unknown backend). Fixed in code: `cargo-recompile` builds wasm with the getrandom `unsupported` backend and the NES machine powers on with zeroed RAM. The verify stage runs the wasm under Bun against the interpreter and `bun-engine run`. Rebuild and rerun on the VPS."
+    },
+    {
+      "id": "engine.recompile-exe",
+      "area": "Bun Engine",
+      "need": "Statically recompile a ROM to a native executable and run it",
+      "command": "re recompile <rom> --target exe --out DIR [--json]",
+      "mcp": [
+        "re_recompile"
+      ],
+      "owner": "crates/re pipeline::recomp + crates/bun-engine-core/src/recomp",
+      "before": "covered",
+      "status": "pending-build",
+      "proofs": [
+        {
+          "id": "recompile-nes-exe",
+          "command": "re recompile alter_ego.nes --target exe --out var/rea-matrix/proof/recompile-nes-exe --frames 300 --json",
+          "ok": false,
+          "output": "-",
+          "detail": "not run: interrupted by a full C: drive, then the no-build-on-PC rule; pending on the VPS"
+        }
+      ],
+      "note": "Not run: interrupted by a full C: drive, then by the no-build-on-PC rule. The verify stage runs the executable translated and `--interp` and compares with `bun-engine run`."
+    },
+    {
+      "id": "replica.record-replay",
+      "area": "Replica",
+      "need": "Record and replay a deterministic input session on a Bun Engine machine",
+      "command": "re replica record <system> <image> --input SCRIPT --frames N | re replica replay <file>",
+      "mcp": [
+        "replica_record",
+        "replica_replay"
+      ],
+      "owner": "crates/bun-engine-core (bun-engine run --input --trace) + packages/re/src/replica/replay.ts",
+      "before": "missing",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "replica-record-nes",
+          "command": "re replica record nes C:/src/bun-os/vendor/tetanes/tetanes/assets/roms/alter_ego.nes --frames 300 --input start@120-125,right@180-240 --out C:/src/bun-os/var/rea-matrix/proof/replay-nes.json --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 27.53,
+          "output": "var/rea-matrix/proof/replica-record-nes.out"
+        },
+        {
+          "id": "replica-replay-nes",
+          "command": "re replica replay C:/src/bun-os/var/rea-matrix/proof/replay-nes.json --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 5.501,
+          "output": "var/rea-matrix/proof/replica-replay-nes.out"
+        },
+        {
+          "id": "replica-replay-divergence",
+          "command": "re replica replay replay-nes-altered.json (same recording, input without start@120-125; expected exit 1)",
+          "exit": 1,
+          "ok": true,
+          "seconds": 6.116,
+          "output": "var/rea-matrix/proof/replica-replay-nes-altered.out",
+          "detail": "first divergence at frame 122"
+        },
+        {
+          "id": "replica-record-gba",
+          "command": "re replica record gba C:/src/bun-os/vendor/rustboyadvance-ng/external/gba-tests/arm/arm.gba --frames 240 --out C:/src/bun-os/var/rea-matrix/proof/replay-gba.json --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 3.087,
+          "output": "var/rea-matrix/proof/replica-record-gba.out"
+        },
+        {
+          "id": "replica-replay-gba",
+          "command": "re replica replay C:/src/bun-os/var/rea-matrix/proof/replay-gba.json --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 26.282,
+          "output": "var/rea-matrix/proof/replica-replay-gba.out"
+        }
+      ],
+      "note": "New: scripted input and per-frame FNV-1a screen digests in the native headless loop; replay pins image/BIOS SHA-256 and reports the first diverging frame."
+    },
+    {
+      "id": "replica.intake",
+      "area": "Replica",
+      "need": "Read-only DS intake and provenance for a Replica project",
+      "command": "re replica nds <rom> | re replica init <rom> [out]",
+      "mcp": [
+        "replica_nds"
+      ],
+      "owner": "packages/re/src/replica",
+      "before": "partial",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "replica-nds",
+          "command": "re replica nds C:/src/bun-os/usr/var/cache/bep/roms/godmode9i/GodMode9i.nds --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.078,
+          "output": "var/rea-matrix/proof/replica-nds.out"
+        },
+        {
+          "id": "replica-init-homebrew",
+          "command": "re replica init GodMode9i.nds var/rea-matrix/proof/replica-godmode9i",
+          "exit": 0,
+          "ok": true,
+          "output": "var/rea-matrix/proof/replica-init.out",
+          "detail": "homebrew #### game code accepted; input.json/status.json written"
+        }
+      ],
+      "note": "Before: no MCP tool, and `init` rejected homebrew (`####` game code, devkitPro default); now accepted."
+    },
+    {
+      "id": "replica.skills",
+      "area": "Replica",
+      "need": "Ordered Replica skill pack and pipeline stages",
+      "command": "re replica skills | skill <name> | pipeline",
+      "mcp": [],
+      "owner": "packages/re/plugin/skills/replica-*",
+      "before": "covered",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "replica-pipeline",
+          "command": "re replica pipeline --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.102,
+          "output": "var/rea-matrix/proof/replica-pipeline.out"
+        }
+      ],
+      "note": "Served to agents as plugin skills, not MCP tools."
+    },
+    {
+      "id": "emulators.binaries",
+      "area": "Emulators in usr/",
+      "need": "PE/ELF imports, version resource, signature and provenance of release emulators",
+      "command": "re bin <exe> [--strings N] [--imports N] [--json]",
+      "mcp": [
+        "binary_inspect"
+      ],
+      "owner": "crates/re triage (bunre pipeline triage) + bun:windows PE + packages/bun-engine/src/usr.ts (bep db)",
+      "before": "missing",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "bin-mgba",
+          "command": "re bin C:/src/bun-os/usr/lib/mgba/mGBA-0.10.5-win64/mGBA.exe --strings 16 --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.329,
+          "output": "var/rea-matrix/proof/bin-mgba.out"
+        }
+      ],
+      "note": "Before: core rea `inspect-artifact` gave identity only; imports needed a deep provider."
+    },
+    {
+      "id": "steam.binary",
+      "area": "Steam",
+      "need": "Header, imports and strings of a Steam executable on this PC (read-only)",
+      "command": "re bin <steam exe> --json",
+      "mcp": [
+        "binary_inspect"
+      ],
+      "owner": "crates/re triage + bun:windows PE + @aphrody/bun-steam (installedGames)",
+      "before": "missing",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "bin-steam-client",
+          "command": "re bin C:/Program Files (x86)/Steam/steam.exe --strings 16 --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.172,
+          "output": "var/rea-matrix/proof/bin-steam-client.out"
+        }
+      ],
+      "note": "No game with an executable is installed on this PC (only app 228980, redistributables); the Steam client executable was used."
+    },
+    {
+      "id": "steam.index",
+      "area": "Steam",
+      "need": "Local Steam index, Web API catalogue, libraries, VDF",
+      "command": "re steam <command> [--json]",
+      "mcp": [
+        "steam_scan",
+        "steam_stats",
+        "steam_sql",
+        "steam_api_sync",
+        "steam_classify"
+      ],
+      "owner": "packages/bun-steam (consumed)",
+      "before": "covered",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "steam-libraries",
+          "command": "re steam libraries games --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.145,
+          "output": "var/rea-matrix/proof/steam-libraries.out"
+        },
+        {
+          "id": "steam-stats",
+          "command": "re steam stats --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.144,
+          "output": "var/rea-matrix/proof/steam-stats.out"
+        },
+        {
+          "id": "steam-appinfo-vdf",
+          "command": "re steam vdf C:/Program Files (x86)/Steam/appcache/appinfo.vdf --appinfo --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.123,
+          "output": "var/rea-matrix/proof/steam-appinfo-vdf.out"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "steam.appinfo-depots",
+      "area": "Steam",
+      "need": "appinfo.vdf entries and depot manifests for agents",
+      "command": "re steam vdf <appinfo.vdf> --appinfo | re steam depot ...",
+      "mcp": [
+        "steam_appinfo",
+        "steam_manifest"
+      ],
+      "owner": "packages/bun-steam (parseAppInfo, parseDepotManifest)",
+      "before": "partial",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "steam-appinfo-vdf",
+          "command": "re steam vdf C:/Program Files (x86)/Steam/appcache/appinfo.vdf --appinfo --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.123,
+          "output": "var/rea-matrix/proof/steam-appinfo-vdf.out"
+        },
+        {
+          "id": "mcp:steam_appinfo",
+          "command": "MCP tools/call steam_appinfo",
+          "ok": true,
+          "seconds": 0.02,
+          "output": "var/rea-matrix/proof/mcp.json"
+        },
+        {
+          "id": "mcp:steam_manifest",
+          "command": "MCP tools/call steam_manifest",
+          "ok": true,
+          "seconds": 0.004,
+          "output": "var/rea-matrix/proof/mcp.json"
+        }
+      ],
+      "note": "Before: CLI only; MCP tools added over the owner's parsers."
+    },
+    {
+      "id": "steam.rea",
+      "area": "Steam",
+      "need": "RE pipeline on an installed Steam app executable",
+      "command": "re steam-rea <appid>",
+      "mcp": [
+        "steam_rea"
+      ],
+      "owner": "packages/re/src/steamRea.ts over bun-steam index + crates/re pipeline",
+      "before": "covered",
+      "status": "not-run",
+      "proofs": [],
+      "note": "No installed app with a scanned executable on this PC."
+    },
+    {
+      "id": "proton.vps",
+      "area": "Proton/Wine",
+      "need": "Static view of Proton/Wine binaries on the VPS, read-only",
+      "command": "re bin <path> --host vps --json",
+      "mcp": [
+        "binary_inspect"
+      ],
+      "owner": "crates/re triage (local copy via ssh cat, deleted after)",
+      "before": "missing",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "bin-proton-vps",
+          "command": "re bin /home/ubuntu/.steam/steam/steamapps/common/Proton - Experimental/files/bin/wineserver --host vps --strings 16 --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 3.06,
+          "output": "var/rea-matrix/proof/bin-proton-vps.out"
+        }
+      ],
+      "note": "One bounded `ssh vps head -c` read; nothing written on the VPS."
+    },
+    {
+      "id": "ghidra.windows",
+      "area": "Ghidra",
+      "need": "Ghidra on Windows: install, JDK, PE metadata, source build",
+      "command": "re ghidra-win probe|inspect <pe>|build",
+      "mcp": [
+        "ghidra_probe"
+      ],
+      "owner": "packages/re/src/ghidra/windows.ts (bun:windows)",
+      "before": "partial",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "ghidra-probe",
+          "command": "re ghidra-win probe --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.158,
+          "output": "var/rea-matrix/proof/ghidra-probe.out"
+        },
+        {
+          "id": "ghidra-inspect",
+          "command": "re ghidra-win inspect C:/src/bun-os/usr/lib/mgba/mGBA-0.10.5-win64/mGBA.exe --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.181,
+          "output": "var/rea-matrix/proof/ghidra-inspect.out"
+        }
+      ],
+      "note": "Probe now reports the installed Ghidra and the stale JAVA_HOME with its remediation."
+    },
+    {
+      "id": "ghidra.headless",
+      "area": "Ghidra",
+      "need": "Ghidra headless import, analysis and decompilation of a small binary",
+      "command": "re pipeline <bin> --target os --out DIR --external",
+      "mcp": [
+        "re_pipeline_run"
+      ],
+      "owner": "crates/re pipeline/ghidra.rs (GHIDRA_INSTALL_DIR)",
+      "before": "covered",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "pipeline-ghidra-headless",
+          "command": "JAVA_HOME=<JDK 25> re pipeline target/slot-1/release/bun_python_host.dll --target os --out var/rea-matrix/proof/ghidra-pyhost --external --max-functions 64",
+          "exit": 0,
+          "ok": true,
+          "seconds": 110.9,
+          "output": "(console report kept in the session log; output tree removed during disk cleanup)",
+          "detail": "ghidra-headless analyze ok (import + auto-analysis), ghidra-headless-decompile ok, x86-lift 64 functions 96.5% modelled, clang-c and rustc-lib rebuild ok, lift-verify ok"
+        }
+      ],
+      "note": "Requires a valid JAVA_HOME (user value is stale; run with the JDK 25 path)."
+    },
+    {
+      "id": "pipeline.cross-os",
+      "area": "RE pipeline",
+      "need": "Acquire to verify on OS binaries, BIOS and firmware; adapter status",
+      "command": "re pipeline <input> --target os|bios|firmware | re pipeline adapters",
+      "mcp": [
+        "re_pipeline_run",
+        "re_pipeline_adapters"
+      ],
+      "owner": "crates/re pipeline",
+      "before": "covered",
+      "status": "partial",
+      "proofs": [
+        {
+          "id": "pipeline-adapters",
+          "command": "re pipeline adapters --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.194,
+          "output": "var/rea-matrix/proof/pipeline-adapters.out"
+        },
+        {
+          "id": "pipeline-bios",
+          "command": "re pipeline C:/src/bun-os/vendor/rustboyadvance-ng/core/benches/roms/normatt_gba_bios.bin --target bios --out C:/src/bun-os/var/rea-matrix/proof/pipeline-normmatt --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.963,
+          "output": "var/rea-matrix/proof/pipeline-bios.out"
+        }
+      ],
+      "note": "Console BIOS images identify as `raw` in crates/re sniff (use `re formats`/`re recompile`); the binwalk adapter fails on Windows (binwalk v2 imports `pwd`)."
+    },
+    {
+      "id": "magika",
+      "area": "ML",
+      "need": "Magika content typing of a file and of a mixed folder",
+      "command": "re magika identify <file|dir> [--limit N] | re magika setup",
+      "mcp": [
+        "magika_identify"
+      ],
+      "owner": "vendor/magika via bun:python (packages/re/src/ml/magika.ts)",
+      "before": "partial",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "magika-file",
+          "command": "re magika identify C:/src/bun-os/vendor/tetanes/tetanes/assets/roms/alter_ego.nes --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 0.461,
+          "output": "var/rea-matrix/proof/magika-file.out"
+        },
+        {
+          "id": "magika-folder",
+          "command": "re magika identify C:/src/bun-os/usr/lib/mgba/mGBA-0.10.5-win64 --limit 500 --json",
+          "exit": 0,
+          "ok": true,
+          "seconds": 2.339,
+          "output": "var/rea-matrix/proof/magika-folder.out"
+        }
+      ],
+      "note": "Fixed: setup needs the MSVC env (maturin/Cargo), stale BUN_PYTHON_HOST_LIBRARY now falls back to the checkout build, one session per folder."
+    },
+    {
+      "id": "game.assets",
+      "area": "NIE/IEVR",
+      "need": "Game-agnostic detect/mount/index/export/serve (generalized NIE pipeline)",
+      "command": "re game <appid|path> <command>",
+      "mcp": [],
+      "owner": "crates/re/src/game + packages/re/src/game (other agent, consumed only)",
+      "before": "partial",
+      "status": "not-run",
+      "proofs": [],
+      "note": "Being moved by the NIE agent; `bunre game` needs the `assets` feature; MCP tools left to that owner."
+    },
+    {
+      "id": "dbxv2",
+      "area": "Game RE",
+      "need": "Dragon Ball Xenoverse 2 inventory and archives",
+      "command": "re dbxv2 <command>",
+      "mcp": [],
+      "owner": "crates/re bin/bunre/dbxv2.rs",
+      "before": "covered",
+      "status": "not-run",
+      "proofs": [
+        {
+          "id": "dbxv2-usage",
+          "command": "re dbxv2",
+          "exit": 2,
+          "ok": true,
+          "seconds": 0.102,
+          "output": "var/rea-matrix/proof/dbxv2-usage.out"
+        }
+      ],
+      "note": "No Xenoverse 2 install on this PC; wiring verified (usage, exit 2)."
+    },
+    {
+      "id": "mcp",
+      "area": "MCP",
+      "need": "One MCP server exposing every Bun OS command",
+      "command": "re mcp",
+      "mcp": [],
+      "owner": "packages/re/src/server/registerBunOsTools.ts",
+      "before": "partial",
+      "status": "covered",
+      "proofs": [
+        {
+          "id": "mcp:list",
+          "command": "re mcp (stdio client: tools/list)",
+          "ok": true,
+          "seconds": 27.014,
+          "output": "var/rea-matrix/proof/mcp.json",
+          "detail": "228 tools, 21 Bun OS tools registered, missing: none"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "id": "plugin.skills",
+      "area": "Plugin",
+      "need": "Skills routing agents to the right rea command",
+      "command": "re install",
+      "mcp": [],
+      "owner": "packages/re/plugin/skills",
+      "before": "partial",
+      "status": "covered",
+      "proofs": [],
+      "note": "bun-engine, binary-triage, firmware-analyst, ghidra-headless, static-recompile and steam skills updated; `re install` not run (it rewrites ~/.claude skills and the user MCP registration)."
+    }
+  ]
+}
