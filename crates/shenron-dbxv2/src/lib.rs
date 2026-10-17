@@ -20,6 +20,8 @@
 //! | `shenron_dbxv2_model_json` / `shenron_dbxv2_model_glb` | assembled EMD (+EMB, ESK) as JSON / GLB |
 //! | `shenron_dbxv2_usm_to_video(data, len, out)` | MP4 (H.264) or WebM (VP9) bytes, sniffed by magic |
 //! | `shenron_dbxv2_font_to_sfnt(data, len, out)` | validated TTF/OTF/WOFF bytes |
+//! | `shenron_dbxv2_xz_decode(data, len, out)` | decoded bytes of one xz stream (`.xz` asset fetched over HTTP) |
+//! | `shenron_dbxv2_read_asset(root, kind, cpk, path, out)` | bytes of `<root>/<kind>/<cpk>/<path>`, `.xz`/`.gz` decoded transparently |
 
 use std::{
     cell::RefCell,
@@ -247,6 +249,43 @@ pub unsafe extern "C" fn shenron_dbxv2_audio_to_wav(
             packed.extend_from_slice(wave);
         }
         Ok(packed)
+    })
+}
+
+/// Decode one xz stream (an `.xz` asset of the DBXV2 origin).
+///
+/// # Safety
+/// `data` valid for `len` bytes, `out` writable.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn shenron_dbxv2_xz_decode(
+    data: *const u8,
+    len: usize,
+    out: *mut ShBuf,
+) -> c_int {
+    // SAFETY: forwarded caller contract.
+    let bytes = unsafe { input(data, len) };
+    run(out, || {
+        api::xz_decode(bytes).map_err(|error| error.to_string())
+    })
+}
+
+/// Read one asset of an assets tree on disk, decoding `.xz`/`.gz` storage transparently.
+///
+/// # Safety
+/// `root`, `kind`, `cpk` and `path` NUL-terminated, `out` writable.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn shenron_dbxv2_read_asset(
+    root: *const c_char,
+    kind: *const c_char,
+    cpk: *const c_char,
+    path: *const c_char,
+    out: *mut ShBuf,
+) -> c_int {
+    // SAFETY: forwarded caller contract.
+    let (root, kind, cpk, path) = unsafe { (text(root), text(kind), text(cpk), text(path)) };
+    run(out, || {
+        api::read_asset(std::path::Path::new(root), kind, cpk, path)
+            .map_err(|error| error.to_string())
     })
 }
 

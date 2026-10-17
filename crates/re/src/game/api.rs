@@ -248,6 +248,69 @@ pub fn audio_to_wav(bytes: &[u8]) -> Result<Vec<Vec<u8>>> {
 }
 
 // ---------------------------------------------------------------------------
+// Asset tree reader: `<kind>/<cpk>/<path>` stored raw, `.xz` or `.gz` (see docs/re/DBXV2.md).
+// ---------------------------------------------------------------------------
+
+/// Decode one xz stream (pure Rust, so the WebAssembly build carries no C dependency).
+pub fn xz_decode(bytes: &[u8]) -> Result<Vec<u8>> {
+    let mut out = Vec::with_capacity(bytes.len().saturating_mul(4));
+    lzma_rs::xz_decompress(&mut std::io::BufReader::new(bytes), &mut out).map_err(|error| {
+        ReError::ParseError {
+            context: "xz",
+            details: error.to_string(),
+        }
+    })?;
+    Ok(out)
+}
+
+/// Decode stored asset bytes according to the name they were fetched under: `.xz` is decoded,
+/// `.gz` is inflated, anything else is returned as is.
+pub fn decode_asset(bytes: Vec<u8>, name: &str) -> Result<Vec<u8>> {
+    if name.ends_with(".xz") {
+        xz_decode(&bytes)
+    } else if name.ends_with(".gz") {
+        use std::io::Read;
+        let mut out = Vec::new();
+        flate2::read::MultiGzDecoder::new(bytes.as_slice()).read_to_end(&mut out)?;
+        Ok(out)
+    } else {
+        Ok(bytes)
+    }
+}
+
+/// Read one asset of the assets tree at `root` (`<root>/<kind>/<cpk>/<path>`), whichever
+/// way it is stored: `<path>.xz`, `<path>.gz` or the raw `<path>` (audio, video).
+#[cfg(feature = "dbxv2")]
+pub fn read_asset(root: &std::path::Path, kind: &str, cpk: &str, path: &str) -> Result<Vec<u8>> {
+    let relative = std::path::Path::new(kind).join(cpk).join(path);
+    for part in relative.components() {
+        if matches!(
+            part,
+            std::path::Component::ParentDir
+                | std::path::Component::RootDir
+                | std::path::Component::Prefix(_)
+        ) {
+            return Err(ReError::CorruptHeader(format!("asset path escapes the tree: {path}")));
+        }
+    }
+    let base = root.join(&relative);
+    for suffix in [".xz", ".gz", ""] {
+        let mut candidate = base.clone().into_os_string();
+        candidate.push(suffix);
+        match std::fs::read(&candidate) {
+            Ok(bytes) => return decode_asset(bytes, suffix),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error.into()),
+        }
+    }
+    Err(std::io::Error::new(
+        std::io::ErrorKind::NotFound,
+        format!("{kind}/{cpk}/{path}"),
+    )
+    .into())
+}
+
+// ---------------------------------------------------------------------------
 // On-demand CPK service: range-read index, find and read (never the whole archive).
 // ---------------------------------------------------------------------------
 
@@ -594,6 +657,12 @@ pub fn cpk_read_file(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn decode_asset_passes_raw_bytes_through() {
+        assert_eq!(decode_asset(b"raw".to_vec(), "x.emd").unwrap(), b"raw");
+        assert!(xz_decode(b"not xz").is_err());
+    }
 
     #[test]
     fn identify_uses_magic_then_extension() {

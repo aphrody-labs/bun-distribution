@@ -23,6 +23,7 @@ export interface Dbxv2WasmGlue {
   wasm_model_json(name: string, emd: Uint8Array, emb?: Uint8Array, esk?: Uint8Array): ModelJson;
   wasm_model_glb(name: string, emd: Uint8Array, emb?: Uint8Array, esk?: Uint8Array): Uint8Array;
   wasm_font_to_sfnt(bytes: Uint8Array): Uint8Array;
+  wasm_xz_decode(bytes: Uint8Array): Uint8Array;
   wasm_cpk_find(read: RangeReader, label: string, query: string): IndexEntry[];
   wasm_cpk_read(read: RangeReader, label: string, path: string, start: number, len: number): Uint8Array;
   /** The next three exist only when the module was built with the `dbxv2` feature as well. */
@@ -50,6 +51,7 @@ export async function loadDbxv2Wasm(glue: Dbxv2WasmGlue, wasm?: unknown): Promis
     modelGlb: (name, emd, emb, esk) => glue.wasm_model_glb(name, emd, emb, esk),
     usmToVideo: bytes => needs(glue.wasm_usm_to_video, "video remux")(bytes).bytes,
     fontToSfnt: bytes => glue.wasm_font_to_sfnt(bytes),
+    xzDecode: bytes => glue.wasm_xz_decode(bytes),
     cpkFind: (read, label, query = "") => glue.wasm_cpk_find(read, label, query),
     cpkRead: (read, label, entry, range) =>
       glue.wasm_cpk_read(read, label, entry, range?.start ?? 0, range?.length ?? 0),

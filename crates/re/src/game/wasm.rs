@@ -55,6 +55,12 @@ pub fn wasm_triage_cpk(bytes: &[u8]) -> Result<JsValue, JsValue> {
     serde_wasm_bindgen::to_value(&summary).map_err(to_js_err)
 }
 
+/// Decode an xz-compressed DBXV2 asset (`<kind>/<cpk>/<path>.xz`) in pure Rust.
+#[wasm_bindgen]
+pub fn wasm_xz_decode(bytes: &[u8]) -> Result<Vec<u8>, JsValue> {
+    crate::game::api::xz_decode(bytes).map_err(to_js_err)
+}
+
 /// Extract a single file from a CPK archive by path or name (CRILAYLA is decompressed).
 #[wasm_bindgen]
 pub fn wasm_extract_cpk_file(archive_bytes: &[u8], filename: &str) -> Result<Vec<u8>, JsValue> {

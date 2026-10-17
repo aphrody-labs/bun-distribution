@@ -1,7 +1,7 @@
 import { dlopen, FFIType, ptr, toArrayBuffer } from "bun:ffi";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { CpkEntry, Dbxv2, Dbxv2CpkFiles, FormatInfo, IndexEntry, ModelJson, Summary } from "./types.ts";
+import type { AssetKind, CpkEntry, Dbxv2, Dbxv2CpkFiles, FormatInfo, IndexEntry, ModelJson, Summary } from "./types.ts";
 
 /** ABI version this loader was written against (`shenron_dbxv2_abi_version`). */
 export const EXPECTED_ABI_VERSION = 1;
@@ -66,6 +66,11 @@ const symbols = {
   },
   shenron_dbxv2_usm_to_video: { args: [FFIType.ptr, FFIType.u64, FFIType.ptr], returns: FFIType.i32 },
   shenron_dbxv2_font_to_sfnt: { args: [FFIType.ptr, FFIType.u64, FFIType.ptr], returns: FFIType.i32 },
+  shenron_dbxv2_xz_decode: { args: [FFIType.ptr, FFIType.u64, FFIType.ptr], returns: FFIType.i32 },
+  shenron_dbxv2_read_asset: {
+    args: [FFIType.cstring, FFIType.cstring, FFIType.cstring, FFIType.cstring, FFIType.ptr],
+    returns: FFIType.i32,
+  },
 } as const;
 
 /** NUL-terminated UTF-8 argument for a `const char *` parameter. */
@@ -74,7 +79,12 @@ function cstr(value: string): Uint8Array {
 }
 
 /** Load the C ABI and return the typed operations. Throws on an ABI version mismatch. */
-export function loadDbxv2Ffi(libraryPath?: string): Dbxv2 & Dbxv2CpkFiles & { close(): void } {
+export function loadDbxv2Ffi(libraryPath?: string): Dbxv2 &
+  Dbxv2CpkFiles & {
+    /** Synchronous read of one asset of a local assets tree; `.xz`/`.gz` storage is decoded natively. */
+    readAssetFile(root: string, kind: AssetKind, cpk: string, path: string): Uint8Array;
+    close(): void;
+  } {
   const library = dlopen(resolveLibraryPath(libraryPath), symbols);
   const native = library.symbols;
   const abi = native.shenron_dbxv2_abi_version();
@@ -175,6 +185,17 @@ export function loadDbxv2Ffi(libraryPath?: string): Dbxv2 & Dbxv2CpkFiles & { cl
       ),
     usmToVideo: bytes => call(out => native.shenron_dbxv2_usm_to_video(ptr(bytes), size(bytes), ptr(out))),
     fontToSfnt: bytes => call(out => native.shenron_dbxv2_font_to_sfnt(ptr(bytes), size(bytes), ptr(out))),
+    xzDecode: bytes => call(out => native.shenron_dbxv2_xz_decode(ptr(bytes), size(bytes), ptr(out))),
+    readAssetFile: (root, kind, cpk, path) =>
+      call(out =>
+        native.shenron_dbxv2_read_asset(
+          cstr(root) as never,
+          cstr(kind) as never,
+          cstr(cpk) as never,
+          cstr(path) as never,
+          ptr(out),
+        ),
+      ),
     close: () => library.close(),
   };
 }

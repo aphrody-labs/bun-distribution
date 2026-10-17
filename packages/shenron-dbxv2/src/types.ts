@@ -88,6 +88,17 @@ export interface Dbxv2 {
   usmToVideo(bytes: Uint8Array): Uint8Array;
   /** Validated TTF/OTF/WOFF bytes; Iggy bundles are refused. */
   fontToSfnt(bytes: Uint8Array): Uint8Array;
+  /** Decode one xz stream: a `.xz` asset of the DBXV2 origin (pure Rust, no npm xz library). */
+  xzDecode(bytes: Uint8Array): Uint8Array;
+}
+
+/** Asset kinds of the assets tree; `audio` and `video` are stored raw, the others as `.xz`. */
+export type AssetKind = "models" | "textures" | "audio" | "video" | "text" | "data";
+
+/** Reader of the assets tree, from a local directory or the HTTP origin; `.xz`/`.gz` are decoded. */
+export interface Dbxv2Assets {
+  /** Bytes of `<kind>/<cpk>/<path>` as the game file, whichever way it is stored. */
+  readAsset(kind: AssetKind, cpk: string, path: string): Promise<Uint8Array>;
 }
 
 /** Window of the extracted bytes of an entry. */

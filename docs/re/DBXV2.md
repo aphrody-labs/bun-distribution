@@ -17,10 +17,22 @@ One capability merges four former owners:
 - `cpk_list` / `cpk_extract`: plain `CPK ` archives through the canonical `aphrody-nie-formats` reader (CRILAYLA decompressed).
 - `summarize(bytes, name)`: JSON for EMB, EMD (counts per part), ESK, CMS, CUS, PUP, MSG and the gameplay formats.
 - `audio_to_wav(bytes)` (feature `dbxv2`): HCA, ADX, AWB and embedded-AWB ACB to PCM16 WAV, one per subsong.
+- `xz_decode(bytes)` and `decode_asset(bytes, name)`: pure-Rust xz (`lzma-rs`, no C dependency, so also in the wasm build) and gzip decoding of stored assets; `read_asset(root, kind, cpk, path)` (feature `dbxv2`) reads from a local assets tree.
+
+## Assets tree and origin
+
+The private dump is reorganised by `scripts/aphrody/tools/infra/dbxv2-assets-layout.ts` into `<kind>/<cpk>/<path>` (`kind` = models, textures, audio, video, text, data) and served by the mesh-only nginx origin (`infra/config/host/nginx/private/dbxv2-assets.conf`, `10.200.77.1:8794`). Storage contract:
+
+- `models`, `textures`, `data`, `text`: stored once as `<path>.xz` (`xz -9e --threads=1`, about 30% smaller than gzip -9 on EMD). Clients request `/<kind>/<cpk>/<path>.xz`; the origin returns the xz stream untouched as `application/x-xz` (no `Content-Encoding`, no gzip/gunzip) and the client decodes it. A `<path>.gz` can only remain while a conversion is unfinished; it is still served inflated.
+- `audio`, `video`: raw, requested without suffix (`/video/` supports ranges).
+- `meta/index.jsonl`: one line per file with `cpk`, `path`, `kind`, `size` (original bytes), `gzip` (true only for a leftover `.gz`), `compression` (`"xz"`/`"gzip"`, absent for raw) and `stored` (bytes on disk).
+- Every `.xz` is decoded and its length compared with `size` before the previous copy is deleted.
+
+Decoding: `bun_re::game::api::{xz_decode, decode_asset, read_asset}`, `shenron_dbxv2_xz_decode` / `shenron_dbxv2_read_asset` (C ABI), `wasm_xz_decode` (wasm), and in `@shenron/dbxv2` `xzDecode` on both loaders, `loadDbxv2Ffi().readAssetFile(root, kind, cpk, path)` (sync, local tree) and `createAssetReader(origin, loader).readAsset(kind, cpk, path)` (async, local directory or `http(s)://` origin; `assetUrl()` builds the request URL).
 
 ## WebAssembly
 
-`wasm_identify_format`, `wasm_summarize`, `wasm_triage_cpk`, `wasm_extract_cpk_file` (feature `wasm`) and `wasm_audio_to_wav` (adds `dbxv2`) in `crates/re/src/game/wasm.rs`. Build with `wasm-pack build crates/re --target web --features wasm`. Typed loader: `loadDbxv2Wasm` in `@shenron/dbxv2`.
+`wasm_identify_format`, `wasm_summarize`, `wasm_triage_cpk`, `wasm_extract_cpk_file` (feature `wasm`) and `wasm_xz_decode`, `wasm_audio_to_wav` (adds `dbxv2`) in `crates/re/src/game/wasm.rs`. Build with `wasm-pack build crates/re --target web --features wasm`. Typed loader: `loadDbxv2Wasm` in `@shenron/dbxv2`.
 
 ## C ABI
 
