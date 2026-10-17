@@ -37,3 +37,20 @@ Logins are typed by the owner only:
 - Remote Play: sign in to the same Steam account on the workstation; the VPS appears under
   Steam > Settings > Remote Play. Enable "Allow direct connection (IP sharing)" on both clients if
   the LAN broadcast over `wg1` is not discovered.
+
+## Steam client and downloads
+
+- `steam.sh` restarts the VPS Steam client in `bun-os-gaming.slice` on Xvfb `:99` with `-silent`
+  (the software-rendered client UI otherwise costs ~1.5 cores), unthrottled downloads,
+  `steam_dev.cfg` (HTTP/1.1 chunk fetches, more CDN connections), no background Vulkan shader
+  processing (pointless on llvmpipe), and Proton Experimental for every Windows title
+  (`CompatToolMapping`, `STEAM_COMPAT` overrides per app id). It signs in through the session the
+  client already holds; it never handles credentials. The library is `/games/SteamLibrary`
+  (`~/.steam/steam/steamapps` links there).
+- `lancache.sh` runs the Bun LAN cache (`packages/bun-steam/src/lancache.ts`): Steam sends depot
+  chunks to `lancache.steamcontent.com` when it resolves to a private address, so the name is
+  pinned to `10.255.77.77` and nft-redirected to the proxy on port 8099 (nginx owns `*:80`).
+  Misses are fetched from Valve's CDN through public DNS and cached content-addressed under
+  `/games/cache/steam-lancache`; `GET /_lancache/audit` (or `bun lancache.ts audit`) returns the
+  JSON audit. Measured on a re-download of app 454650: 216/216 chunks served from cache on the
+  second pass, 0 errors over 808 requests.
