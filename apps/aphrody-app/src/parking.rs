@@ -45,7 +45,9 @@ pub fn hide_when_loaded<R: Runtime>(webview: &Webview<R>, event: &PageLoadEvent)
         return;
     }
     std::thread::spawn(move || {
-        let parked = window.outer_position().is_ok_and(|at| is_parked(at.x, at.y));
+        let parked = window
+            .outer_position()
+            .is_ok_and(|at| is_parked(at.x, at.y));
         if parked && let Err(error) = window.hide() {
             log::warn!("hiding the parked window {}: {error}", window.label());
         }
@@ -94,11 +96,17 @@ mod tests {
             assert_eq!(window["visible"], false, "{label} must start hidden");
             assert_eq!(window["x"], PARK, "{label} must be created parked");
             assert_eq!(window["y"], PARK, "{label} must be created parked");
-            assert!(window.get("center").is_none(), "{label}: `center` would undo the parking");
+            assert!(
+                window.get("center").is_none(),
+                "{label}: `center` would undo the parking"
+            );
         }
         for window in windows.iter().filter(|window| window["visible"] == false) {
             let label = window["label"].as_str().expect("label");
-            assert!(HIDDEN_AT_START.contains(&label), "{label} starts hidden but is not parked");
+            assert!(
+                HIDDEN_AT_START.contains(&label),
+                "{label} starts hidden but is not parked"
+            );
         }
     }
 }

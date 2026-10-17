@@ -18,7 +18,14 @@
 // Release builds on Windows are GUI-subsystem apps, so launching from the Start Menu or Explorer
 // doesn't open a console window. (`--version` output then only shows when redirected.)
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod app_dirs;
 mod app_icon;
@@ -67,8 +74,10 @@ const CUSTOM_TITLEBAR: bool = !cfg!(target_os = "macos");
 /// Interface › System Title Bar asks for the system's (#1271, #1316). Read from the saved
 /// preferences before the window opens; a missing or unreadable file keeps the default.
 fn custom_titlebar(prefs_file: Option<&std::path::Path>) -> bool {
-    let prefs: photocraft_engine::prefs::Preferences =
-        prefs_file.and_then(|p| std::fs::read_to_string(p).ok()).and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default();
+    let prefs: photocraft_engine::prefs::Preferences = prefs_file
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .and_then(|t| serde_json::from_str(&t).ok())
+        .unwrap_or_default();
     CUSTOM_TITLEBAR && !prefs.interface.system_title_bar
 }
 
@@ -113,7 +122,9 @@ fn restored_window(builder: egui::ViewportBuilder) -> egui::ViewportBuilder {
 /// clamped it), and the minimum size isn't applied to a restored one: PhotoCraft then reopened
 /// as a 160 × 64 strip on every launch.
 fn at_least_min_size(mut builder: egui::ViewportBuilder) -> egui::ViewportBuilder {
-    let (Some(size), Some(min)) = (builder.inner_size, builder.min_inner_size) else { return builder };
+    let (Some(size), Some(min)) = (builder.inner_size, builder.min_inner_size) else {
+        return builder;
+    };
     let grown = size.max(min);
     if grown != size {
         builder.position = builder.position.map(|pos| pos - (grown - size) / 2.0);
@@ -126,7 +137,9 @@ fn at_least_min_size(mut builder: egui::ViewportBuilder) -> egui::ViewportBuilde
 /// names the value (issue #701): silently running with no control server leaves a launcher or
 /// agent unable to tell a typo from a successful grant.
 fn parse_control_port(value: &str, source: &str) -> Result<u16, String> {
-    value.trim().parse().map_err(|_| format!("{source}: `{value}` is not a valid port (expected a number from 0 to 65535)"))
+    value.trim().parse().map_err(|_| {
+        format!("{source}: `{value}` is not a valid port (expected a number from 0 to 65535)")
+    })
 }
 
 /// Process exit status for the collected `--control` / `PHOTOCRAFT_CONTROL_PORT` errors: `None`
@@ -172,7 +185,10 @@ fn main() -> eframe::Result {
     photocraft_ui_egui::type_tool::warm_fonts();
     let mut control_port: Option<u16> = None;
     let mut control_arg_errors: Vec<String> = Vec::new();
-    if let Some(value) = std::env::var("PHOTOCRAFT_CONTROL_PORT").ok().filter(|v| !v.trim().is_empty()) {
+    if let Some(value) = std::env::var("PHOTOCRAFT_CONTROL_PORT")
+        .ok()
+        .filter(|v| !v.trim().is_empty())
+    {
         match parse_control_port(&value, "PHOTOCRAFT_CONTROL_PORT") {
             Ok(port) => control_port = Some(port),
             Err(error) => control_arg_errors.push(error),
@@ -180,15 +196,18 @@ fn main() -> eframe::Result {
     }
     let mut control_token = None;
     let mut control_token_file = None;
-    let mut automation_read_root = std::env::var_os("PHOTOCRAFT_AUTOMATION_READ_ROOT").map(std::path::PathBuf::from);
-    let mut automation_write_root = std::env::var_os("PHOTOCRAFT_AUTOMATION_WRITE_ROOT").map(std::path::PathBuf::from);
+    let mut automation_read_root =
+        std::env::var_os("PHOTOCRAFT_AUTOMATION_READ_ROOT").map(std::path::PathBuf::from);
+    let mut automation_write_root =
+        std::env::var_os("PHOTOCRAFT_AUTOMATION_WRITE_ROOT").map(std::path::PathBuf::from);
     let mut files = Vec::new();
     // Arguments that are not valid Unicode (issue #1108): a file manager can hand over a Latin-1
     // file name on Linux, and `std::env::args()` would panic before any window opened. Paths are
     // reported in a notice once the app is up; a control token is a usage error like a bad port.
     let mut unreadable_paths: Vec<String> = Vec::new();
     let mut safe_gpu = false;
-    let mut in_window_menus = std::env::var_os("PHOTOCRAFT_IN_WINDOW_MENUS").is_some_and(|v| !v.is_empty() && v != "0");
+    let mut in_window_menus =
+        std::env::var_os("PHOTOCRAFT_IN_WINDOW_MENUS").is_some_and(|v| !v.is_empty() && v != "0");
     let mut args = std::env::args_os().skip(1);
     while let Some(a) = args.next() {
         match a.to_str() {
@@ -197,20 +216,34 @@ fn main() -> eframe::Result {
                     Ok(port) => control_port = Some(port),
                     Err(error) => control_arg_errors.push(error),
                 },
-                None => control_arg_errors.push("--control: missing port value (expected `--control <port>`)".to_string()),
+                None => control_arg_errors.push(
+                    "--control: missing port value (expected `--control <port>`)".to_string(),
+                ),
             },
             Some("--control-token") => match args.next().map(std::ffi::OsString::into_string) {
                 Some(Ok(token)) => control_token = Some(token),
-                Some(Err(raw)) => control_arg_errors.push(format!("--control-token: value is not valid Unicode (`{}`)", raw.to_string_lossy())),
+                Some(Err(raw)) => control_arg_errors.push(format!(
+                    "--control-token: value is not valid Unicode (`{}`)",
+                    raw.to_string_lossy()
+                )),
                 None => control_token = None,
             },
-            Some("--control-token-file") => control_token_file = args.next().map(std::path::PathBuf::from),
-            Some("--automation-read-root") => automation_read_root = args.next().map(std::path::PathBuf::from),
-            Some("--automation-write-root") => automation_write_root = args.next().map(std::path::PathBuf::from),
+            Some("--control-token-file") => {
+                control_token_file = args.next().map(std::path::PathBuf::from)
+            }
+            Some("--automation-read-root") => {
+                automation_read_root = args.next().map(std::path::PathBuf::from)
+            }
+            Some("--automation-write-root") => {
+                automation_write_root = args.next().map(std::path::PathBuf::from)
+            }
             Some("--safe-gpu") => safe_gpu = true,
             Some("--in-window-menus") => in_window_menus = true,
             Some("--version") => {
-                println!("photocraft {}", photocraft_engine::build_info::long_version());
+                println!(
+                    "photocraft {}",
+                    photocraft_engine::build_info::long_version()
+                );
                 return Ok(());
             }
             // Old macOS passes a process serial number when launched from Finder.
@@ -234,7 +267,11 @@ fn main() -> eframe::Result {
     // and usage errors leave no file behind. Records logged until now are written to it first.
     if let (Some(logger), Some(dir)) = (logger, services::config_dir()) {
         match logger.attach_dir(&dir.join("logs")) {
-            Ok(path) => log::info!("PhotoCraft {}, log file {}", photocraft_engine::build_info::long_version(), path.display()),
+            Ok(path) => log::info!(
+                "PhotoCraft {}, log file {}",
+                photocraft_engine::build_info::long_version(),
+                path.display()
+            ),
             // Standard error only by now (`attach_dir` gave up on the file); unlike `eprintln!`, never panics.
             Err(e) => log::warn!("no log file: {e}"),
         }
@@ -251,11 +288,14 @@ fn main() -> eframe::Result {
     // run the window ($DISPLAY set, X11 libraries installed); otherwise the session's own.
     #[cfg(target_os = "linux")]
     let session = if session == linux_libs::DisplaySession::Wayland
-        && gpu_startup::read_display_server(services::prefs_file().as_deref()) == photocraft_engine::prefs::LinuxDisplayServer::X11
+        && gpu_startup::read_display_server(services::prefs_file().as_deref())
+            == photocraft_engine::prefs::LinuxDisplayServer::X11
         && std::env::var_os("DISPLAY").is_some_and(|d| !d.is_empty())
         && linux_libs::available(linux_libs::DisplaySession::X11)
     {
-        eprintln!("photocraft: opening the window through Xwayland (Preferences › Performance › Linux display server)");
+        eprintln!(
+            "photocraft: opening the window through Xwayland (Preferences › Performance › Linux display server)"
+        );
         linux_libs::DisplaySession::X11
     } else {
         session
@@ -270,8 +310,12 @@ fn main() -> eframe::Result {
     }
 
     let control = if let Some(port) = control_port {
-        let (supplied, token_file) = photocraft_automation::security::token_inputs(control_token, control_token_file);
-        let token = match photocraft_automation::security::server_token(supplied.as_deref(), token_file.as_deref()) {
+        let (supplied, token_file) =
+            photocraft_automation::security::token_inputs(control_token, control_token_file);
+        let token = match photocraft_automation::security::server_token(
+            supplied.as_deref(),
+            token_file.as_deref(),
+        ) {
             Ok(token) => token,
             Err(e) => {
                 eprintln!("photocraft: cannot configure control authentication: {e}");
@@ -285,7 +329,10 @@ fn main() -> eframe::Result {
         } else {
             eprintln!("photocraft: using supplied control token");
         }
-        let workspace = match photocraft_automation::AuthorizedWorkspace::new(automation_read_root.as_deref(), automation_write_root.as_deref()) {
+        let workspace = match photocraft_automation::AuthorizedWorkspace::new(
+            automation_read_root.as_deref(),
+            automation_write_root.as_deref(),
+        ) {
             Ok(workspace) => workspace,
             Err(error) => {
                 eprintln!("photocraft: cannot configure automation workspace: {error}");
@@ -340,24 +387,51 @@ fn main() -> eframe::Result {
         None => (gpu_startup::Previous::Clean, None),
     };
     let env_backend = std::env::var("WGPU_BACKEND").ok();
-    let plan = gpu_startup::plan_with_mode(pref, mode, previous.crashed(), env_backend.as_deref(), safe_gpu, os);
+    let plan = gpu_startup::plan_with_mode(
+        pref,
+        mode,
+        previous.crashed(),
+        env_backend.as_deref(),
+        safe_gpu,
+        os,
+    );
     if let Some(m) = previous.crashed() {
-        log::warn!("the previous start didn't finish (GPU backend {}, adapter {:?}); {}", m.backend, m.adapter, plan.reason.as_deref().unwrap_or(""));
+        log::warn!(
+            "the previous start didn't finish (GPU backend {}, adapter {:?}); {}",
+            m.backend,
+            m.adapter,
+            plan.reason.as_deref().unwrap_or("")
+        );
     }
-    let sentinel: gpu_startup::SharedSentinel = std::sync::Arc::new(std::sync::Mutex::new(sentinel));
-    if let Some(s) = sentinel.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_mut() {
+    let sentinel: gpu_startup::SharedSentinel =
+        std::sync::Arc::new(std::sync::Mutex::new(sentinel));
+    if let Some(s) = sentinel
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .as_mut()
+    {
         let backend = match &plan.env {
             Some(v) => format!("env:{v}"),
             None => plan.backend.name().to_string(),
         };
-        let marker = gpu_startup::Marker { backend, version: photocraft_engine::build_info::long_version().to_string(), ..Default::default() };
+        let marker = gpu_startup::Marker {
+            backend,
+            version: photocraft_engine::build_info::long_version().to_string(),
+            ..Default::default()
+        };
         if let Err(e) = s.write(marker) {
             log::warn!("GPU startup marker: {e}");
         }
     }
     let gpu_note: std::sync::Arc<std::sync::Mutex<Option<String>>> = Default::default();
     // The adapter's real texture limits (egui asks for 8192 px), so big documents stay on the GPU.
-    gpu_startup::configure(&mut options.wgpu_options.wgpu_setup, &plan, os, sentinel.clone(), gpu_note.clone());
+    gpu_startup::configure(
+        &mut options.wgpu_options.wgpu_setup,
+        &plan,
+        os,
+        sentinel.clone(),
+        gpu_note.clone(),
+    );
     let sentinel_ms = t_sentinel.elapsed().as_secs_f64() * 1000.0;
     log::info!("GPU startup: {:?} ({sentinel_ms:.2} ms)", plan);
     let retry_cpu = !safe_gpu && plan.backend != photocraft_engine::prefs::GpuBackend::Cpu;
@@ -381,8 +455,11 @@ fn main() -> eframe::Result {
                 file_dialog_probe::start();
                 if services.is_wayland {
                     let var = |name| std::env::var(name).ok();
-                    services.xwayland_command =
-                        services::xwayland_command(var("FLATPAK_ID").as_deref(), var("APPIMAGE").as_deref(), std::env::var_os("DISPLAY").is_some());
+                    services.xwayland_command = services::xwayland_command(
+                        var("FLATPAK_ID").as_deref(),
+                        var("APPIMAGE").as_deref(),
+                        std::env::var_os("DISPLAY").is_some(),
+                    );
                 }
             }
             let mut app = PhotocraftApp::new(Session::new(), services);
@@ -399,17 +476,25 @@ fn main() -> eframe::Result {
             if let Some(rx) = monitor {
                 #[cfg(target_os = "linux")]
                 {
-                    app.services.read_displays = Some(std::sync::Arc::new(move || monitor_profile::detect_async_for_session(native_session)));
+                    app.services.read_displays = Some(std::sync::Arc::new(move || {
+                        monitor_profile::detect_async_for_session(native_session)
+                    }));
                 }
                 #[cfg(not(target_os = "linux"))]
                 {
-                    app.services.read_displays = Some(std::sync::Arc::new(monitor_profile::detect_async));
+                    app.services.read_displays =
+                        Some(std::sync::Arc::new(monitor_profile::detect_async));
                 }
                 match rx.recv_timeout(std::time::Duration::from_secs(2)) {
                     Ok(r) => photocraft_ui_egui::monitor_status::apply(&mut app, r),
-                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => photocraft_ui_egui::monitor_status::pending(&mut app, rx),
+                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                        photocraft_ui_egui::monitor_status::pending(&mut app, rx)
+                    }
                     Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
-                        photocraft_ui_egui::monitor_status::apply(&mut app, Err("the display profile reader stopped without an answer".into()));
+                        photocraft_ui_egui::monitor_status::apply(
+                            &mut app,
+                            Err("the display profile reader stopped without an answer".into()),
+                        );
                     }
                 }
             }
@@ -417,22 +502,36 @@ fn main() -> eframe::Result {
             // composites on the CPU).
             let info = &mut app.perf.gpu_info;
             info.preference = pref.name().to_string();
-            info.selected = if plan.env.is_some() { "env".into() } else { plan.backend.name().to_string() };
-            info.fallback = match (plan.reason.clone(), gpu_note.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()) {
+            info.selected = if plan.env.is_some() {
+                "env".into()
+            } else {
+                plan.backend.name().to_string()
+            };
+            info.fallback = match (
+                plan.reason.clone(),
+                gpu_note
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .clone(),
+            ) {
                 (Some(reason), Some(note)) => Some(format!("{reason}. {note}")),
                 (reason, note) => reason.or(note),
             };
             info.canvas = "cpu".into();
             if let Some(rs) = cc.wgpu_render_state.clone() {
                 app.perf.gpu_info.set_adapter(&rs.adapter.get_info());
-                let software_window = rs.adapter.get_info().device_type == eframe::wgpu::DeviceType::Cpu;
+                let software_window =
+                    rs.adapter.get_info().device_type == eframe::wgpu::DeviceType::Cpu;
                 if software_window && mode != photocraft_engine::prefs::RenderingMode::Cpu {
-                    app.perf.gpu_info.fallback = Some("No compatible hardware graphics adapter; using software graphics.".into());
+                    app.perf.gpu_info.fallback = Some(
+                        "No compatible hardware graphics adapter; using software graphics.".into(),
+                    );
                 }
                 if !software_window
                     && plan.backend != photocraft_engine::prefs::GpuBackend::Cpu
                     && std::env::var_os("PHOTOCRAFT_CPU_CANVAS").is_none()
-                    && app.session.prefs().performance.effective_rendering_mode() != photocraft_engine::prefs::RenderingMode::Cpu
+                    && app.session.prefs().performance.effective_rendering_mode()
+                        != photocraft_engine::prefs::RenderingMode::Cpu
                 {
                     app.set_wgpu(rs);
                 } else {
@@ -440,21 +539,28 @@ fn main() -> eframe::Result {
                     let _ = photocraft_ui_egui::gpu_canvas::DeviceHealth::watch(&rs.device);
                 }
             }
-            let fallback_reason = std::env::var("PHOTOCRAFT_GPU_STARTUP_FAILURE").ok().or_else(|| {
-                (app.perf.gpu_info.canvas == "cpu" && mode != photocraft_engine::prefs::RenderingMode::Cpu)
-                    .then(|| app.perf.gpu_info.fallback.clone())
-                    .flatten()
-            });
+            let fallback_reason = std::env::var("PHOTOCRAFT_GPU_STARTUP_FAILURE")
+                .ok()
+                .or_else(|| {
+                    (app.perf.gpu_info.canvas == "cpu"
+                        && mode != photocraft_engine::prefs::RenderingMode::Cpu)
+                        .then(|| app.perf.gpu_info.fallback.clone())
+                        .flatten()
+                });
             if let Some(reason) = fallback_reason {
                 photocraft_ui_egui::gpu_status::queue_fallback_notice(&mut app, &reason);
             }
             app.perf.span("gpuSentinel", sentinel_ms);
             // Once the first frames rendered: clear the marker, and keep a crash fallback.
-            let remember_cpu =
-                std::env::var_os("PHOTOCRAFT_GPU_STARTUP_FAILURE").is_some() || (plan.remember && plan.backend == photocraft_engine::prefs::GpuBackend::Cpu);
+            let remember_cpu = std::env::var_os("PHOTOCRAFT_GPU_STARTUP_FAILURE").is_some()
+                || (plan.remember && plan.backend == photocraft_engine::prefs::GpuBackend::Cpu);
             let remember = plan.remember.then_some(plan.backend);
             app.on_started(move |app| {
-                if let Some(s) = started_sentinel.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take() {
+                if let Some(s) = started_sentinel
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .take()
+                {
                     s.finish();
                 }
                 if remember_cpu
@@ -469,7 +575,10 @@ fn main() -> eframe::Result {
                 }
                 if let Some(b) = remember
                     && app.session.prefs().performance.gpu_backend != b
-                    && let Err(e) = app.run("prefs.set", serde_json::json!({"path": "performance.gpuBackend", "value": b.name()}))
+                    && let Err(e) = app.run(
+                        "prefs.set",
+                        serde_json::json!({"path": "performance.gpuBackend", "value": b.name()}),
+                    )
                 {
                     log::warn!("couldn't remember GPU backend {}: {e}", b.name());
                 }
@@ -516,13 +625,30 @@ fn main() -> eframe::Result {
             app.open_paths(&files);
             if !unreadable_paths.is_empty() {
                 use photocraft_ui_egui::i18n;
-                let line = i18n::t("{path}: the path is not valid Unicode; rename the file and open it again.");
-                let lines = unreadable_paths.iter().map(|p| i18n::fmt(line, &[("path", p.as_str())])).collect();
-                photocraft_ui_egui::notices::post(&mut app, i18n::t("Could not open"), lines, true, None);
+                let line = i18n::t(
+                    "{path}: the path is not valid Unicode; rename the file and open it again.",
+                );
+                let lines = unreadable_paths
+                    .iter()
+                    .map(|p| i18n::fmt(line, &[("path", p.as_str())]))
+                    .collect();
+                photocraft_ui_egui::notices::post(
+                    &mut app,
+                    i18n::t("Could not open"),
+                    lines,
+                    true,
+                    None,
+                );
             }
             // Portable marker found but its data folder isn't writable (#228): say where settings went.
             if let Some(w) = &app_dirs::current().warning {
-                photocraft_ui_egui::notices::post(&mut app, "Portable mode is off", vec![w.clone()], false, None);
+                photocraft_ui_egui::notices::post(
+                    &mut app,
+                    "Portable mode is off",
+                    vec![w.clone()],
+                    false,
+                    None,
+                );
             }
             Ok(Box::new(app))
         }),
@@ -532,7 +658,10 @@ fn main() -> eframe::Result {
     // a failed CPU start would otherwise pin every later start to CPU.
     let renderer_error = gpu_startup::keep_marker_after_run(&result);
     if !(renderer_error && keep_marker)
-        && let Some(mut s) = sentinel.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take()
+        && let Some(mut s) = sentinel
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take()
     {
         if result.is_err()
             && !renderer_error
@@ -549,9 +678,20 @@ fn main() -> eframe::Result {
     }
     // Retry in a fresh process: winit event loops cannot be recreated reliably in-process.
     // Only renderer initialization failures qualify; never restart after editing has begun.
-    if retry_cpu && !app_created.load(std::sync::atomic::Ordering::Relaxed) && matches!(&result, Err(eframe::Error::Wgpu(_))) {
-        let reason = result.as_ref().err().map(ToString::to_string).unwrap_or_default();
-        if let Some(s) = sentinel.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take() {
+    if retry_cpu
+        && !app_created.load(std::sync::atomic::Ordering::Relaxed)
+        && matches!(&result, Err(eframe::Error::Wgpu(_)))
+    {
+        let reason = result
+            .as_ref()
+            .err()
+            .map(ToString::to_string)
+            .unwrap_or_default();
+        if let Some(s) = sentinel
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take()
+        {
             s.finish();
         }
         if let Ok(exe) = std::env::current_exe() {
@@ -576,7 +716,10 @@ mod tests {
     fn window_and_panel_geometry_survive_a_restart() {
         let options = super::native_options(super::CUSTOM_TITLEBAR);
         assert!(options.persist_window);
-        assert_eq!(options.persistence_path, super::services::config_dir().map(|dir| dir.join("ui.ron")));
+        assert_eq!(
+            options.persistence_path,
+            super::services::config_dir().map(|dir| dir.join("ui.ron"))
+        );
 
         #[derive(Default)]
         struct Storage(std::collections::BTreeMap<String, String>);
@@ -593,9 +736,17 @@ mod tests {
             fn flush(&mut self) {}
         }
         let ctx = egui::Context::default();
-        let input = || egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1200.0, 800.0))), ..Default::default() };
+        let input = || egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(1200.0, 800.0),
+            )),
+            ..Default::default()
+        };
         let mut output = ctx.run_ui(input(), |ui| {
-            egui::Panel::right("dock").exact_size(410.0).show(ui, |ui| ui.set_min_width(ui.available_width()));
+            egui::Panel::right("dock")
+                .exact_size(410.0)
+                .show(ui, |ui| ui.set_min_width(ui.available_width()));
         });
         output.textures_delta.clear();
         let mut storage = Storage::default();
@@ -603,17 +754,23 @@ mod tests {
         let restored = egui::Context::default();
         restored.memory_mut(|memory| *memory = eframe::get_value(&storage, "egui").unwrap());
         let mut output = restored.run_ui(input(), |ui| {
-            egui::Panel::right("dock").default_size(290.0).show(ui, |ui| ui.set_min_width(ui.available_width()));
+            egui::Panel::right("dock")
+                .default_size(290.0)
+                .show(ui, |ui| ui.set_min_width(ui.available_width()));
         });
         output.textures_delta.clear();
-        let panel = egui::containers::panel::PanelState::load(&restored, egui::Id::new("dock")).unwrap();
+        let panel =
+            egui::containers::panel::PanelState::load(&restored, egui::Id::new("dock")).unwrap();
         assert_eq!(panel.size().x, 410.0);
     }
 
     #[test]
     fn the_window_opens_centred_at_its_default_size() {
         let o = super::native_options(super::CUSTOM_TITLEBAR);
-        assert!(o.centered, "#419: centred, not cascaded from the top-left corner");
+        assert!(
+            o.centered,
+            "#419: centred, not cascaded from the top-left corner"
+        );
         assert_eq!(o.viewport.inner_size, Some(egui::vec2(1440.0, 900.0)));
         // eframe shrinks the start size to the monitor, so the centred position is on-screen.
         assert_ne!(o.viewport.clamp_size_to_monitor_size, Some(false));
@@ -621,20 +778,39 @@ mod tests {
 
     #[test]
     fn a_window_saved_while_minimized_reopens_at_the_minimum_size() {
-        let hook = super::native_options(super::CUSTOM_TITLEBAR).window_builder.expect("a window builder hook");
+        let hook = super::native_options(super::CUSTOM_TITLEBAR)
+            .window_builder
+            .expect("a window builder hook");
         // Saved minimized on Windows, then centred on a 1920 × 1080 monitor by eframe.
-        let saved = super::native_options(super::CUSTOM_TITLEBAR).viewport.with_inner_size([160.0, 64.0]).with_position([880.0, 508.0]);
+        let saved = super::native_options(super::CUSTOM_TITLEBAR)
+            .viewport
+            .with_inner_size([160.0, 64.0])
+            .with_position([880.0, 508.0]);
         let opened = hook(saved);
         assert_eq!(opened.inner_size, Some(egui::vec2(760.0, 480.0)));
-        assert_eq!(opened.position, Some(egui::pos2(580.0, 300.0)), "still centred");
+        assert_eq!(
+            opened.position,
+            Some(egui::pos2(580.0, 300.0)),
+            "still centred"
+        );
         // Too narrow only: only the width grows.
-        let opened = super::at_least_min_size(super::native_options(false).viewport.with_inner_size([500.0, 900.0]));
+        let opened = super::at_least_min_size(
+            super::native_options(false)
+                .viewport
+                .with_inner_size([500.0, 900.0]),
+        );
         assert_eq!(opened.inner_size, Some(egui::vec2(760.0, 900.0)));
         // A window at or above the minimum, or with no size, is left alone.
         for size in [[760.0, 480.0], [1100.0, 760.0]] {
-            let builder = super::native_options(false).viewport.with_inner_size(size).with_position([10.0, 20.0]);
+            let builder = super::native_options(false)
+                .viewport
+                .with_inner_size(size)
+                .with_position([10.0, 20.0]);
             let opened = super::at_least_min_size(builder);
-            assert_eq!((opened.inner_size, opened.position), (Some(egui::Vec2::from(size)), Some(egui::pos2(10.0, 20.0))));
+            assert_eq!(
+                (opened.inner_size, opened.position),
+                (Some(egui::Vec2::from(size)), Some(egui::pos2(10.0, 20.0)))
+            );
         }
         let mut builder = super::native_options(false).viewport;
         builder.inner_size = None;
@@ -643,7 +819,9 @@ mod tests {
 
     #[test]
     fn a_window_saved_in_full_screen_reopens_maximized_not_full_screen() {
-        let hook = super::native_options(super::CUSTOM_TITLEBAR).window_builder.expect("a window builder hook");
+        let hook = super::native_options(super::CUSTOM_TITLEBAR)
+            .window_builder
+            .expect("a window builder hook");
         // What eframe restores from a ui.ron saved in a full-screen mode on Windows.
         let saved = super::native_options(super::CUSTOM_TITLEBAR)
             .viewport
@@ -652,8 +830,16 @@ mod tests {
             .with_fullscreen(true)
             .with_maximized(true);
         let opened = hook(saved);
-        assert_eq!(opened.fullscreen, Some(false), "Standard Screen Mode is where PhotoCraft starts");
-        assert_eq!(opened.maximized, Some(true), "the rest of the saved geometry is kept");
+        assert_eq!(
+            opened.fullscreen,
+            Some(false),
+            "Standard Screen Mode is where PhotoCraft starts"
+        );
+        assert_eq!(
+            opened.maximized,
+            Some(true),
+            "the rest of the saved geometry is kept"
+        );
         assert_eq!(opened.inner_size, Some(egui::vec2(2560.0, 1392.0)));
     }
 
@@ -664,16 +850,30 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("pc-titlebar-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let file = dir.join("prefs.json");
-        assert_eq!(super::custom_titlebar(None), super::CUSTOM_TITLEBAR, "no preferences file: the default");
+        assert_eq!(
+            super::custom_titlebar(None),
+            super::CUSTOM_TITLEBAR,
+            "no preferences file: the default"
+        );
         std::fs::write(&file, "not json").unwrap();
-        assert_eq!(super::custom_titlebar(Some(&file)), super::CUSTOM_TITLEBAR, "an unreadable file: the default");
+        assert_eq!(
+            super::custom_titlebar(Some(&file)),
+            super::CUSTOM_TITLEBAR,
+            "an unreadable file: the default"
+        );
         std::fs::write(&file, r#"{"interface":{"systemTitleBar":true}}"#).unwrap();
         assert!(!super::custom_titlebar(Some(&file)));
-        assert_eq!(super::native_options(false).viewport.decorations, Some(true));
+        assert_eq!(
+            super::native_options(false).viewport.decorations,
+            Some(true)
+        );
         std::fs::write(&file, r#"{"interface":{"systemTitleBar":false}}"#).unwrap();
         assert_eq!(super::custom_titlebar(Some(&file)), super::CUSTOM_TITLEBAR);
         if super::CUSTOM_TITLEBAR {
-            assert_eq!(super::native_options(true).viewport.decorations, Some(false));
+            assert_eq!(
+                super::native_options(true).viewport.decorations,
+                Some(false)
+            );
         }
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -683,7 +883,9 @@ mod tests {
     #[test]
     fn the_desktop_entry_names_the_window_class() {
         let entry = include_str!("../packaging/linux/ai.storyteller.photocraft.desktop");
-        let class = entry.lines().find_map(|line| line.strip_prefix("StartupWMClass="));
+        let class = entry
+            .lines()
+            .find_map(|line| line.strip_prefix("StartupWMClass="));
         assert_eq!(class, Some(super::APP_ID));
     }
 }

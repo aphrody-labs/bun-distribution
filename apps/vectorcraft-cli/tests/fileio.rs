@@ -16,7 +16,11 @@ fn tmp(name: &str) -> String {
 
 fn ok(args: &[&str]) -> String {
     let out = Command::new(BIN).args(args).output().unwrap();
-    assert!(out.status.success(), "{args:?}: {}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "{args:?}: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     String::from_utf8(out.stdout).unwrap()
 }
 
@@ -70,23 +74,40 @@ fn images_open_at_their_pixel_size() {
     let webp = tmp("tiny.webp");
     make(&webp, 3, 2);
     let v = info(&webp);
-    assert_eq!(v["artboards"][0]["rect"], serde_json::json!([0.0, 0.0, 3.0, 2.0]), "{v}");
+    assert_eq!(
+        v["artboards"][0]["rect"],
+        serde_json::json!([0.0, 0.0, 3.0, 2.0]),
+        "{v}"
+    );
     assert_eq!(v["kinds"]["Image"], 1, "{v}");
     let png = tmp("tiny.png");
     ok(&["convert", &webp, &png, "--scale", "2"]);
-    assert_eq!(&std::fs::read(&png).unwrap()[16..24], [0, 0, 0, 6, 0, 0, 0, 4], "IHDR 6×4");
+    assert_eq!(
+        &std::fs::read(&png).unwrap()[16..24],
+        [0, 0, 0, 6, 0, 0, 0, 4],
+        "IHDR 6×4"
+    );
 }
 
 #[test]
 fn help_lists_readable_formats() {
     let out = ok(&["--help"]);
-    assert!(out.contains("Readable formats: .vectorcraft") && out.contains(".ait") && out.contains(".webp"), "{out}");
+    assert!(
+        out.contains("Readable formats: .vectorcraft")
+            && out.contains(".ait")
+            && out.contains(".webp"),
+        "{out}"
+    );
 }
 
 #[test]
 fn help_lists_perf_deep() {
     let out = ok(&["--help"]);
-    assert!(out.contains("vectorcraft-cli perf [--paths N] [--deep]") && out.contains("--deep also times"), "{out}");
+    assert!(
+        out.contains("vectorcraft-cli perf [--paths N] [--deep]")
+            && out.contains("--deep also times"),
+        "{out}"
+    );
 }
 
 /// `info` reports the import warnings: an EPS read only up to an error names it.
@@ -112,6 +133,12 @@ fn convert_reports_import_warnings() {
     .unwrap();
     let png = tmp("missing-link.png");
     let out: Value = serde_json::from_str(ok(&["convert", &svg, &png]).trim()).unwrap();
-    let w = out["importWarnings"].as_array().unwrap_or_else(|| panic!("{out}"));
-    assert!(w.iter().any(|w| w.as_str().unwrap().contains("nowhere-to-be-found.png")), "{out}");
+    let w = out["importWarnings"]
+        .as_array()
+        .unwrap_or_else(|| panic!("{out}"));
+    assert!(
+        w.iter()
+            .any(|w| w.as_str().unwrap().contains("nowhere-to-be-found.png")),
+        "{out}"
+    );
 }

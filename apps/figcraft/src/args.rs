@@ -15,12 +15,16 @@ pub struct Args {
 
 /// An invite link rather than a file (`figcraft:` links, in any case).
 pub fn is_invite(arg: &str) -> bool {
-    arg.get(..9).is_some_and(|s| s.eq_ignore_ascii_case("figcraft:"))
+    arg.get(..9)
+        .is_some_and(|s| s.eq_ignore_ascii_case("figcraft:"))
 }
 
 /// The path a local `file://` URL names (`%XX` escapes decoded); `None` for anything else.
 pub fn file_url_path(arg: &str) -> Option<String> {
-    let rest = arg.get(..7).filter(|s| s.eq_ignore_ascii_case("file://")).and(arg.get(7..))?;
+    let rest = arg
+        .get(..7)
+        .filter(|s| s.eq_ignore_ascii_case("file://"))
+        .and(arg.get(7..))?;
     let path = rest.strip_prefix("localhost").unwrap_or(rest);
     if !path.starts_with('/') {
         return None;
@@ -41,7 +45,11 @@ pub fn file_url_path(arg: &str) -> Option<String> {
     let path = String::from_utf8(out).ok()?;
     // `file:///C:/…` on Windows.
     let drive = matches!(path.as_bytes().get(1..3), Some([l, b':']) if l.is_ascii_alphabetic());
-    Some(if cfg!(windows) && drive { path.get(1..).unwrap_or_default().to_string() } else { path })
+    Some(if cfg!(windows) && drive {
+        path.get(1..).unwrap_or_default().to_string()
+    } else {
+        path
+    })
 }
 
 /// Read the arguments after the program name.

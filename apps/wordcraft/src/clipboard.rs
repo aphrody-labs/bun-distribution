@@ -13,7 +13,9 @@ use wordcraft_engine::cmd::paste::MAX_PASTE_BYTES;
 use wordcraft_ui_egui::paste_picture::ClipboardPicture;
 
 fn open() -> Option<arboard::Clipboard> {
-    arboard::Clipboard::new().map_err(|e| log::warn!("clipboard: {e}")).ok()
+    arboard::Clipboard::new()
+        .map_err(|e| log::warn!("clipboard: {e}"))
+        .ok()
 }
 
 /// The clipboard's text.
@@ -23,7 +25,11 @@ pub fn text() -> Option<String> {
 
 /// The clipboard's HTML (Windows: the fragment of its "HTML Format"), if not too large.
 pub fn html() -> Option<String> {
-    open()?.get().html().ok().filter(|h| h.len() <= MAX_PASTE_BYTES)
+    open()?
+        .get()
+        .html()
+        .ok()
+        .filter(|h| h.len() <= MAX_PASTE_BYTES)
 }
 
 /// The clipboard's RTF: Windows ("Rich Text Format") and Wayland (`text/rtf`); not offered by
@@ -34,7 +40,9 @@ pub fn rtf() -> Option<String> {
         return None;
     }
     // RTF is 7-bit by the spec; stray 8-bit bytes become replacement characters.
-    let s = String::from_utf8_lossy(&bytes).trim_end_matches('\0').to_string();
+    let s = String::from_utf8_lossy(&bytes)
+        .trim_end_matches('\0')
+        .to_string();
     s.trim_start().starts_with("{\\rtf").then_some(s)
 }
 
@@ -51,7 +59,9 @@ pub fn picture() -> Option<ClipboardPicture> {
         Ok(c) => c,
         Err(e) => {
             log::warn!("clipboard: {e}");
-            return Some(ClipboardPicture::Unreadable(format!("the system clipboard couldn't be opened ({e})")));
+            return Some(ClipboardPicture::Unreadable(format!(
+                "the system clipboard couldn't be opened ({e})"
+            )));
         }
     };
     if let Ok(files) = clipboard.get().file_list()
@@ -60,29 +70,54 @@ pub fn picture() -> Option<ClipboardPicture> {
         return Some(ClipboardPicture::Files(files));
     }
     match clipboard.get_image() {
-        Ok(image) => Some(ClipboardPicture::Pixels { width: image.width, height: image.height, rgba: image.bytes.into_owned() }),
-        Err(arboard::Error::ContentNotAvailable) => platform::encoded_picture().map(ClipboardPicture::Encoded),
+        Ok(image) => Some(ClipboardPicture::Pixels {
+            width: image.width,
+            height: image.height,
+            rgba: image.bytes.into_owned(),
+        }),
+        Err(arboard::Error::ContentNotAvailable) => {
+            platform::encoded_picture().map(ClipboardPicture::Encoded)
+        }
         Err(arboard::Error::ConversionFailure) => Some(
             platform::encoded_picture()
                 .map(ClipboardPicture::Encoded)
-                .unwrap_or_else(|| ClipboardPicture::Unreadable("WordCraft can't decode its format".into())),
+                .unwrap_or_else(|| {
+                    ClipboardPicture::Unreadable("WordCraft can't decode its format".into())
+                }),
         ),
         Err(e) => {
             log::warn!("clipboard picture: {e}");
-            platform::encoded_picture().map(ClipboardPicture::Encoded).or(Some(ClipboardPicture::Unreadable(e.to_string())))
+            platform::encoded_picture()
+                .map(ClipboardPicture::Encoded)
+                .or(Some(ClipboardPicture::Unreadable(e.to_string())))
         }
     }
 }
 
 /// Picture types read straight from Wayland when arboard (PNG only) finds none, best first.
-#[cfg(all(unix, not(any(target_os = "macos", target_os = "android", target_os = "emscripten"))))]
-const PICTURE_MIMES: [&str; 6] = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "image/x-bmp"];
+#[cfg(all(
+    unix,
+    not(any(target_os = "macos", target_os = "android", target_os = "emscripten"))
+))]
+const PICTURE_MIMES: [&str; 6] = [
+    "image/png",
+    "image/jpeg",
+    "image/gif",
+    "image/webp",
+    "image/bmp",
+    "image/x-bmp",
+];
 
-#[cfg(all(unix, not(any(target_os = "macos", target_os = "android", target_os = "emscripten"))))]
+#[cfg(all(
+    unix,
+    not(any(target_os = "macos", target_os = "android", target_os = "emscripten"))
+))]
 mod platform {
     use std::io::Read;
 
-    use wl_clipboard_rs::paste::{ClipboardType, MimeType, Seat, get_contents, get_mime_types_ordered};
+    use wl_clipboard_rs::paste::{
+        ClipboardType, MimeType, Seat, get_contents, get_mime_types_ordered,
+    };
 
     fn wayland() -> bool {
         std::env::var_os("WAYLAND_DISPLAY").is_some()
@@ -90,9 +125,16 @@ mod platform {
 
     /// One MIME type's bytes, at most `cap`; `None` when absent or larger.
     fn read(mime: &str, cap: u64) -> Option<Vec<u8>> {
-        let (pipe, _) = get_contents(ClipboardType::Regular, Seat::Unspecified, MimeType::Specific(mime)).ok()?;
+        let (pipe, _) = get_contents(
+            ClipboardType::Regular,
+            Seat::Unspecified,
+            MimeType::Specific(mime),
+        )
+        .ok()?;
         let mut out = Vec::new();
-        pipe.take(cap.saturating_add(1)).read_to_end(&mut out).ok()?;
+        pipe.take(cap.saturating_add(1))
+            .read_to_end(&mut out)
+            .ok()?;
         (out.len() as u64 <= cap).then_some(out)
     }
 
@@ -108,7 +150,9 @@ mod platform {
             return None;
         }
         let offered = formats();
-        let mime = ["text/rtf", "application/rtf", "text/richtext"].into_iter().find(|m| offered.iter().any(|o| o == m))?;
+        let mime = ["text/rtf", "application/rtf", "text/richtext"]
+            .into_iter()
+            .find(|m| offered.iter().any(|o| o == m))?;
         read(mime, super::MAX_PASTE_BYTES as u64)
     }
 
@@ -117,7 +161,9 @@ mod platform {
             return None;
         }
         let offered = formats();
-        let mime = super::PICTURE_MIMES.into_iter().find(|m| offered.iter().any(|o| o == m))?;
+        let mime = super::PICTURE_MIMES
+            .into_iter()
+            .find(|m| offered.iter().any(|o| o == m))?;
         read(mime, wordcraft_ui_egui::paste_picture::MAX_FILE_BYTES)
     }
 }
@@ -127,9 +173,14 @@ mod platform {
     use clipboard_win::{Clipboard, EnumFormats, raw};
 
     pub fn formats() -> Vec<String> {
-        let Ok(_open) = Clipboard::new_attempts(10) else { return Vec::new() };
+        let Ok(_open) = Clipboard::new_attempts(10) else {
+            return Vec::new();
+        };
         // Standard formats are named too (CF_BITMAP, CF_UNICODETEXT…).
-        EnumFormats::new().take(64).filter_map(raw::format_name_big).collect()
+        EnumFormats::new()
+            .take(64)
+            .filter_map(raw::format_name_big)
+            .collect()
     }
 
     pub fn rtf() -> Option<Vec<u8>> {
@@ -148,7 +199,13 @@ mod platform {
     }
 }
 
-#[cfg(not(any(target_os = "windows", all(unix, not(any(target_os = "macos", target_os = "android", target_os = "emscripten"))))))]
+#[cfg(not(any(
+    target_os = "windows",
+    all(
+        unix,
+        not(any(target_os = "macos", target_os = "android", target_os = "emscripten"))
+    )
+)))]
 mod platform {
     pub fn formats() -> Vec<String> {
         Vec::new()

@@ -31,7 +31,13 @@ use wasm_bindgen::prelude::*;
 #[wasm_bindgen(module = "/js/host.js")]
 extern "C" {
     #[wasm_bindgen(js_name = workerRun)]
-    fn worker_run(id: f64, json: &str, files: js_sys::Array, base: &str, on_message: &js_sys::Function);
+    fn worker_run(
+        id: f64,
+        json: &str,
+        files: js_sys::Array,
+        base: &str,
+        on_message: &js_sys::Function,
+    );
     #[wasm_bindgen(js_name = workerCancel)]
     fn worker_cancel(id: f64);
     #[wasm_bindgen(js_name = workerStats)]
@@ -61,48 +67,66 @@ impl Offload for WorkerOffload {
         let files = js_sys::Array::new();
         for p in &req.files {
             if let Some((d, version)) = crate::files::get_versioned(p) {
-                files.push(&js_sys::Array::of3(&JsValue::from_str(p), &js_sys::Uint8Array::from(&d[..]), &JsValue::from_f64(version as f64)));
+                files.push(&js_sys::Array::of3(
+                    &JsValue::from_str(p),
+                    &js_sys::Uint8Array::from(&d[..]),
+                    &JsValue::from_f64(version as f64),
+                ));
             }
         }
         let json = serde_json::to_string(&req).map_err(|e| e.to_string())?;
-        let on: OnMessage = Closure::new(move |kind: String, json: JsValue, path: JsValue, bytes: JsValue| {
-            match kind.as_str() {
-                "reply" => {
-                    let Some(t) = json.as_string() else { return };
-                    match serde_json::from_str::<WorkerReply>(&t) {
-                        Ok(r) => {
-                            if let WorkerReply::Segs { segs } = &r {
-                                crate::frames::relay_segs(segs);
+        let on: OnMessage = Closure::new(
+            move |kind: String, json: JsValue, path: JsValue, bytes: JsValue| {
+                match kind.as_str() {
+                    "reply" => {
+                        let Some(t) = json.as_string() else { return };
+                        match serde_json::from_str::<WorkerReply>(&t) {
+                            Ok(r) => {
+                                if let WorkerReply::Segs { segs } = &r {
+                                    crate::frames::relay_segs(segs);
+                                }
+                                let done = matches!(r, WorkerReply::Done);
+                                inbox.push(r);
+                                if done {
+                                    end(id);
+                                }
                             }
-                            let done = matches!(r, WorkerReply::Done);
-                            inbox.push(r);
-                            if done {
-                                end(id);
-                            }
+                            Err(e) => log::warn!("worker reply: {e}"),
                         }
-                        Err(e) => log::warn!("worker reply: {e}"),
+                    }
+                    "file" => {
+                        if let (Some(p), Ok(b)) =
+                            (path.as_string(), bytes.dyn_into::<js_sys::Uint8Array>())
+                        {
+                            crate::files::add_output(&p, b.to_vec().into());
+                        }
+                    }
+                    "store" => {
+                        // A file the job keeps (Content-Aware Fill's sequence): browser storage.
+                        if let (Some(p), Ok(b)) =
+                            (path.as_string(), bytes.dyn_into::<js_sys::Uint8Array>())
+                        {
+                            crate::files::put(&p, b.to_vec().into());
+                        }
+                    }
+                    _ => {
+                        inbox.push(WorkerReply::Failed {
+                            error: json.as_string().unwrap_or_else(|| "worker failed".into()),
+                        });
+                        inbox.push(WorkerReply::Done);
+                        end(id);
                     }
                 }
-                "file" => {
-                    if let (Some(p), Ok(b)) = (path.as_string(), bytes.dyn_into::<js_sys::Uint8Array>()) {
-                        crate::files::add_output(&p, b.to_vec().into());
-                    }
-                }
-                "store" => {
-                    // A file the job keeps (Content-Aware Fill's sequence): browser storage.
-                    if let (Some(p), Ok(b)) = (path.as_string(), bytes.dyn_into::<js_sys::Uint8Array>()) {
-                        crate::files::put(&p, b.to_vec().into());
-                    }
-                }
-                _ => {
-                    inbox.push(WorkerReply::Failed { error: json.as_string().unwrap_or_else(|| "worker failed".into()) });
-                    inbox.push(WorkerReply::Done);
-                    end(id);
-                }
-            }
-            crate::repaint();
-        });
-        worker_run(id as f64, &json, files, &crate::page_url(""), on.as_ref().unchecked_ref());
+                crate::repaint();
+            },
+        );
+        worker_run(
+            id as f64,
+            &json,
+            files,
+            &crate::page_url(""),
+            on.as_ref().unchecked_ref(),
+        );
         HANDLERS.with(|h| h.borrow_mut().insert(id, on));
         Ok(())
     }
@@ -145,7 +169,14 @@ fn obj(pairs: &[(&str, JsValue)]) -> JsValue {
 pub(crate) fn post_store(path: &str, data: &[u8]) {
     let bytes = js_sys::Uint8Array::from(data);
     let buf = bytes.buffer();
-    post(&obj(&[("type", "store".into()), ("path", path.into()), ("bytes", buf.clone().into())]), Some(&js_sys::Array::of1(&buf)));
+    post(
+        &obj(&[
+            ("type", "store".into()),
+            ("path", path.into()),
+            ("bytes", buf.clone().into()),
+        ]),
+        Some(&js_sys::Array::of1(&buf)),
+    );
 }
 
 /// Set up the worker's engine session (called once by `web/worker.js`).
@@ -159,7 +190,14 @@ pub fn worker_init() {
     let sink: Arc<effectcraft_export::Sink> = Arc::new(|path: &str, data: Vec<u8>| {
         let bytes = js_sys::Uint8Array::from(&data[..]);
         let buf = bytes.buffer();
-        post(&obj(&[("type", "file".into()), ("path", path.into()), ("bytes", buf.clone().into())]), Some(&js_sys::Array::of1(&buf)));
+        post(
+            &obj(&[
+                ("type", "file".into()),
+                ("path", path.into()),
+                ("bytes", buf.clone().into()),
+            ]),
+            Some(&js_sys::Array::of1(&buf)),
+        );
     });
     let s = Session {
         services: Arc::new(crate::files::WebServices),
@@ -167,7 +205,9 @@ pub fn worker_init() {
         importer: Some(Arc::new(crate::files::WebImporter { pool })),
         expr: Some(Arc::new(effectcraft_expr::Expressions)),
         expr_check: Some(effectcraft_expr::check_syntax),
-        exporter: Some(Arc::new(effectcraft_host::FileExporter { sink: Some(sink) })),
+        exporter: Some(Arc::new(effectcraft_host::FileExporter {
+            sink: Some(sink),
+        })),
         ..Default::default()
     };
     SESSION.with(|c| *c.borrow_mut() = Some(s));
@@ -175,7 +215,8 @@ pub fn worker_init() {
 
 /// The worker's media pool (footage files sent by the page).
 pub fn pool() -> Arc<effectcraft_media::MediaPool> {
-    POOL.with(|p| p.borrow().clone()).unwrap_or_else(|| Arc::new(effectcraft_media::MediaPool::new()))
+    POOL.with(|p| p.borrow().clone())
+        .unwrap_or_else(|| Arc::new(effectcraft_media::MediaPool::new()))
 }
 
 /// A footage file for the jobs that follow.
@@ -229,12 +270,21 @@ pub async fn worker_job(json: String) {
     let send: effectcraft_engine::offload::Post = Rc::new(|r: WorkerReply| {
         let done = matches!(r, WorkerReply::Done);
         let t = serde_json::to_string(&r).unwrap_or_default();
-        post(&obj(&[("type", "reply".into()), ("json", t.into()), ("done", done.into())]), None);
+        post(
+            &obj(&[
+                ("type", "reply".into()),
+                ("json", t.into()),
+                ("done", done.into()),
+            ]),
+            None,
+        );
     });
     let req: WorkerRequest = match serde_json::from_str(&json) {
         Ok(r) => r,
         Err(e) => {
-            send(WorkerReply::Failed { error: format!("bad request: {e}") });
+            send(WorkerReply::Failed {
+                error: format!("bad request: {e}"),
+            });
             send(WorkerReply::Done);
             return;
         }
@@ -242,12 +292,17 @@ pub async fn worker_job(json: String) {
     // The session leaves its slot while the job runs (the job awaits the GPU in between;
     // messages are handled one at a time, so nothing else needs it meanwhile).
     let Some(mut s) = SESSION.with(|c| c.borrow_mut().take()) else {
-        send(WorkerReply::Failed { error: "worker not initialised".into() });
+        send(WorkerReply::Failed {
+            error: "worker not initialised".into(),
+        });
         send(WorkerReply::Done);
         return;
     };
     let gpu = GPU.with(|c| c.borrow().clone());
-    let before = gpu.as_ref().and_then(|g| g.deferred_stats()).unwrap_or_default();
+    let before = gpu
+        .as_ref()
+        .and_then(|g| g.deferred_stats())
+        .unwrap_or_default();
     let t0 = web_time::Instant::now();
     let kind = format!("{:?}", req.job.kind());
     // `Done` is posted last by the job; the stats go out just before it.
@@ -255,7 +310,10 @@ pub async fn worker_job(json: String) {
     let (g2, s2) = (gpu.clone(), stats_sent.clone());
     let send2: effectcraft_engine::offload::Post = Rc::new(move |r: WorkerReply| {
         if matches!(r, WorkerReply::Done) && !s2.replace(true) {
-            let after = g2.as_ref().and_then(|g| g.deferred_stats()).unwrap_or_default();
+            let after = g2
+                .as_ref()
+                .and_then(|g| g.deferred_stats())
+                .unwrap_or_default();
             post(
                 &obj(&[
                     ("type", "stats".into()),

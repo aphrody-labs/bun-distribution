@@ -43,7 +43,10 @@ fn get(o: &JsValue, k: &str) -> JsValue {
 fn now() -> f64 {
     let perf = get(&js_sys::global(), "performance");
     let f = get(&perf, "now");
-    f.dyn_ref::<js_sys::Function>().and_then(|f| f.call0(&perf).ok()).and_then(|v| v.as_f64()).unwrap_or(0.0)
+    f.dyn_ref::<js_sys::Function>()
+        .and_then(|f| f.call0(&perf).ok())
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.0)
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -63,13 +66,17 @@ pub fn worker_main(store: String) {
     wasm_bindgen_futures::spawn_local(async move {
         let backend = match store.as_str() {
             "memory" => None,
-            _ => Backend::open(store == "idb").await.map_err(|e| log::warn!("render worker: no storage ({e})")).ok(),
+            _ => Backend::open(store == "idb")
+                .await
+                .map_err(|e| log::warn!("render worker: no storage ({e})"))
+                .ok(),
         };
         let s = scope.clone();
-        let onmessage = Closure::<dyn FnMut(web_sys::MessageEvent)>::new(move |e: web_sys::MessageEvent| {
-            let (s, b) = (s.clone(), backend.clone());
-            wasm_bindgen_futures::spawn_local(async move { handle(&s, b, e.data()).await });
-        });
+        let onmessage =
+            Closure::<dyn FnMut(web_sys::MessageEvent)>::new(move |e: web_sys::MessageEvent| {
+                let (s, b) = (s.clone(), backend.clone());
+                wasm_bindgen_futures::spawn_local(async move { handle(&s, b, e.data()).await });
+            });
         scope.set_onmessage(Some(onmessage.as_ref().unchecked_ref()));
         onmessage.forget();
         let ready = Object::new();
@@ -79,13 +86,19 @@ pub fn worker_main(store: String) {
 }
 
 /// Run one job message and post the result.
-async fn handle(scope: &web_sys::DedicatedWorkerGlobalScope, backend: Option<Backend>, msg: JsValue) {
+async fn handle(
+    scope: &web_sys::DedicatedWorkerGlobalScope,
+    backend: Option<Backend>,
+    msg: JsValue,
+) {
     let id = get(&msg, "id");
     let t0 = now();
     let out = Object::new();
     set(&out, "id", &id);
-    let job: Result<WireJob, String> =
-        get(&msg, "job").as_string().ok_or("no job".to_string()).and_then(|j| serde_json::from_str(&j).map_err(|e| e.to_string()));
+    let job: Result<WireJob, String> = get(&msg, "job")
+        .as_string()
+        .ok_or("no job".to_string())
+        .and_then(|j| serde_json::from_str(&j).map_err(|e| e.to_string()));
     let mut transfer = Array::new();
     let result: Result<(Rendered, u32), String> = async {
         let job = job?;
@@ -94,10 +107,23 @@ async fn handle(scope: &web_sys::DedicatedWorkerGlobalScope, backend: Option<Bac
         if job.thumb_cached
             && let (Some(b), Some(key)) = (&backend, job.thumb_key())
         {
-            match b.read(&key).await.ok().flatten().and_then(|bytes| lightcraft_preview::decode_jpeg(&bytes)) {
+            match b
+                .read(&key)
+                .await
+                .ok()
+                .flatten()
+                .and_then(|bytes| lightcraft_preview::decode_jpeg(&bytes))
+            {
                 Some(image) => {
                     let histogram = Histogram::of_srgb8(&image);
-                    return Ok((Rendered { image, histogram, deep: None }, 0));
+                    return Ok((
+                        Rendered {
+                            image,
+                            histogram,
+                            deep: None,
+                        },
+                        0,
+                    ));
                 }
                 None => cache_miss = true,
             }
@@ -192,7 +218,9 @@ struct Inner {
 
 impl Inner {
     fn observe_cache(&mut self, cache: &Arc<PreviewCache>, generation: u64) {
-        let gone = self.preview_generation.observe(cache, generation, &mut self.index);
+        let gone = self
+            .preview_generation
+            .observe(cache, generation, &mut self.index);
         if !gone.is_empty()
             && let Some(backend) = self.backend.clone()
         {
@@ -238,7 +266,9 @@ impl Workers {
         })));
         let module = get(&js_sys::global(), "lightcraftModule");
         if module.is_undefined() {
-            log::warn!("render workers: no compiled module on the page (window.lightcraftModule); rendering on the main thread");
+            log::warn!(
+                "render workers: no compiled module on the page (window.lightcraftModule); rendering on the main thread"
+            );
             return w;
         }
         let mut slots = WorkerSlots::default();
@@ -256,7 +286,9 @@ impl Workers {
                 }
             };
             let me = w.clone();
-            let onmessage = Closure::<dyn FnMut(web_sys::MessageEvent)>::new(move |e: web_sys::MessageEvent| me.on_message(i, e.data()));
+            let onmessage = Closure::<dyn FnMut(web_sys::MessageEvent)>::new(
+                move |e: web_sys::MessageEvent| me.on_message(i, e.data()),
+            );
             worker.set_onmessage(Some(onmessage.as_ref().unchecked_ref()));
             onmessage.forget();
             let me = w.clone();
@@ -274,14 +306,21 @@ impl Workers {
                 worker.terminate();
                 continue;
             }
-            w.0.borrow_mut().workers.push(W { worker, ready: false, dead: false, busy: None });
+            w.0.borrow_mut().workers.push(W {
+                worker,
+                ready: false,
+                dead: false,
+                busy: None,
+            });
             slots.commit();
         }
         w
     }
 
     fn on_error(&self, i: usize, e: JsValue) {
-        let msg = get(&e, "message").as_string().unwrap_or_else(|| format!("{e:?}"));
+        let msg = get(&e, "message")
+            .as_string()
+            .unwrap_or_else(|| format!("{e:?}"));
         log::error!("render worker {i} failed: {msg}");
         let mut g = self.0.borrow_mut();
         if let Some(w) = g.workers.get_mut(i) {
@@ -310,24 +349,40 @@ impl Workers {
         let mut g = self.0.borrow_mut();
         let g = &mut *g;
         g.ctx.request_repaint();
-        let Some(w) = g.workers.get_mut(i) else { return };
+        let Some(w) = g.workers.get_mut(i) else {
+            return;
+        };
         if get(&data, "ready").is_truthy() {
             w.ready = true;
             return;
         }
         let id = get(&data, "id").as_f64().unwrap_or(-1.0) as u32;
-        let Some(b) = w.busy.take_if(|b| b.id == id) else { return };
+        let Some(b) = w.busy.take_if(|b| b.id == id) else {
+            return;
+        };
         let ms = get(&data, "ms").as_f64().unwrap_or(0.0);
         let rendered = if get(&data, "ok").is_truthy() {
-            let (wd, ht) = (get(&data, "w").as_f64().unwrap_or(0.0) as usize, get(&data, "h").as_f64().unwrap_or(0.0) as usize);
+            let (wd, ht) = (
+                get(&data, "w").as_f64().unwrap_or(0.0) as usize,
+                get(&data, "h").as_f64().unwrap_or(0.0) as usize,
+            );
             let rgba = Uint8Array::new(&get(&data, "rgba")).to_vec();
             let hist = Uint32Array::new(&get(&data, "hist")).to_vec();
-            match (Rgba8::from_bytes(wd, ht, &rgba), Histogram::from_words(&hist)) {
-                (Some(image), Some(histogram)) => Ok(Rendered { image, histogram, deep: None }),
+            match (
+                Rgba8::from_bytes(wd, ht, &rgba),
+                Histogram::from_words(&hist),
+            ) {
+                (Some(image), Some(histogram)) => Ok(Rendered {
+                    image,
+                    histogram,
+                    deep: None,
+                }),
                 _ => Err("render worker: bad image".to_string()),
             }
         } else {
-            Err(get(&data, "err").as_string().unwrap_or_else(|| "render worker failed".into()))
+            Err(get(&data, "err")
+                .as_string()
+                .unwrap_or_else(|| "render worker failed".into()))
         };
         if let Ok(r) = &rendered
             && let Some((cache, key)) = &b.cache
@@ -432,7 +487,11 @@ impl RenderOffload for Workers {
                 photo: job.photo,
                 level: job.level,
                 key: job.key,
-                rendered: Ok(Rendered { image, histogram, deep: None }),
+                rendered: Ok(Rendered {
+                    image,
+                    histogram,
+                    deep: None,
+                }),
                 gpu_fallback: None,
                 loaded: None,
                 quick: None,
@@ -458,7 +517,12 @@ impl RenderOffload for Workers {
             // a decoded preview-level source, or the loupe's stage cache, is worth waiting for; a
             // thumbnail isn't
             Some(&i) if g.workers.get(i).is_some_and(free) => Some(i),
-            Some(&i) if (job.level == SourceLevel::Preview || job.stages.is_some()) && g.workers.get(i).is_some_and(|w| !w.dead) => None,
+            Some(&i)
+                if (job.level == SourceLevel::Preview || job.stages.is_some())
+                    && g.workers.get(i).is_some_and(|w| !w.dead) =>
+            {
+                None
+            }
             _ => g.workers.iter().position(free),
         };
         let Some(i) = pick else { return Some(job) };
@@ -470,7 +534,9 @@ impl RenderOffload for Workers {
         // The namespace also changes when a new library's cache starts again at generation zero.
         wire.cache_generation = g.index.namespace();
         wire.thumb = disk_key.clone();
-        let Ok(text) = serde_json::to_string(&wire) else { return Some(job) };
+        let Ok(text) = serde_json::to_string(&wire) else {
+            return Some(job);
+        };
         g.next_id = g.next_id.wrapping_add(1);
         let id = g.next_id;
         let msg = Object::new();

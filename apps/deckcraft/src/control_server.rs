@@ -40,14 +40,20 @@ fn serve(stream: TcpStream, tx: Sender<ControlRequest>, ctx: egui::Context) {
         let reply = match serde_json::from_str::<Value>(&line) {
             Ok(msg) => {
                 let id = msg.get("id").cloned().unwrap_or(Value::Null);
-                let method = msg.get("method").and_then(Value::as_str).unwrap_or("").to_string();
+                let method = msg
+                    .get("method")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_string();
                 let params = msg.get("params").cloned().unwrap_or(json!({}));
                 let (req, rrx) = ControlRequest::new(method, params);
                 if tx.send(req).is_err() {
                     break;
                 }
                 ctx.request_repaint();
-                let mut r = rrx.recv_timeout(Duration::from_secs(60)).unwrap_or_else(|_| json!({"ok": false, "error": "timeout"}));
+                let mut r = rrx
+                    .recv_timeout(Duration::from_secs(60))
+                    .unwrap_or_else(|_| json!({"ok": false, "error": "timeout"}));
                 if let Some(o) = r.as_object_mut() {
                     o.insert("id".into(), id);
                 }

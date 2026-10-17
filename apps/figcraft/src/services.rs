@@ -23,11 +23,14 @@ pub struct Desktop {
 
 pub fn config_dir() -> Option<PathBuf> {
     #[cfg(target_os = "macos")]
-    let base = std::env::var_os("HOME").map(|h| PathBuf::from(h).join("Library/Application Support"));
+    let base =
+        std::env::var_os("HOME").map(|h| PathBuf::from(h).join("Library/Application Support"));
     #[cfg(target_os = "windows")]
     let base = std::env::var_os("APPDATA").map(PathBuf::from);
     #[cfg(all(unix, not(target_os = "macos")))]
-    let base = std::env::var_os("XDG_CONFIG_HOME").map(PathBuf::from).or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")));
+    let base = std::env::var_os("XDG_CONFIG_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")));
     base.map(|b| b.join("FigCraft"))
 }
 
@@ -38,22 +41,39 @@ impl Desktop {
 
     /// With the preferences kept in `dir`.
     pub fn load_from(dir: Option<PathBuf>, recovery: crate::recovery::Shared) -> Self {
-        let state: Value =
-            dir.as_ref().and_then(|d| std::fs::read_to_string(d.join(STATE)).ok()).and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(json!({}));
-        let prefs = state.get("prefs").and_then(|p| serde_json::from_value::<Prefs>(p.clone()).ok()).map(|mut p| {
-            // Recent files lived next to the preferences before they moved into them.
-            if p.recent_files.is_empty()
-                && let Some(old) = state.get("recents").and_then(Value::as_array)
-            {
-                p.recent_files = old.iter().filter_map(|v| v.as_str().map(str::to_string)).collect();
-            }
-            p.recent_files.truncate(figcraft_engine::cmd::file::MAX_RECENT);
-            p
-        });
+        let state: Value = dir
+            .as_ref()
+            .and_then(|d| std::fs::read_to_string(d.join(STATE)).ok())
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .unwrap_or(json!({}));
+        let prefs = state
+            .get("prefs")
+            .and_then(|p| serde_json::from_value::<Prefs>(p.clone()).ok())
+            .map(|mut p| {
+                // Recent files lived next to the preferences before they moved into them.
+                if p.recent_files.is_empty()
+                    && let Some(old) = state.get("recents").and_then(Value::as_array)
+                {
+                    p.recent_files = old
+                        .iter()
+                        .filter_map(|v| v.as_str().map(str::to_string))
+                        .collect();
+                }
+                p.recent_files
+                    .truncate(figcraft_engine::cmd::file::MAX_RECENT);
+                p
+            });
         let reduce_motion = Arc::new(AtomicBool::new(false));
         let flag = reduce_motion.clone();
         std::thread::spawn(move || flag.store(system_reduce_motion(), Ordering::Relaxed));
-        Self { clipboard: arboard::Clipboard::new().ok(), dir, prefs, reduce_motion, language: system_language(), recovery }
+        Self {
+            clipboard: arboard::Clipboard::new().ok(),
+            dir,
+            prefs,
+            reduce_motion,
+            language: system_language(),
+            recovery,
+        }
     }
 }
 
@@ -64,14 +84,22 @@ fn system_language() -> Option<String> {
     #[cfg(target_os = "windows")]
     {
         windows::System::UserProfile::GlobalizationPreferences::Languages()
-            .map(|l| l.into_iter().map(|s| s.to_string()).collect::<Vec<_>>().join(","))
+            .map(|l| {
+                l.into_iter()
+                    .map(|s| s.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",")
+            })
             .inspect_err(|e| log::info!("language: can't read the system languages: {e}"))
             .ok()
     }
     // `defaults` prints a list: ( "es-ES", en ).
     #[cfg(target_os = "macos")]
     {
-        let out = std::process::Command::new("defaults").args(["read", "-g", "AppleLanguages"]).output().ok()?;
+        let out = std::process::Command::new("defaults")
+            .args(["read", "-g", "AppleLanguages"])
+            .output()
+            .ok()?;
         let list: Vec<String> = String::from_utf8_lossy(&out.stdout)
             .split(['(', ',', ')'])
             .map(|s| s.trim().trim_matches('"').to_string())
@@ -82,9 +110,17 @@ fn system_language() -> Option<String> {
     // gettext's `LANGUAGE` priority list ("fr:de"), then the locale ("fr_FR.UTF-8").
     #[cfg(all(unix, not(target_os = "macos")))]
     {
-        let var = |k: &str| std::env::var(k).ok().filter(|v| !v.is_empty() && v != "C" && v != "POSIX");
+        let var = |k: &str| {
+            std::env::var(k)
+                .ok()
+                .filter(|v| !v.is_empty() && v != "C" && v != "POSIX")
+        };
         let locale = ["LC_ALL", "LC_MESSAGES", "LANG"].into_iter().find_map(var);
-        let list: Vec<String> = var("LANGUAGE").map(|l| l.replace(':', ",")).into_iter().chain(locale).collect();
+        let list: Vec<String> = var("LANGUAGE")
+            .map(|l| l.replace(':', ","))
+            .into_iter()
+            .chain(locale)
+            .collect();
         (!list.is_empty()).then(|| list.join(","))
     }
     #[cfg(not(any(windows, unix)))]
@@ -108,11 +144,19 @@ fn system_reduce_motion() -> bool {
     }
     #[cfg(target_os = "macos")]
     {
-        command_says("defaults", &["read", "com.apple.universalaccess", "reduceMotion"], "1")
+        command_says(
+            "defaults",
+            &["read", "com.apple.universalaccess", "reduceMotion"],
+            "1",
+        )
     }
     #[cfg(all(unix, not(target_os = "macos")))]
     {
-        command_says("gsettings", &["get", "org.gnome.desktop.interface", "enable-animations"], "false")
+        command_says(
+            "gsettings",
+            &["get", "org.gnome.desktop.interface", "enable-animations"],
+            "false",
+        )
     }
     #[cfg(not(any(windows, unix)))]
     {
@@ -154,10 +198,17 @@ fn write_prefs(dir: &Path, prefs: &Prefs) {
 
 impl Services for Desktop {
     fn pick_open(&mut self, title: &str, exts: &[&str]) -> Option<PathBuf> {
-        rfd::FileDialog::new().set_title(title).add_filter("Supported files", exts).pick_file()
+        rfd::FileDialog::new()
+            .set_title(title)
+            .add_filter("Supported files", exts)
+            .pick_file()
     }
     fn pick_save(&mut self, title: &str, name: &str, exts: &[&str]) -> Option<PathBuf> {
-        rfd::FileDialog::new().set_title(title).set_file_name(name).add_filter("File", exts).save_file()
+        rfd::FileDialog::new()
+            .set_title(title)
+            .set_file_name(name)
+            .add_filter("File", exts)
+            .save_file()
     }
     fn pick_folder(&mut self, title: &str) -> Option<PathBuf> {
         rfd::FileDialog::new().set_title(title).pick_folder()
@@ -172,14 +223,25 @@ impl Services for Desktop {
     }
     fn clipboard_set_png(&mut self, w: u32, h: u32, rgba: &[u8]) {
         if let Some(c) = self.clipboard.as_mut() {
-            let _ = c.set_image(arboard::ImageData { width: w as usize, height: h as usize, bytes: std::borrow::Cow::Borrowed(rgba) });
+            let _ = c.set_image(arboard::ImageData {
+                width: w as usize,
+                height: h as usize,
+                bytes: std::borrow::Cow::Borrowed(rgba),
+            });
         }
     }
     fn clipboard_get_image(&mut self) -> Option<(u32, u32, Vec<u8>)> {
         let img = self.clipboard.as_mut()?.get_image().ok()?;
-        let (w, h) = (u32::try_from(img.width).ok()?, u32::try_from(img.height).ok()?);
+        let (w, h) = (
+            u32::try_from(img.width).ok()?,
+            u32::try_from(img.height).ok()?,
+        );
         // Refuse absurd sizes (and mismatched buffers) rather than allocate.
-        if w == 0 || h == 0 || u64::from(w) * u64::from(h) > 100_000_000 || img.bytes.len() != (w as usize) * (h as usize) * 4 {
+        if w == 0
+            || h == 0
+            || u64::from(w) * u64::from(h) > 100_000_000
+            || img.bytes.len() != (w as usize) * (h as usize) * 4
+        {
             return None;
         }
         Some((w, h, img.bytes.into_owned()))
@@ -214,8 +276,14 @@ pub fn window_icon() -> Option<egui::IconData> {
     #[cfg(target_os = "macos")]
     let bytes = include_bytes!("../../../assets/figcraft/app-icon/figcraft-256.png");
     #[cfg(not(target_os = "macos"))]
-    let bytes = include_bytes!("../../../assets/figcraft/app-icon/hicolor/256x256/apps/ai.storyteller.figcraft.png");
+    let bytes = include_bytes!(
+        "../../../assets/figcraft/app-icon/hicolor/256x256/apps/ai.storyteller.figcraft.png"
+    );
     let img = image::load_from_memory(bytes).ok()?.to_rgba8();
     let (w, h) = img.dimensions();
-    Some(egui::IconData { rgba: img.into_raw(), width: w, height: h })
+    Some(egui::IconData {
+        rgba: img.into_raw(),
+        width: w,
+        height: h,
+    })
 }

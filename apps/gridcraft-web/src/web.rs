@@ -15,19 +15,27 @@ pub fn start() {
             log::error!("no document");
             return;
         };
-        let Some(canvas) = document.get_element_by_id(CANVAS_ID).and_then(|e| e.dyn_into::<web_sys::HtmlCanvasElement>().ok()) else {
+        let Some(canvas) = document
+            .get_element_by_id(CANVAS_ID)
+            .and_then(|e| e.dyn_into::<web_sys::HtmlCanvasElement>().ok())
+        else {
             log::error!("missing <canvas id=\"{CANVAS_ID}\">");
             return;
         };
         let mut options = eframe::WebOptions::default();
         if query().contains("webgl")
-            && let eframe::egui_wgpu::WgpuSetup::CreateNew(create) = &mut options.wgpu_options.wgpu_setup
+            && let eframe::egui_wgpu::WgpuSetup::CreateNew(create) =
+                &mut options.wgpu_options.wgpu_setup
         {
             create.instance_descriptor.backends = eframe::wgpu::Backends::GL;
         }
         // `?host=parent`: a same-origin page framing GridCraft (such as a Nextcloud app) opens
         // workbooks in it and stores what it saves (`host`).
-        let bridge = if query_param("host").as_deref() == Some("parent") { crate::host::Bridge::new() } else { None };
+        let bridge = if query_param("host").as_deref() == Some("parent") {
+            crate::host::Bridge::new()
+        } else {
+            None
+        };
         let app_bridge = bridge.clone();
         let result = eframe::WebRunner::new()
             .start(
@@ -37,8 +45,15 @@ pub fn start() {
                     let inbox: Inbox = Inbox::default();
                     let mut session = Session::new();
                     // In host mode the parent sends the workbook to edit; no sample meanwhile.
-                    let q = if app_bridge.is_some() { String::new() } else { query() };
-                    if let Some(name) = q.split(['?', '&']).find_map(|kv| kv.strip_prefix("sample=")) {
+                    let q = if app_bridge.is_some() {
+                        String::new()
+                    } else {
+                        query()
+                    };
+                    if let Some(name) = q
+                        .split(['?', '&'])
+                        .find_map(|kv| kv.strip_prefix("sample="))
+                    {
                         let _ = session.execute("file.new", serde_json::json!({"sample": name}));
                     } else if q.contains("sample") {
                         let _ = session.execute("file.new", serde_json::json!({"sample": "sales"}));
@@ -54,7 +69,9 @@ pub fn start() {
                     let browser = gridcraft_ui_egui::i18n::Language::system();
                     if !matches!(
                         browser,
-                        gridcraft_ui_egui::i18n::Language::Zh | gridcraft_ui_egui::i18n::Language::Ja | gridcraft_ui_egui::i18n::Language::Ko
+                        gridcraft_ui_egui::i18n::Language::Zh
+                            | gridcraft_ui_egui::i18n::Language::Ja
+                            | gridcraft_ui_egui::i18n::Language::Ko
                     ) {
                         app.ui.language = browser;
                     }
@@ -65,7 +82,11 @@ pub fn start() {
                         }
                         bridge.post_ready();
                     }
-                    Ok(Box::new(WebShell { app, inbox, bridge: app_bridge }))
+                    Ok(Box::new(WebShell {
+                        app,
+                        inbox,
+                        bridge: app_bridge,
+                    }))
                 }),
             )
             .await;
@@ -82,11 +103,15 @@ pub fn start() {
 }
 
 fn query() -> String {
-    web_sys::window().and_then(|w| w.location().search().ok()).unwrap_or_default()
+    web_sys::window()
+        .and_then(|w| w.location().search().ok())
+        .unwrap_or_default()
 }
 
 fn query_param(key: &str) -> Option<String> {
-    web_sys::UrlSearchParams::new_with_str(&query()).ok()?.get(key)
+    web_sys::UrlSearchParams::new_with_str(&query())
+        .ok()?
+        .get(key)
 }
 
 struct WebShell {
@@ -102,10 +127,17 @@ impl eframe::App for WebShell {
             let inbox = self.inbox.clone();
             let ctx = ctx.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                let name = f.path().file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "dropped.xlsx".into());
+                let name = f
+                    .path()
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_else(|| "dropped.xlsx".into());
                 match f.bytes_async().await {
                     Ok(bytes) => {
-                        inbox.lock().unwrap_or_else(|e| e.into_inner()).push((name, bytes));
+                        inbox
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner())
+                            .push((name, bytes));
                         ctx.request_repaint();
                     }
                     Err(e) => log::error!("couldn't read dropped file {name}: {e}"),
@@ -137,25 +169,40 @@ fn services(inbox: Inbox, ctx: egui::Context) -> Services {
             let ctx = ctx.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 let Some(file) = rfd::AsyncFileDialog::new()
-                    .add_filter("Spreadsheets", &["xlsx", "xlsm", "xls", "xlsb", "ods", "csv", "tsv", "txt", "json"])
+                    .add_filter(
+                        "Spreadsheets",
+                        &[
+                            "xlsx", "xlsm", "xls", "xlsb", "ods", "csv", "tsv", "txt", "json",
+                        ],
+                    )
                     .pick_file()
                     .await
                 else {
                     return;
                 };
                 let bytes = file.read().await;
-                inbox.lock().unwrap_or_else(|e| e.into_inner()).push((file.file_name(), bytes));
+                inbox
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .push((file.file_name(), bytes));
                 ctx.request_repaint();
             });
         })),
         pick_picture_async: Some(Box::new(move |inbox| {
             let ctx = picture_ctx.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                let Some(file) = rfd::AsyncFileDialog::new().add_filter("Pictures (PNG, JPEG)", &["png", "jpg", "jpeg"]).pick_file().await else {
+                let Some(file) = rfd::AsyncFileDialog::new()
+                    .add_filter("Pictures (PNG, JPEG)", &["png", "jpg", "jpeg"])
+                    .pick_file()
+                    .await
+                else {
                     return;
                 };
                 let bytes = file.read().await;
-                inbox.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push((file.file_name(), bytes));
+                inbox
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .push((file.file_name(), bytes));
                 ctx.request_repaint();
             });
         })),
@@ -171,7 +218,8 @@ fn services(inbox: Inbox, ctx: egui::Context) -> Services {
         })),
         open_url: Some(Box::new(|url: &str| {
             if let Some(w) = web_sys::window()
-                && let gridcraft_engine::links::LinkKind::External(url) = gridcraft_engine::links::classify(url)
+                && let gridcraft_engine::links::LinkKind::External(url) =
+                    gridcraft_engine::links::classify(url)
             {
                 let _ = w.open_with_url_and_target(&url, "_blank");
             }
@@ -189,7 +237,10 @@ fn copy_html(html: &str, text: &str) -> Result<(), String> {
     if clipboard.is_undefined() || clipboard.is_null() {
         return Err("browser clipboard is unavailable (a secure context is required)".into());
     }
-    if !js_sys::Reflect::get(&clipboard, &"write".into()).map_err(js)?.is_function() {
+    if !js_sys::Reflect::get(&clipboard, &"write".into())
+        .map_err(js)?
+        .is_function()
+    {
         return Err("browser does not support rich clipboard writes".into());
     }
     let data = js_sys::Object::new();
@@ -200,13 +251,15 @@ fn copy_html(html: &str, text: &str) -> Result<(), String> {
         let blob = web_sys::Blob::new_with_str_sequence_and_options(&parts, &opts).map_err(js)?;
         js_sys::Reflect::set(&data, &mime.into(), &blob).map_err(js)?;
     }
-    let item = web_sys::ClipboardItem::new_with_record_from_str_to_blob_promise(&data).map_err(js)?;
+    let item =
+        web_sys::ClipboardItem::new_with_record_from_str_to_blob_promise(&data).map_err(js)?;
     let promise = clipboard.write(&js_sys::Array::of1(&item));
     let text = text.to_owned();
     wasm_bindgen_futures::spawn_local(async move {
         if let Err(e) = wasm_bindgen_futures::JsFuture::from(promise).await {
             log::warn!("Rich clipboard write failed; trying plain text: {e:?}");
-            if let Err(e) = wasm_bindgen_futures::JsFuture::from(clipboard.write_text(&text)).await {
+            if let Err(e) = wasm_bindgen_futures::JsFuture::from(clipboard.write_text(&text)).await
+            {
                 log::error!("Plain-text clipboard fallback also failed: {e:?}");
             }
         }
@@ -230,9 +283,17 @@ fn print_pdf(bytes: &[u8]) -> Result<(), String> {
     let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&parts, &opts).map_err(js)?;
     let url = web_sys::Url::create_object_url_with_blob(&blob).map_err(js)?;
 
-    let iframe: web_sys::HtmlIFrameElement = document.create_element("iframe").map_err(js)?.dyn_into().map_err(|_| "not an iframe")?;
+    let iframe: web_sys::HtmlIFrameElement = document
+        .create_element("iframe")
+        .map_err(js)?
+        .dyn_into()
+        .map_err(|_| "not an iframe")?;
     iframe.style().set_property("display", "none").map_err(js)?;
-    document.body().ok_or("no body")?.append_child(&iframe).map_err(js)?;
+    document
+        .body()
+        .ok_or("no body")?
+        .append_child(&iframe)
+        .map_err(js)?;
 
     // `onload` fires once the PDF has actually rendered inside the iframe;
     // printing before that would show a blank page. Set the handler BEFORE
@@ -240,7 +301,9 @@ fn print_pdf(bytes: &[u8]) -> Result<(), String> {
     let iframe_for_load = iframe.clone();
     let url_for_cleanup = url.clone();
     let on_load = wasm_bindgen::closure::Closure::once_into_js(move || {
-        let Some(content_window) = iframe_for_load.content_window() else { return };
+        let Some(content_window) = iframe_for_load.content_window() else {
+            return;
+        };
         let _ = content_window.print();
         // `afterprint` fires once the print dialog (or print preview) closes, whether the user
         // printed or cancelled — the right moment to release the blob URL and drop the iframe.
@@ -249,7 +312,8 @@ fn print_pdf(bytes: &[u8]) -> Result<(), String> {
             web_sys::Url::revoke_object_url(&url_for_cleanup).ok();
             iframe_for_cleanup.remove();
         });
-        let _ = content_window.add_event_listener_with_callback("afterprint", on_after_print.unchecked_ref());
+        let _ = content_window
+            .add_event_listener_with_callback("afterprint", on_after_print.unchecked_ref());
     });
     iframe.set_onload(Some(on_load.unchecked_ref()));
     iframe.set_src(&url);
@@ -257,7 +321,12 @@ fn print_pdf(bytes: &[u8]) -> Result<(), String> {
 }
 
 fn mime_for(name: &str) -> &'static str {
-    match name.rsplit('.').next().map(str::to_ascii_lowercase).as_deref() {
+    match name
+        .rsplit('.')
+        .next()
+        .map(str::to_ascii_lowercase)
+        .as_deref()
+    {
         Some("xlsx") => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         Some("xlsm") => "application/vnd.ms-excel.sheet.macroEnabled.12",
         Some("xlsb") => "application/vnd.ms-excel.sheet.binary.macroEnabled.12",
@@ -280,10 +349,16 @@ fn download(name: &str, bytes: &[u8]) -> Result<(), String> {
     let window = web_sys::window().ok_or("no window")?;
 
     let show_picker_fn: Option<js_sys::Function> =
-        js_sys::Reflect::get(&window, &JsValue::from_str("showSaveFilePicker")).ok().and_then(|v| v.dyn_into().ok());
+        js_sys::Reflect::get(&window, &JsValue::from_str("showSaveFilePicker"))
+            .ok()
+            .and_then(|v| v.dyn_into().ok());
 
     if let Some(picker_fn) = show_picker_fn {
-        let ext = std::path::Path::new(name).extension().and_then(|e| e.to_str()).unwrap_or("xlsx").to_ascii_lowercase();
+        let ext = std::path::Path::new(name)
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("xlsx")
+            .to_ascii_lowercase();
         let dot_ext = format!(".{ext}");
         let mime = mime_for(name);
 
@@ -309,18 +384,28 @@ fn download(name: &str, bytes: &[u8]) -> Result<(), String> {
         };
 
         let type_obj = js_sys::Object::new();
-        let _ = js_sys::Reflect::set(&type_obj, &JsValue::from_str("description"), &JsValue::from_str(type_desc));
+        let _ = js_sys::Reflect::set(
+            &type_obj,
+            &JsValue::from_str("description"),
+            &JsValue::from_str(type_desc),
+        );
         let _ = js_sys::Reflect::set(&type_obj, &JsValue::from_str("accept"), &accept_obj);
 
         let types_arr = js_sys::Array::new();
         types_arr.push(&type_obj);
 
         let picker_opts = js_sys::Object::new();
-        let _ = js_sys::Reflect::set(&picker_opts, &JsValue::from_str("suggestedName"), &JsValue::from_str(name));
+        let _ = js_sys::Reflect::set(
+            &picker_opts,
+            &JsValue::from_str("suggestedName"),
+            &JsValue::from_str(name),
+        );
         let _ = js_sys::Reflect::set(&picker_opts, &JsValue::from_str("types"), &types_arr);
 
         let prom_val = picker_fn.call1(&window, &picker_opts).map_err(js)?;
-        let prom: js_sys::Promise = prom_val.dyn_into().map_err(|_| "not a promise".to_string())?;
+        let prom: js_sys::Promise = prom_val
+            .dyn_into()
+            .map_err(|_| "not a promise".to_string())?;
 
         let bytes_vec = bytes.to_vec();
         let name_owned = name.to_string();
@@ -344,7 +429,10 @@ fn download(name: &str, bytes: &[u8]) -> Result<(), String> {
                     }
                 }
                 Err(e) => {
-                    let err_name = js_sys::Reflect::get(&e, &JsValue::from_str("name")).ok().and_then(|v| v.as_string()).unwrap_or_default();
+                    let err_name = js_sys::Reflect::get(&e, &JsValue::from_str("name"))
+                        .ok()
+                        .and_then(|v| v.as_string())
+                        .unwrap_or_default();
                     if err_name == "AbortError" {
                         log::info!("Save file dialog cancelled by user");
                     } else {
@@ -363,27 +451,54 @@ fn download(name: &str, bytes: &[u8]) -> Result<(), String> {
 
 async fn write_file_handle(handle: &JsValue, bytes: &[u8]) -> Result<(), String> {
     let js = |e: wasm_bindgen::JsValue| format!("{e:?}");
-    let create_fn: js_sys::Function = js_sys::Reflect::get(handle, &JsValue::from_str("createWritable"))
+    let create_fn: js_sys::Function =
+        js_sys::Reflect::get(handle, &JsValue::from_str("createWritable"))
+            .map_err(js)?
+            .dyn_into()
+            .map_err(|_| "createWritable is not a function".to_string())?;
+    let stream_prom: js_sys::Promise = create_fn
+        .call0(handle)
         .map_err(js)?
         .dyn_into()
-        .map_err(|_| "createWritable is not a function".to_string())?;
-    let stream_prom: js_sys::Promise = create_fn.call0(handle).map_err(js)?.dyn_into().map_err(|_| "not a promise".to_string())?;
-    let stream = wasm_bindgen_futures::JsFuture::from(stream_prom).await.map_err(js)?;
+        .map_err(|_| "not a promise".to_string())?;
+    let stream = wasm_bindgen_futures::JsFuture::from(stream_prom)
+        .await
+        .map_err(js)?;
 
-    let write_fn: js_sys::Function =
-        js_sys::Reflect::get(&stream, &JsValue::from_str("write")).map_err(js)?.dyn_into().map_err(|_| "write is not a function".to_string())?;
+    let write_fn: js_sys::Function = js_sys::Reflect::get(&stream, &JsValue::from_str("write"))
+        .map_err(js)?
+        .dyn_into()
+        .map_err(|_| "write is not a function".to_string())?;
     let uint8 = js_sys::Uint8Array::from(bytes);
-    let write_prom: js_sys::Promise = write_fn.call1(&stream, &uint8).map_err(js)?.dyn_into().map_err(|_| "not a promise".to_string())?;
-    wasm_bindgen_futures::JsFuture::from(write_prom).await.map_err(js)?;
+    let write_prom: js_sys::Promise = write_fn
+        .call1(&stream, &uint8)
+        .map_err(js)?
+        .dyn_into()
+        .map_err(|_| "not a promise".to_string())?;
+    wasm_bindgen_futures::JsFuture::from(write_prom)
+        .await
+        .map_err(js)?;
 
-    let close_fn: js_sys::Function =
-        js_sys::Reflect::get(&stream, &JsValue::from_str("close")).map_err(js)?.dyn_into().map_err(|_| "close is not a function".to_string())?;
-    let close_prom: js_sys::Promise = close_fn.call0(&stream).map_err(js)?.dyn_into().map_err(|_| "not a promise".to_string())?;
-    wasm_bindgen_futures::JsFuture::from(close_prom).await.map_err(js)?;
+    let close_fn: js_sys::Function = js_sys::Reflect::get(&stream, &JsValue::from_str("close"))
+        .map_err(js)?
+        .dyn_into()
+        .map_err(|_| "close is not a function".to_string())?;
+    let close_prom: js_sys::Promise = close_fn
+        .call0(&stream)
+        .map_err(js)?
+        .dyn_into()
+        .map_err(|_| "not a promise".to_string())?;
+    wasm_bindgen_futures::JsFuture::from(close_prom)
+        .await
+        .map_err(js)?;
     Ok(())
 }
 
-fn trigger_anchor_download(window: &web_sys::Window, name: &str, bytes: &[u8]) -> Result<(), String> {
+fn trigger_anchor_download(
+    window: &web_sys::Window,
+    name: &str,
+    bytes: &[u8],
+) -> Result<(), String> {
     let js = |e: wasm_bindgen::JsValue| format!("{e:?}");
     let document = window.document().ok_or("no document")?;
     let parts = js_sys::Array::of1(&js_sys::Uint8Array::from(bytes));
@@ -391,7 +506,11 @@ fn trigger_anchor_download(window: &web_sys::Window, name: &str, bytes: &[u8]) -
     opts.set_type(mime_for(name));
     let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&parts, &opts).map_err(js)?;
     let url = web_sys::Url::create_object_url_with_blob(&blob).map_err(js)?;
-    let a: web_sys::HtmlAnchorElement = document.create_element("a").map_err(js)?.dyn_into().map_err(|_| "not an anchor".to_string())?;
+    let a: web_sys::HtmlAnchorElement = document
+        .create_element("a")
+        .map_err(js)?
+        .dyn_into()
+        .map_err(|_| "not an anchor".to_string())?;
     a.set_href(&url);
     a.set_download(name);
     a.style().set_property("display", "none").map_err(js)?;
@@ -402,6 +521,8 @@ fn trigger_anchor_download(window: &web_sys::Window, name: &str, bytes: &[u8]) -
     let revoke = wasm_bindgen::closure::Closure::once_into_js(move || {
         web_sys::Url::revoke_object_url(&url).ok();
     });
-    window.set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), 10_000).map_err(js)?;
+    window
+        .set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), 10_000)
+        .map_err(js)?;
     Ok(())
 }

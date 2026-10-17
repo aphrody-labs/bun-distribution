@@ -1,14 +1,24 @@
 //! PdfCraft in the browser. Build: `cd apps/pdfcraft-web && trunk build --release`
 //! (trunk generates the JS loader; no handwritten JS — plan/execution-plan.md §1).
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 #[cfg(target_arch = "wasm32")]
 fn main() {
     use eframe::wasm_bindgen::JsCast;
     use pdfcraft_ui_egui::PdfCraftApp;
 
-    let options = eframe::WebOptions { renderer: eframe::Renderer::Glow, ..Default::default() };
+    let options = eframe::WebOptions {
+        renderer: eframe::Renderer::Glow,
+        ..Default::default()
+    };
     wasm_bindgen_futures::spawn_local(async move {
         let Some(canvas) = web_sys::window()
             .and_then(|w| w.document())
@@ -24,7 +34,10 @@ fn main() {
                 Box::new(|cc| {
                     let mut app = PdfCraftApp::new();
                     // "printcraft": settings saved under the app's former name, PrintCraft.
-                    if let Some(json) = cc.storage.and_then(|s| s.get_string("pdfcraft").or_else(|| s.get_string("printcraft"))) {
+                    if let Some(json) = cc.storage.and_then(|s| {
+                        s.get_string("pdfcraft")
+                            .or_else(|| s.get_string("printcraft"))
+                    }) {
                         app.restore(&json);
                     }
                     // `?file=<url>` opens a PDF from a URL (same-origin or CORS-enabled).
@@ -33,7 +46,14 @@ fn main() {
                         let failed = app.failed_inbox.clone();
                         let ctx = cc.egui_ctx.clone();
                         wasm_bindgen_futures::spawn_local(async move {
-                            let name = url.rsplit('/').next().unwrap_or("document.pdf").split('?').next().unwrap_or("document.pdf").to_string();
+                            let name = url
+                                .rsplit('/')
+                                .next()
+                                .unwrap_or("document.pdf")
+                                .split('?')
+                                .next()
+                                .unwrap_or("document.pdf")
+                                .to_string();
                             match fetch_bytes(&url).await {
                                 Ok(bytes) => {
                                     if let Ok(mut q) = inbox.lock() {
@@ -41,7 +61,9 @@ fn main() {
                                     }
                                 }
                                 Err(e) => {
-                                    eframe::web_sys::console::error_1(&format!("PdfCraft: could not fetch {url}: {e}").into());
+                                    eframe::web_sys::console::error_1(
+                                        &format!("PdfCraft: could not fetch {url}: {e}").into(),
+                                    );
                                     // Shown in the app too, not only in the console (#173).
                                     if let Ok(mut q) = failed.lock() {
                                         q.push((name, e));
@@ -61,7 +83,9 @@ fn main() {
                     {
                         // `?author=`: the host's name for the user signs their comments,
                         // unless they chose a name in PdfCraft (the web default is "Guest").
-                        if let Some(author) = query_param("author").map(|a| a.trim().to_string()).filter(|a| !a.is_empty())
+                        if let Some(author) = query_param("author")
+                            .map(|a| a.trim().to_string())
+                            .filter(|a| !a.is_empty())
                             && app.comment_prefs.author == "Guest"
                         {
                             app.comment_prefs.author = author.chars().take(200).collect();
@@ -89,13 +113,18 @@ fn main() {
 #[cfg(target_arch = "wasm32")]
 fn warn_before_unload(unsaved: std::sync::Arc<std::sync::atomic::AtomicBool>) {
     use eframe::wasm_bindgen::{JsCast, closure::Closure};
-    let Some(window) = web_sys::window() else { return };
+    let Some(window) = web_sys::window() else {
+        return;
+    };
     let handler = Closure::<dyn FnMut(web_sys::Event)>::new(move |event: web_sys::Event| {
         if unsaved.load(std::sync::atomic::Ordering::Relaxed) {
             event.prevent_default();
         }
     });
-    if window.add_event_listener_with_callback("beforeunload", handler.as_ref().unchecked_ref()).is_ok() {
+    if window
+        .add_event_listener_with_callback("beforeunload", handler.as_ref().unchecked_ref())
+        .is_ok()
+    {
         handler.forget();
     }
 }
@@ -103,19 +132,26 @@ fn warn_before_unload(unsaved: std::sync::Arc<std::sync::atomic::AtomicBool>) {
 #[cfg(target_arch = "wasm32")]
 fn query_param(key: &str) -> Option<String> {
     let search = web_sys::window()?.location().search().ok()?;
-    web_sys::UrlSearchParams::new_with_str(&search).ok()?.get(key)
+    web_sys::UrlSearchParams::new_with_str(&search)
+        .ok()?
+        .get(key)
 }
 
 #[cfg(target_arch = "wasm32")]
 async fn fetch_bytes(url: &str) -> Result<Vec<u8>, String> {
     use eframe::wasm_bindgen::JsCast;
     let window = web_sys::window().ok_or("no window")?;
-    let resp = wasm_bindgen_futures::JsFuture::from(window.fetch_with_str(url)).await.map_err(|e| format!("{e:?}"))?;
+    let resp = wasm_bindgen_futures::JsFuture::from(window.fetch_with_str(url))
+        .await
+        .map_err(|e| format!("{e:?}"))?;
     let resp: web_sys::Response = resp.dyn_into().map_err(|_| "not a response")?;
     if !resp.ok() {
         return Err(format!("HTTP {}", resp.status()));
     }
-    let buf = wasm_bindgen_futures::JsFuture::from(resp.array_buffer().map_err(|e| format!("{e:?}"))?).await.map_err(|e| format!("{e:?}"))?;
+    let buf =
+        wasm_bindgen_futures::JsFuture::from(resp.array_buffer().map_err(|e| format!("{e:?}"))?)
+            .await
+            .map_err(|e| format!("{e:?}"))?;
     Ok(js_sys::Uint8Array::new(&buf).to_vec())
 }
 
@@ -151,26 +187,38 @@ mod host {
                 return None;
             }
             let origin = window.location().origin().ok()?;
-            Some(Self { window, parent, origin })
+            Some(Self {
+                window,
+                parent,
+                origin,
+            })
         }
 
         fn post(&self, message: &js_sys::Object, transfer: Option<&JsValue>) -> Result<(), String> {
             let sent = match transfer {
-                Some(t) => self.parent.post_message_with_transfer(message, &self.origin, &js_sys::Array::of1(t)),
+                Some(t) => self.parent.post_message_with_transfer(
+                    message,
+                    &self.origin,
+                    &js_sys::Array::of1(t),
+                ),
                 None => self.parent.post_message(message, &self.origin),
             };
             sent.map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))
         }
 
         pub fn post_ready(&self) {
-            if let Some(m) = message(&[("type", "pdfcraft:ready".into()), ("version", env!("CARGO_PKG_VERSION").into())]) {
+            if let Some(m) = message(&[
+                ("type", "pdfcraft:ready".into()),
+                ("version", env!("CARGO_PKG_VERSION").into()),
+            ]) {
                 let _ = self.post(&m, None);
             }
         }
 
         /// The app couldn't start (no WebGL, for example): let the parent say so.
         pub fn post_failed(&self, error: &str) {
-            if let Some(m) = message(&[("type", "pdfcraft:failed".into()), ("error", error.into())]) {
+            if let Some(m) = message(&[("type", "pdfcraft:failed".into()), ("error", error.into())])
+            {
                 let _ = self.post(&m, None);
             }
         }
@@ -179,29 +227,43 @@ mod host {
         pub fn listen(&self, inbox: pdfcraft_ui_egui::Inbox, ctx: egui::Context) {
             let parent = self.parent.clone();
             let origin = self.origin.clone();
-            let on_message = Closure::<dyn FnMut(web_sys::MessageEvent)>::new(move |event: web_sys::MessageEvent| {
-                if event.origin() != origin || !event.source().is_some_and(|s| js_sys::Object::is(&s, &parent)) {
-                    return;
-                }
-                let data = event.data();
-                if string(&data, "type").as_deref() != Some("pdfcraft:open") {
-                    return;
-                }
-                let name = string(&data, "name").filter(|n| !n.trim().is_empty()).unwrap_or_else(|| "document.pdf".to_string());
-                let Ok(bytes) = js_sys::Reflect::get(&data, &JsValue::from_str("bytes")) else { return };
-                let bytes = if let Some(array) = bytes.dyn_ref::<js_sys::Uint8Array>() {
-                    array.to_vec()
-                } else if bytes.is_instance_of::<js_sys::ArrayBuffer>() {
-                    js_sys::Uint8Array::new(&bytes).to_vec()
-                } else {
-                    return;
-                };
-                if let Ok(mut q) = inbox.lock() {
-                    q.push((name, bytes));
-                }
-                ctx.request_repaint();
-            });
-            if self.window.add_event_listener_with_callback("message", on_message.as_ref().unchecked_ref()).is_ok() {
+            let on_message = Closure::<dyn FnMut(web_sys::MessageEvent)>::new(
+                move |event: web_sys::MessageEvent| {
+                    if event.origin() != origin
+                        || !event
+                            .source()
+                            .is_some_and(|s| js_sys::Object::is(&s, &parent))
+                    {
+                        return;
+                    }
+                    let data = event.data();
+                    if string(&data, "type").as_deref() != Some("pdfcraft:open") {
+                        return;
+                    }
+                    let name = string(&data, "name")
+                        .filter(|n| !n.trim().is_empty())
+                        .unwrap_or_else(|| "document.pdf".to_string());
+                    let Ok(bytes) = js_sys::Reflect::get(&data, &JsValue::from_str("bytes")) else {
+                        return;
+                    };
+                    let bytes = if let Some(array) = bytes.dyn_ref::<js_sys::Uint8Array>() {
+                        array.to_vec()
+                    } else if bytes.is_instance_of::<js_sys::ArrayBuffer>() {
+                        js_sys::Uint8Array::new(&bytes).to_vec()
+                    } else {
+                        return;
+                    };
+                    if let Ok(mut q) = inbox.lock() {
+                        q.push((name, bytes));
+                    }
+                    ctx.request_repaint();
+                },
+            );
+            if self
+                .window
+                .add_event_listener_with_callback("message", on_message.as_ref().unchecked_ref())
+                .is_ok()
+            {
                 // The listener lives as long as the page.
                 on_message.forget();
             }
@@ -211,9 +273,13 @@ mod host {
             let bridge = self.clone();
             Box::new(move |name: &str, bytes: &[u8], save_as: bool| {
                 let buffer = js_sys::Uint8Array::from(bytes).buffer();
-                let m =
-                    message(&[("type", "pdfcraft:save".into()), ("name", name.into()), ("saveAs", save_as.into()), ("bytes", buffer.clone().into())])
-                        .ok_or_else(|| "couldn't build the message".to_string())?;
+                let m = message(&[
+                    ("type", "pdfcraft:save".into()),
+                    ("name", name.into()),
+                    ("saveAs", save_as.into()),
+                    ("bytes", buffer.clone().into()),
+                ])
+                .ok_or_else(|| "couldn't build the message".to_string())?;
                 bridge.post(&m, Some(&buffer))
             })
         }
@@ -224,7 +290,9 @@ mod host {
             Box::new(move |dirty: bool| {
                 if dirty != last {
                     last = dirty;
-                    if let Some(m) = message(&[("type", "pdfcraft:dirty".into()), ("dirty", dirty.into())]) {
+                    if let Some(m) =
+                        message(&[("type", "pdfcraft:dirty".into()), ("dirty", dirty.into())])
+                    {
                         let _ = bridge.post(&m, None);
                     }
                 }
@@ -241,11 +309,15 @@ mod host {
     }
 
     fn string(data: &JsValue, key: &str) -> Option<String> {
-        js_sys::Reflect::get(data, &JsValue::from_str(key)).ok()?.as_string()
+        js_sys::Reflect::get(data, &JsValue::from_str(key))
+            .ok()?
+            .as_string()
     }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
-    eprintln!("pdfcraft-web targets wasm32: run `trunk serve` or `trunk build --release` in apps/pdfcraft-web");
+    eprintln!(
+        "pdfcraft-web targets wasm32: run `trunk serve` or `trunk build --release` in apps/pdfcraft-web"
+    );
 }

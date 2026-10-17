@@ -1,4 +1,4 @@
-use slog::{Drain, KV, Key, Level, Never, OwnedKVList, Record};
+use slog::{Drain, Key, Level, Never, OwnedKVList, Record, KV};
 use std::{
     cell::RefCell,
     fmt,
@@ -42,7 +42,9 @@ impl Drain for Console {
 
 impl Console {
     pub fn new() -> Self {
-        Console { history: RefCell::new(vec![]) }
+        Console {
+            history: RefCell::new(vec![]),
+        }
     }
 }
 
@@ -61,7 +63,10 @@ struct Serializer<'a> {
 
 impl<'a> Serializer<'a> {
     fn new(buffer: &'a mut String, comma_needed: bool) -> Self {
-        Serializer { buffer, comma_needed }
+        Serializer {
+            buffer,
+            comma_needed,
+        }
     }
 
     fn maybe_add_comma(&mut self) {
@@ -162,7 +167,10 @@ struct CompactFormatSerializer<'a> {
 
 impl<'a> CompactFormatSerializer<'a> {
     fn new(history: &'a mut Vec<(String, String)>) -> Self {
-        CompactFormatSerializer { history, buf: vec![] }
+        CompactFormatSerializer {
+            history,
+            buf: vec![],
+        }
     }
 
     fn finish(&mut self) {
@@ -174,18 +182,22 @@ impl<'a> CompactFormatSerializer<'a> {
                 Change,
             }
             let action = if let Some(prev) = self.history.get(indent) {
-                if *prev != buf { HistoryAction::Change } else { HistoryAction::None }
+                if *prev != buf {
+                    HistoryAction::Change
+                } else {
+                    HistoryAction::None
+                }
             } else {
                 HistoryAction::Push
             };
             match action {
-                HistoryAction::None => {},
+                HistoryAction::None => {}
                 HistoryAction::Push => {
                     self.history.push(buf);
                     let (k, v) = &self.history[indent];
                     let group_str = format!("{k}: {v}");
                     console::group_1(&group_str.as_str().into());
-                },
+                }
                 HistoryAction::Change => {
                     for _ in indent..self.history.len() {
                         console::group_end();
@@ -195,7 +207,7 @@ impl<'a> CompactFormatSerializer<'a> {
                     let (k, v) = &self.history[indent];
                     let group_str = format!("{k}: {v}");
                     console::group_1(&group_str.as_str().into());
-                },
+                }
             }
             indent += 1;
         }

@@ -27,18 +27,40 @@ pub struct RuntimeLayout {
 
 fn create(path: PathBuf) -> Result<PathBuf, String> {
     fs::create_dir_all(&path).map_err(|error| {
-        format!("cannot create Aphrody runtime directory {}: {error}", path.display())
+        format!(
+            "cannot create Aphrody runtime directory {}: {error}",
+            path.display()
+        )
     })?;
     Ok(path)
 }
 
 /// Resolve and materialize the one desktop-owned state tree.
 pub fn resolve(app: &AppHandle) -> Result<RuntimeLayout, String> {
-    let data = create(app.path().app_data_dir().map_err(|error| error.to_string())?)?;
-    let config = create(app.path().app_config_dir().map_err(|error| error.to_string())?)?;
-    let cache = create(app.path().app_cache_dir().map_err(|error| error.to_string())?)?;
-    let logs = create(app.path().app_log_dir().map_err(|error| error.to_string())?)?;
-    let resources = app.path().resource_dir().map_err(|error| error.to_string())?;
+    let data = create(
+        app.path()
+            .app_data_dir()
+            .map_err(|error| error.to_string())?,
+    )?;
+    let config = create(
+        app.path()
+            .app_config_dir()
+            .map_err(|error| error.to_string())?,
+    )?;
+    let cache = create(
+        app.path()
+            .app_cache_dir()
+            .map_err(|error| error.to_string())?,
+    )?;
+    let logs = create(
+        app.path()
+            .app_log_dir()
+            .map_err(|error| error.to_string())?,
+    )?;
+    let resources = app
+        .path()
+        .resource_dir()
+        .map_err(|error| error.to_string())?;
     let profiles = create(data.join("profiles"))?;
     let assets = create(data.join("assets"))?;
     let binaries = create(data.join("binaries"))?;

@@ -37,13 +37,26 @@ const fn this_platform() -> Platform {
 pub fn settings_dirs(os: Platform, env: &impl Fn(&str) -> Option<OsString>) -> Vec<PathBuf> {
     let var = |k: &str| env(k).filter(|v| !v.is_empty()).map(PathBuf::from);
     let mut dirs = match os {
-        Platform::Mac => var("HOME").map(|h| h.join("Library/Preferences")).into_iter().flat_map(|prefs| settings_in(&prefs)).collect::<Vec<_>>(),
+        Platform::Mac => var("HOME")
+            .map(|h| h.join("Library/Preferences"))
+            .into_iter()
+            .flat_map(|prefs| settings_in(&prefs))
+            .collect::<Vec<_>>(),
         // `%APPDATA%\Adobe\Adobe Photoshop 2026\Adobe Photoshop 2026 Settings`.
         Platform::Windows => var("APPDATA")
             .map(|a| a.join("Adobe"))
             .into_iter()
-            .flat_map(|adobe| std::fs::read_dir(adobe).into_iter().flatten().flatten().map(|e| e.path()))
-            .filter(|p| p.file_name().is_some_and(|n| n.to_string_lossy().starts_with("Adobe Photoshop ")))
+            .flat_map(|adobe| {
+                std::fs::read_dir(adobe)
+                    .into_iter()
+                    .flatten()
+                    .flatten()
+                    .map(|e| e.path())
+            })
+            .filter(|p| {
+                p.file_name()
+                    .is_some_and(|n| n.to_string_lossy().starts_with("Adobe Photoshop "))
+            })
             .flat_map(|p| settings_in(&p))
             .collect(),
         Platform::Other => Vec::new(),
@@ -60,7 +73,10 @@ fn settings_in(parent: &Path) -> Vec<PathBuf> {
         .flatten()
         .map(|e| e.path())
         .filter(|p| {
-            let name = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            let name = p
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
             name.starts_with("Adobe Photoshop ") && name.ends_with(" Settings") && p.is_dir()
         })
         .collect()
@@ -69,9 +85,19 @@ fn settings_in(parent: &Path) -> Vec<PathBuf> {
 /// Newest first: the version number in the folder name (2026; CC 2019 → 2019; CS6 → 6), then
 /// the set's modification time.
 fn version_key(dir: &Path) -> (u64, std::time::SystemTime) {
-    let name = dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-    let number = name.split(|c: char| !c.is_ascii_digit()).filter(|s| !s.is_empty()).filter_map(|s| s.parse::<u64>().ok()).max().unwrap_or(0);
-    let modified = std::fs::metadata(dir.join(FILE)).and_then(|m| m.modified()).unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+    let name = dir
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let number = name
+        .split(|c: char| !c.is_ascii_digit())
+        .filter(|s| !s.is_empty())
+        .filter_map(|s| s.parse::<u64>().ok())
+        .max()
+        .unwrap_or(0);
+    let modified = std::fs::metadata(dir.join(FILE))
+        .and_then(|m| m.modified())
+        .unwrap_or(std::time::SystemTime::UNIX_EPOCH);
     (number, modified)
 }
 
@@ -80,19 +106,28 @@ pub const FILE: &str = "Keyboard Shortcuts.psp";
 
 /// The newest install's live set as (path, XML text), `None` without a readable one. A file that
 /// is not a shortcut set (another version's binary `.psp`, a truncated file) is skipped.
-pub fn live_keyboard_shortcuts_on(os: Platform, env: &impl Fn(&str) -> Option<OsString>) -> Option<(String, String)> {
-    settings_dirs(os, env).into_iter().map(|d| d.join(FILE)).find_map(|path| {
-        let len = std::fs::metadata(&path).ok()?.len();
-        if len > MAX_BYTES {
-            return None;
-        }
-        let text = std::fs::read_to_string(&path).ok()?;
-        text.contains("<photoshop-keyboard-shortcuts").then(|| (path.to_string_lossy().into_owned(), text))
-    })
+pub fn live_keyboard_shortcuts_on(
+    os: Platform,
+    env: &impl Fn(&str) -> Option<OsString>,
+) -> Option<(String, String)> {
+    settings_dirs(os, env)
+        .into_iter()
+        .map(|d| d.join(FILE))
+        .find_map(|path| {
+            let len = std::fs::metadata(&path).ok()?.len();
+            if len > MAX_BYTES {
+                return None;
+            }
+            let text = std::fs::read_to_string(&path).ok()?;
+            text.contains("<photoshop-keyboard-shortcuts")
+                .then(|| (path.to_string_lossy().into_owned(), text))
+        })
 }
 
 /// [`live_keyboard_shortcuts_on`] for this platform.
-pub fn live_keyboard_shortcuts(env: &impl Fn(&str) -> Option<OsString>) -> Option<(String, String)> {
+pub fn live_keyboard_shortcuts(
+    env: &impl Fn(&str) -> Option<OsString>,
+) -> Option<(String, String)> {
     live_keyboard_shortcuts_on(this_platform(), env)
 }
 
@@ -104,7 +139,10 @@ mod tests {
 
     /// A fresh scratch directory per test (removed first, so a rerun starts clean).
     fn temp_root(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("photocraft-photoshop-settings-{name}-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!(
+            "photocraft-photoshop-settings-{name}-{}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
@@ -128,14 +166,34 @@ mod tests {
         let root = temp_root("mac");
         let prefs = root.join("home/Library/Preferences");
         write(&prefs.join("Adobe Photoshop 2024 Settings"), SET.as_bytes());
-        write(&prefs.join("Adobe Photoshop 2026 Settings"), SET.replace("texcuts", "newest").as_bytes());
-        write(&prefs.join("Adobe Photoshop CC 2019 Settings"), SET.as_bytes());
+        write(
+            &prefs.join("Adobe Photoshop 2026 Settings"),
+            SET.replace("texcuts", "newest").as_bytes(),
+        );
+        write(
+            &prefs.join("Adobe Photoshop CC 2019 Settings"),
+            SET.as_bytes(),
+        );
         write(&prefs.join("Adobe Photoshop 2025 Paths"), SET.as_bytes()); // not a Settings folder
         let env = env_for(&root);
-        let dirs: Vec<String> = settings_dirs(Platform::Mac, &env).iter().map(|d| d.file_name().unwrap().to_string_lossy().into_owned()).collect();
-        assert_eq!(dirs, ["Adobe Photoshop 2026 Settings", "Adobe Photoshop 2024 Settings", "Adobe Photoshop CC 2019 Settings"]);
+        let dirs: Vec<String> = settings_dirs(Platform::Mac, &env)
+            .iter()
+            .map(|d| d.file_name().unwrap().to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(
+            dirs,
+            [
+                "Adobe Photoshop 2026 Settings",
+                "Adobe Photoshop 2024 Settings",
+                "Adobe Photoshop CC 2019 Settings"
+            ]
+        );
         let (path, text) = live_keyboard_shortcuts_on(Platform::Mac, &env).unwrap();
-        assert!(path.replace('\\', "/").ends_with("Adobe Photoshop 2026 Settings/Keyboard Shortcuts.psp"), "{path}");
+        assert!(
+            path.replace('\\', "/")
+                .ends_with("Adobe Photoshop 2026 Settings/Keyboard Shortcuts.psp"),
+            "{path}"
+        );
         assert!(text.contains("filename=\"newest\""));
     }
 
@@ -144,13 +202,28 @@ mod tests {
         let root = temp_root("win");
         let adobe = root.join("appdata/Adobe");
         // The newest install's file is not a shortcut set (binary); the older one is used.
-        write(&adobe.join("Adobe Photoshop 2026/Adobe Photoshop 2026 Settings"), &[0x80, 0x00, 0xff, 0xfe]);
-        write(&adobe.join("Adobe Photoshop 2025/Adobe Photoshop 2025 Settings"), SET.as_bytes());
-        std::fs::create_dir_all(adobe.join("Adobe Illustrator 30/Adobe Illustrator 30 Settings")).unwrap();
+        write(
+            &adobe.join("Adobe Photoshop 2026/Adobe Photoshop 2026 Settings"),
+            &[0x80, 0x00, 0xff, 0xfe],
+        );
+        write(
+            &adobe.join("Adobe Photoshop 2025/Adobe Photoshop 2025 Settings"),
+            SET.as_bytes(),
+        );
+        std::fs::create_dir_all(adobe.join("Adobe Illustrator 30/Adobe Illustrator 30 Settings"))
+            .unwrap();
         let env = env_for(&root);
         let (path, _) = live_keyboard_shortcuts_on(Platform::Windows, &env).unwrap();
-        assert!(path.replace('\\', "/").ends_with("Adobe Photoshop 2025/Adobe Photoshop 2025 Settings/Keyboard Shortcuts.psp"), "{path}");
+        assert!(
+            path.replace('\\', "/").ends_with(
+                "Adobe Photoshop 2025/Adobe Photoshop 2025 Settings/Keyboard Shortcuts.psp"
+            ),
+            "{path}"
+        );
         assert!(live_keyboard_shortcuts_on(Platform::Other, &env).is_none());
-        assert!(live_keyboard_shortcuts_on(Platform::Mac, &|_| None).is_none(), "no HOME, no set");
+        assert!(
+            live_keyboard_shortcuts_on(Platform::Mac, &|_| None).is_none(),
+            "no HOME, no set"
+        );
     }
 }

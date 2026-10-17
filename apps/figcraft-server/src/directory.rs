@@ -65,11 +65,15 @@ pub struct Directory {
 
 /// A plugin id as manifests have them (letters, digits, `.`, `-`, `_`; 1–128).
 fn valid_id(s: &str) -> bool {
-    (1..=128).contains(&s.len()) && s.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'-' | b'_'))
+    (1..=128).contains(&s.len())
+        && s.bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'-' | b'_'))
 }
 
 fn valid_sha(s: &str) -> bool {
-    s.len() == 64 && s.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    s.len() == 64
+        && s.bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
 /// Newest first.
@@ -83,25 +87,36 @@ impl Directory {
     pub fn open(root: &Path, cfg: DirectoryConfig) -> (Directory, Vec<String>) {
         let dir = root.join(PLUGINS);
         let burst = (2 * cfg.max_plugin_bytes) as f64 / MIB;
-        let mut d = Directory { dir, cfg, entries: Vec::new(), served: Bucket::new(SERVE_MIB_PER_SEC, burst.max(SERVE_BURST_MIB)), broken: false };
+        let mut d = Directory {
+            dir,
+            cfg,
+            entries: Vec::new(),
+            served: Bucket::new(SERVE_MIB_PER_SEC, burst.max(SERVE_BURST_MIB)),
+            broken: false,
+        };
         let mut problems = Vec::new();
         let index = d.dir.join(INDEX);
         let _ = fs::remove_file(disk::temp_of(&index));
         if !index.exists() {
             return (d, problems);
         }
-        let all: Vec<PluginEntry> =
-            match disk::read_capped(&index, MAX_INDEX_FILE).and_then(|b| serde_json::from_slice(&b).map_err(|e| e.to_string())) {
-                Ok(all) => all,
-                Err(e) => {
-                    problems.push(format!("plugin directory: {INDEX} can't be read ({e}); no plugins are listed or published until it is fixed"));
-                    d.broken = true;
-                    return (d, problems);
-                }
-            };
+        let all: Vec<PluginEntry> = match disk::read_capped(&index, MAX_INDEX_FILE)
+            .and_then(|b| serde_json::from_slice(&b).map_err(|e| e.to_string()))
+        {
+            Ok(all) => all,
+            Err(e) => {
+                problems.push(format!("plugin directory: {INDEX} can't be read ({e}); no plugins are listed or published until it is fixed"));
+                d.broken = true;
+                return (d, problems);
+            }
+        };
         for e in all {
             let size = fs::metadata(d.file(&e.sha256)).map(|m| m.len()).ok();
-            if !valid_id(&e.id) || parse_version(&e.version).is_none() || !valid_sha(&e.sha256) || size != Some(e.bytes) {
+            if !valid_id(&e.id)
+                || parse_version(&e.version).is_none()
+                || !valid_sha(&e.sha256)
+                || size != Some(e.bytes)
+            {
                 problems.push(format!(
                     "plugin directory: skipped {} {}: its bundle is missing or damaged",
                     e.id.escape_debug(),
@@ -125,7 +140,11 @@ impl Directory {
 
     /// Bytes of bundles kept (a bundle published under two versions counts once).
     fn total_bytes(&self) -> u64 {
-        let files: BTreeMap<&str, u64> = self.entries.iter().map(|e| (e.sha256.as_str(), e.bytes)).collect();
+        let files: BTreeMap<&str, u64> = self
+            .entries
+            .iter()
+            .map(|e| (e.sha256.as_str(), e.bytes))
+            .collect();
         files.values().sum()
     }
 
@@ -135,7 +154,9 @@ impl Directory {
         if self.cfg.max_plugins == 0 {
             return failed("this server's plugin directory is turned off".into());
         }
-        let needs_key = || failed("publishing and unpublishing plugins needs the server's key (ws://host:port/?key=…)".into());
+        let needs_key = || {
+            failed("publishing and unpublishing plugins needs the server's key (ws://host:port/?key=…)".into())
+        };
         match req {
             PluginReq::List { query } => PluginReply::List(self.list(&query)),
             PluginReq::Fetch { id, version } => match self.fetch(&id, version.as_deref()) {
@@ -143,15 +164,24 @@ impl Directory {
                 Err(e) => failed(e),
             },
             PluginReq::Publish { .. } | PluginReq::Unpublish { .. } if !publisher => needs_key(),
-            PluginReq::Publish { bundle } => self.publish(&bundle).map_or_else(failed, PluginReply::Published),
-            PluginReq::Unpublish { id, version } => self.unpublish(&id, version.as_deref()).map_or_else(failed, PluginReply::Removed),
+            PluginReq::Publish { bundle } => self
+                .publish(&bundle)
+                .map_or_else(failed, PluginReply::Published),
+            PluginReq::Unpublish { id, version } => self
+                .unpublish(&id, version.as_deref())
+                .map_or_else(failed, PluginReply::Removed),
         }
     }
 
     /// The latest version of each plugin matching `query` (any case, in its id, name, description
     /// or author), by name, with the versions kept.
     pub fn list(&self, query: &str) -> Vec<PluginEntry> {
-        let q: String = query.trim().chars().take(MAX_QUERY).collect::<String>().to_lowercase();
+        let q: String = query
+            .trim()
+            .chars()
+            .take(MAX_QUERY)
+            .collect::<String>()
+            .to_lowercase();
         let mut by_id: BTreeMap<&str, Vec<&PluginEntry>> = BTreeMap::new();
         for e in &self.entries {
             by_id.entry(e.id.as_str()).or_default().push(e);
@@ -164,13 +194,27 @@ impl Directory {
                 latest.versions = versions.iter().map(|v| v.version.clone()).collect();
                 Some(latest)
             })
-            .filter(|e| q.is_empty() || [&e.id, &e.name, &e.description, &e.author].iter().any(|f| f.to_lowercase().contains(&q)))
+            .filter(|e| {
+                q.is_empty()
+                    || [&e.id, &e.name, &e.description, &e.author]
+                        .iter()
+                        .any(|f| f.to_lowercase().contains(&q))
+            })
             .collect();
-        out.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()).then_with(|| a.id.cmp(&b.id)));
+        out.sort_by(|a, b| {
+            a.name
+                .to_lowercase()
+                .cmp(&b.name.to_lowercase())
+                .then_with(|| a.id.cmp(&b.id))
+        });
         // A listing stays well within a message.
         let mut size = 0;
         out.retain(|e| {
-            size += 256 + e.name.len() + e.description.len() + e.author.len() + e.commands.iter().map(|c| c.len() + 8).sum::<usize>();
+            size += 256
+                + e.name.len()
+                + e.description.len()
+                + e.author.len()
+                + e.commands.iter().map(|c| c.len() + 8).sum::<usize>();
             size <= MAX_LISTING
         });
         out
@@ -180,31 +224,60 @@ impl Directory {
     pub fn size_of(&self, id: &str, version: Option<&str>) -> Option<u64> {
         self.entries
             .iter()
-            .filter(|e| e.id == id && version.is_none_or(|v| compare_versions(&e.version, v) == Some(Ordering::Equal)))
+            .filter(|e| {
+                e.id == id
+                    && version
+                        .is_none_or(|v| compare_versions(&e.version, v) == Some(Ordering::Equal))
+            })
             .min_by(|a, b| by_version(a, b))
             .map(|e| e.bytes)
     }
 
     /// Version `version` (or the latest) of plugin `id`, and its bundle, read back and checked
     /// against its hash.
-    pub fn fetch(&mut self, id: &str, version: Option<&str>) -> Result<(PluginEntry, Vec<u8>), String> {
+    pub fn fetch(
+        &mut self,
+        id: &str,
+        version: Option<&str>,
+    ) -> Result<(PluginEntry, Vec<u8>), String> {
         let entry = self
             .entries
             .iter()
-            .filter(|e| e.id == id && version.is_none_or(|v| compare_versions(&e.version, v) == Some(Ordering::Equal)))
+            .filter(|e| {
+                e.id == id
+                    && version
+                        .is_none_or(|v| compare_versions(&e.version, v) == Some(Ordering::Equal))
+            })
             .min_by(|a, b| by_version(a, b))
             .cloned()
             .ok_or_else(|| match version {
-                Some(v) => format!("the directory has no version {} of that plugin", v.chars().take(32).collect::<String>()),
-                None => "the directory has no such plugin (it may have been unpublished)".to_string(),
+                Some(v) => format!(
+                    "the directory has no version {} of that plugin",
+                    v.chars().take(32).collect::<String>()
+                ),
+                None => {
+                    "the directory has no such plugin (it may have been unpublished)".to_string()
+                }
             })?;
-        if !self.served.take_n(Instant::now(), 1.0 + entry.bytes as f64 / MIB) {
+        if !self
+            .served
+            .take_n(Instant::now(), 1.0 + entry.bytes as f64 / MIB)
+        {
             return Err("the server is busy sending plugins: try again in a moment".into());
         }
-        let bytes = disk::read_capped(&self.file(&entry.sha256), self.cfg.max_plugin_bytes.max(entry.bytes))?;
+        let bytes = disk::read_capped(
+            &self.file(&entry.sha256),
+            self.cfg.max_plugin_bytes.max(entry.bytes),
+        )?;
         if sha256_hex(&bytes) != entry.sha256 {
-            log::error!("plugin directory: the bundle of {} {} is damaged on disk; not sending it", entry.id, entry.version);
-            return Err("that plugin's bundle is damaged on the server; tell the server's owner".into());
+            log::error!(
+                "plugin directory: the bundle of {} {} is damaged on disk; not sending it",
+                entry.id,
+                entry.version
+            );
+            return Err(
+                "that plugin's bundle is damaged on the server; tell the server's owner".into(),
+            );
         }
         Ok((entry, bytes))
     }
@@ -215,22 +288,39 @@ impl Directory {
     pub fn publish(&mut self, bytes: &[u8]) -> Result<PluginEntry, String> {
         let max = self.cfg.max_plugin_bytes;
         if bytes.len() as u64 > max {
-            return Err(format!("the plugin is {} KiB; this server keeps plugins up to {} KiB", bytes.len() >> 10, max >> 10));
+            return Err(format!(
+                "the plugin is {} KiB; this server keeps plugins up to {} KiB",
+                bytes.len() >> 10,
+                max >> 10
+            ));
         }
         let bundle = Bundle::decode(bytes, usize::try_from(max).unwrap_or(usize::MAX))?;
         let m = bundle.check()?;
-        if let Some(latest) = self.entries.iter().filter(|e| e.id == m.id).min_by(|a, b| by_version(a, b))
+        if let Some(latest) = self
+            .entries
+            .iter()
+            .filter(|e| e.id == m.id)
+            .min_by(|a, b| by_version(a, b))
             && compare_versions(&m.version, &latest.version) != Some(Ordering::Greater)
         {
-            return Err(format!("version {} of {} is on the server already: publish a newer version", latest.version, m.id));
+            return Err(format!(
+                "version {} of {} is on the server already: publish a newer version",
+                latest.version, m.id
+            ));
         }
         if self.entries.len() >= self.cfg.max_plugins {
-            return Err(format!("the directory keeps at most {} plugin versions: unpublish some first", self.cfg.max_plugins));
+            return Err(format!(
+                "the directory keeps at most {} plugin versions: unpublish some first",
+                self.cfg.max_plugins
+            ));
         }
         let sha = sha256_hex(bytes);
         let known = self.entries.iter().any(|e| e.sha256 == sha);
         if !known && self.total_bytes() + bytes.len() as u64 > self.cfg.max_total_bytes {
-            return Err(format!("the directory is full ({} MiB): unpublish some plugins first", self.cfg.max_total_bytes >> 20));
+            return Err(format!(
+                "the directory is full ({} MiB): unpublish some plugins first",
+                self.cfg.max_total_bytes >> 20
+            ));
         }
         let entry = PluginEntry {
             id: m.id.clone(),
@@ -253,21 +343,31 @@ impl Directory {
         fs::create_dir_all(&self.dir).map_err(|e| format!("couldn't keep the plugin: {e}"))?;
         let file = self.file(&sha);
         if !known {
-            disk::write_atomic(&file, bytes).map_err(|e| format!("couldn't keep the plugin: {e}"))?;
+            disk::write_atomic(&file, bytes)
+                .map_err(|e| format!("couldn't keep the plugin: {e}"))?;
         }
         self.entries.push(entry.clone());
         if let Err(e) = self.save() {
             self.entries.pop();
             return Err(format!("couldn't keep the plugin: {e}"));
         }
-        log::info!("plugin directory: published {} {} ({} bytes)", entry.id, entry.version, entry.bytes);
+        log::info!(
+            "plugin directory: published {} {} ({} bytes)",
+            entry.id,
+            entry.version,
+            entry.bytes
+        );
         Ok(entry)
     }
 
     /// Remove version `version` (or every version) of plugin `id`; the versions removed.
     pub fn unpublish(&mut self, id: &str, version: Option<&str>) -> Result<Vec<String>, String> {
-        let gone = |e: &PluginEntry| e.id == id && version.is_none_or(|v| compare_versions(&e.version, v) == Some(Ordering::Equal));
-        let (removed, kept): (Vec<PluginEntry>, Vec<PluginEntry>) = self.entries.iter().cloned().partition(gone);
+        let gone = |e: &PluginEntry| {
+            e.id == id
+                && version.is_none_or(|v| compare_versions(&e.version, v) == Some(Ordering::Equal))
+        };
+        let (removed, kept): (Vec<PluginEntry>, Vec<PluginEntry>) =
+            self.entries.iter().cloned().partition(gone);
         if removed.is_empty() {
             return Err("the directory has no such plugin or version".into());
         }
@@ -280,7 +380,11 @@ impl Directory {
             if !self.entries.iter().any(|e| e.sha256 == r.sha256)
                 && let Err(e) = fs::remove_file(self.file(&r.sha256))
             {
-                log::warn!("plugin directory: couldn't delete the bundle of {} {}: {e}", r.id, r.version);
+                log::warn!(
+                    "plugin directory: couldn't delete the bundle of {} {}: {e}",
+                    r.id,
+                    r.version
+                );
             }
         }
         let versions: Vec<String> = removed.into_iter().map(|e| e.version).collect();
@@ -290,7 +394,9 @@ impl Directory {
 
     fn save(&self) -> Result<(), String> {
         if self.broken {
-            return Err(format!("the directory's {INDEX} is damaged; tell the server's owner"));
+            return Err(format!(
+                "the directory's {INDEX} is damaged; tell the server's owner"
+            ));
         }
         let text = serde_json::to_vec_pretty(&self.entries).map_err(|e| e.to_string())?;
         disk::write_atomic(&self.dir.join(INDEX), &text).map_err(|e| e.to_string())

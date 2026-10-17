@@ -75,7 +75,10 @@ fn file_name(path: &str) -> &str {
 /// Name + size do not identify content: replacing an occupied path changes every project item referencing it.
 pub fn register_blob(name: &str, blob: web_sys::Blob) -> String {
     let size = blob.size() as u64;
-    let clean: String = name.chars().map(|c| if c == '/' || c == '\\' { '_' } else { c }).collect();
+    let clean: String = name
+        .chars()
+        .map(|c| if c == '/' || c == '\\' { '_' } else { c })
+        .collect();
     FS.with(|fs| {
         let mut fs = fs.borrow_mut();
         let (stem, ext) = match clean.rfind('.') {
@@ -84,7 +87,11 @@ pub fn register_blob(name: &str, blob: web_sys::Blob) -> String {
         };
         let mut n = 1;
         let path = loop {
-            let p = if n == 1 { format!("/files/{clean}") } else { format!("/files/{stem} ({n}){ext}") };
+            let p = if n == 1 {
+                format!("/files/{clean}")
+            } else {
+                format!("/files/{stem} ({n}){ext}")
+            };
             if !fs.entries.contains_key(&p) {
                 break p;
             }
@@ -101,7 +108,11 @@ pub fn register_blob(name: &str, blob: web_sys::Blob) -> String {
 
 /// Put bytes at a path (no download).
 pub fn put(path: &str, data: Vec<u8>) {
-    FS.with(|fs| fs.borrow_mut().entries.insert(path.to_string(), Entry::Mem(data.into())));
+    FS.with(|fs| {
+        fs.borrow_mut()
+            .entries
+            .insert(path.to_string(), Entry::Mem(data.into()))
+    });
 }
 
 /// (path, size, kind) of every file.
@@ -190,7 +201,11 @@ impl Fs {
         if self.bytes <= CACHE_BUDGET {
             return;
         }
-        let mut all: Vec<((u32, u64), u64, usize)> = self.chunks.iter().map(|(k, (d, t))| (*k, *t, d.len())).collect();
+        let mut all: Vec<((u32, u64), u64, usize)> = self
+            .chunks
+            .iter()
+            .map(|(k, (d, t))| (*k, *t, d.len()))
+            .collect();
         all.sort_unstable_by_key(|x| x.1);
         for (k, _, n) in all {
             if self.bytes <= CACHE_BUDGET * 9 / 10 {
@@ -217,7 +232,9 @@ fn request(id: u32, c: u64) {
     let Some(blob) = blob else { return };
     let size = blob.size() as u64;
     let (a, b) = (c * CHUNK, ((c + 1) * CHUNK).min(size));
-    let fut = blob.slice_with_f64_and_f64(a as f64, b as f64).map(|s| JsFuture::from(s.array_buffer()));
+    let fut = blob
+        .slice_with_f64_and_f64(a as f64, b as f64)
+        .map(|s| JsFuture::from(s.array_buffer()));
     wasm_bindgen_futures::spawn_local(async move {
         let r = match fut {
             Ok(f) => f.await.map(|buf| js_sys::Uint8Array::new(&buf).to_vec()),
@@ -271,13 +288,23 @@ impl ByteReader for BlobReader {
         let last = (self.size.max(1) - 1) / CHUNK;
         let missing: Vec<u64> = FS.with(|fs| {
             let fs = fs.borrow();
-            (c0..=c1).filter(|c| !fs.chunks.contains_key(&(self.id, *c))).collect()
+            (c0..=c1)
+                .filter(|c| !fs.chunks.contains_key(&(self.id, *c)))
+                .collect()
         });
-        if let Some(e) = FS.with(|fs| missing.iter().find_map(|c| fs.borrow().failed.get(&(self.id, *c)).cloned())) {
+        if let Some(e) = FS.with(|fs| {
+            missing
+                .iter()
+                .find_map(|c| fs.borrow().failed.get(&(self.id, *c)).cloned())
+        }) {
             return Err(io::Error::other(format!("file read failed: {e}")));
         }
         if !missing.is_empty() {
-            for c in missing.iter().copied().chain(c1 + 1..=(c1 + READ_AHEAD).min(last)) {
+            for c in missing
+                .iter()
+                .copied()
+                .chain(c1 + 1..=(c1 + READ_AHEAD).min(last))
+            {
                 request(self.id, c);
             }
             return Err(filmcraft_media::pending::would_block());
@@ -289,9 +316,15 @@ impl ByteReader for BlobReader {
             let mut pos = 0usize;
             for c in c0..=c1 {
                 // Present (checked above); evicted in between would be a bug, reported as an error.
-                let Some((d, used)) = fs.chunks.get_mut(&(self.id, c)) else { return false };
+                let Some((d, used)) = fs.chunks.get_mut(&(self.id, c)) else {
+                    return false;
+                };
                 *used = t;
-                let a = if c == c0 { (offset - c * CHUNK) as usize } else { 0 };
+                let a = if c == c0 {
+                    (offset - c * CHUNK) as usize
+                } else {
+                    0
+                };
                 let n = (d.len() - a).min(buf.len() - pos);
                 buf[pos..pos + n].copy_from_slice(&d[a..a + n]);
                 pos += n;
@@ -310,7 +343,10 @@ impl ByteReader for BlobReader {
 }
 
 fn not_found(path: &str) -> io::Error {
-    io::Error::new(io::ErrorKind::NotFound, format!("{path}: not found (files from an earlier browser session must be imported again)"))
+    io::Error::new(
+        io::ErrorKind::NotFound,
+        format!("{path}: not found (files from an earlier browser session must be imported again)"),
+    )
 }
 
 /// The engine's host services on the web.
@@ -319,7 +355,10 @@ pub struct WebServices;
 impl WebServices {
     fn entry_reader(path: &str) -> io::Result<SharedReader> {
         FS.with(|fs| match fs.borrow().entries.get(path) {
-            Some(Entry::Blob { id, size }) => Ok(Arc::new(BlobReader { id: *id, size: *size }) as SharedReader),
+            Some(Entry::Blob { id, size }) => Ok(Arc::new(BlobReader {
+                id: *id,
+                size: *size,
+            }) as SharedReader),
             Some(Entry::Mem(b)) => Ok(Arc::new(MemReader(b.clone())) as SharedReader),
             None => Err(not_found(path)),
         })
@@ -330,7 +369,9 @@ impl Services for WebServices {
     fn read_file(&self, path: &str) -> io::Result<Vec<u8>> {
         let r = Self::entry_reader(path)?;
         if r.len() > WHOLE_FILE_MAX {
-            return Err(io::Error::other(format!("{path}: too large to read whole in the browser")));
+            return Err(io::Error::other(format!(
+                "{path}: too large to read whole in the browser"
+            )));
         }
         filmcraft_media::reader::read_range(&*r, 0, r.len() as usize)
     }
@@ -341,7 +382,8 @@ impl Services for WebServices {
         }
         let hook = FS.with(|fs| {
             let mut fs = fs.borrow_mut();
-            fs.entries.insert(path.to_string(), Entry::Mem(Arc::from(data)));
+            fs.entries
+                .insert(path.to_string(), Entry::Mem(Arc::from(data)));
             fs.on_write.clone()
         });
         if !path.starts_with("/opfs/")
@@ -369,15 +411,24 @@ impl Services for WebServices {
     }
 
     /// The Media Browser lists the virtual file table: picked and dropped files under `/files`.
-    fn list_entries(&self, dir: &str) -> Option<io::Result<Vec<filmcraft_engine::media_browser::DirEntry>>> {
+    fn list_entries(
+        &self,
+        dir: &str,
+    ) -> Option<io::Result<Vec<filmcraft_engine::media_browser::DirEntry>>> {
         use filmcraft_engine::media_browser::DirEntry;
-        let prefix = if dir.ends_with('/') { dir.to_string() } else { format!("{dir}/") };
+        let prefix = if dir.ends_with('/') {
+            dir.to_string()
+        } else {
+            format!("{dir}/")
+        };
         let out = FS.with(|fs| {
             let fs = fs.borrow();
             let mut dirs: Vec<String> = Vec::new();
             let mut files = Vec::new();
             for (path, e) in &fs.entries {
-                let Some(rest) = path.strip_prefix(&prefix) else { continue };
+                let Some(rest) = path.strip_prefix(&prefix) else {
+                    continue;
+                };
                 match rest.split_once('/') {
                     Some((d, _)) if !d.is_empty() => {
                         if !dirs.iter().any(|x| x == d) {
@@ -390,11 +441,23 @@ impl Services for WebServices {
                             Entry::Blob { size, .. } => *size,
                             Entry::Mem(b) => b.len() as u64,
                         };
-                        files.push(DirEntry { name: rest.to_string(), is_dir: false, size: Some(size), modified: None });
+                        files.push(DirEntry {
+                            name: rest.to_string(),
+                            is_dir: false,
+                            size: Some(size),
+                            modified: None,
+                        });
                     }
                 }
             }
-            let mut v: Vec<DirEntry> = dirs.into_iter().map(|name| DirEntry { name, is_dir: true, ..Default::default() }).collect();
+            let mut v: Vec<DirEntry> = dirs
+                .into_iter()
+                .map(|name| DirEntry {
+                    name,
+                    is_dir: true,
+                    ..Default::default()
+                })
+                .collect();
             v.extend(files);
             v
         });
@@ -409,7 +472,9 @@ impl Services for WebServices {
 /// Offer bytes as a browser download named `name`. Downloads are clicked at least
 /// [`crate::download_pacing::GAP_MS`] apart: Chrome drops a burst of them (#378).
 pub fn download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
-    let doc = web_sys::window().and_then(|w| w.document()).ok_or("no document")?;
+    let doc = web_sys::window()
+        .and_then(|w| w.document())
+        .ok_or("no document")?;
     let blob = bytes_to_blob(data, "application/octet-stream")?;
     let url = web_sys::Url::create_object_url_with_blob(&blob)?;
     let a: web_sys::HtmlAnchorElement = doc.create_element("a")?.dyn_into()?;

@@ -6,7 +6,10 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use photocraft_codecs::{ChannelLayout, DecodeOptions, EncodeOptions, Format, Image, SampleType, decode, decode_with, exif_orientation};
+use photocraft_codecs::{
+    ChannelLayout, DecodeOptions, EncodeOptions, Format, Image, SampleType, decode, decode_with,
+    exif_orientation,
+};
 use serde_json::Value;
 
 fn bin() -> Command {
@@ -22,8 +25,15 @@ fn tmp(name: &str) -> PathBuf {
 
 fn ok(cmd: &mut Command) -> String {
     let o = cmd.output().unwrap();
-    let (out, err) = (String::from_utf8_lossy(&o.stdout).into_owned(), String::from_utf8_lossy(&o.stderr).into_owned());
-    assert!(o.status.success(), "exit {:?}\nstdout: {out}\nstderr: {err}", o.status);
+    let (out, err) = (
+        String::from_utf8_lossy(&o.stdout).into_owned(),
+        String::from_utf8_lossy(&o.stderr).into_owned(),
+    );
+    assert!(
+        o.status.success(),
+        "exit {:?}\nstdout: {out}\nstderr: {err}",
+        o.status
+    );
     out
 }
 
@@ -60,8 +70,16 @@ fn phone_jpeg() -> Vec<u8> {
         }
     }
     let stored = Image::from_u8(h as u32, w as u32, ChannelLayout::Rgb, px).unwrap();
-    let jpeg =
-        photocraft_codecs::encode(&stored, Format::Jpeg, &EncodeOptions { jpeg_quality: 100, jpeg_chroma_subsampling: false, ..Default::default() }).unwrap();
+    let jpeg = photocraft_codecs::encode(
+        &stored,
+        Format::Jpeg,
+        &EncodeOptions {
+            jpeg_quality: 100,
+            jpeg_chroma_subsampling: false,
+            ..Default::default()
+        },
+    )
+    .unwrap();
     let mut seg = b"Exif\0\0".to_vec();
     seg.extend_from_slice(&exif(6));
     let mut out = jpeg[..2].to_vec();
@@ -74,7 +92,14 @@ fn phone_jpeg() -> Vec<u8> {
 
 /// The file as stored (no orientation applied), so its own dimensions and tag can be checked.
 fn stored(path: &Path) -> Image {
-    decode_with(&std::fs::read(path).unwrap(), &DecodeOptions { keep_orientation: true, ..Default::default() }).unwrap()
+    decode_with(
+        &std::fs::read(path).unwrap(),
+        &DecodeOptions {
+            keep_orientation: true,
+            ..Default::default()
+        },
+    )
+    .unwrap()
 }
 
 fn assert_portrait_pixels(img: &Image) {
@@ -83,7 +108,12 @@ fn assert_portrait_pixels(img: &Image) {
         let i = (y * 16 + x) * 3;
         let got = &img.data()[i..i + 3];
         let want = upright_color(x, y);
-        assert!(got.iter().zip(want).all(|(a, b)| (i32::from(*a) - i32::from(b)).abs() <= 12), "({x},{y}): {got:?} vs {want:?}");
+        assert!(
+            got.iter()
+                .zip(want)
+                .all(|(a, b)| (i32::from(*a) - i32::from(b)).abs() <= 12),
+            "({x},{y}): {got:?} vs {want:?}"
+        );
     }
 }
 
@@ -103,11 +133,19 @@ fn orientation_6_jpeg_converts_upright_and_rotates_back() {
         assert_eq!(exif_orientation(e), 1, "written EXIF orientation");
     }
     assert_eq!(exif_orientation(&std::fs::read(&png).unwrap()), 1);
-    assert_eq!(decode(&std::fs::read(&png).unwrap()).unwrap().dimensions(), (16, 32), "no second turn on reopen");
+    assert_eq!(
+        decode(&std::fs::read(&png).unwrap()).unwrap().dimensions(),
+        (16, 32),
+        "no second turn on reopen"
+    );
 
     // An explicit Image › Image Rotation › 90° Clockwise makes it landscape again.
     let turned = d.join("turned.png");
-    ok(bin().arg("run").arg(&jpg).args(["--cmd", "image.imageRotation.90cw", "--out"]).arg(&turned));
+    ok(bin()
+        .arg("run")
+        .arg(&jpg)
+        .args(["--cmd", "image.imageRotation.90cw", "--out"])
+        .arg(&turned));
     let t = stored(&turned);
     assert_eq!(t.dimensions(), (32, 16));
     if let Some(e) = t.meta.exif.as_deref() {
@@ -116,7 +154,11 @@ fn orientation_6_jpeg_converts_upright_and_rotates_back() {
     // The portrait's top-left (red) is now top-right; its bottom (blue) is on the left.
     let t = t.convert(ChannelLayout::Rgb, SampleType::U8);
     let at = |x: usize, y: usize| <[u8; 3]>::try_from(&t.data()[(y * 32 + x) * 3..][..3]).unwrap();
-    let near = |a: [u8; 3], b: [u8; 3]| a.iter().zip(b).all(|(a, b)| (i32::from(*a) - i32::from(b)).abs() <= 12);
+    let near = |a: [u8; 3], b: [u8; 3]| {
+        a.iter()
+            .zip(b)
+            .all(|(a, b)| (i32::from(*a) - i32::from(b)).abs() <= 12)
+    };
     assert!(near(at(28, 3), upright_color(3, 4)), "{:?}", at(28, 3));
     assert!(near(at(28, 12), upright_color(12, 4)), "{:?}", at(28, 12));
     assert!(near(at(4, 8), upright_color(8, 28)), "{:?}", at(4, 8));
@@ -133,7 +175,10 @@ fn orientation_6_jpeg_converts_upright_and_rotates_back() {
         v
     };
     let (mut ia, mut ib) = (info(&a), info(&b));
-    assert_eq!((ia["width"].as_u64(), ia["height"].as_u64()), (Some(16), Some(32)));
+    assert_eq!(
+        (ia["width"].as_u64(), ia["height"].as_u64()),
+        (Some(16), Some(32))
+    );
     assert_eq!(ia["name"], "a.pcraft");
     assert_eq!(ib["name"], "b.pcraft");
     ia.as_object_mut().unwrap().remove("name");
@@ -146,6 +191,10 @@ fn orientation_6_jpeg_converts_upright_and_rotates_back() {
     assert_eq!(xa.dimensions(), (16, 32));
     assert_eq!(xa.to_rgba8(), xb.to_rgba8());
     assert_eq!(xa.meta.exif, xb.meta.exif);
-    assert_eq!(xa.to_rgba8(), stored(&png).to_rgba8(), "the .pcraft round trip matches the direct conversion");
+    assert_eq!(
+        xa.to_rgba8(),
+        stored(&png).to_rgba8(),
+        "the .pcraft round trip matches the direct conversion"
+    );
     std::fs::remove_dir_all(d).unwrap();
 }

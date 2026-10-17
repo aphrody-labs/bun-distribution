@@ -13,7 +13,10 @@ pub fn source() -> MotionSource {
     Box::new(move || {
         let reduced = reduced();
         if reduced.is_some() && last.replace(reduced) != reduced {
-            log::info!("system animation effects: {}", if reduced == Some(true) { "off" } else { "on" });
+            log::info!(
+                "system animation effects: {}",
+                if reduced == Some(true) { "off" } else { "on" }
+            );
         }
         reduced
     })
@@ -40,12 +43,23 @@ mod tests {
     /// keeps its on/off system parameters as the bits of `UserPreferencesMask`: bit n is the
     /// parameter `SPI_GET…` 0x1000 + 2n, and client-area animation is 0x1042, so bit 33.
     fn saved_choice() -> Option<bool> {
-        let out = std::process::Command::new("reg").args(["query", r"HKCU\Control Panel\Desktop", "/v", "UserPreferencesMask"]).output().ok()?;
+        let out = std::process::Command::new("reg")
+            .args([
+                "query",
+                r"HKCU\Control Panel\Desktop",
+                "/v",
+                "UserPreferencesMask",
+            ])
+            .output()
+            .ok()?;
         if !out.status.success() {
             return None;
         }
         let text = String::from_utf8_lossy(&out.stdout);
-        let hex = text.split_whitespace().skip_while(|word| *word != "REG_BINARY").nth(1)?;
+        let hex = text
+            .split_whitespace()
+            .skip_while(|word| *word != "REG_BINARY")
+            .nth(1)?;
         let byte = u8::from_str_radix(hex.get(8..10)?, 16).ok()?;
         Some(byte & 0b10 != 0)
     }
@@ -63,11 +77,16 @@ mod tests {
             Ok(enabled) => {
                 assert_eq!(answer, Some(!enabled));
                 if saved_choice() == Some(false) {
-                    assert!(!enabled, "Animation effects are off in Settings, but the answer was that animations are on");
+                    assert!(
+                        !enabled,
+                        "Animation effects are off in Settings, but the answer was that animations are on"
+                    );
                 }
             }
             Err(e) => {
-                eprintln!("UISettings isn't available here ({e}); not compared with the saved choice");
+                eprintln!(
+                    "UISettings isn't available here ({e}); not compared with the saved choice"
+                );
                 assert_eq!(answer, None);
             }
         }

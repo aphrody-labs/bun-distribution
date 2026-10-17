@@ -41,7 +41,11 @@ fn accept_loop(listener: TcpListener, tx: Sender<ControlRequest>, ctx: egui::Con
     for mut stream in listener.incoming().flatten() {
         if open.fetch_add(1, Ordering::SeqCst) >= MAX_CONNECTIONS {
             open.fetch_sub(1, Ordering::SeqCst);
-            let _ = writeln!(stream, "{}", json!({"ok": false, "error": "too many control connections"}));
+            let _ = writeln!(
+                stream,
+                "{}",
+                json!({"ok": false, "error": "too many control connections"})
+            );
             continue;
         }
         let tx = tx.clone();
@@ -49,10 +53,12 @@ fn accept_loop(listener: TcpListener, tx: Sender<ControlRequest>, ctx: egui::Con
         // The slot is given back when the guard drops: after `serve` returns, if it panics, or if
         // the thread can't be started (the closure, and with it the guard, is dropped).
         let slot = Slot(Arc::clone(&open));
-        let spawned = std::thread::Builder::new().name("control-conn".into()).spawn(move || {
-            let _slot = slot;
-            serve(stream, &tx, &ctx);
-        });
+        let spawned = std::thread::Builder::new()
+            .name("control-conn".into())
+            .spawn(move || {
+                let _slot = slot;
+                serve(stream, &tx, &ctx);
+            });
         if let Err(e) = spawned {
             eprintln!("filmcraft: control server could not start a connection thread: {e}");
         }
@@ -74,7 +80,10 @@ fn serve(stream: TcpStream, tx: &Sender<ControlRequest>, ctx: &egui::Context) {
         let (req, rrx) = ControlRequest::new(method, params);
         tx.send(req).ok()?;
         ctx.request_repaint();
-        Some(rrx.recv_timeout(Duration::from_secs(60)).unwrap_or_else(|_| json!({"ok": false, "error": "timeout"})))
+        Some(
+            rrx.recv_timeout(Duration::from_secs(60))
+                .unwrap_or_else(|_| json!({"ok": false, "error": "timeout"})),
+        )
     });
 }
 
@@ -92,7 +101,9 @@ enum Line {
 
 fn parse_line(bytes: &[u8]) -> Line {
     let Ok(text) = std::str::from_utf8(bytes) else {
-        return Line::Reject("not a control request (invalid UTF-8); closing the connection".into());
+        return Line::Reject(
+            "not a control request (invalid UTF-8); closing the connection".into(),
+        );
     };
     let text = text.trim();
     if text.is_empty() {
@@ -100,24 +111,43 @@ fn parse_line(bytes: &[u8]) -> Line {
     }
     let msg = match serde_json::from_str::<Value>(text) {
         Ok(v) => v,
-        Err(e) => return Line::Reject(format!("bad JSON ({e}); expected one JSON request object per line; closing the connection")),
+        Err(e) => {
+            return Line::Reject(format!(
+                "bad JSON ({e}); expected one JSON request object per line; closing the connection"
+            ));
+        }
     };
     let Some(obj) = msg.as_object() else {
-        return Line::Reject("not a control request (expected a JSON object); closing the connection".into());
+        return Line::Reject(
+            "not a control request (expected a JSON object); closing the connection".into(),
+        );
     };
     let Some(method) = obj.get("method").and_then(Value::as_str) else {
-        return Line::Reject("not a control request (missing string `method`); closing the connection".into());
+        return Line::Reject(
+            "not a control request (missing string `method`); closing the connection".into(),
+        );
     };
-    Line::Request { id: obj.get("id").cloned().unwrap_or(Value::Null), method: method.to_string(), params: obj.get("params").cloned().unwrap_or(json!({})) }
+    Line::Request {
+        id: obj.get("id").cloned().unwrap_or(Value::Null),
+        method: method.to_string(),
+        params: obj.get("params").cloned().unwrap_or(json!({})),
+    }
 }
 
 /// Read one `\n`-terminated line of at most `max` bytes into `buf` (newline stripped).
 /// `Ok(false)` at end of stream; `Err` when the line is too long or the read fails.
-fn read_bounded_line(reader: &mut impl BufRead, buf: &mut Vec<u8>, max: usize) -> Result<bool, String> {
+fn read_bounded_line(
+    reader: &mut impl BufRead,
+    buf: &mut Vec<u8>,
+    max: usize,
+) -> Result<bool, String> {
     buf.clear();
     // `take` bounds the bytes buffered for one line: a peer can't make us allocate more than `max`.
     let limit = u64::try_from(max).unwrap_or(u64::MAX).saturating_add(1);
-    let n = reader.take(limit).read_until(b'\n', buf).map_err(|e| e.to_string())?;
+    let n = reader
+        .take(limit)
+        .read_until(b'\n', buf)
+        .map_err(|e| e.to_string())?;
     if n == 0 {
         return Ok(false);
     }
@@ -129,7 +159,9 @@ fn read_bounded_line(reader: &mut impl BufRead, buf: &mut Vec<u8>, max: usize) -
         return Ok(true);
     }
     if buf.len() > max {
-        return Err(format!("request line longer than {max} bytes; closing the connection"));
+        return Err(format!(
+            "request line longer than {max} bytes; closing the connection"
+        ));
     }
     // Last line without a newline, then end of stream.
     Ok(true)
@@ -138,7 +170,11 @@ fn read_bounded_line(reader: &mut impl BufRead, buf: &mut Vec<u8>, max: usize) -
 /// Serve requests from `read`, answering on `out`, until the peer closes, sends something that is
 /// not a request, or `handle` returns `None` (app gone). `handle` gets `(method, params)` and
 /// returns the reply object (the request's `id` is added here).
-fn serve_lines<R: Read, W: Write>(read: R, mut out: W, mut handle: impl FnMut(String, Value) -> Option<Value>) {
+fn serve_lines<R: Read, W: Write>(
+    read: R,
+    mut out: W,
+    mut handle: impl FnMut(String, Value) -> Option<Value>,
+) {
     let mut reader = BufReader::new(read);
     let mut buf = Vec::new();
     loop {
@@ -149,7 +185,9 @@ fn serve_lines<R: Read, W: Write>(read: R, mut out: W, mut handle: impl FnMut(St
                 Line::Blank => continue,
                 Line::Reject(e) => e,
                 Line::Request { id, method, params } => {
-                    let Some(mut r) = handle(method, params) else { return };
+                    let Some(mut r) = handle(method, params) else {
+                        return;
+                    };
                     if let Some(o) = r.as_object_mut() {
                         o.insert("id".into(), id);
                     }
@@ -160,7 +198,8 @@ fn serve_lines<R: Read, W: Write>(read: R, mut out: W, mut handle: impl FnMut(St
                 }
             },
         };
-        let _ = writeln!(out, "{}", json!({"ok": false, "error": reject})).and_then(|()| out.flush());
+        let _ =
+            writeln!(out, "{}", json!({"ok": false, "error": reject})).and_then(|()| out.flush());
         return;
     }
 }
@@ -176,7 +215,11 @@ mod tests {
             calls.push(m);
             Some(json!({"ok": true, "result": null}))
         });
-        let replies = String::from_utf8(out).unwrap().lines().map(|l| serde_json::from_str::<Value>(l).unwrap()).collect();
+        let replies = String::from_utf8(out)
+            .unwrap()
+            .lines()
+            .map(|l| serde_json::from_str::<Value>(l).unwrap())
+            .collect();
         (replies, calls)
     }
 
@@ -200,7 +243,12 @@ mod tests {
         assert!(calls.is_empty(), "nothing may run: {calls:?}");
         assert_eq!(r.len(), 1);
         assert_eq!(r[0]["ok"], false);
-        assert!(r[0]["error"].as_str().unwrap().contains("closing the connection"));
+        assert!(
+            r[0]["error"]
+                .as_str()
+                .unwrap()
+                .contains("closing the connection")
+        );
     }
 
     #[test]
@@ -260,7 +308,8 @@ mod tests {
         });
         let mut c = TcpStream::connect(addr).unwrap();
         c.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
-        c.write_all(b"{\"id\":7,\"method\":\"x\"}\nhello\n{\"method\":\"y\"}\n").unwrap();
+        c.write_all(b"{\"id\":7,\"method\":\"x\"}\nhello\n{\"method\":\"y\"}\n")
+            .unwrap();
         let mut text = String::new();
         c.read_to_string(&mut text).unwrap(); // returns at EOF: the server closed the connection
         server.join().unwrap();
@@ -279,7 +328,9 @@ mod tests {
         // Idle connections are accepted in order and held open.
         let held: Vec<TcpStream> = (0..16).map(|_| TcpStream::connect(addr).unwrap()).collect();
         let mut extra = TcpStream::connect(addr).unwrap();
-        extra.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        extra
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .unwrap();
         let mut line = String::new();
         BufReader::new(&mut extra).read_line(&mut line).unwrap();
         assert!(line.contains("too many control connections"), "{line}");

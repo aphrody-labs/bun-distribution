@@ -6,8 +6,18 @@
 //! `{"id":1,"key":"…","method":"engine.execute","params":{"command":"text.insert","params":{"text":"Hi"}}}`.
 //! Every request needs the key the app writes to `<settings>/control-key.<instance>` (mode 0600,
 //! removed on exit). See `docs/control-protocol.md`.
-#![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![cfg_attr(
+    all(target_os = "windows", not(debug_assertions)),
+    windows_subsystem = "windows"
+)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod animations;
 #[cfg(target_os = "macos")]
@@ -46,7 +56,8 @@ impl eframe::App for App {
         self.0.logic(ctx);
         self.3.show(frame);
         let prev = self.0.ui.window;
-        self.0.ui.window = ctx.input(|i| WindowGeometry::track(prev, i.viewport(), i.viewport_rect().size()));
+        self.0.ui.window =
+            ctx.input(|i| WindowGeometry::track(prev, i.viewport(), i.viewport_rect().size()));
         if let Some(pos) = ctx.input(|i| take_rescue(&mut self.1, i.viewport())) {
             ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition(pos));
         }
@@ -168,10 +179,17 @@ fn load_user_fonts() {
     if !prefs_enabled() {
         return;
     }
-    let Some(dir) = wordcraft_control_key::settings_dir().map(|d| d.join("fonts")) else { return };
+    let Some(dir) = wordcraft_control_key::settings_dir().map(|d| d.join("fonts")) else {
+        return;
+    };
     let (loaded, skipped) = wordcraft_fonts::FontDb::global().load_user_fonts(&dir);
     if !loaded.is_empty() || !skipped.is_empty() {
-        log::info!("user fonts: {} loaded, {} skipped from {}", loaded.len(), skipped.len(), dir.display());
+        log::info!(
+            "user fonts: {} loaded, {} skipped from {}",
+            loaded.len(),
+            skipped.len(),
+            dir.display()
+        );
     }
 }
 
@@ -223,20 +241,28 @@ fn app_icon() -> Option<egui::IconData> {
     #[cfg(target_os = "macos")]
     let png: &[u8] = include_bytes!("../../../assets/wordcraft/app-icon/wordcraft-macos-512.png");
     #[cfg(not(target_os = "macos"))]
-    let png: &[u8] = include_bytes!("../../../assets/wordcraft/app-icon/hicolor/256x256/apps/ai.storyteller.wordcraft.png");
-    eframe::icon_data::from_png_bytes(png).map_err(|e| log::warn!("app icon: {e}")).ok()
+    let png: &[u8] = include_bytes!(
+        "../../../assets/wordcraft/app-icon/hicolor/256x256/apps/ai.storyteller.wordcraft.png"
+    );
+    eframe::icon_data::from_png_bytes(png)
+        .map_err(|e| log::warn!("app icon: {e}"))
+        .ok()
 }
 
 /// The commit the build came from (short), or `dev`.
 fn build_sha() -> &'static str {
-    option_env!("WORDCRAFT_BUILD_SHA").map(|s| s.get(..8).unwrap_or(s)).unwrap_or("dev")
+    option_env!("WORDCRAFT_BUILD_SHA")
+        .map(|s| s.get(..8).unwrap_or(s))
+        .unwrap_or("dev")
 }
 
 fn main() -> eframe::Result {
     // First, so the panic hook and every start-up warning are recorded (`logging`).
     let logger = logging::install();
     logging::install_panic_hook();
-    let mut control_port: Option<u16> = std::env::var("WORDCRAFT_CONTROL_PORT").ok().and_then(|p| p.parse().ok());
+    let mut control_port: Option<u16> = std::env::var("WORDCRAFT_CONTROL_PORT")
+        .ok()
+        .and_then(|p| p.parse().ok());
     let mut files = Vec::new();
     let mut sample = false;
     let mut args = std::env::args().skip(1);
@@ -258,7 +284,12 @@ fn main() -> eframe::Result {
     if let Some(logger) = logger {
         match log_dir().filter(|_| prefs_enabled()) {
             Some(dir) => match logger.attach_dir(&dir) {
-                Ok(path) => log::info!("WordCraft {} ({}), log file {}", env!("CARGO_PKG_VERSION"), build_sha(), path.display()),
+                Ok(path) => log::info!(
+                    "WordCraft {} ({}), log file {}",
+                    env!("CARGO_PKG_VERSION"),
+                    build_sha(),
+                    path.display()
+                ),
                 // Standard error only by now (`attach_dir` gave up on the file); unlike `eprintln!`, never panics.
                 Err(e) => log::warn!("no log file: {e}"),
             },
@@ -313,7 +344,11 @@ fn main() -> eframe::Result {
             // The system region picks the new document's paper, the units and the decimal
             // separator (#838).
             let region = region::system();
-            let doc = if sample { wordcraft_engine::sample::sample_document() } else { wordcraft_engine::blank_document(&region) };
+            let doc = if sample {
+                wordcraft_engine::sample::sample_document()
+            } else {
+                wordcraft_engine::blank_document(&region)
+            };
             let (file_dialog, dialogs) = file_dialogs::hook(&cc.egui_ctx);
             let mut session = Session::new(doc);
             session.system_region = region;
@@ -331,7 +366,11 @@ fn main() -> eframe::Result {
             app.integrated_titlebar = cfg!(target_os = "macos");
             let mut key_file = None;
             if let Some(port) = control_port
-                && let Some((rx, file)) = control_server::start(port, cc.egui_ctx.clone(), wordcraft_control_key::settings_dir().as_deref())
+                && let Some((rx, file)) = control_server::start(
+                    port,
+                    cc.egui_ctx.clone(),
+                    wordcraft_control_key::settings_dir().as_deref(),
+                )
             {
                 app = app.with_control(rx);
                 key_file = file;

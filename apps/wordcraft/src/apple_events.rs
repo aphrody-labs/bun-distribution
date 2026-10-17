@@ -23,7 +23,10 @@ impl AppleEvents {
     /// that launched the app (a Finder double-click) is caught too.
     pub fn install() -> Self {
         let (registration, inbox) = Registration::install();
-        Self { _registration: registration, inbox }
+        Self {
+            _registration: registration,
+            inbox,
+        }
     }
 
     /// The queue the app drains every frame ([`poll`]); events arriving later wake `ctx`.
@@ -49,7 +52,10 @@ pub fn poll(inbox: &Inbox, app: &mut WordApp, ctx: &egui::Context) {
                             log::warn!("{p}: {e}");
                             let e = e.to_string();
                             let msg = wordcraft_ui_egui::tl!("Couldn't open {path}: {error}");
-                            app.status(wordcraft_ui_egui::i18n::fmt(msg, &[("path", p), ("error", &e)]));
+                            app.status(wordcraft_ui_egui::i18n::fmt(
+                                msg,
+                                &[("path", p), ("error", &e)],
+                            ));
                         }
                     }
                 }

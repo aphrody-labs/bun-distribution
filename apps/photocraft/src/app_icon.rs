@@ -29,7 +29,9 @@ pub fn window_icon() -> egui::IconData {
 #[cfg(target_os = "macos")]
 const PNG: &[u8] = include_bytes!("../../../assets/photocraft/app-icon/photocraft-1024.png");
 #[cfg(not(target_os = "macos"))]
-const PNG: &[u8] = include_bytes!("../../../assets/photocraft/app-icon/hicolor/256x256/apps/ai.storyteller.photocraft.png");
+const PNG: &[u8] = include_bytes!(
+    "../../../assets/photocraft/app-icon/hicolor/256x256/apps/ai.storyteller.photocraft.png"
+);
 
 #[cfg(test)]
 mod tests {
@@ -48,21 +50,40 @@ mod tests {
     #[test]
     fn window_icon_decodes() {
         let icon = window_icon();
-        assert!(icon.width >= 256 && icon.width == icon.height, "{}x{}", icon.width, icon.height);
-        assert_eq!(icon.rgba.len(), icon.width as usize * icon.height as usize * 4);
-        assert!(icon.rgba.chunks(4).any(|p| p[3] > 0), "the icon isn't blank");
+        assert!(
+            icon.width >= 256 && icon.width == icon.height,
+            "{}x{}",
+            icon.width,
+            icon.height
+        );
+        assert_eq!(
+            icon.rgba.len(),
+            icon.width as usize * icon.height as usize * 4
+        );
+        assert!(
+            icon.rgba.chunks(4).any(|p| p[3] > 0),
+            "the icon isn't blank"
+        );
     }
 
     /// The `.ico` build.rs embeds: every size Windows asks for, each a valid PNG or BMP image.
     #[test]
     fn exe_icon_has_every_shell_size() {
-        assert_eq!((u16_at(ICO, 0), u16_at(ICO, 2)), (0, 1), "ICONDIR header, type 1 (icon)");
+        assert_eq!(
+            (u16_at(ICO, 0), u16_at(ICO, 2)),
+            (0, 1),
+            "ICONDIR header, type 1 (icon)"
+        );
         let n = u16_at(ICO, 4);
         let mut sizes = Vec::new();
         for i in 0..n {
             let e = 6 + i * 16;
             let w = if ICO[e] == 0 { 256 } else { ICO[e] as usize };
-            let h = if ICO[e + 1] == 0 { 256 } else { ICO[e + 1] as usize };
+            let h = if ICO[e + 1] == 0 {
+                256
+            } else {
+                ICO[e + 1] as usize
+            };
             assert_eq!(w, h);
             let (len, off) = (u32_at(ICO, e + 8), u32_at(ICO, e + 12));
             let data = ICO.get(off..off + len).expect("image data inside the file");
@@ -77,7 +98,10 @@ mod tests {
             sizes.push(w);
         }
         for want in [16, 24, 32, 48, 64, 256] {
-            assert!(sizes.contains(&want), "photocraft.ico lacks {want}px (has {sizes:?})");
+            assert!(
+                sizes.contains(&want),
+                "photocraft.ico lacks {want}px (has {sizes:?})"
+            );
         }
     }
 
@@ -91,29 +115,47 @@ mod tests {
     /// Each `<tag …>` element's text up to its closing `>`.
     fn elements<'a>(xml: &'a str, tag: &str) -> Vec<&'a str> {
         let open = format!("<{tag} ");
-        xml.match_indices(&open).map(|(i, _)| &xml[i..i + xml[i..].find('>').unwrap()]).collect()
+        xml.match_indices(&open)
+            .map(|(i, _)| &xml[i..i + xml[i..].find('>').unwrap()])
+            .collect()
     }
 
     /// ICE50 (#248): advertised shortcut icons are cached under their `<Icon Id>`; without the
     /// target's extension the shell shows a blank page on the Start Menu and the taskbar.
     #[test]
     fn msi_shortcut_icons_keep_the_exe_extension() {
-        let icons: Vec<&str> = elements(WXS, "Icon").iter().filter_map(|e| attr(e, "Id")).collect();
+        let icons: Vec<&str> = elements(WXS, "Icon")
+            .iter()
+            .filter_map(|e| attr(e, "Id"))
+            .collect();
         assert!(!icons.is_empty());
         for id in &icons {
-            assert!(id.ends_with(".exe") || id.ends_with(".ico"), "<Icon Id=\"{id}\"> needs an .exe or .ico extension");
+            assert!(
+                id.ends_with(".exe") || id.ends_with(".ico"),
+                "<Icon Id=\"{id}\"> needs an .exe or .ico extension"
+            );
         }
         let shortcuts = elements(WXS, "Shortcut");
         assert!(!shortcuts.is_empty());
         for s in shortcuts {
             let icon = attr(s, "Icon").expect("shortcuts name their icon");
-            assert!(icons.contains(&icon), "shortcut icon {icon} isn't an <Icon>");
+            assert!(
+                icons.contains(&icon),
+                "shortcut icon {icon} isn't an <Icon>"
+            );
             if attr(s, "Advertise") == Some("yes") {
                 // Every shortcut in the MSI targets photocraft.exe.
-                assert!(icon.ends_with(".exe"), "advertised shortcut icon {icon} must end in .exe like its target (ICE50)");
+                assert!(
+                    icon.ends_with(".exe"),
+                    "advertised shortcut icon {icon} must end in .exe like its target (ICE50)"
+                );
             }
         }
-        let arp = WXS.split("Id=\"ARPPRODUCTICON\" Value=\"").nth(1).and_then(|r| r.split('"').next()).expect("ARPPRODUCTICON");
+        let arp = WXS
+            .split("Id=\"ARPPRODUCTICON\" Value=\"")
+            .nth(1)
+            .and_then(|r| r.split('"').next())
+            .expect("ARPPRODUCTICON");
         assert!(icons.contains(&arp), "ARPPRODUCTICON {arp} isn't an <Icon>");
         // The Start Menu shortcut must not set its own AppUserModelID: the process keeps the
         // implicit one, and a mismatch would split the taskbar button from the shortcut.

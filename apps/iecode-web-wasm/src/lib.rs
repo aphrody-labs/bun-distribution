@@ -9,7 +9,6 @@ pub mod renderer_3d;
 mod webgpu;
 
 use aphrody_dust_core::{
-    Model, SaveContents,
     cpu::{self, arm7, arm9, interpreter::Interpreter},
     ds_slot,
     emu::{self, input::Keys},
@@ -17,10 +16,11 @@ use aphrody_dust_core::{
     gpu::{SCREEN_HEIGHT, SCREEN_WIDTH},
     rtc,
     spi::firmware,
-    utils::{BoxedByteSlice, Bytes, zeroed_box},
+    utils::{zeroed_box, BoxedByteSlice, Bytes},
+    Model, SaveContents,
 };
 use bun_engine::host::{DsHost, DsInput};
-use js_sys::{Function, Uint8Array, Uint32Array};
+use js_sys::{Function, Uint32Array, Uint8Array};
 use wasm_bindgen::prelude::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -115,11 +115,11 @@ fn build_emu<E: cpu::Engine>(emu_builder: emu::Builder, engine: E) -> emu::Emu<E
             emu::BuildError::RomCreation(err) => match err {
                 ds_slot::rom::normal::CreationError::InvalidSize => {
                     unreachable!("Invalid DS slot ROM file size")
-                },
+                }
             },
             emu::BuildError::RomNeedsDecryptionButNoBiosProvided => {
                 panic!("Couldn't start emulator: ROM needs decryption but no BIOS provided.");
-            },
+            }
         },
     }
 }
@@ -157,7 +157,15 @@ impl EmuState {
     }
 
     pub fn load_save(&mut self, ram_arr: Uint8Array) {
-        ram_arr.copy_to(self.host.as_mut().unwrap().emu_mut().ds_slot.spi.contents_mut())
+        ram_arr.copy_to(
+            self.host
+                .as_mut()
+                .unwrap()
+                .emu_mut()
+                .ds_slot
+                .spi
+                .contents_mut(),
+        )
     }
 
     pub fn export_save(&self) -> Uint8Array {
@@ -179,7 +187,10 @@ impl EmuState {
     }
 
     pub fn run_frame(&mut self) -> Uint32Array {
-        assert!(self.gpu_presentation.is_none(), "Use run_frame_webgpu for GPU output");
+        assert!(
+            self.gpu_presentation.is_none(),
+            "Use run_frame_webgpu for GPU output"
+        );
         let host = self.host.as_mut().unwrap();
         host.update(self.input);
         let emu = host.emu();
@@ -201,7 +212,8 @@ impl EmuState {
             .ok_or_else(|| JsValue::from_str("Emulator is unavailable"))?
             .emu_mut();
         emu.gpu.engine_3d.set_renderer_tx(Box::new(renderer_3d));
-        emu.gpu.set_renderer_2d(Box::new(renderer_2d), &mut emu.arm9);
+        emu.gpu
+            .set_renderer_2d(Box::new(renderer_2d), &mut emu.arm9);
         self.gpu_presentation = Some(presentation);
         Ok(())
     }
@@ -345,7 +357,7 @@ pub fn create_emu_state(
                     } else {
                         save_contents
                     })
-                },
+                }
                 None => SaveContents::New(expected_len),
             };
             match save_type {
@@ -369,7 +381,7 @@ pub fn create_emu_state(
                     // NOTE: The save contents' size is ensured beforehand, this should never occur.
                     .expect("couldn't create EEPROM/FRAM DS slot SPI device")
                     .into()
-                },
+                }
                 SaveType::Flash2m | SaveType::Flash4m | SaveType::Flash8m => {
                     ds_slot::spi::flash::Flash::new(
                         save_contents,
@@ -381,7 +393,7 @@ pub fn create_emu_state(
                     // NOTE: The save contents' size is ensured beforehand, this should never occur.
                     .expect("couldn't create FLASH DS slot SPI device")
                     .into()
-                },
+                }
                 SaveType::Nand64m | SaveType::Nand128m | SaveType::Nand256m => {
                     #[cfg(feature = "log")]
                     slog::error!(
@@ -393,7 +405,7 @@ pub fn create_emu_state(
                         logger.new(slog::o!("ds_spi" => "nand_todo")),
                     )
                     .into()
-                },
+                }
             }
         }
     };

@@ -37,7 +37,9 @@ pub fn detect_async() -> Option<Receiver<Detection>> {
 /// window opened through Xwayland still belongs to the Wayland desktop and must not apply a
 /// compositor-managed output profile a second time.
 #[cfg(target_os = "linux")]
-pub fn detect_async_for_session(session: crate::linux_libs::DisplaySession) -> Option<Receiver<Detection>> {
+pub fn detect_async_for_session(
+    session: crate::linux_libs::DisplaySession,
+) -> Option<Receiver<Detection>> {
     (session == crate::linux_libs::DisplaySession::X11).then(|| spawn_reader(detect))
 }
 
@@ -88,11 +90,18 @@ const HELPER_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 /// Run the helper and return its standard output; a helper that fails, or runs longer than
 /// `timeout`, is an error (and is killed and reaped), so a hung reading can't block later ones.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
-fn run_helper(cmd: &mut std::process::Command, timeout: std::time::Duration) -> Result<String, String> {
+fn run_helper(
+    cmd: &mut std::process::Command,
+    timeout: std::time::Duration,
+) -> Result<String, String> {
     use std::io::Read;
     use std::process::Stdio;
-    let mut child =
-        cmd.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().map_err(|e| format!("couldn't run the display profile reader: {e}"))?;
+    let mut child = cmd
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("couldn't run the display profile reader: {e}"))?;
     // Drain both pipes while waiting: a reply larger than the pipe buffer would otherwise block
     // the helper until the deadline.
     let drain = |p: Option<Box<dyn Read + Send>>| {
@@ -104,22 +113,39 @@ fn run_helper(cmd: &mut std::process::Command, timeout: std::time::Duration) -> 
             buf
         })
     };
-    let out = drain(child.stdout.take().map(|p| Box::new(p) as Box<dyn Read + Send>));
-    let err = drain(child.stderr.take().map(|p| Box::new(p) as Box<dyn Read + Send>));
+    let out = drain(
+        child
+            .stdout
+            .take()
+            .map(|p| Box::new(p) as Box<dyn Read + Send>),
+    );
+    let err = drain(
+        child
+            .stderr
+            .take()
+            .map(|p| Box::new(p) as Box<dyn Read + Send>),
+    );
     let deadline = std::time::Instant::now() + timeout;
     let status = loop {
         match child.try_wait() {
             Ok(Some(status)) => break status,
-            Ok(None) if std::time::Instant::now() < deadline => std::thread::sleep(std::time::Duration::from_millis(20)),
+            Ok(None) if std::time::Instant::now() < deadline => {
+                std::thread::sleep(std::time::Duration::from_millis(20))
+            }
             Ok(None) => {
                 let _ = child.kill();
                 let _ = child.wait();
-                return Err(format!("reading the display profiles took longer than {} s and was stopped", timeout.as_secs()));
+                return Err(format!(
+                    "reading the display profiles took longer than {} s and was stopped",
+                    timeout.as_secs()
+                ));
             }
             Err(e) => {
                 let _ = child.kill();
                 let _ = child.wait();
-                return Err(format!("waiting for the display profile reader failed: {e}"));
+                return Err(format!(
+                    "waiting for the display profile reader failed: {e}"
+                ));
             }
         }
     };
@@ -128,7 +154,14 @@ fn run_helper(cmd: &mut std::process::Command, timeout: std::time::Duration) -> 
     if !status.success() {
         let err = String::from_utf8_lossy(&err);
         let first = err.lines().next().unwrap_or("").trim();
-        return Err(format!("reading the display profiles failed ({status}){}", if first.is_empty() { String::new() } else { format!(": {first}") }));
+        return Err(format!(
+            "reading the display profiles failed ({status}){}",
+            if first.is_empty() {
+                String::new()
+            } else {
+                format!(": {first}")
+            }
+        ));
     }
     Ok(String::from_utf8_lossy(&out).into_owned())
 }
@@ -167,8 +200,14 @@ mod linux {
     }
 
     pub(super) fn detect() -> Detection {
-        let (connection, screen) = x11rb::connect(None).map_err(|e| format!("couldn't connect to the X11 display: {e}"))?;
-        let root = connection.setup().roots.get(screen).ok_or_else(|| "the X11 server didn't provide a screen".to_string())?.root;
+        let (connection, screen) = x11rb::connect(None)
+            .map_err(|e| format!("couldn't connect to the X11 display: {e}"))?;
+        let root = connection
+            .setup()
+            .roots
+            .get(screen)
+            .ok_or_else(|| "the X11 server didn't provide a screen".to_string())?
+            .root;
         let resources = randr::get_screen_resources_current(&connection, root)
             .map_err(|e| format!("couldn't request XRandR outputs: {e}"))?
             .reply()
@@ -177,7 +216,8 @@ mod linux {
         let mut output_names = HashMap::new();
         let mut active_crtcs = BTreeMap::new();
         for output in resources.outputs {
-            let info = match randr::get_output_info(&connection, output, resources.config_timestamp) {
+            let info = match randr::get_output_info(&connection, output, resources.config_timestamp)
+            {
                 Ok(cookie) => match cookie.reply() {
                     Ok(info) => info,
                     Err(e) => {
@@ -212,27 +252,48 @@ mod linux {
         };
         let mut displays = Vec::with_capacity(active_crtcs.len());
         for crtc in active_crtcs.into_keys() {
-            let crtc_info = match randr::get_crtc_info(&connection, crtc, resources.config_timestamp) {
-                Ok(cookie) => match cookie.reply() {
-                    Ok(info) if info.status == randr::SetConfig::SUCCESS && info.width > 0 && info.height > 0 => info,
-                    Ok(_) => continue,
+            let crtc_info =
+                match randr::get_crtc_info(&connection, crtc, resources.config_timestamp) {
+                    Ok(cookie) => match cookie.reply() {
+                        Ok(info)
+                            if info.status == randr::SetConfig::SUCCESS
+                                && info.width > 0
+                                && info.height > 0 =>
+                        {
+                            info
+                        }
+                        Ok(_) => continue,
+                        Err(e) => {
+                            log::debug!("couldn't read XRandR CRTC {crtc}: {e}");
+                            continue;
+                        }
+                    },
                     Err(e) => {
-                        log::debug!("couldn't read XRandR CRTC {crtc}: {e}");
+                        log::debug!("couldn't request XRandR CRTC {crtc}: {e}");
                         continue;
                     }
-                },
-                Err(e) => {
-                    log::debug!("couldn't request XRandR CRTC {crtc}: {e}");
-                    continue;
-                }
+                };
+            let Some(output_names) = crtc_info
+                .outputs
+                .iter()
+                .map(|output| output_names.get(output).cloned())
+                .collect::<Option<Vec<_>>>()
+            else {
+                continue;
             };
-            let Some(output_names) = crtc_info.outputs.iter().map(|output| output_names.get(output).cloned()).collect::<Option<Vec<_>>>() else { continue };
-            let Some(primary_name) = output_names.first() else { continue };
+            let Some(primary_name) = output_names.first() else {
+                continue;
+            };
             let profile = unambiguous_clone_profile(&output_names, &profiles);
             displays.push(Display {
                 id: crtc,
                 name: primary_name.clone(),
-                frame: [f64::from(crtc_info.x), f64::from(crtc_info.y), f64::from(crtc_info.width), f64::from(crtc_info.height)],
+                frame: [
+                    f64::from(crtc_info.x),
+                    f64::from(crtc_info.y),
+                    f64::from(crtc_info.width),
+                    f64::from(crtc_info.height),
+                ],
                 profile_name: profile.as_ref().map(|p| p.name.clone()),
                 icc: profile.map(|p| p.bytes),
             });
@@ -249,40 +310,62 @@ mod linux {
             .method_timeout(Duration::from_secs(2))
             .build()
             .map_err(|e| format!("couldn't connect to the system bus: {e}"))?;
-        let manager = Proxy::new(&connection, COLORD, COLORD_ROOT, COLORD_MANAGER).map_err(|e| format!("couldn't access colord: {e}"))?;
-        let devices: Vec<OwnedObjectPath> =
-            manager.call("GetDevicesByKind", &("display",)).map_err(|e| format!("colord couldn't list display devices: {e}"))?;
+        let manager = Proxy::new(&connection, COLORD, COLORD_ROOT, COLORD_MANAGER)
+            .map_err(|e| format!("couldn't access colord: {e}"))?;
+        let devices: Vec<OwnedObjectPath> = manager
+            .call("GetDevicesByKind", &("display",))
+            .map_err(|e| format!("colord couldn't list display devices: {e}"))?;
         let mut profiles: HashMap<String, Vec<IccProfile>> = HashMap::new();
         for device_path in devices {
-            let device = Proxy::new(&connection, COLORD, &device_path, COLORD_DEVICE).map_err(|e| format!("couldn't access a colord display device: {e}"))?;
-            let metadata: HashMap<String, String> = device.get_property("Metadata").map_err(|e| format!("couldn't read colord display metadata: {e}"))?;
-            let Some(output_name) = metadata.get("XRANDR_name").filter(|name| !name.is_empty()) else { continue };
+            let device = Proxy::new(&connection, COLORD, &device_path, COLORD_DEVICE)
+                .map_err(|e| format!("couldn't access a colord display device: {e}"))?;
+            let metadata: HashMap<String, String> = device
+                .get_property("Metadata")
+                .map_err(|e| format!("couldn't read colord display metadata: {e}"))?;
+            let Some(output_name) = metadata.get("XRANDR_name").filter(|name| !name.is_empty())
+            else {
+                continue;
+            };
             // `*` is colord's default profile qualifier. A display without one is kept, with no
             // ICC, so the engine reports the normal sRGB fallback.
-            let profile_path: OwnedObjectPath = match device.call("GetProfileForQualifiers", &(vec!["*"],)) {
-                Ok(path) => path,
-                Err(_) => continue,
-            };
-            let profile = Proxy::new(&connection, COLORD, &profile_path, COLORD_PROFILE).map_err(|e| format!("couldn't access a colord ICC profile: {e}"))?;
+            let profile_path: OwnedObjectPath =
+                match device.call("GetProfileForQualifiers", &(vec!["*"],)) {
+                    Ok(path) => path,
+                    Err(_) => continue,
+                };
+            let profile = Proxy::new(&connection, COLORD, &profile_path, COLORD_PROFILE)
+                .map_err(|e| format!("couldn't access a colord ICC profile: {e}"))?;
             let filename: String = match profile.get_property::<String>("Filename") {
                 Ok(filename) if !filename.is_empty() => filename,
                 _ => continue,
             };
             let Some(profile) = read_icc(Path::new(&filename)) else {
-                log::warn!("couldn't read a valid ICC profile assigned to X11 output {output_name}");
+                log::warn!(
+                    "couldn't read a valid ICC profile assigned to X11 output {output_name}"
+                );
                 continue;
             };
-            profiles.entry(output_name.clone()).or_default().push(profile);
+            profiles
+                .entry(output_name.clone())
+                .or_default()
+                .push(profile);
         }
         Ok(profiles)
     }
 
     fn read_icc(path: &Path) -> Option<IccProfile> {
         let mut bytes = Vec::new();
-        std::fs::File::open(path).ok()?.take((MAX_ICC_BYTES + 1) as u64).read_to_end(&mut bytes).ok()?;
+        std::fs::File::open(path)
+            .ok()?
+            .take((MAX_ICC_BYTES + 1) as u64)
+            .read_to_end(&mut bytes)
+            .ok()?;
         let bytes = checked_icc_bytes(bytes)?;
         let name = path.file_name()?.to_str()?.to_owned();
-        Some(IccProfile { name, bytes: Arc::new(bytes) })
+        Some(IccProfile {
+            name,
+            bytes: Arc::new(bytes),
+        })
     }
 
     fn checked_icc_bytes(mut bytes: Vec<u8>) -> Option<Vec<u8>> {
@@ -298,12 +381,18 @@ mod linux {
         (profile.color_space == photocraft_cms::ColorSpace::Rgb).then_some(bytes)
     }
 
-    fn unambiguous_clone_profile(output_names: &[String], profiles: &HashMap<String, Vec<IccProfile>>) -> Option<IccProfile> {
+    fn unambiguous_clone_profile(
+        output_names: &[String],
+        profiles: &HashMap<String, Vec<IccProfile>>,
+    ) -> Option<IccProfile> {
         let mut selected: Option<&IccProfile> = None;
         for output in output_names {
             let candidates = profiles.get(output)?;
             let first = candidates.first()?;
-            if candidates.iter().any(|candidate| candidate.bytes != first.bytes) {
+            if candidates
+                .iter()
+                .any(|candidate| candidate.bytes != first.bytes)
+            {
                 return None;
             }
             if selected.is_some_and(|profile| profile.bytes != first.bytes) {
@@ -311,7 +400,10 @@ mod linux {
             }
             selected = Some(first);
         }
-        selected.map(|profile| IccProfile { name: profile.name.clone(), bytes: profile.bytes.clone() })
+        selected.map(|profile| IccProfile {
+            name: profile.name.clone(),
+            bytes: profile.bytes.clone(),
+        })
     }
 
     #[cfg(test)]
@@ -334,21 +426,34 @@ mod linux {
         fn cloned_outputs_use_only_one_unambiguous_profile() {
             let srgb = photocraft_cms::Builtin::Srgb.profile().to_bytes();
             let p3 = photocraft_cms::Builtin::DisplayP3.profile().to_bytes();
-            let profile = |name: &str, bytes: std::sync::Arc<Vec<u8>>| IccProfile { name: name.into(), bytes };
+            let profile = |name: &str, bytes: std::sync::Arc<Vec<u8>>| IccProfile {
+                name: name.into(),
+                bytes,
+            };
             let outputs = ["DP-1".to_owned(), "HDMI-1".to_owned()];
 
-            let matching =
-                HashMap::from([("DP-1".to_owned(), vec![profile("sRGB", srgb.clone())]), ("HDMI-1".to_owned(), vec![profile("sRGB", srgb.clone())])]);
-            assert_eq!(unambiguous_clone_profile(&outputs, &matching).map(|p| p.name), Some("sRGB".into()));
+            let matching = HashMap::from([
+                ("DP-1".to_owned(), vec![profile("sRGB", srgb.clone())]),
+                ("HDMI-1".to_owned(), vec![profile("sRGB", srgb.clone())]),
+            ]);
+            assert_eq!(
+                unambiguous_clone_profile(&outputs, &matching).map(|p| p.name),
+                Some("sRGB".into())
+            );
 
-            let differing =
-                HashMap::from([("DP-1".to_owned(), vec![profile("sRGB", srgb.clone())]), ("HDMI-1".to_owned(), vec![profile("Display P3", p3.clone())])]);
+            let differing = HashMap::from([
+                ("DP-1".to_owned(), vec![profile("sRGB", srgb.clone())]),
+                ("HDMI-1".to_owned(), vec![profile("Display P3", p3.clone())]),
+            ]);
             assert!(unambiguous_clone_profile(&outputs, &differing).is_none());
 
             let missing = HashMap::from([("DP-1".to_owned(), vec![profile("sRGB", srgb.clone())])]);
             assert!(unambiguous_clone_profile(&outputs, &missing).is_none());
 
-            let conflicting = HashMap::from([("DP-1".to_owned(), vec![profile("sRGB", srgb), profile("Display P3", p3)])]);
+            let conflicting = HashMap::from([(
+                "DP-1".to_owned(),
+                vec![profile("sRGB", srgb), profile("Display P3", p3)],
+            )]);
             assert!(unambiguous_clone_profile(&["DP-1".to_owned()], &conflicting).is_none());
         }
     }
@@ -362,29 +467,59 @@ fn parse_reply(out: &str) -> Detection {
     let mut primary_height = None;
     for line in out.lines().filter(|l| !l.trim().is_empty()) {
         let f: Vec<&str> = line.splitn(8, '\t').collect();
-        let [id, x, y, w, h, b64, profile_name, name] = f.as_slice() else { continue };
+        let [id, x, y, w, h, b64, profile_name, name] = f.as_slice() else {
+            continue;
+        };
         let num = |s: &str| s.trim().parse::<f64>().ok().filter(|v| v.is_finite());
-        let (Some(id), Some(x), Some(y), Some(w), Some(h)) = (display_id(id), num(x), num(y), num(w), num(h)) else { continue };
+        let (Some(id), Some(x), Some(y), Some(w), Some(h)) =
+            (display_id(id), num(x), num(y), num(w), num(h))
+        else {
+            continue;
+        };
         // Cocoa frames are relative to the primary screen's bottom-left corner, y up.
         let top = *primary_height.get_or_insert(h) - (y + h);
         let name = name.trim();
-        let name = if name.is_empty() { format!("Display {id}") } else { name.to_string() };
+        let name = if name.is_empty() {
+            format!("Display {id}")
+        } else {
+            name.to_string()
+        };
         let b64 = b64.trim();
         // An ICC profile starts with its size and carries `acsp` at offset 36; anything else is
         // treated as no profile (the engine then says the display has none).
-        let icc = (!b64.is_empty()).then(|| base64_decode(b64)).flatten().filter(|b| b.len() >= 132 && b.get(36..40) == Some(b"acsp"));
+        let icc = (!b64.is_empty())
+            .then(|| base64_decode(b64))
+            .flatten()
+            .filter(|b| b.len() >= 132 && b.get(36..40) == Some(b"acsp"));
         let profile_name = Some(profile_name.trim().to_string()).filter(|n| !n.is_empty());
-        displays.push(Display { id, name, frame: [x, top, w, h], profile_name, icc: icc.map(std::sync::Arc::new) });
+        displays.push(Display {
+            id,
+            name,
+            frame: [x, top, w, h],
+            profile_name,
+            icc: icc.map(std::sync::Arc::new),
+        });
     }
     if displays.is_empty() {
         // Only the start of the first field: a display line carries a whole base64 ICC profile,
         // which must not end up in a notice (#1371).
-        let first = out.lines().next().unwrap_or("").split('\t').next().unwrap_or("").trim();
+        let first = out
+            .lines()
+            .next()
+            .unwrap_or("")
+            .split('\t')
+            .next()
+            .unwrap_or("")
+            .trim();
         let mut shown: String = first.chars().take(80).collect();
         if shown.len() < first.len() {
             shown.push('…');
         }
-        return Err(if shown.is_empty() { "the display reader returned nothing".into() } else { format!("couldn't read the display list: {shown}") });
+        return Err(if shown.is_empty() {
+            "the display reader returned nothing".into()
+        } else {
+            format!("couldn't read the display list: {shown}")
+        });
     }
     Ok(displays)
 }
@@ -395,7 +530,9 @@ fn parse_reply(out: &str) -> Detection {
 fn display_id(s: &str) -> Option<u32> {
     let s = s.trim();
     s.parse::<u32>().ok().or_else(|| {
-        let v = s.parse::<f64>().ok().filter(|v| v.is_finite() && *v >= 0.0 && v.fract() == 0.0 && *v <= f64::from(u32::MAX))?;
+        let v = s.parse::<f64>().ok().filter(|v| {
+            v.is_finite() && *v >= 0.0 && v.fract() == 0.0 && *v <= f64::from(u32::MAX)
+        })?;
         Some(v as u32)
     })
 }
@@ -457,18 +594,39 @@ mod tests {
         );
         let d = parse_reply(&reply).unwrap();
         assert_eq!(d.len(), 2);
-        assert_eq!((d[0].id, d[0].name.as_str(), d[0].frame), (1, "Built-in Retina Display", [0.0, 0.0, 1728.0, 1117.0]));
+        assert_eq!(
+            (d[0].id, d[0].name.as_str(), d[0].frame),
+            (1, "Built-in Retina Display", [0.0, 0.0, 1728.0, 1117.0])
+        );
         assert_eq!((d[1].id, d[1].frame), (4, [1728.0, -667.0, 3008.0, 1692.0]));
-        assert_eq!(d[1].profile_name.as_deref(), Some("Apple_Display_26-04-13.icc"));
+        assert_eq!(
+            d[1].profile_name.as_deref(),
+            Some("Apple_Display_26-04-13.icc")
+        );
         assert_eq!(d[1].icc.as_deref(), Some(&icc));
         // No profile, a bad profile, no name: kept, without a profile or with a fallback name.
-        let d = parse_reply("2\t0\t0\t800\t600\t\t\t\n3\t800\t0\t800\t600\taGVsbG8=\tX\tY\n").unwrap();
-        assert_eq!((d[0].name.as_str(), d[0].icc.is_none(), d[0].profile_name.is_none()), ("Display 2", true, true));
+        let d =
+            parse_reply("2\t0\t0\t800\t600\t\t\t\n3\t800\t0\t800\t600\taGVsbG8=\tX\tY\n").unwrap();
+        assert_eq!(
+            (
+                d[0].name.as_str(),
+                d[0].icc.is_none(),
+                d[0].profile_name.is_none()
+            ),
+            ("Display 2", true, true)
+        );
         assert!(d[1].icc.is_none());
         // Garbage lines are skipped; nothing usable is an error.
-        assert_eq!(parse_reply("junk\n5\t0\t0\t10\t10\t\t\tZ").unwrap().len(), 1);
+        assert_eq!(
+            parse_reply("junk\n5\t0\t0\t10\t10\t\t\tZ").unwrap().len(),
+            1
+        );
         assert!(parse_reply("").is_err());
-        assert!(parse_reply("execution error: -1728").unwrap_err().contains("-1728"));
+        assert!(
+            parse_reply("execution error: -1728")
+                .unwrap_err()
+                .contains("-1728")
+        );
     }
 
     #[test]
@@ -480,12 +638,17 @@ mod tests {
         for bad in ["4.3E+9", "-1", "1.5", "NaN", "inf", "", "x"] {
             assert_eq!(display_id(bad), None, "{bad}");
         }
-        let d = parse_reply("2.077748985E+9\t0\t0\t1512\t982\t\tColor LCD\tBuilt-in Retina Display\n").unwrap();
+        let d =
+            parse_reply("2.077748985E+9\t0\t0\t1512\t982\t\tColor LCD\tBuilt-in Retina Display\n")
+                .unwrap();
         assert_eq!(d[0].id, 2_077_748_985);
         // A line that can't be read never puts its profile into the error.
         let profile = "A".repeat(4000);
         let e = parse_reply(&format!("bad id\t0\t0\t1\t1\t{profile}\tColor LCD\tX\n")).unwrap_err();
-        assert!(e.contains("bad id") && !e.contains("AAAA") && e.len() < 120, "{e}");
+        assert!(
+            e.contains("bad id") && !e.contains("AAAA") && e.len() < 120,
+            "{e}"
+        );
         let e = parse_reply(&"Z".repeat(500)).unwrap_err();
         assert!(e.chars().count() < 120 && e.ends_with('…'), "{e}");
     }
@@ -496,23 +659,47 @@ mod tests {
     #[test]
     fn a_hung_helper_is_stopped_and_big_replies_dont_block() {
         let t0 = std::time::Instant::now();
-        let e = run_helper(std::process::Command::new("sleep").arg("30"), std::time::Duration::from_millis(300)).unwrap_err();
+        let e = run_helper(
+            std::process::Command::new("sleep").arg("30"),
+            std::time::Duration::from_millis(300),
+        )
+        .unwrap_err();
         assert!(e.contains("took longer than"), "{e}");
-        assert!(t0.elapsed() < std::time::Duration::from_secs(5), "killed at the deadline");
+        assert!(
+            t0.elapsed() < std::time::Duration::from_secs(5),
+            "killed at the deadline"
+        );
         // 1 MB on stdout (far beyond a pipe buffer) arrives whole.
-        let big = run_helper(std::process::Command::new("/bin/sh").args(["-c", "head -c 1048576 /dev/zero | tr '\\0' a"]), std::time::Duration::from_secs(20))
-            .unwrap();
+        let big = run_helper(
+            std::process::Command::new("/bin/sh")
+                .args(["-c", "head -c 1048576 /dev/zero | tr '\\0' a"]),
+            std::time::Duration::from_secs(20),
+        )
+        .unwrap();
         assert_eq!(big.len(), 1 << 20);
-        let e = run_helper(std::process::Command::new("/bin/sh").args(["-c", "echo boom >&2; exit 3"]), std::time::Duration::from_secs(5)).unwrap_err();
+        let e = run_helper(
+            std::process::Command::new("/bin/sh").args(["-c", "echo boom >&2; exit 3"]),
+            std::time::Duration::from_secs(5),
+        )
+        .unwrap_err();
         assert!(e.contains("boom"), "{e}");
-        assert!(run_helper(&mut std::process::Command::new("/nonexistent/helper"), std::time::Duration::from_secs(1)).is_err());
+        assert!(
+            run_helper(
+                &mut std::process::Command::new("/nonexistent/helper"),
+                std::time::Duration::from_secs(1)
+            )
+            .is_err()
+        );
     }
 
     fn base64_encode(b: &[u8]) -> String {
         const A: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         let mut s = String::new();
         for c in b.chunks(3) {
-            let n = c.iter().enumerate().fold(0u32, |n, (i, v)| n | u32::from(*v) << (16 - 8 * i));
+            let n = c
+                .iter()
+                .enumerate()
+                .fold(0u32, |n, (i, v)| n | u32::from(*v) << (16 - 8 * i));
             for i in 0..=c.len() {
                 s.push(A[(n >> (18 - 6 * i) & 63) as usize] as char);
             }
@@ -531,7 +718,13 @@ mod tests {
             for d in displays {
                 let Some(icc) = d.icc else { continue };
                 let p = photocraft_engine::color_cmds::profile_from_bytes(&icc).expect("parses");
-                assert_eq!(format!("{:?}", p.color_space), "Rgb", "{}: {}", d.name, p.description);
+                assert_eq!(
+                    format!("{:?}", p.color_space),
+                    "Rgb",
+                    "{}: {}",
+                    d.name,
+                    p.description
+                );
             }
         }
     }

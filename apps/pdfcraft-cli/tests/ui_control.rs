@@ -46,15 +46,26 @@ fn spy() -> Spy {
     let port = listener.local_addr().unwrap().port();
     let seen = std::thread::spawn(move || {
         let (stream, _) = listener.accept().unwrap();
-        stream.set_read_timeout(Some(Duration::from_secs(10))).unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(10)))
+            .unwrap();
         let mut write = stream.try_clone().unwrap();
         let mut seen = String::new();
         for line in BufReader::new(stream).lines() {
             let Ok(line) = line else { break };
-            let id = serde_json::from_str::<serde_json::Value>(&line).ok().and_then(|v| v.get("id").cloned()).unwrap_or_default();
+            let id = serde_json::from_str::<serde_json::Value>(&line)
+                .ok()
+                .and_then(|v| v.get("id").cloned())
+                .unwrap_or_default();
             seen.push_str(&line);
             seen.push('\n');
-            if writeln!(write, "{}", serde_json::json!({ "jsonrpc": "2.0", "id": id, "result": { "ok": true } })).is_err() {
+            if writeln!(
+                write,
+                "{}",
+                serde_json::json!({ "jsonrpc": "2.0", "id": id, "result": { "ok": true } })
+            )
+            .is_err()
+            {
                 break;
             }
         }
@@ -89,7 +100,13 @@ fn write_private(path: &Path, text: &str) {
 }
 
 fn ui(control: &Path, method: &str) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_pdfcraft-cli")).arg("ui").arg("--control").arg(control).arg(method).output().unwrap()
+    Command::new(env!("CARGO_BIN_EXE_pdfcraft-cli"))
+        .arg("ui")
+        .arg("--control")
+        .arg(control)
+        .arg(method)
+        .output()
+        .unwrap()
 }
 
 fn assert_refused(o: &Output, received: &str, expect: &str) {
@@ -108,7 +125,10 @@ fn a_control_file_of_your_own_still_works() {
     let o = ui(&control, "state");
     let received = spy.received();
     assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
-    assert!(received.contains(TOKEN) && received.contains("ui.state"), "{received}");
+    assert!(
+        received.contains(TOKEN) && received.contains("ui.state"),
+        "{received}"
+    );
 }
 
 /// Checking the owner must not depend on anything but the control file: not on being able to
@@ -131,7 +151,10 @@ fn a_control_file_of_your_own_works_without_a_writable_temp_folder() {
         .unwrap();
     let received = spy.received();
     assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
-    assert!(received.contains(TOKEN) && received.contains("ui.state"), "{received}");
+    assert!(
+        received.contains(TOKEN) && received.contains("ui.state"),
+        "{received}"
+    );
     assert!(!missing.exists(), "the CLI created the temp folder");
 }
 
@@ -161,7 +184,10 @@ fn an_oversized_control_file_is_refused() {
     let spy = spy();
     let control = dir.join("pc.json");
     // Valid JSON, padded far beyond anything the app writes.
-    write_private(&control, &format!("{}{}", control_json(spy.port), " ".repeat(1 << 20)));
+    write_private(
+        &control,
+        &format!("{}{}", control_json(spy.port), " ".repeat(1 << 20)),
+    );
     let o = ui(&control, "state");
     assert_refused(&o, &spy.received(), "too large");
 }
@@ -172,7 +198,8 @@ fn a_port_beyond_65535_is_refused_not_wrapped() {
     let spy = spy();
     let control = dir.join("pc.json");
     // 65536 more than the spy's port: truncated to 16 bits, it would reach the spy.
-    let json = serde_json::json!({ "port": u64::from(spy.port) + 65536, "token": TOKEN, "pid": 1 }).to_string();
+    let json = serde_json::json!({ "port": u64::from(spy.port) + 65536, "token": TOKEN, "pid": 1 })
+        .to_string();
     write_private(&control, &json);
     let o = ui(&control, "state");
     assert_refused(&o, &spy.received(), "not a port number");

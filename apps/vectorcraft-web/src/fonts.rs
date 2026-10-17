@@ -42,7 +42,8 @@ pub fn spawn_background_fonts(ctx: egui::Context) {
     if BACKGROUND_STARTED.with(|s| s.replace(true)) {
         return;
     }
-    let queue: Rc<Vec<&'static WebFont>> = Rc::new(WEB_FONTS.iter().filter(|f| !f.startup).collect());
+    let queue: Rc<Vec<&'static WebFont>> =
+        Rc::new(WEB_FONTS.iter().filter(|f| !f.startup).collect());
     let next = Rc::new(Cell::new(0usize));
     for _ in 0..BACKGROUND_PARALLEL.min(queue.len()) {
         let (queue, next, ctx) = (queue.clone(), next.clone(), ctx.clone());
@@ -69,7 +70,11 @@ async fn load(f: &WebFont, timeout_ms: i32) -> bool {
         }
     };
     if FontDb::global().add_font(bytes) == 0 {
-        log::warn!("web font {} {}: not a font, or already loaded", f.family, f.style);
+        log::warn!(
+            "web font {} {}: not a font, or already loaded",
+            f.family,
+            f.style
+        );
         return false;
     }
     true
@@ -88,13 +93,25 @@ async fn fetch(url: &str, integrity: &str, timeout_ms: i32) -> Result<Vec<u8>, S
         let abort = abort.clone();
         Closure::<dyn FnMut()>::new(move || abort.abort())
     };
-    let timer = window.set_timeout_with_callback_and_timeout_and_arguments_0(on_timeout.as_ref().unchecked_ref(), timeout_ms).map_err(js)?;
+    let timer = window
+        .set_timeout_with_callback_and_timeout_and_arguments_0(
+            on_timeout.as_ref().unchecked_ref(),
+            timeout_ms,
+        )
+        .map_err(js)?;
     let result = async {
-        let response: web_sys::Response = JsFuture::from(window.fetch_with_str_and_init(url, &init)).await.map_err(js)?.dyn_into().map_err(js)?;
+        let response: web_sys::Response =
+            JsFuture::from(window.fetch_with_str_and_init(url, &init))
+                .await
+                .map_err(js)?
+                .dyn_into()
+                .map_err(js)?;
         if !response.ok() {
             return Err(format!("HTTP {} for {url}", response.status()));
         }
-        let buffer = JsFuture::from(response.array_buffer().map_err(js)?).await.map_err(js)?;
+        let buffer = JsFuture::from(response.array_buffer().map_err(js)?)
+            .await
+            .map_err(js)?;
         Ok(js_sys::Uint8Array::new(&buffer).to_vec())
     }
     .await;

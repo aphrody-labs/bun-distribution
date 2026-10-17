@@ -63,7 +63,9 @@ impl Note {
 /// The host named in the settings (empty or unknown = the default host).
 fn host(name: &str) -> cpal::Host {
     if !name.is_empty()
-        && let Some(id) = cpal::available_hosts().into_iter().find(|h| h.name() == name)
+        && let Some(id) = cpal::available_hosts()
+            .into_iter()
+            .find(|h| h.name() == name)
         && let Ok(h) = cpal::host_from_id(id)
     {
         return h;
@@ -99,33 +101,55 @@ fn fallback_rank(name: &str) -> u8 {
 /// default cannot be opened — a broken ALSA `default` (missing `99-pipewire-default.conf`,
 /// #23/#106) — a fallback that can, so the app is not silently mute. The fallback list is probed
 /// only after the default fails, in [`fallback_rank`] order, and the pick is cached in `cache`.
-fn output_device(h: &cpal::Host, name: &str, cache: &Mutex<Option<(String, String)>>) -> Option<DeviceChoice> {
+fn output_device(
+    h: &cpal::Host,
+    name: &str,
+    cache: &Mutex<Option<(String, String)>>,
+) -> Option<DeviceChoice> {
     if !name.is_empty()
         && let Ok(mut devs) = h.output_devices()
         && let Some(d) = devs.find(|d| d.name().is_ok_and(|n| n == name))
     {
-        return Some(DeviceChoice { device: d, fallback: None });
+        return Some(DeviceChoice {
+            device: d,
+            fallback: None,
+        });
     }
     if let Some(d) = h.default_output_device()
         && d.default_output_config().is_ok()
     {
-        return Some(DeviceChoice { device: d, fallback: None });
+        return Some(DeviceChoice {
+            device: d,
+            fallback: None,
+        });
     }
     let host_name = h.id().name().to_string();
     let mut cache = cache.lock().unwrap_or_else(PoisonError::into_inner);
-    let mut devs: Vec<(String, cpal::Device)> = h.output_devices().ok()?.filter_map(|d| d.name().ok().map(|n| (n, d))).collect();
+    let mut devs: Vec<(String, cpal::Device)> = h
+        .output_devices()
+        .ok()?
+        .filter_map(|d| d.name().ok().map(|n| (n, d)))
+        .collect();
     if let Some((cached_host, cached)) = cache.as_ref()
         && *cached_host == host_name
         && let Some(i) = devs.iter().position(|(n, _)| n == cached)
     {
         let (found, d) = devs.swap_remove(i);
-        return Some(DeviceChoice { device: d, fallback: Some(Note::Fallback(found)) });
+        return Some(DeviceChoice {
+            device: d,
+            fallback: Some(Note::Fallback(found)),
+        });
     }
     devs.sort_by_key(|(n, _)| fallback_rank(n));
-    let (found, d) = devs.into_iter().find(|(_, d)| d.default_output_config().is_ok())?;
+    let (found, d) = devs
+        .into_iter()
+        .find(|(_, d)| d.default_output_config().is_ok())?;
     log::warn!("the default audio output device cannot be opened; falling back to '{found}'");
     *cache = Some((host_name, found.clone()));
-    Some(DeviceChoice { device: d, fallback: Some(Note::Fallback(found)) })
+    Some(DeviceChoice {
+        device: d,
+        fallback: Some(Note::Fallback(found)),
+    })
 }
 
 impl CpalOut {
@@ -133,7 +157,9 @@ impl CpalOut {
         let host = cpal::default_host();
         let fallback = Mutex::new(None);
         let choice = output_device(&host, "", &fallback);
-        let cfg = choice.as_ref().and_then(|c| c.device.default_output_config().ok());
+        let cfg = choice
+            .as_ref()
+            .and_then(|c| c.device.default_output_config().ok());
         let note = match choice {
             Some(c) => c.fallback,
             None => {
@@ -160,18 +186,33 @@ impl CpalOut {
     /// The stream configuration the settings ask for, falling back to the device default.
     fn config(&self, dev: &cpal::Device) -> Result<cpal::SupportedStreamConfig, String> {
         let default = dev.default_output_config().map_err(|e| e.to_string())?;
-        let want = if self.hw.force_document_rate { self.document_rate.unwrap_or(self.hw.sample_rate) } else { self.hw.sample_rate };
+        let want = if self.hw.force_document_rate {
+            self.document_rate.unwrap_or(self.hw.sample_rate)
+        } else {
+            self.hw.sample_rate
+        };
         let exact = dev.supported_output_configs().ok().and_then(|it| {
-            it.filter(|c| c.channels() > 0 && (c.min_sample_rate().0..=c.max_sample_rate().0).contains(&want))
-                .max_by_key(|c| {
-                    (c.channels() == default.channels(), c.sample_format() == cpal::SampleFormat::F32, c.sample_format() == default.sample_format())
-                })
-                .and_then(|c| c.try_with_sample_rate(cpal::SampleRate(want)))
+            it.filter(|c| {
+                c.channels() > 0 && (c.min_sample_rate().0..=c.max_sample_rate().0).contains(&want)
+            })
+            .max_by_key(|c| {
+                (
+                    c.channels() == default.channels(),
+                    c.sample_format() == cpal::SampleFormat::F32,
+                    c.sample_format() == default.sample_format(),
+                )
+            })
+            .and_then(|c| c.try_with_sample_rate(cpal::SampleRate(want)))
         });
         Ok(exact.unwrap_or(default))
     }
 
-    fn converted_stream<T>(&self, dev: &cpal::Device, config: &cpal::StreamConfig, fill: Arc<Mutex<Fill>>) -> Result<cpal::Stream, cpal::BuildStreamError>
+    fn converted_stream<T>(
+        &self,
+        dev: &cpal::Device,
+        config: &cpal::StreamConfig,
+        fill: Arc<Mutex<Fill>>,
+    ) -> Result<cpal::Stream, cpal::BuildStreamError>
     where
         T: cpal::SizedSample + cpal::FromSample<f32>,
     {
@@ -184,7 +225,11 @@ impl CpalOut {
             config,
             move |buf: &mut [T], _| {
                 // Reuse the conversion buffer. A pathological driver buffer must not panic the audio thread.
-                if buf.len() > 1_048_576 || scratch.try_reserve(buf.len().saturating_sub(scratch.len())).is_err() {
+                if buf.len() > 1_048_576
+                    || scratch
+                        .try_reserve(buf.len().saturating_sub(scratch.len()))
+                        .is_err()
+                {
                     buf.fill(T::EQUILIBRIUM);
                     if !health.failed.swap(true, Ordering::SeqCst) {
                         eprintln!("filmcraft: unable to allocate the audio conversion buffer");
@@ -204,17 +249,27 @@ impl CpalOut {
     /// channels) a restarted stream must keep: the mixer was set up for them.
     fn open(&mut self, fill: Arc<Mutex<Fill>>, expect: Option<(u32, u16)>) -> Result<(), String> {
         let host = host(&self.hw.device_class);
-        let DeviceChoice { device: dev, fallback } = output_device(&host, &self.hw.default_output, &self.fallback).ok_or("no output device")?;
+        let DeviceChoice {
+            device: dev,
+            fallback,
+        } = output_device(&host, &self.hw.default_output, &self.fallback)
+            .ok_or("no output device")?;
         self.note = fallback;
         let cfg = self.config(&dev)?;
         let channels = cfg.channels() as usize;
         if channels == 0 || cfg.sample_rate().0 == 0 {
-            return Err("the output device returned an invalid channel count or sample rate".into());
+            return Err(
+                "the output device returned an invalid channel count or sample rate".into(),
+            );
         }
         if let Some((rate, ch)) = expect
             && (rate, ch) != (cfg.sample_rate().0, cfg.channels())
         {
-            return Err(format!("the output device now runs at {} Hz with {} channels", cfg.sample_rate().0, cfg.channels()));
+            return Err(format!(
+                "the output device now runs at {} Hz with {} channels",
+                cfg.sample_rate().0,
+                cfg.channels()
+            ));
         }
         let mut config: cpal::StreamConfig = cfg.clone().into();
         if let cpal::SupportedBufferSize::Range { min, max } = cfg.buffer_size()
@@ -316,7 +371,10 @@ struct Watchdog {
 
 impl Watchdog {
     fn reset(&mut self, now: Duration) {
-        *self = Self { seen: (0, now), ..Self::default() };
+        *self = Self {
+            seen: (0, now),
+            ..Self::default()
+        };
     }
 
     fn check(&mut self, now: Duration, played: u64, errored: bool, lost: bool) -> Verdict {
@@ -330,7 +388,8 @@ impl Watchdog {
         if !lost && !(self.pending_error && stalled) {
             return Verdict::Healthy;
         }
-        self.restarts.retain(|t| now.saturating_sub(*t) < RESTART_WINDOW);
+        self.restarts
+            .retain(|t| now.saturating_sub(*t) < RESTART_WINDOW);
         if self.restarts.len() >= MAX_RESTARTS {
             return Verdict::GiveUp;
         }
@@ -344,7 +403,13 @@ impl Watchdog {
 /// One device callback: run the shared mixer into `buf` and advance the clock. Never panics: a
 /// panicking mixer plays silence and fails the stream, and a mixer held by another stream (never
 /// expected: a restart drops the old stream first) plays silence without advancing the clock.
-fn render(fill: &Mutex<Fill>, buf: &mut [f32], channels: usize, played: &AtomicU64, health: &Health) {
+fn render(
+    fill: &Mutex<Fill>,
+    buf: &mut [f32],
+    channels: usize,
+    played: &AtomicU64,
+    health: &Health,
+) {
     let mut guard = match fill.try_lock() {
         Ok(guard) => guard,
         Err(TryLockError::Poisoned(poisoned)) => poisoned.into_inner(),
@@ -353,7 +418,9 @@ fn render(fill: &Mutex<Fill>, buf: &mut [f32], channels: usize, played: &AtomicU
             return;
         }
     };
-    if health.failed.load(Ordering::SeqCst) || catch_unwind(AssertUnwindSafe(|| (*guard)(buf, channels))).is_err() {
+    if health.failed.load(Ordering::SeqCst)
+        || catch_unwind(AssertUnwindSafe(|| (*guard)(buf, channels))).is_err()
+    {
         buf.fill(0.0);
         if !health.failed.swap(true, Ordering::SeqCst) {
             eprintln!("filmcraft: the audio mixer failed; playing without sound");
@@ -377,7 +444,11 @@ fn convert_samples<T: cpal::Sample + cpal::FromSample<f32>>(input: &[f32], outpu
     // Integer conversion represents [-1, 1). In particular I24 cannot represent +1 exactly.
     let upper = f32::from_bits(1.0_f32.to_bits() - 1);
     for (sample, converted) in input.iter().zip(output) {
-        *converted = T::from_sample(if sample.is_finite() { sample.clamp(-1.0, upper) } else { 0.0 });
+        *converted = T::from_sample(if sample.is_finite() {
+            sample.clamp(-1.0, upper)
+        } else {
+            0.0
+        });
     }
 }
 
@@ -402,10 +473,22 @@ impl AudioOut for CpalOut {
         }
         let lost = self.health.lost.swap(false, Ordering::SeqCst);
         let errored = self.health.errored.swap(false, Ordering::SeqCst);
-        match self.watchdog.check(self.epoch.elapsed(), self.played.load(Ordering::SeqCst), errored, lost) {
+        match self.watchdog.check(
+            self.epoch.elapsed(),
+            self.played.load(Ordering::SeqCst),
+            errored,
+            lost,
+        ) {
             Verdict::Healthy => {}
             Verdict::Restart => {
-                log::warn!("the audio output stream {}; restarting it", if lost { "lost its device" } else { "stopped after an error" });
+                log::warn!(
+                    "the audio output stream {}; restarting it",
+                    if lost {
+                        "lost its device"
+                    } else {
+                        "stopped after an error"
+                    }
+                );
                 if let Err(e) = self.restart() {
                     log::warn!("the audio output stream could not be restarted: {e}");
                     self.stream = None;
@@ -413,7 +496,10 @@ impl AudioOut for CpalOut {
                 }
             }
             Verdict::GiveUp => {
-                log::warn!("the audio output stream keeps failing ({MAX_RESTARTS} restarts within {} s)", RESTART_WINDOW.as_secs());
+                log::warn!(
+                    "the audio output stream keeps failing ({MAX_RESTARTS} restarts within {} s)",
+                    RESTART_WINDOW.as_secs()
+                );
                 self.health.failed.store(true, Ordering::SeqCst);
             }
         }
@@ -425,15 +511,34 @@ impl AudioOut for CpalOut {
         self.channels as usize
     }
     fn played_frames(&self) -> Option<u64> {
-        self.stream.as_ref().filter(|_| !self.health.failed.load(Ordering::SeqCst)).map(|_| self.played.load(Ordering::SeqCst))
+        self.stream
+            .as_ref()
+            .filter(|_| !self.health.failed.load(Ordering::SeqCst))
+            .map(|_| self.played.load(Ordering::SeqCst))
     }
     fn devices(&self) -> AudioDevices {
         let h = host(&self.hw.device_class);
-        let outputs = h.output_devices().map(|d| d.filter_map(|x| x.name().ok()).collect()).unwrap_or_default();
-        let inputs = h.input_devices().map(|d| d.filter_map(|x| x.name().ok()).collect()).unwrap_or_default();
-        let output_channels =
-            output_device(&h, &self.hw.default_output, &self.fallback).and_then(|c| self.config(&c.device).ok()).map(|cfg| cfg.channels()).unwrap_or(0);
-        AudioDevices { hosts: cpal::available_hosts().iter().map(|h| h.name().to_string()).collect(), inputs, outputs, output_channels }
+        let outputs = h
+            .output_devices()
+            .map(|d| d.filter_map(|x| x.name().ok()).collect())
+            .unwrap_or_default();
+        let inputs = h
+            .input_devices()
+            .map(|d| d.filter_map(|x| x.name().ok()).collect())
+            .unwrap_or_default();
+        let output_channels = output_device(&h, &self.hw.default_output, &self.fallback)
+            .and_then(|c| self.config(&c.device).ok())
+            .map(|cfg| cfg.channels())
+            .unwrap_or(0);
+        AudioDevices {
+            hosts: cpal::available_hosts()
+                .iter()
+                .map(|h| h.name().to_string())
+                .collect(),
+            inputs,
+            outputs,
+            output_channels,
+        }
     }
     fn configure(&mut self, hw: &AudioHardwarePrefs, document_rate: Option<u32>) {
         self.hw = hw.clone();
@@ -460,21 +565,52 @@ mod tests {
 
     #[test]
     fn fallback_prefers_sound_servers_over_raw_hardware() {
-        let mut names = vec!["plughw:CARD=PCH,DEV=0", "hw:CARD=PCH,DEV=0", "sysdefault:CARD=PCH", "pulse", "pipewire"];
+        let mut names = vec![
+            "plughw:CARD=PCH,DEV=0",
+            "hw:CARD=PCH,DEV=0",
+            "sysdefault:CARD=PCH",
+            "pulse",
+            "pipewire",
+        ];
         names.sort_by_key(|n| fallback_rank(n));
-        assert_eq!(names, ["pipewire", "pulse", "sysdefault:CARD=PCH", "plughw:CARD=PCH,DEV=0", "hw:CARD=PCH,DEV=0"]);
+        assert_eq!(
+            names,
+            [
+                "pipewire",
+                "pulse",
+                "sysdefault:CARD=PCH",
+                "plughw:CARD=PCH,DEV=0",
+                "hw:CARD=PCH,DEV=0"
+            ]
+        );
     }
 
     #[test]
     fn notes_name_the_fallback_device() {
-        assert!(Note::Fallback("pipewire".into()).text().contains("'pipewire'"));
+        assert!(
+            Note::Fallback("pipewire".into())
+                .text()
+                .contains("'pipewire'")
+        );
         assert!(!Note::NoDevice.text().is_empty());
     }
 
     #[test]
     fn integer_conversion_clips_and_preserves_interleaved_channels() {
         let mut signed = [0_i16; 8];
-        convert_samples(&[-2.0, 2.0, -0.5, 0.5, 0.0, f32::NAN, f32::INFINITY, f32::NEG_INFINITY], &mut signed);
+        convert_samples(
+            &[
+                -2.0,
+                2.0,
+                -0.5,
+                0.5,
+                0.0,
+                f32::NAN,
+                f32::INFINITY,
+                f32::NEG_INFINITY,
+            ],
+            &mut signed,
+        );
         assert_eq!(signed, [i16::MIN, i16::MAX, -16_384, 16_384, 0, 0, 0, 0]);
         let mut unsigned = [0_u16; 3];
         convert_samples(&[-1.0, 0.0, 1.0], &mut unsigned);
@@ -491,11 +627,21 @@ mod tests {
     #[test]
     fn stream_errors_ask_for_a_restart_instead_of_failing_playback() {
         let health = Health::default();
-        stream_error(&health, cpal::StreamError::BackendSpecific { err: cpal::BackendSpecificError { description: "`alsa::poll()` returned POLLERR".into() } });
+        stream_error(
+            &health,
+            cpal::StreamError::BackendSpecific {
+                err: cpal::BackendSpecificError {
+                    description: "`alsa::poll()` returned POLLERR".into(),
+                },
+            },
+        );
         assert!(health.errored.load(Ordering::SeqCst) && !health.lost.load(Ordering::SeqCst));
         stream_error(&health, cpal::StreamError::DeviceNotAvailable);
         assert!(health.lost.load(Ordering::SeqCst));
-        assert!(!health.failed.load(Ordering::SeqCst), "a stream error alone must not silence playback");
+        assert!(
+            !health.failed.load(Ordering::SeqCst),
+            "a stream error alone must not silence playback"
+        );
         let output = CpalOut::new();
         assert_eq!(output.played_frames(), None, "no stream, no clock");
     }
@@ -511,7 +657,10 @@ mod tests {
         assert_eq!(w.check(ms(10), 480, true, false), Verdict::Healthy);
         // the stream keeps consuming samples after the error: never restarted
         for (i, t) in (20..2_000).step_by(20).enumerate() {
-            assert_eq!(w.check(ms(t), 480 * (i as u64 + 2), false, false), Verdict::Healthy);
+            assert_eq!(
+                w.check(ms(t), 480 * (i as u64 + 2), false, false),
+                Verdict::Healthy
+            );
         }
     }
 

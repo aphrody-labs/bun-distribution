@@ -24,7 +24,11 @@ pub enum FlushOp {
     /// Replace the whole file.
     Write { name: String, data: Vec<u8> },
     /// Bytes appended since the last flush, starting at `offset` (the stored file's length).
-    Append { name: String, offset: usize, data: Vec<u8> },
+    Append {
+        name: String,
+        offset: usize,
+        data: Vec<u8>,
+    },
 }
 
 impl FlushOp {
@@ -55,7 +59,11 @@ struct Mirror {
 
 impl Mirror {
     fn mark(&mut self, name: &str, d: Dirty) {
-        let prev = self.dirty.iter().position(|(n, _)| n == name).map(|i| self.dirty.remove(i).1);
+        let prev = self
+            .dirty
+            .iter()
+            .position(|(n, _)| n == name)
+            .map(|i| self.dirty.remove(i).1);
         let d = match (prev, d) {
             // appends after appends keep the original offset; anything else needs a rewrite
             (Some(Dirty::Append { from }), Dirty::Append { .. }) => Dirty::Append { from },
@@ -121,7 +129,11 @@ impl Files {
             .map(|(name, d)| {
                 let data = m.files.get(&name).cloned().unwrap_or_default();
                 match d {
-                    Dirty::Append { from } if from <= data.len() => FlushOp::Append { offset: from, data: data[from..].to_vec(), name },
+                    Dirty::Append { from } if from <= data.len() => FlushOp::Append {
+                        offset: from,
+                        data: data[from..].to_vec(),
+                        name,
+                    },
                     _ => FlushOp::Write { name, data },
                 }
             })
@@ -196,7 +208,14 @@ impl Store for FilesStore {
 }
 
 /// Names of the library files read at start-up.
-pub const LIBRARY_FILES: [&str; 6] = ["catalog.snap", "catalog.log", "presets.json", "view.json", "prefs.json", "ui.json"];
+pub const LIBRARY_FILES: [&str; 6] = [
+    "catalog.snap",
+    "catalog.log",
+    "presets.json",
+    "view.json",
+    "prefs.json",
+    "ui.json",
+];
 
 #[cfg(test)]
 mod tests {
@@ -227,7 +246,14 @@ mod tests {
         f.preload("log", b"ab".to_vec());
         f.append("log", b"c");
         f.append("log", b"d");
-        assert_eq!(f.take_dirty(), vec![FlushOp::Append { name: "log".into(), offset: 2, data: b"cd".to_vec() }]);
+        assert_eq!(
+            f.take_dirty(),
+            vec![FlushOp::Append {
+                name: "log".into(),
+                offset: 2,
+                data: b"cd".to_vec()
+            }]
+        );
         assert!(!f.is_dirty());
         f.write("snap", b"S");
         f.truncate("log", 1);
@@ -235,7 +261,16 @@ mod tests {
         let ops = f.take_dirty();
         assert_eq!(
             ops,
-            vec![FlushOp::Write { name: "snap".into(), data: b"S".to_vec() }, FlushOp::Write { name: "log".into(), data: b"ax".to_vec() }]
+            vec![
+                FlushOp::Write {
+                    name: "snap".into(),
+                    data: b"S".to_vec()
+                },
+                FlushOp::Write {
+                    name: "log".into(),
+                    data: b"ax".to_vec()
+                }
+            ]
         );
         f.failed(&ops);
         assert_eq!(f.take_dirty().len(), 2);
@@ -247,7 +282,11 @@ mod tests {
         f.append("catalog.log", b"1\n");
         f.write("catalog.snap", b"snap");
         f.write("catalog.log", b"");
-        let names: Vec<_> = f.take_dirty().iter().map(|o| o.name().to_string()).collect();
+        let names: Vec<_> = f
+            .take_dirty()
+            .iter()
+            .map(|o| o.name().to_string())
+            .collect();
         assert_eq!(names, ["catalog.snap", "catalog.log"]);
     }
 
@@ -258,12 +297,20 @@ mod tests {
         let mut disk = BTreeMap::new();
         let files = Files::default();
         let mut s = Session::new();
-        let stores = LibraryStores { dir: "browser".into(), catalog: Box::new(files.store()), files: Box::new(files.store()), on_disk: false };
+        let stores = LibraryStores {
+            dir: "browser".into(),
+            catalog: Box::new(files.store()),
+            files: Box::new(files.store()),
+            on_disk: false,
+        };
         s.open_library_in(stores, true).unwrap();
         flush(&files, &mut disk);
         files.set_error(Some("QuotaExceededError".into()));
         let r = s.execute("photo.rate", &json!({"rating": 5}));
-        assert!(matches!(r, Err(lightcraft_engine::EngineError::NotSaved(_))), "{r:?}");
+        assert!(
+            matches!(r, Err(lightcraft_engine::EngineError::NotSaved(_))),
+            "{r:?}"
+        );
         let (ops, why) = s.unsaved().unwrap();
         assert!(ops > 0 && why.contains("QuotaExceeded"), "{why}");
         files.set_error(None);
@@ -277,9 +324,18 @@ mod tests {
             files2.preload(k, v.clone());
         }
         let mut s2 = Session::new();
-        let stores = LibraryStores { dir: "browser".into(), catalog: Box::new(files2.store()), files: Box::new(files2.store()), on_disk: false };
+        let stores = LibraryStores {
+            dir: "browser".into(),
+            catalog: Box::new(files2.store()),
+            files: Box::new(files2.store()),
+            on_disk: false,
+        };
         s2.open_library_in(stores, true).unwrap();
-        assert_eq!(s2.catalog.photo(id).unwrap().rating, 5, "the rating survived");
+        assert_eq!(
+            s2.catalog.photo(id).unwrap().rating,
+            5,
+            "the rating survived"
+        );
     }
 
     #[test]
@@ -291,7 +347,12 @@ mod tests {
                 files.preload(k, v.clone());
             }
             let mut s = Session::new();
-            let stores = LibraryStores { dir: "browser".into(), catalog: Box::new(files.store()), files: Box::new(files.store()), on_disk: false };
+            let stores = LibraryStores {
+                dir: "browser".into(),
+                catalog: Box::new(files.store()),
+                files: Box::new(files.store()),
+                on_disk: false,
+            };
             s.open_library_in(stores, true).unwrap();
             (s, files)
         };
@@ -299,7 +360,11 @@ mod tests {
         assert!(!s.catalog.is_empty(), "seeded with the demo photos");
         flush(&files, &mut disk);
         let id = s.selection.active.unwrap();
-        s.execute("develop.set", &json!({"control": "light.exposure", "value": 1.25})).unwrap();
+        s.execute(
+            "develop.set",
+            &json!({"control": "light.exposure", "value": 1.25}),
+        )
+        .unwrap();
         s.execute("photo.rate", &json!({"rating": 4})).unwrap();
         s.save_view();
         flush(&files, &mut disk);

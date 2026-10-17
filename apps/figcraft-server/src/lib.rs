@@ -72,7 +72,8 @@ pub fn start(cfg: &Config) -> Result<Running, String> {
     let addr = listener.local_addr().map_err(|e| e.to_string())?;
     cli::write_running(&cfg.data, addr)?;
     let public = cli::public_endpoint(cfg, addr)?;
-    let hosting = Hosting::serve(listener, store, cfg.net()).map_err(|e| format!("can't start serving: {e}"))?;
+    let hosting = Hosting::serve(listener, store, cfg.net())
+        .map_err(|e| format!("can't start serving: {e}"))?;
     log::info!(
         "figcraft-server {}: {files} file{} in {}; listening on {addr}; links name {}",
         env!("CARGO_PKG_VERSION"),
@@ -81,7 +82,10 @@ pub fn start(cfg: &Config) -> Result<Running, String> {
         public.url()
     );
     if addr.ip().is_loopback() && cfg.public_url.is_none() {
-        log::info!("only this machine can connect: listen on 0.0.0.0:{} (or behind a reverse proxy) to share", addr.port());
+        log::info!(
+            "only this machine can connect: listen on 0.0.0.0:{} (or behind a reverse proxy) to share",
+            addr.port()
+        );
     }
     Ok(Running { hosting })
 }

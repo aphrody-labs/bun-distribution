@@ -17,7 +17,10 @@ fn main() {
         .set("ProductName", "DeckCraft")
         .set("FileDescription", "DeckCraft presentations")
         .set("CompanyName", "Learning Machines LLC")
-        .set("LegalCopyright", "Copyright (c) the DeckCraft authors. MIT OR Apache-2.0.")
+        .set(
+            "LegalCopyright",
+            "Copyright (c) the DeckCraft authors. MIT OR Apache-2.0.",
+        )
         .set("OriginalFilename", "deckcraft.exe")
         .set("InternalName", "deckcraft");
     if let Err(e) = res.compile() {

@@ -6,7 +6,9 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use vectorcraft_engine::Session;
-use vectorcraft_engine::cmd::clipboard::{FILE_HEAD, Flavour, PASTE_ORDER, file_flavour, is_address};
+use vectorcraft_engine::cmd::clipboard::{
+    FILE_HEAD, Flavour, PASTE_ORDER, file_flavour, is_address,
+};
 use vectorcraft_engine::cmd::fileio;
 use vectorcraft_engine::cmd::recovery::{self, Hold, RecoveryStore};
 use vectorcraft_ui_egui::graphics::GraphicsLoss;
@@ -56,7 +58,9 @@ struct Host {
 
 pub fn start() {
     eframe::WebLogger::init(log::LevelFilter::Info).ok();
-    let Some(canvas) = element(CANVAS_ID).and_then(|e| e.dyn_into::<web_sys::HtmlCanvasElement>().ok()) else {
+    let Some(canvas) =
+        element(CANVAS_ID).and_then(|e| e.dyn_into::<web_sys::HtmlCanvasElement>().ok())
+    else {
         log::error!("missing <canvas id=\"{CANVAS_ID}\">");
         return;
     };
@@ -106,12 +110,22 @@ async fn run(host: Host, canvas: web_sys::HtmlCanvasElement, moving: Option<Movi
                 let loss = GraphicsLoss::default();
                 watch_canvas(&page, &loss, ctx);
                 if let Some(rs) = &cc.wgpu_render_state {
-                    log::info!("vectorcraft-web: wgpu backend {:?}", rs.adapter.get_info().backend);
+                    log::info!(
+                        "vectorcraft-web: wgpu backend {:?}",
+                        rs.adapter.get_info().backend
+                    );
                     let (loss, ctx) = (loss.clone(), ctx.clone());
-                    rs.device.set_device_lost_callback(move |reason, msg| loss.report(&ctx, format!("{reason:?}: {msg}")));
+                    rs.device.set_device_lost_callback(move |reason, msg| {
+                        loss.report(&ctx, format!("{reason:?}: {msg}"))
+                    });
                 }
                 host.pasted.borrow_mut().ctx = Some(ctx.clone());
-                let services = services(host.inbox.clone(), host.place_inbox.clone(), ctx.clone(), host.locks.clone());
+                let services = services(
+                    host.inbox.clone(),
+                    host.place_inbox.clone(),
+                    ctx.clone(),
+                    host.locks.clone(),
+                );
                 let app = match taken.borrow_mut().take() {
                     Some(mut app) => {
                         // The old services asked the old context for frames.
@@ -121,7 +135,12 @@ async fn run(host: Host, canvas: web_sys::HtmlCanvasElement, moving: Option<Movi
                     }
                     None => VectorcraftApp::new(Session::new(), services),
                 };
-                Ok(Box::new(WebShell { app: Some(app), host, canvas: page, loss }))
+                Ok(Box::new(WebShell {
+                    app: Some(app),
+                    host,
+                    canvas: page,
+                    loss,
+                }))
             }),
         )
         .await;
@@ -131,9 +150,15 @@ async fn run(host: Host, canvas: web_sys::HtmlCanvasElement, moving: Option<Movi
                 el.remove();
             }
         }
-        (Err(e), None) => notice(&[&format!("VectorCraft failed to start: {}", js_err(e)), "A browser with WebGPU or WebGL2 is required."]),
+        (Err(e), None) => notice(&[
+            &format!("VectorCraft failed to start: {}", js_err(e)),
+            "A browser with WebGPU or WebGL2 is required.",
+        ]),
         (Err(e), Some(kept)) => {
-            log::error!("vectorcraft-web: couldn't restart the graphics: {}", js_err(e));
+            log::error!(
+                "vectorcraft-web: couldn't restart the graphics: {}",
+                js_err(e)
+            );
             give_up(slot.borrow_mut().take(), kept);
         }
     }
@@ -143,7 +168,8 @@ async fn run(host: Host, canvas: web_sys::HtmlCanvasElement, moving: Option<Movi
 fn web_options() -> eframe::WebOptions {
     let mut options = eframe::WebOptions::default();
     if query().contains("webgl")
-        && let eframe::egui_wgpu::WgpuSetup::CreateNew(create) = &mut options.wgpu_options.wgpu_setup
+        && let eframe::egui_wgpu::WgpuSetup::CreateNew(create) =
+            &mut options.wgpu_options.wgpu_setup
     {
         create.instance_descriptor.backends = eframe::wgpu::Backends::GL;
     }
@@ -161,18 +187,26 @@ fn detect_language() {
     }
     i18n::set_system_locales(tags.as_slice());
     if let Some(el) = element(LOADING_ID) {
-        el.set_text_content(Some(i18n::message(i18n::system_lang(), "Loading VectorCraft…").as_str()));
+        el.set_text_content(Some(
+            i18n::message(i18n::system_lang(), "Loading VectorCraft…").as_str(),
+        ));
     }
 }
 
 /// The value of `name=` in the address's query, if given.
 fn query_param(name: &str) -> Option<String> {
     let query = query();
-    query.trim_start_matches('?').split('&').find_map(|kv| kv.strip_prefix(name)?.strip_prefix('=').map(str::to_string)).filter(|v| !v.is_empty())
+    query
+        .trim_start_matches('?')
+        .split('&')
+        .find_map(|kv| kv.strip_prefix(name)?.strip_prefix('=').map(str::to_string))
+        .filter(|v| !v.is_empty())
 }
 
 fn query() -> String {
-    web_sys::window().and_then(|w| w.location().search().ok()).unwrap_or_default()
+    web_sys::window()
+        .and_then(|w| w.location().search().ok())
+        .unwrap_or_default()
 }
 
 fn element(id: &str) -> Option<web_sys::Element> {
@@ -183,11 +217,19 @@ fn element(id: &str) -> Option<web_sys::Element> {
 /// doesn't get during a drag.
 fn track_drag(canvas: &web_sys::HtmlCanvasElement, pos: &DragPos) {
     let p = pos.clone();
-    let on_drag = wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::DragEvent)>::new(move |e: web_sys::DragEvent| {
-        p.set(Some((e.offset_x() as f32, e.offset_y() as f32, e.shift_key())));
-    });
+    let on_drag = wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::DragEvent)>::new(
+        move |e: web_sys::DragEvent| {
+            p.set(Some((
+                e.offset_x() as f32,
+                e.offset_y() as f32,
+                e.shift_key(),
+            )));
+        },
+    );
     for kind in ["dragover", "drop"] {
-        if let Err(e) = canvas.add_event_listener_with_callback(kind, on_drag.as_ref().unchecked_ref()) {
+        if let Err(e) =
+            canvas.add_event_listener_with_callback(kind, on_drag.as_ref().unchecked_ref())
+        {
             log::error!("couldn't follow {kind} events: {e:?}");
         }
     }
@@ -199,42 +241,72 @@ fn track_drag(canvas: &web_sys::HtmlCanvasElement, pos: &DragPos) {
 /// text hands the first of its files that is art (a bitmap, SVG, PDF, a metafile) to the next
 /// frame. Text, SVG markup among it, is left to egui.
 fn track_paste(pasted: &Rc<RefCell<Pasted>>) {
-    let Some(window) = web_sys::window() else { return };
+    let Some(window) = web_sys::window() else {
+        return;
+    };
     let pasted = pasted.clone();
-    let on_paste = wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::ClipboardEvent)>::new(move |e: web_sys::ClipboardEvent| {
-        let Some(data) = e.clipboard_data() else { return };
-        let Some(files) = data.files().filter(|f| f.length() > 0) else { return };
-        // Text is egui's, but for the address a browser's Copy Image puts next to the picture.
-        // Blank text is not a caption. A picture pasted with it is still the picture.
-        if data.get_data("text").is_ok_and(|t| !t.trim().is_empty() && !is_address(&t)) {
-            return;
-        }
-        e.prevent_default();
-        let held = pasted.borrow().ctx.as_ref().map(|c| c.input(|i| i.modifiers)).unwrap_or_default();
-        let files: Vec<web_sys::File> = (0..files.length()).filter_map(|i| files.get(i)).collect();
-        let pasted = pasted.clone();
-        wasm_bindgen_futures::spawn_local(async move {
-            for file in files {
-                let bytes = match wasm_bindgen_futures::JsFuture::from(file.array_buffer()).await {
-                    Ok(buf) => js_sys::Uint8Array::new(&buf).to_vec(),
-                    Err(e) => {
-                        log::error!("couldn't read the pasted file {}: {}", file.name(), js_err(e));
-                        continue;
-                    }
-                };
-                if let Some(mime) = file_flavour(&file.name(), bytes.get(..FILE_HEAD).unwrap_or(&bytes), &PASTE_ORDER) {
-                    let mut p = pasted.borrow_mut();
-                    p.flavour = Some((Flavour { mime, data: bytes }, held));
-                    if let Some(ctx) = &p.ctx {
-                        ctx.request_repaint();
-                    }
-                    return;
-                }
+    let on_paste = wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::ClipboardEvent)>::new(
+        move |e: web_sys::ClipboardEvent| {
+            let Some(data) = e.clipboard_data() else {
+                return;
+            };
+            let Some(files) = data.files().filter(|f| f.length() > 0) else {
+                return;
+            };
+            // Text is egui's, but for the address a browser's Copy Image puts next to the picture.
+            // Blank text is not a caption. A picture pasted with it is still the picture.
+            if data
+                .get_data("text")
+                .is_ok_and(|t| !t.trim().is_empty() && !is_address(&t))
+            {
+                return;
             }
-        });
-    });
+            e.prevent_default();
+            let held = pasted
+                .borrow()
+                .ctx
+                .as_ref()
+                .map(|c| c.input(|i| i.modifiers))
+                .unwrap_or_default();
+            let files: Vec<web_sys::File> =
+                (0..files.length()).filter_map(|i| files.get(i)).collect();
+            let pasted = pasted.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                for file in files {
+                    let bytes =
+                        match wasm_bindgen_futures::JsFuture::from(file.array_buffer()).await {
+                            Ok(buf) => js_sys::Uint8Array::new(&buf).to_vec(),
+                            Err(e) => {
+                                log::error!(
+                                    "couldn't read the pasted file {}: {}",
+                                    file.name(),
+                                    js_err(e)
+                                );
+                                continue;
+                            }
+                        };
+                    if let Some(mime) = file_flavour(
+                        &file.name(),
+                        bytes.get(..FILE_HEAD).unwrap_or(&bytes),
+                        &PASTE_ORDER,
+                    ) {
+                        let mut p = pasted.borrow_mut();
+                        p.flavour = Some((Flavour { mime, data: bytes }, held));
+                        if let Some(ctx) = &p.ctx {
+                            ctx.request_repaint();
+                        }
+                        return;
+                    }
+                }
+            });
+        },
+    );
     // Captured before eframe's own listener, which stops the event.
-    if let Err(e) = window.add_event_listener_with_callback_and_bool("paste", on_paste.as_ref().unchecked_ref(), true) {
+    if let Err(e) = window.add_event_listener_with_callback_and_bool(
+        "paste",
+        on_paste.as_ref().unchecked_ref(),
+        true,
+    ) {
         log::error!("couldn't follow paste events: {e:?}");
     }
     // The listener lives as long as the page.
@@ -245,10 +317,14 @@ fn track_paste(pasted: &Rc<RefCell<Pasted>>) {
 /// wgpu).
 fn watch_canvas(canvas: &web_sys::HtmlCanvasElement, loss: &GraphicsLoss, ctx: &egui::Context) {
     let (loss, ctx) = (loss.clone(), ctx.clone());
-    let on_lost = wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::Event)>::new(move |_: web_sys::Event| {
-        loss.report(&ctx, "the WebGL context was lost");
-    });
-    if let Err(e) = canvas.add_event_listener_with_callback("webglcontextlost", on_lost.as_ref().unchecked_ref()) {
+    let on_lost = wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::Event)>::new(
+        move |_: web_sys::Event| {
+            loss.report(&ctx, "the WebGL context was lost");
+        },
+    );
+    if let Err(e) = canvas
+        .add_event_listener_with_callback("webglcontextlost", on_lost.as_ref().unchecked_ref())
+    {
         log::error!("couldn't watch for a lost WebGL context: {e:?}");
     }
     // The listener lives as long as the canvas.
@@ -258,7 +334,11 @@ fn watch_canvas(canvas: &web_sys::HtmlCanvasElement, loss: &GraphicsLoss, ctx: &
 /// A new canvas in place of `old`, whose graphics were lost (a canvas whose WebGL context is lost
 /// can't get another).
 fn fresh_canvas(old: &web_sys::HtmlCanvasElement) -> Result<web_sys::HtmlCanvasElement, String> {
-    let new: web_sys::HtmlCanvasElement = old.clone_node().map_err(js_err)?.dyn_into().map_err(|_| "not a canvas")?;
+    let new: web_sys::HtmlCanvasElement = old
+        .clone_node()
+        .map_err(js_err)?
+        .dyn_into()
+        .map_err(|_| "not a canvas")?;
     old.replace_with_with_node_1(&new).map_err(js_err)?;
     Ok(new)
 }
@@ -285,11 +365,15 @@ fn give_up(app: Option<VectorcraftApp>, kept: bool) {
 
 /// Show `lines` in the middle of the page (where the loading message was).
 fn notice(lines: &[&str]) {
-    let Some(document) = web_sys::window().and_then(|w| w.document()) else { return };
+    let Some(document) = web_sys::window().and_then(|w| w.document()) else {
+        return;
+    };
     let el = match document.get_element_by_id(LOADING_ID) {
         Some(el) => el,
         None => {
-            let Ok(el) = document.create_element("div") else { return };
+            let Ok(el) = document.create_element("div") else {
+                return;
+            };
             el.set_id(LOADING_ID);
             let Some(body) = document.body() else { return };
             if let Err(e) = body.append_child(&el) {
@@ -324,14 +408,21 @@ impl WebShell {
     /// The graphics were lost (`why`): keep recovery copies, then start again on a new canvas
     /// with the same app once this frame is over (the runner is busy with it until then).
     fn restart(&mut self, why: &str) {
-        let Some(mut app) = self.app.take() else { return };
+        let Some(mut app) = self.app.take() else {
+            return;
+        };
         let kept = app.graphics_lost(why);
         let mut host = self.host.clone();
         host.restarts += 1;
-        let canvas =
-            if host.restarts > MAX_RESTARTS { Err(format!("the graphics were lost {MAX_RESTARTS} times")) } else { fresh_canvas(&self.canvas) };
+        let canvas = if host.restarts > MAX_RESTARTS {
+            Err(format!("the graphics were lost {MAX_RESTARTS} times"))
+        } else {
+            fresh_canvas(&self.canvas)
+        };
         match canvas {
-            Ok(canvas) => wasm_bindgen_futures::spawn_local(run(host, canvas, Some(Moving { app, kept }))),
+            Ok(canvas) => {
+                wasm_bindgen_futures::spawn_local(run(host, canvas, Some(Moving { app, kept })))
+            }
             Err(e) => {
                 log::error!("vectorcraft-web: giving up on the graphics: {e}");
                 let runner = host.runner;
@@ -356,19 +447,38 @@ impl eframe::App for WebShell {
         if !dropped.is_empty() {
             let at = self.host.drag.take();
             let z = ctx.zoom_factor();
-            let (pos, shift) = (at.map(|(x, y, _)| egui::pos2(x / z, y / z)), at.is_some_and(|a| a.2));
+            let (pos, shift) = (
+                at.map(|(x, y, _)| egui::pos2(x / z, y / z)),
+                at.is_some_and(|a| a.2),
+            );
             for f in dropped {
-                let name = f.path().file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "dropped".into());
+                let name = f
+                    .path()
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_else(|| "dropped".into());
                 let target = app.drop_target(&name, pos, shift);
-                let (inbox, place_inbox, ctx) = (self.host.inbox.clone(), self.host.place_inbox.clone(), ctx.clone());
+                let (inbox, place_inbox, ctx) = (
+                    self.host.inbox.clone(),
+                    self.host.place_inbox.clone(),
+                    ctx.clone(),
+                );
                 wasm_bindgen_futures::spawn_local(async move {
                     match f.bytes_async().await {
                         Ok(bytes) => {
                             match target {
-                                DropTarget::Place(d) => {
-                                    place_inbox.lock().unwrap_or_else(|e| e.into_inner()).push(PlaceArrival { name, bytes, drop: Some(d) })
-                                }
-                                DropTarget::Open => inbox.lock().unwrap_or_else(|e| e.into_inner()).push((name, bytes)),
+                                DropTarget::Place(d) => place_inbox
+                                    .lock()
+                                    .unwrap_or_else(|e| e.into_inner())
+                                    .push(PlaceArrival {
+                                        name,
+                                        bytes,
+                                        drop: Some(d),
+                                    }),
+                                DropTarget::Open => inbox
+                                    .lock()
+                                    .unwrap_or_else(|e| e.into_inner())
+                                    .push((name, bytes)),
                             }
                             ctx.request_repaint();
                         }
@@ -393,7 +503,12 @@ impl eframe::App for WebShell {
     }
 }
 
-fn services(inbox: Inbox, place_inbox: PlaceInbox, ctx: egui::Context, locks: Option<WebLocks>) -> Services {
+fn services(
+    inbox: Inbox,
+    place_inbox: PlaceInbox,
+    ctx: egui::Context,
+    locks: Option<WebLocks>,
+) -> Services {
     let open_inbox = inbox.clone();
     let picked = place_inbox.clone();
     let place_ctx = ctx.clone();
@@ -403,18 +518,34 @@ fn services(inbox: Inbox, place_inbox: PlaceInbox, ctx: egui::Context, locks: Op
             let inbox = picked.clone();
             let ctx = place_ctx.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                let dialog =
-                    fileio::place_filters().fold(rfd::AsyncFileDialog::new().set_title(vectorcraft_ui_egui::i18n::t("Place")), |d, (name, exts)| {
-                        d.add_filter(vectorcraft_ui_egui::i18n::tr_ctx(vectorcraft_ui_egui::i18n::current(), "file-filter", name), exts)
-                    });
+                let dialog = fileio::place_filters().fold(
+                    rfd::AsyncFileDialog::new().set_title(vectorcraft_ui_egui::i18n::t("Place")),
+                    |d, (name, exts)| {
+                        d.add_filter(
+                            vectorcraft_ui_egui::i18n::tr_ctx(
+                                vectorcraft_ui_egui::i18n::current(),
+                                "file-filter",
+                                name,
+                            ),
+                            exts,
+                        )
+                    },
+                );
                 let Some(files) = dialog.pick_files().await else {
                     return;
                 };
                 let mut arrived = vec![];
                 for f in files {
-                    arrived.push(PlaceArrival { name: f.file_name(), bytes: f.read().await, drop: None });
+                    arrived.push(PlaceArrival {
+                        name: f.file_name(),
+                        bytes: f.read().await,
+                        drop: None,
+                    });
                 }
-                inbox.lock().unwrap_or_else(|e| e.into_inner()).extend(arrived);
+                inbox
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .extend(arrived);
                 ctx.request_repaint();
             });
         })),
@@ -423,14 +554,25 @@ fn services(inbox: Inbox, place_inbox: PlaceInbox, ctx: egui::Context, locks: Op
             let inbox = open_inbox.clone();
             let ctx = ctx.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                let dialog = fileio::open_filters().fold(rfd::AsyncFileDialog::new(), |d, (name, exts)| {
-                    d.add_filter(vectorcraft_ui_egui::i18n::tr_ctx(vectorcraft_ui_egui::i18n::current(), "file-filter", name), exts)
-                });
+                let dialog =
+                    fileio::open_filters().fold(rfd::AsyncFileDialog::new(), |d, (name, exts)| {
+                        d.add_filter(
+                            vectorcraft_ui_egui::i18n::tr_ctx(
+                                vectorcraft_ui_egui::i18n::current(),
+                                "file-filter",
+                                name,
+                            ),
+                            exts,
+                        )
+                    });
                 let Some(file) = dialog.pick_file().await else {
                     return;
                 };
                 let bytes = file.read().await;
-                inbox.lock().unwrap_or_else(|e| e.into_inner()).push((file.file_name(), bytes));
+                inbox
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .push((file.file_name(), bytes));
                 ctx.request_repaint();
             });
         })),
@@ -463,26 +605,41 @@ fn js_err(e: wasm_bindgen::JsValue) -> String {
 }
 
 fn local_storage() -> Result<web_sys::Storage, String> {
-    web_sys::window().ok_or("no window")?.local_storage().map_err(js_err)?.ok_or_else(|| "browser storage is turned off".into())
+    web_sys::window()
+        .ok_or("no window")?
+        .local_storage()
+        .map_err(js_err)?
+        .ok_or_else(|| "browser storage is turned off".into())
 }
 
 impl RecoveryStore for BrowserStore {
     fn list(&self) -> Result<Vec<String>, String> {
         let s = local_storage()?;
         let n = s.length().map_err(js_err)?;
-        Ok((0..n).filter_map(|i| s.key(i).ok().flatten()).filter_map(|k| k.strip_prefix(RECOVERY_PREFIX).map(str::to_string)).collect())
+        Ok((0..n)
+            .filter_map(|i| s.key(i).ok().flatten())
+            .filter_map(|k| k.strip_prefix(RECOVERY_PREFIX).map(str::to_string))
+            .collect())
     }
     fn read(&self, name: &str) -> Result<Vec<u8>, String> {
-        let text = local_storage()?.get_item(&format!("{RECOVERY_PREFIX}{name}")).map_err(js_err)?;
-        text.and_then(|t| vectorcraft_format::base64_decode(&t)).ok_or_else(|| format!("{name}: no such recovery entry"))
+        let text = local_storage()?
+            .get_item(&format!("{RECOVERY_PREFIX}{name}"))
+            .map_err(js_err)?;
+        text.and_then(|t| vectorcraft_format::base64_decode(&t))
+            .ok_or_else(|| format!("{name}: no such recovery entry"))
     }
     fn write(&self, name: &str, bytes: &[u8]) -> Result<(), String> {
         local_storage()?
-            .set_item(&format!("{RECOVERY_PREFIX}{name}"), &vectorcraft_format::base64_encode(bytes))
+            .set_item(
+                &format!("{RECOVERY_PREFIX}{name}"),
+                &vectorcraft_format::base64_encode(bytes),
+            )
             .map_err(|e| format!("browser storage is full or turned off: {}", js_err(e)))
     }
     fn remove(&self, name: &str) -> Result<(), String> {
-        local_storage()?.remove_item(&format!("{RECOVERY_PREFIX}{name}")).map_err(js_err)
+        local_storage()?
+            .remove_item(&format!("{RECOVERY_PREFIX}{name}"))
+            .map_err(js_err)
     }
     fn location(&self) -> String {
         "browser storage".into()
@@ -501,11 +658,21 @@ impl RecoveryStore for BrowserStore {
 /// Trigger a browser download of `bytes` named after the last component of `path`.
 fn download(path: &str, bytes: &[u8]) -> Result<(), String> {
     let js = |e: wasm_bindgen::JsValue| format!("{e:?}");
-    let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "vectorcraft".into());
+    let name = std::path::Path::new(path)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| "vectorcraft".into());
     let window = web_sys::window().ok_or("no window")?;
     let document = window.document().ok_or("no document")?;
-    let url = blob_url(bytes, fileio::format_for_name(&name).map_or("application/octet-stream", |f| f.mime))?;
-    let a: web_sys::HtmlAnchorElement = document.create_element("a").map_err(js)?.dyn_into().map_err(|_| "not an anchor")?;
+    let url = blob_url(
+        bytes,
+        fileio::format_for_name(&name).map_or("application/octet-stream", |f| f.mime),
+    )?;
+    let a: web_sys::HtmlAnchorElement = document
+        .create_element("a")
+        .map_err(js)?
+        .dyn_into()
+        .map_err(|_| "not an anchor")?;
     a.set_href(&url);
     a.set_download(&name);
     a.style().set_property("display", "none").map_err(js)?;
@@ -517,7 +684,9 @@ fn download(path: &str, bytes: &[u8]) -> Result<(), String> {
     let revoke = wasm_bindgen::closure::Closure::once_into_js(move || {
         web_sys::Url::revoke_object_url(&url).ok();
     });
-    window.set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), 10_000).map_err(js)?;
+    window
+        .set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), 10_000)
+        .map_err(js)?;
     Ok(())
 }
 
@@ -526,7 +695,8 @@ fn blob_url(bytes: &[u8], mime: &str) -> Result<String, String> {
     let parts = js_sys::Array::of1(&js_sys::Uint8Array::from(bytes));
     let opts = web_sys::BlobPropertyBag::new();
     opts.set_type(mime);
-    let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&parts, &opts).map_err(js_err)?;
+    let blob =
+        web_sys::Blob::new_with_u8_array_sequence_and_options(&parts, &opts).map_err(js_err)?;
     web_sys::Url::create_object_url_with_blob(&blob).map_err(js_err)
 }
 
@@ -545,12 +715,17 @@ impl PrintService for BrowserPrint {
 
     fn print(&mut self, job: &PrintJob) -> Result<String, String> {
         print_pdf(job.pdf)?;
-        Ok(format!("Printing “{}”: pick the printer in the browser's print dialog", job.title))
+        Ok(format!(
+            "Printing “{}”: pick the printer in the browser's print dialog",
+            job.title
+        ))
     }
 }
 
 fn print_pdf(pdf: &[u8]) -> Result<(), String> {
-    let document = web_sys::window().and_then(|w| w.document()).ok_or("no document")?;
+    let document = web_sys::window()
+        .and_then(|w| w.document())
+        .ok_or("no document")?;
     // The previous job's frame and its blob go first.
     if let Some(old) = document.get_element_by_id(PRINT_FRAME_ID) {
         if let Some(url) = old.get_attribute("src") {
@@ -559,11 +734,22 @@ fn print_pdf(pdf: &[u8]) -> Result<(), String> {
         old.remove();
     }
     let url = blob_url(pdf, "application/pdf")?;
-    let frame: web_sys::HtmlIFrameElement = document.create_element("iframe").map_err(js_err)?.dyn_into().map_err(|_| "not a frame")?;
+    let frame: web_sys::HtmlIFrameElement = document
+        .create_element("iframe")
+        .map_err(js_err)?
+        .dyn_into()
+        .map_err(|_| "not a frame")?;
     frame.set_id(PRINT_FRAME_ID);
     // Out of sight but laid out: browsers don't print a frame that isn't.
     let style = frame.style();
-    for (k, v) in [("position", "fixed"), ("right", "0"), ("bottom", "0"), ("width", "0"), ("height", "0"), ("border", "0")] {
+    for (k, v) in [
+        ("position", "fixed"),
+        ("right", "0"),
+        ("bottom", "0"),
+        ("width", "0"),
+        ("height", "0"),
+        ("border", "0"),
+    ] {
         style.set_property(k, v).map_err(js_err)?;
     }
     let loaded = frame.clone();
@@ -577,6 +763,10 @@ fn print_pdf(pdf: &[u8]) -> Result<(), String> {
     });
     frame.set_onload(Some(onload.unchecked_ref()));
     frame.set_src(&url);
-    document.body().ok_or("no body")?.append_child(&frame).map_err(js_err)?;
+    document
+        .body()
+        .ok_or("no body")?
+        .append_child(&frame)
+        .map_err(js_err)?;
     Ok(())
 }

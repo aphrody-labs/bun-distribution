@@ -7,7 +7,10 @@ use std::net::{IpAddr, SocketAddr};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use figcraft_collab::message::{Access, Admin, AdminReply, FileRow, LinkInfo, NewLink, PluginEntry, PluginReply, PluginReq, ReportInfo};
+use figcraft_collab::message::{
+    Access, Admin, AdminReply, FileRow, LinkInfo, NewLink, PluginEntry, PluginReply, PluginReq,
+    ReportInfo,
+};
 use figcraft_collab_net::hub::Backend;
 use figcraft_collab_net::{Endpoint, Invite, manage};
 use serde::{Deserialize, Serialize};
@@ -73,18 +76,40 @@ pub enum Sort {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Command {
     Serve,
-    Key { rotate: bool },
-    Files { sort: Sort },
-    RemoveFile { file: String },
-    Links { file: String },
-    CreateLink { file: String, access: Access, label: String },
-    Revoke { file: String, link: String },
+    Key {
+        rotate: bool,
+    },
+    Files {
+        sort: Sort,
+    },
+    RemoveFile {
+        file: String,
+    },
+    Links {
+        file: String,
+    },
+    CreateLink {
+        file: String,
+        access: Access,
+        label: String,
+    },
+    Revoke {
+        file: String,
+        link: String,
+    },
     Plugins,
-    RemovePlugin { id: String, version: Option<String> },
+    RemovePlugin {
+        id: String,
+        version: Option<String>,
+    },
     Reports,
     Check,
-    Block { ip: String },
-    Unblock { ip: String },
+    Block {
+        ip: String,
+    },
+    Unblock {
+        ip: String,
+    },
     Blocked,
     Help,
     Version,
@@ -112,19 +137,39 @@ pub fn parse(args: &[String]) -> Result<Cli, String> {
     let mut sort = Sort::Id;
     let mut it = args.iter();
     while let Some(a) = it.next() {
-        let mut value = |name: &str| it.next().cloned().ok_or_else(|| format!("{name} needs a value"));
+        let mut value = |name: &str| {
+            it.next()
+                .cloned()
+                .ok_or_else(|| format!("{name} needs a value"))
+        };
         match a.as_str() {
-            "-h" | "--help" => return Ok(Cli { config, command: Command::Help }),
+            "-h" | "--help" => {
+                return Ok(Cli {
+                    config,
+                    command: Command::Help,
+                });
+            }
             // After `plugins remove ID`: the version to unpublish.
-            "--version" if words.first().is_some_and(|w| w == "plugins") => version = Some(value("--version")?),
-            "-V" | "--version" => return Ok(Cli { config, command: Command::Version }),
+            "--version" if words.first().is_some_and(|w| w == "plugins") => {
+                version = Some(value("--version")?)
+            }
+            "-V" | "--version" => {
+                return Ok(Cli {
+                    config,
+                    command: Command::Version,
+                });
+            }
             "--config" => {
                 value("--config")?;
             }
             "--listen" => config.listen = value("--listen")?,
             "--data" => config.data = PathBuf::from(value("--data")?),
             "--public-url" => config.public_url = Some(value("--public-url")?),
-            "--access" => access = Some(Access::parse(&value("--access")?).ok_or("--access must be edit or view")?),
+            "--access" => {
+                access = Some(
+                    Access::parse(&value("--access")?).ok_or("--access must be edit or view")?,
+                )
+            }
             "--label" => label = value("--label")?,
             "--rotate" => rotate = true,
             "--sort" => {
@@ -144,14 +189,26 @@ pub fn parse(args: &[String]) -> Result<Cli, String> {
         [] | ["serve"] => Command::Serve,
         ["key"] => Command::Key { rotate },
         ["files"] | ["files", "list"] => Command::Files { sort },
-        ["files", "remove", file] => Command::RemoveFile { file: file.to_string() },
-        ["links", "list", file] => Command::Links { file: file.to_string() },
-        ["links", "create", file] => {
-            Command::CreateLink { file: file.to_string(), access: access.ok_or("links create needs --access edit or --access view")?, label }
-        }
-        ["links", "revoke", file, link] => Command::Revoke { file: file.to_string(), link: link.to_string() },
+        ["files", "remove", file] => Command::RemoveFile {
+            file: file.to_string(),
+        },
+        ["links", "list", file] => Command::Links {
+            file: file.to_string(),
+        },
+        ["links", "create", file] => Command::CreateLink {
+            file: file.to_string(),
+            access: access.ok_or("links create needs --access edit or --access view")?,
+            label,
+        },
+        ["links", "revoke", file, link] => Command::Revoke {
+            file: file.to_string(),
+            link: link.to_string(),
+        },
         ["plugins"] | ["plugins", "list"] => Command::Plugins,
-        ["plugins", "remove", id] => Command::RemovePlugin { id: id.to_string(), version },
+        ["plugins", "remove", id] => Command::RemovePlugin {
+            id: id.to_string(),
+            version,
+        },
         ["reports"] => Command::Reports,
         ["check"] => Command::Check,
         ["block-ip", ip] => Command::Block { ip: ip.to_string() },
@@ -172,15 +229,22 @@ pub struct Running {
 
 /// Note where the server listens (for the command line).
 pub fn write_running(data: &Path, listen: SocketAddr) -> Result<(), String> {
-    let text = serde_json::to_vec_pretty(&Running { listen, pid: std::process::id() }).map_err(|e| e.to_string())?;
-    disk::write_atomic(&data.join(SERVER_JSON), &text).map_err(|e| format!("can't write {SERVER_JSON}: {e}"))
+    let text = serde_json::to_vec_pretty(&Running {
+        listen,
+        pid: std::process::id(),
+    })
+    .map_err(|e| e.to_string())?;
+    disk::write_atomic(&data.join(SERVER_JSON), &text)
+        .map_err(|e| format!("can't write {SERVER_JSON}: {e}"))
 }
 
 /// `addr` as something this machine can connect to (the loopback address for "every interface").
 fn reachable(addr: SocketAddr) -> SocketAddr {
     match addr.ip() {
         IpAddr::V4(ip) if ip.is_unspecified() => SocketAddr::from(([127, 0, 0, 1], addr.port())),
-        IpAddr::V6(ip) if ip.is_unspecified() => SocketAddr::from((std::net::Ipv6Addr::LOCALHOST, addr.port())),
+        IpAddr::V6(ip) if ip.is_unspecified() => {
+            SocketAddr::from((std::net::Ipv6Addr::LOCALHOST, addr.port()))
+        }
         _ => addr,
     }
 }
@@ -191,8 +255,14 @@ pub fn public_endpoint(cfg: &Config, listen: SocketAddr) -> Result<Endpoint, Str
     if let Some(e) = cfg.public()? {
         return Ok(e);
     }
-    let ip = if listen.ip().is_unspecified() { figcraft_collab_net::lan_ip().unwrap_or(reachable(listen).ip()) } else { listen.ip() };
-    Ok(Endpoint::plain(SocketAddr::new(ip, listen.port()).to_string()))
+    let ip = if listen.ip().is_unspecified() {
+        figcraft_collab_net::lan_ip().unwrap_or(reachable(listen).ip())
+    } else {
+        listen.ip()
+    };
+    Ok(Endpoint::plain(
+        SocketAddr::new(ip, listen.port()).to_string(),
+    ))
 }
 
 /// Run a command other than serving; what to print.
@@ -201,22 +271,31 @@ pub fn run(cli: &Cli) -> Result<String, String> {
     match &cli.command {
         Command::Help => Ok(USAGE.to_string()),
         Command::Version => Ok(format!("figcraft-server {}\n", env!("CARGO_PKG_VERSION"))),
-        Command::Serve => Err("serving runs in the foreground: run figcraft-server without a command".into()),
+        Command::Serve => {
+            Err("serving runs in the foreground: run figcraft-server without a command".into())
+        }
         Command::Key { rotate } => key(cfg, *rotate),
         Command::Files { sort } => match admin(cfg, Admin::Listing)? {
             AdminReply::Listing(files) => Ok(files_table(files, *sort, store::now())),
             other => unexpected(other),
         },
         // `parse` checked them.
-        Command::Check => {
-            Ok(format!("The settings are fine{}.\n", if cfg.open_publish { ": open to the public (anyone may publish without the key)" } else { "" }))
-        }
+        Command::Check => Ok(format!(
+            "The settings are fine{}.\n",
+            if cfg.open_publish {
+                ": open to the public (anyone may publish without the key)"
+            } else {
+                ""
+            }
+        )),
         Command::Reports => match admin(cfg, Admin::Reports)? {
             AdminReply::Reports(reports) => Ok(reports_table(&reports)),
             other => unexpected(other),
         },
         Command::Block { ip } => match admin(cfg, Admin::Block { ip: ip.clone() })? {
-            AdminReply::Done => Ok(format!("Blocked {ip}: its connections were dropped and new ones are refused.\n")),
+            AdminReply::Done => Ok(format!(
+                "Blocked {ip}: its connections were dropped and new ones are refused.\n"
+            )),
             other => unexpected(other),
         },
         Command::Unblock { ip } => match admin(cfg, Admin::Unblock { ip: ip.clone() })? {
@@ -224,7 +303,9 @@ pub fn run(cli: &Cli) -> Result<String, String> {
             other => unexpected(other),
         },
         Command::Blocked => match admin(cfg, Admin::Blocked)? {
-            AdminReply::Blocked(list) if list.is_empty() => Ok("No addresses are blocked.\n".into()),
+            AdminReply::Blocked(list) if list.is_empty() => {
+                Ok("No addresses are blocked.\n".into())
+            }
             AdminReply::Blocked(list) => Ok(list.iter().map(|ip| format!("{ip}\n")).collect()),
             other => unexpected(other),
         },
@@ -236,22 +317,54 @@ pub fn run(cli: &Cli) -> Result<String, String> {
             AdminReply::Links(links) => Ok(links_table(&links)),
             other => unexpected(other),
         },
-        Command::CreateLink { file, access, label } => {
-            match admin(cfg, Admin::CreateLink { file: file.clone(), access: *access, label: label.clone() })? {
+        Command::CreateLink {
+            file,
+            access,
+            label,
+        } => {
+            match admin(
+                cfg,
+                Admin::CreateLink {
+                    file: file.clone(),
+                    access: *access,
+                    label: label.clone(),
+                },
+            )? {
                 AdminReply::Link(l) => Ok(new_link(cfg, &l)?),
                 other => unexpected(other),
             }
         }
-        Command::Revoke { file, link } => match admin(cfg, Admin::Revoke { file: file.clone(), link: link.clone() })? {
-            AdminReply::Done => Ok(format!("Revoked link {link}: it no longer joins, and whoever was in the file with it was disconnected.\n")),
+        Command::Revoke { file, link } => match admin(
+            cfg,
+            Admin::Revoke {
+                file: file.clone(),
+                link: link.clone(),
+            },
+        )? {
+            AdminReply::Done => Ok(format!(
+                "Revoked link {link}: it no longer joins, and whoever was in the file with it was disconnected.\n"
+            )),
             other => unexpected(other),
         },
-        Command::Plugins => match directory(cfg, PluginReq::List { query: String::new() })? {
+        Command::Plugins => match directory(
+            cfg,
+            PluginReq::List {
+                query: String::new(),
+            },
+        )? {
             PluginReply::List(entries) => Ok(plugins_table(&entries)),
             other => unexpected_plugins(other),
         },
-        Command::RemovePlugin { id, version } => match directory(cfg, PluginReq::Unpublish { id: id.clone(), version: version.clone() })? {
-            PluginReply::Removed(versions) => Ok(format!("Unpublished {id} {}.\n", versions.join(", "))),
+        Command::RemovePlugin { id, version } => match directory(
+            cfg,
+            PluginReq::Unpublish {
+                id: id.clone(),
+                version: version.clone(),
+            },
+        )? {
+            PluginReply::Removed(versions) => {
+                Ok(format!("Unpublished {id} {}.\n", versions.join(", ")))
+            }
             other => unexpected_plugins(other),
         },
     }
@@ -271,8 +384,15 @@ fn directory(cfg: &Config, req: PluginReq) -> Result<PluginReply, String> {
         Some(mut store) => Ok(store.directory().handle(true, req)),
         None => {
             let addr = running(&cfg.data)?;
-            let key = std::fs::read_to_string(cfg.data.join(KEY)).map_err(|e| format!("can't read the server key: {e}"))?;
-            manage::plugins(&Endpoint::plain(addr.to_string()), key.trim(), req, &cfg.net(), Duration::from_secs(5))
+            let key = std::fs::read_to_string(cfg.data.join(KEY))
+                .map_err(|e| format!("can't read the server key: {e}"))?;
+            manage::plugins(
+                &Endpoint::plain(addr.to_string()),
+                key.trim(),
+                req,
+                &cfg.net(),
+                Duration::from_secs(5),
+            )
         }
     }
 }
@@ -281,8 +401,9 @@ fn plugins_table(entries: &[PluginEntry]) -> String {
     if entries.is_empty() {
         return "No plugins yet (publish one with `figcraft-cli plugin publish FOLDER --server ws://host:port/?key=KEY`).\n".into();
     }
-    let mut out =
-        String::from("ID                                VERSIONS            NAME                  AUTHOR            ACCESS  SIZE       SHA-256\n");
+    let mut out = String::from(
+        "ID                                VERSIONS            NAME                  AUTHOR            ACCESS  SIZE       SHA-256\n",
+    );
     for e in entries {
         let _ = writeln!(
             out,
@@ -308,8 +429,10 @@ fn unexpected(reply: AdminReply) -> Result<String, String> {
 
 /// The running server's address, when one holds the data directory.
 fn running(data: &Path) -> Result<SocketAddr, String> {
-    let bytes = disk::read_capped(&data.join(SERVER_JSON), 1 << 16).map_err(|e| format!("a server is using {} but {e}", data.display()))?;
-    let r: Running = serde_json::from_slice(&bytes).map_err(|e| format!("{SERVER_JSON} is damaged ({e})"))?;
+    let bytes = disk::read_capped(&data.join(SERVER_JSON), 1 << 16)
+        .map_err(|e| format!("a server is using {} but {e}", data.display()))?;
+    let r: Running =
+        serde_json::from_slice(&bytes).map_err(|e| format!("{SERVER_JSON} is damaged ({e})"))?;
     Ok(reachable(r.listen))
 }
 
@@ -319,9 +442,19 @@ fn admin(cfg: &Config, req: Admin) -> Result<AdminReply, String> {
         Some(mut store) => Ok(store.admin(req, &|_| None).reply),
         None => {
             let addr = running(&cfg.data)?;
-            let key = std::fs::read_to_string(cfg.data.join(KEY)).map_err(|e| format!("can't read the server key: {e}"))?;
-            let replies = manage::request(&Endpoint::plain(addr.to_string()), key.trim(), vec![req], &cfg.net(), Duration::from_secs(5))?;
-            replies.into_iter().next().ok_or_else(|| "the server didn't answer".to_string())
+            let key = std::fs::read_to_string(cfg.data.join(KEY))
+                .map_err(|e| format!("can't read the server key: {e}"))?;
+            let replies = manage::request(
+                &Endpoint::plain(addr.to_string()),
+                key.trim(),
+                vec![req],
+                &cfg.net(),
+                Duration::from_secs(5),
+            )?;
+            replies
+                .into_iter()
+                .next()
+                .ok_or_else(|| "the server didn't answer".to_string())
         }
     }
 }
@@ -337,18 +470,31 @@ fn key(cfg: &Config, rotate: bool) -> Result<String, String> {
         (Some(s), true) => s.rotate_key()?,
         (Some(s), false) => s.key().to_string(),
         (None, true) => return Err("stop the server to replace its key".into()),
-        (None, false) => std::fs::read_to_string(cfg.data.join(KEY)).map_err(|e| format!("can't read the server key: {e}"))?.trim().to_string(),
+        (None, false) => std::fs::read_to_string(cfg.data.join(KEY))
+            .map_err(|e| format!("can't read the server key: {e}"))?
+            .trim()
+            .to_string(),
     };
     let public = public_endpoint(cfg, listen)?;
     let mut out = String::new();
     if rotate {
         out.push_str("A new server key: the old one no longer works.\n");
     }
-    let _ = writeln!(out, "Publish to this address (in FigCraft: File > Publish to server…):");
+    let _ = writeln!(
+        out,
+        "Publish to this address (in FigCraft: File > Publish to server…):"
+    );
     let _ = writeln!(out, "  {}?key={key}", public.url());
-    let _ = writeln!(out, "Whoever has it can publish files and manage their links: share it only with people you trust.");
+    let _ = writeln!(
+        out,
+        "Whoever has it can publish files and manage their links: share it only with people you trust."
+    );
     if cfg.open_publish {
-        let _ = writeln!(out, "Open to the public: anyone can publish to {} without the key (each file gets an owner token).", public.url());
+        let _ = writeln!(
+            out,
+            "Open to the public: anyone can publish to {} without the key (each file gets an owner token).",
+            public.url()
+        );
     }
     Ok(out)
 }
@@ -358,13 +504,28 @@ fn new_link(cfg: &Config, l: &NewLink) -> Result<String, String> {
         Ok(a) if store::lock(&cfg.data)?.is_none() => a,
         _ => cfg.addr()?,
     };
-    let invite = Invite { server: public_endpoint(cfg, listen)?, file: l.link.file.clone(), token: l.token.clone() };
+    let invite = Invite {
+        server: public_endpoint(cfg, listen)?,
+        file: l.link.file.clone(),
+        token: l.token.clone(),
+    };
     let mut out = String::new();
-    let what = if l.link.access == Access::View { "view" } else { "edit" };
-    let _ = writeln!(out, "New {what} link {} for file {}:", l.link.id, l.link.file);
+    let what = if l.link.access == Access::View {
+        "view"
+    } else {
+        "edit"
+    };
+    let _ = writeln!(
+        out,
+        "New {what} link {} for file {}:",
+        l.link.id, l.link.file
+    );
     let _ = writeln!(out, "  {}", invite.link());
     let _ = writeln!(out, "  {}", invite.url());
-    let _ = writeln!(out, "This is the only time the link is shown (the server keeps only a hash of its token).");
+    let _ = writeln!(
+        out,
+        "This is the only time the link is shown (the server keeps only a hash of its token)."
+    );
     Ok(out)
 }
 
@@ -383,7 +544,9 @@ fn files_table(mut files: Vec<FileRow>, sort: Sort, now: u64) -> String {
         Sort::Age => files.sort_by_key(|f| f.info.created),
         Sort::Idle => files.sort_by_key(used),
     }
-    let mut out = String::from("ID                NAME                            PEOPLE  SIZE       CREATED     IDLE  EXPIRES     REPORTS  BY\n");
+    let mut out = String::from(
+        "ID                NAME                            PEOPLE  SIZE       CREATED     IDLE  EXPIRES     REPORTS  BY\n",
+    );
     for f in &files {
         let idle = format!("{}d", now.saturating_sub(used(f)) / 86_400);
         let expires = f.expires.map_or_else(|| "never".to_string(), day);
@@ -411,7 +574,15 @@ fn reports_table(reports: &[ReportInfo]) -> String {
     }
     let mut out = String::new();
     for r in reports {
-        let _ = writeln!(out, "{}  file {} ({})  from {}  link {}", date(r.at), r.file, elide(&r.name, 40), r.ip, r.link);
+        let _ = writeln!(
+            out,
+            "{}  file {} ({})  from {}  link {}",
+            date(r.at),
+            r.file,
+            elide(&r.name, 40),
+            r.ip,
+            r.link
+        );
         let _ = writeln!(out, "    {}", r.reason);
     }
     out
@@ -424,17 +595,29 @@ fn day(secs: u64) -> String {
 
 fn links_table(links: &[LinkInfo]) -> String {
     if links.is_empty() {
-        return "No links (make one with `figcraft-server links create FILE --access view`).\n".into();
+        return "No links (make one with `figcraft-server links create FILE --access view`).\n"
+            .into();
     }
     let mut out = String::from("LINK              ACCESS  CREATED               LABEL\n");
     for l in links {
-        let _ = writeln!(out, "{:<16}  {:<6}  {:<20}  {}", l.id, l.access.id(), date(l.created), l.label);
+        let _ = writeln!(
+            out,
+            "{:<16}  {:<6}  {:<20}  {}",
+            l.id,
+            l.access.id(),
+            date(l.created),
+            l.label
+        );
     }
     out
 }
 
 fn elide(s: &str, n: usize) -> String {
-    if s.chars().count() <= n { s.to_string() } else { format!("{}…", s.chars().take(n - 1).collect::<String>()) }
+    if s.chars().count() <= n {
+        s.to_string()
+    } else {
+        format!("{}…", s.chars().take(n - 1).collect::<String>())
+    }
 }
 
 fn size(bytes: u64) -> String {

@@ -25,10 +25,14 @@ pub fn held() -> u32 {
         (B::DPadLeft, 14),
         (B::DPadRight, 15),
     ];
-    let Ok(pads) = Gamepad::Gamepads() else { return 0 };
+    let Ok(pads) = Gamepad::Gamepads() else {
+        return 0;
+    };
     let mut held = 0;
     for pad in pads {
-        let Ok(r) = pad.GetCurrentReading() else { continue };
+        let Ok(r) = pad.GetCurrentReading() else {
+            continue;
+        };
         for (b, i) in MAP {
             if r.Buttons.contains(b) {
                 held |= 1 << i;

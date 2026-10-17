@@ -54,7 +54,11 @@ impl Args {
     }
 
     pub fn opt(&self, k: &str) -> Option<&str> {
-        self.opts.iter().rev().find(|(n, _)| n == k).and_then(|(_, v)| v.as_deref())
+        self.opts
+            .iter()
+            .rev()
+            .find(|(n, _)| n == k)
+            .and_then(|(_, v)| v.as_deref())
     }
 
     pub fn flag(&self, k: &str) -> bool {
@@ -69,7 +73,10 @@ impl Args {
 
     /// The first option that is not in `allowed`, if any.
     pub fn unknown_opt(&self, allowed: &[&str]) -> Option<&str> {
-        self.opts.iter().map(|(n, _)| n.as_str()).find(|n| !allowed.contains(n))
+        self.opts
+            .iter()
+            .map(|(n, _)| n.as_str())
+            .find(|n| !allowed.contains(n))
     }
 
     /// Command params from positionals `from..`: one JSON object, or `key=value` pairs
@@ -83,7 +90,9 @@ impl Args {
         }
         let mut m = Map::new();
         for kv in rest {
-            let (k, v) = kv.split_once('=').ok_or_else(|| format!("expected key=value, got `{kv}`"))?;
+            let (k, v) = kv
+                .split_once('=')
+                .ok_or_else(|| format!("expected key=value, got `{kv}`"))?;
             insert_dotted(&mut m, k, parse_value(v));
         }
         Ok(Value::Object(m))
@@ -96,7 +105,9 @@ fn insert_dotted(m: &mut Map<String, Value>, key: &str, v: Value) {
             m.insert(key.to_string(), v);
         }
         Some((head, tail)) => {
-            let e = m.entry(head.to_string()).or_insert_with(|| Value::Object(Map::new()));
+            let e = m
+                .entry(head.to_string())
+                .or_insert_with(|| Value::Object(Map::new()));
             if !e.is_object() {
                 *e = Value::Object(Map::new());
             }
@@ -135,8 +146,12 @@ mod tests {
 
     #[test]
     fn key_value_params() {
-        let a = args("exec x seconds=3.5 name=Selects on=true ids=[1,2] color.r=1 color.g=0.5 s=\"7\"");
-        assert_eq!(a.params_from(2).unwrap(), json!({"seconds": 3.5, "name": "Selects", "on": true, "ids": [1, 2], "color": {"r": 1, "g": 0.5}, "s": "7"}));
+        let a =
+            args("exec x seconds=3.5 name=Selects on=true ids=[1,2] color.r=1 color.g=0.5 s=\"7\"");
+        assert_eq!(
+            a.params_from(2).unwrap(),
+            json!({"seconds": 3.5, "name": "Selects", "on": true, "ids": [1, 2], "color": {"r": 1, "g": 0.5}, "s": "7"})
+        );
         assert!(args("exec x novalue").params_from(2).is_err());
         assert_eq!(args("exec x").params_from(2).unwrap(), json!({}));
     }
@@ -149,7 +164,14 @@ mod tests {
 
     #[test]
     fn version_after_global_options() {
-        for s in ["--version", "-V", "--demo --version", "--compact -V", "--data-dir d --version", "export --version"] {
+        for s in [
+            "--version",
+            "-V",
+            "--demo --version",
+            "--compact -V",
+            "--data-dir d --version",
+            "export --version",
+        ] {
             assert!(args(s).wants_version(), "{s}");
         }
         for s in ["version", "--data-dir -V", "exec x -V", "-- --version"] {
@@ -160,9 +182,18 @@ mod tests {
     #[test]
     fn unknown_opt_reports_first_unlisted_option() {
         let allowed = ["--bridge", "--project"];
-        assert_eq!(args("mcp --automation-read-root X").unknown_opt(&allowed), Some("--automation-read-root"));
-        assert_eq!(args("mcp --bridge=a --typo=1").unknown_opt(&allowed), Some("--typo"));
-        assert_eq!(args("mcp --project p --bridge a").unknown_opt(&allowed), None);
+        assert_eq!(
+            args("mcp --automation-read-root X").unknown_opt(&allowed),
+            Some("--automation-read-root")
+        );
+        assert_eq!(
+            args("mcp --bridge=a --typo=1").unknown_opt(&allowed),
+            Some("--typo")
+        );
+        assert_eq!(
+            args("mcp --project p --bridge a").unknown_opt(&allowed),
+            None
+        );
     }
 
     #[test]

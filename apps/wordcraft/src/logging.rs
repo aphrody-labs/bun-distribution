@@ -51,7 +51,10 @@ impl Filter {
     /// Parse `spec`; unknown levels and empty parts are skipped. Without a bare level, targets no
     /// directive names log errors only.
     pub fn parse(spec: &str) -> Filter {
-        let mut f = Filter { default: LevelFilter::Error, directives: Vec::new() };
+        let mut f = Filter {
+            default: LevelFilter::Error,
+            directives: Vec::new(),
+        };
         for part in spec.split(',').map(str::trim).filter(|p| !p.is_empty()) {
             match part.split_once('=') {
                 Some((name, level)) => {
@@ -72,12 +75,19 @@ impl Filter {
 
     /// The level that applies to `target` (the most specific matching directive wins).
     pub fn level_for(&self, target: &str) -> LevelFilter {
-        self.directives.iter().filter(|(name, _)| matches(name, target)).max_by_key(|(name, _)| name.len()).map_or(self.default, |(_, level)| *level)
+        self.directives
+            .iter()
+            .filter(|(name, _)| matches(name, target))
+            .max_by_key(|(name, _)| name.len())
+            .map_or(self.default, |(_, level)| *level)
     }
 
     /// The most verbose level any target can reach (for `log::set_max_level`).
     pub fn max(&self) -> LevelFilter {
-        self.directives.iter().map(|(_, level)| *level).fold(self.default, Ord::max)
+        self.directives
+            .iter()
+            .map(|(_, level)| *level)
+            .fold(self.default, Ord::max)
     }
 }
 
@@ -90,7 +100,9 @@ fn parse_level(s: &str) -> Option<LevelFilter> {
 fn matches(name: &str, target: &str) -> bool {
     match name.strip_suffix('*') {
         Some(prefix) => target.starts_with(prefix),
-        None => target.strip_prefix(name).is_some_and(|rest| rest.is_empty() || rest.starts_with("::")),
+        None => target
+            .strip_prefix(name)
+            .is_some_and(|rest| rest.is_empty() || rest.starts_with("::")),
     }
 }
 
@@ -100,7 +112,13 @@ pub fn timestamp(t: SystemTime) -> String {
     let secs = since.as_secs();
     let (days, rem) = (secs / 86_400, secs % 86_400);
     let (y, m, d) = civil_from_days(days);
-    format!("{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}.{:03}Z", rem / 3600, rem % 3600 / 60, rem % 60, since.subsec_millis())
+    format!(
+        "{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}.{:03}Z",
+        rem / 3600,
+        rem % 3600 / 60,
+        rem % 60,
+        since.subsec_millis()
+    )
 }
 
 /// Days since 1970-01-01 to a proleptic Gregorian (year, month, day) (Howard Hinnant's
@@ -115,12 +133,19 @@ fn civil_from_days(days: u64) -> (u64, u64, u64) {
     let mp = (5 * doy + 2) / 153;
     let d = doy - (153 * mp + 2) / 5 + 1;
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = era.saturating_mul(400).saturating_add(yoe).saturating_add(u64::from(m <= 2));
+    let y = era
+        .saturating_mul(400)
+        .saturating_add(yoe)
+        .saturating_add(u64::from(m <= 2));
     (y, m, d)
 }
 
 fn numbered(dir: &Path, n: usize) -> PathBuf {
-    if n == 0 { dir.join(LOG_FILE) } else { dir.join(format!("wordcraft.{n}.log")) }
+    if n == 0 {
+        dir.join(LOG_FILE)
+    } else {
+        dir.join(format!("wordcraft.{n}.log"))
+    }
 }
 
 /// Shift the previous logs up one (`.log` → `.1.log` → … → `.<KEEP>.log`, the oldest dropped)
@@ -139,7 +164,13 @@ pub fn rotate(dir: &Path) -> std::io::Result<(PathBuf, File)> {
 }
 
 /// One formatted log line: `<timestamp> <LEVEL> [<thread>] <target>: <message>\n`.
-pub fn format_line(ts: &str, level: log::Level, thread: &str, target: &str, message: &str) -> String {
+pub fn format_line(
+    ts: &str,
+    level: log::Level,
+    thread: &str,
+    target: &str,
+    message: &str,
+) -> String {
     let message = message.strip_suffix('\n').unwrap_or(message);
     format!("{ts} {level:<5} [{thread}] {target}: {message}\n")
 }
@@ -157,7 +188,14 @@ pub struct Sink {
 
 impl Sink {
     pub fn new(max_bytes: u64) -> Sink {
-        Sink { file: None, pending: Vec::new(), dropped: 0, written: 0, max_bytes, capped: false }
+        Sink {
+            file: None,
+            pending: Vec::new(),
+            dropped: 0,
+            written: 0,
+            max_bytes,
+            capped: false,
+        }
     }
 
     /// Append `line` to the file, or keep it until [`Sink::attach`].
@@ -184,7 +222,10 @@ impl Sink {
             self.append(&line);
         }
         if self.dropped > 0 {
-            let note = format!("{} earlier log lines were dropped before the log file was opened\n", self.dropped);
+            let note = format!(
+                "{} earlier log lines were dropped before the log file was opened\n",
+                self.dropped
+            );
             self.dropped = 0;
             self.append(&note);
         }
@@ -202,11 +243,16 @@ impl Sink {
         if self.capped {
             return;
         }
-        let Some(file) = self.file.as_mut() else { return };
+        let Some(file) = self.file.as_mut() else {
+            return;
+        };
         let len = u64::try_from(line.len()).unwrap_or(u64::MAX);
         let text = if self.written.saturating_add(len) > self.max_bytes {
             self.capped = true;
-            format!("log file reached {} bytes; later records go to standard error only\n", self.max_bytes)
+            format!(
+                "log file reached {} bytes; later records go to standard error only\n",
+                self.max_bytes
+            )
         } else {
             self.written = self.written.saturating_add(len);
             line.to_owned()
@@ -228,7 +274,11 @@ pub struct AppLogger {
 
 impl AppLogger {
     pub fn new(filter: Filter, stderr: bool) -> AppLogger {
-        AppLogger { filter, stderr, sink: Mutex::new(Sink::new(MAX_FILE_BYTES)) }
+        AppLogger {
+            filter,
+            stderr,
+            sink: Mutex::new(Sink::new(MAX_FILE_BYTES)),
+        }
     }
 
     /// Rotate the logs in `dir` and send records to the fresh file; returns its path. On an error
@@ -250,7 +300,10 @@ impl AppLogger {
 
     /// No log file for this run (runs without preferences): log to standard error only.
     pub fn no_file(&self) {
-        self.sink.lock().unwrap_or_else(PoisonError::into_inner).no_file();
+        self.sink
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .no_file();
     }
 }
 
@@ -265,13 +318,21 @@ impl log::Log for AppLogger {
         }
         // Formatted before the sink is locked, so a message that logs while it is formatted can't deadlock.
         let thread = std::thread::current();
-        let line =
-            format_line(&timestamp(SystemTime::now()), record.level(), thread.name().unwrap_or("?"), record.target(), &record.args().to_string());
+        let line = format_line(
+            &timestamp(SystemTime::now()),
+            record.level(),
+            thread.name().unwrap_or("?"),
+            record.target(),
+            &record.args().to_string(),
+        );
         if self.stderr {
             // No terminal (a Windows GUI build, a closed pipe) is not an error worth reporting.
             let _ = std::io::stderr().write_all(line.as_bytes());
         }
-        self.sink.lock().unwrap_or_else(PoisonError::into_inner).write(&line);
+        self.sink
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .write(&line);
     }
 
     fn flush(&self) {}
@@ -281,7 +342,9 @@ impl log::Log for AppLogger {
 /// logger was installed first. Call [`AppLogger::attach_dir`] once the settings directory is known.
 pub fn install() -> Option<&'static AppLogger> {
     static LOGGER: OnceLock<AppLogger> = OnceLock::new();
-    let spec = std::env::var("RUST_LOG").ok().filter(|s| !s.trim().is_empty());
+    let spec = std::env::var("RUST_LOG")
+        .ok()
+        .filter(|s| !s.trim().is_empty());
     let filter = Filter::parse(spec.as_deref().unwrap_or(DEFAULT_FILTER));
     let max = filter.max();
     let logger = LOGGER.get_or_init(|| AppLogger::new(filter, true));
@@ -310,9 +373,16 @@ pub fn redact_quoted(message: &str) -> String {
 
 /// The text the panic hook logs: where it happened, the redacted message and, when captured
 /// (`RUST_BACKTRACE`), the backtrace.
-pub fn panic_report(location: Option<&str>, message: Option<&str>, backtrace: Option<&str>) -> String {
+pub fn panic_report(
+    location: Option<&str>,
+    message: Option<&str>,
+    backtrace: Option<&str>,
+) -> String {
     let message = message.map_or_else(|| "(no message)".to_owned(), redact_quoted);
-    let mut report = format!("panic at {}: {message}", location.unwrap_or("an unknown place"));
+    let mut report = format!(
+        "panic at {}: {message}",
+        location.unwrap_or("an unknown place")
+    );
     if let Some(trace) = backtrace {
         report.push('\n');
         report.push_str(trace.trim_end());
@@ -326,13 +396,17 @@ pub fn install_panic_hook() {
     std::panic::set_hook(Box::new(|info| {
         let location = info.location().map(ToString::to_string);
         let trace = std::backtrace::Backtrace::capture();
-        let trace = (trace.status() == std::backtrace::BacktraceStatus::Captured).then(|| trace.to_string());
+        let trace = (trace.status() == std::backtrace::BacktraceStatus::Captured)
+            .then(|| trace.to_string());
         let report = panic_report(location.as_deref(), info.payload_as_str(), trace.as_deref());
         if log::log_enabled!(log::Level::Error) {
             log::error!("{report}");
         } else {
             // `eprintln!` panics on a broken stderr pipe, and a panic inside the panic hook aborts.
-            let _ = std::io::Write::write_fmt(&mut std::io::stderr(), format_args!("wordcraft: {report}\n"));
+            let _ = std::io::Write::write_fmt(
+                &mut std::io::stderr(),
+                format_args!("wordcraft: {report}\n"),
+            );
         }
     }));
 }
@@ -345,7 +419,11 @@ mod tests {
 
     fn temp_dir(tag: &str) -> PathBuf {
         static N: AtomicUsize = AtomicUsize::new(0);
-        let d = std::env::temp_dir().join(format!("wordcraft-logging-{tag}-{}-{}", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+        let d = std::env::temp_dir().join(format!(
+            "wordcraft-logging-{tag}-{}-{}",
+            std::process::id(),
+            N.fetch_add(1, Ordering::Relaxed)
+        ));
         let _ = std::fs::remove_dir_all(&d);
         d
     }
@@ -377,14 +455,32 @@ mod tests {
         // A module name is matched at `::` boundaries, not as a bare prefix.
         assert_eq!(f.level_for("wgpu_core_extra"), LevelFilter::Info);
         // A trailing `*` is a prefix.
-        assert_eq!(Filter::parse("wordcraft*=debug").level_for("wordcraft_layout::lines"), LevelFilter::Debug);
-        assert_eq!(Filter::parse("wordcraft*=debug").level_for("eframe"), LevelFilter::Error);
+        assert_eq!(
+            Filter::parse("wordcraft*=debug").level_for("wordcraft_layout::lines"),
+            LevelFilter::Debug
+        );
+        assert_eq!(
+            Filter::parse("wordcraft*=debug").level_for("eframe"),
+            LevelFilter::Error
+        );
         // A bare target name sets that target to the most verbose level, as env_logger does.
-        assert_eq!(Filter::parse("naga").level_for("naga::front"), LevelFilter::Trace);
-        assert_eq!(Filter::parse("naga").level_for("eframe"), LevelFilter::Error);
+        assert_eq!(
+            Filter::parse("naga").level_for("naga::front"),
+            LevelFilter::Trace
+        );
+        assert_eq!(
+            Filter::parse("naga").level_for("eframe"),
+            LevelFilter::Error
+        );
         // Levels are case-insensitive and surrounding blanks are ignored.
-        assert_eq!(Filter::parse(" WARN , wordcraft = Debug ").level_for("wordcraft"), LevelFilter::Debug);
-        assert_eq!(Filter::parse(" WARN , wordcraft = Debug ").level_for("eframe"), LevelFilter::Warn);
+        assert_eq!(
+            Filter::parse(" WARN , wordcraft = Debug ").level_for("wordcraft"),
+            LevelFilter::Debug
+        );
+        assert_eq!(
+            Filter::parse(" WARN , wordcraft = Debug ").level_for("eframe"),
+            LevelFilter::Warn
+        );
     }
 
     #[test]
@@ -416,33 +512,72 @@ mod tests {
             }
             let _ = f.max();
         }
-        assert_eq!(Filter::parse("warn,,wordcraft=DEBUG").level_for("wordcraft"), LevelFilter::Debug);
+        assert_eq!(
+            Filter::parse("warn,,wordcraft=DEBUG").level_for("wordcraft"),
+            LevelFilter::Debug
+        );
         // An unknown level is skipped: that target keeps the default.
-        assert_eq!(Filter::parse("nonsense=loud").level_for("nonsense"), LevelFilter::Error);
-        assert_eq!(Filter::parse("wordcraft=").level_for("wordcraft"), LevelFilter::Error);
+        assert_eq!(
+            Filter::parse("nonsense=loud").level_for("nonsense"),
+            LevelFilter::Error
+        );
+        assert_eq!(
+            Filter::parse("wordcraft=").level_for("wordcraft"),
+            LevelFilter::Error
+        );
         assert_eq!(Filter::parse("=debug").max(), LevelFilter::Error);
-        assert_eq!(Filter::parse("🦀=info").level_for("🦀::claw"), LevelFilter::Info);
+        assert_eq!(
+            Filter::parse("🦀=info").level_for("🦀::claw"),
+            LevelFilter::Info
+        );
     }
 
     #[test]
     fn timestamps_are_utc_with_milliseconds() {
         assert_eq!(timestamp(UNIX_EPOCH), "1970-01-01T00:00:00.000Z");
-        assert_eq!(timestamp(UNIX_EPOCH + Duration::from_millis(1_791_446_357_728)), "2026-10-08T07:59:17.728Z");
+        assert_eq!(
+            timestamp(UNIX_EPOCH + Duration::from_millis(1_791_446_357_728)),
+            "2026-10-08T07:59:17.728Z"
+        );
         // Leap day, and the day after it.
-        assert_eq!(timestamp(UNIX_EPOCH + Duration::from_secs(1_709_164_800)), "2024-02-29T00:00:00.000Z");
-        assert_eq!(timestamp(UNIX_EPOCH + Duration::from_secs(1_709_251_199)), "2024-02-29T23:59:59.000Z");
-        assert_eq!(timestamp(UNIX_EPOCH + Duration::from_secs(1_709_251_200)), "2024-03-01T00:00:00.000Z");
+        assert_eq!(
+            timestamp(UNIX_EPOCH + Duration::from_secs(1_709_164_800)),
+            "2024-02-29T00:00:00.000Z"
+        );
+        assert_eq!(
+            timestamp(UNIX_EPOCH + Duration::from_secs(1_709_251_199)),
+            "2024-02-29T23:59:59.000Z"
+        );
+        assert_eq!(
+            timestamp(UNIX_EPOCH + Duration::from_secs(1_709_251_200)),
+            "2024-03-01T00:00:00.000Z"
+        );
         // 2000 is a leap year (divisible by 400), 2100 is not.
-        assert_eq!(timestamp(UNIX_EPOCH + Duration::from_secs(951_782_400)), "2000-02-29T00:00:00.000Z");
-        assert_eq!(timestamp(UNIX_EPOCH + Duration::from_secs(4_107_542_400)), "2100-03-01T00:00:00.000Z");
+        assert_eq!(
+            timestamp(UNIX_EPOCH + Duration::from_secs(951_782_400)),
+            "2000-02-29T00:00:00.000Z"
+        );
+        assert_eq!(
+            timestamp(UNIX_EPOCH + Duration::from_secs(4_107_542_400)),
+            "2100-03-01T00:00:00.000Z"
+        );
         // Before the epoch (a clock set wrong) clamps instead of panicking.
-        assert_eq!(timestamp(UNIX_EPOCH - Duration::from_secs(5)), "1970-01-01T00:00:00.000Z");
+        assert_eq!(
+            timestamp(UNIX_EPOCH - Duration::from_secs(5)),
+            "1970-01-01T00:00:00.000Z"
+        );
     }
 
     #[test]
     fn a_line_carries_time_level_thread_target_and_message() {
         assert_eq!(
-            format_line("2026-10-08T07:59:17.728Z", log::Level::Warn, "main", "wordcraft_docx::package", "skipping unreadable zip entry 3"),
+            format_line(
+                "2026-10-08T07:59:17.728Z",
+                log::Level::Warn,
+                "main",
+                "wordcraft_docx::package",
+                "skipping unreadable zip entry 3"
+            ),
             "2026-10-08T07:59:17.728Z WARN  [main] wordcraft_docx::package: skipping unreadable zip entry 3\n"
         );
         // A multi-line message keeps its lines; the record still ends in one newline.
@@ -461,7 +596,10 @@ mod tests {
         assert_eq!(read(&dir.join(LOG_FILE)), "run 4");
         assert_eq!(read(&dir.join("wordcraft.1.log")), "run 3");
         assert_eq!(read(&dir.join("wordcraft.2.log")), "run 2");
-        assert!(!dir.join("wordcraft.3.log").exists(), "only {KEEP} old logs are kept");
+        assert!(
+            !dir.join("wordcraft.3.log").exists(),
+            "only {KEEP} old logs are kept"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -497,7 +635,10 @@ mod tests {
         }
         sink.attach(file);
         let text = read(&path);
-        assert_eq!(text.lines().filter(|l| l.starts_with("line ")).count(), MAX_PENDING);
+        assert_eq!(
+            text.lines().filter(|l| l.starts_with("line ")).count(),
+            MAX_PENDING
+        );
         assert!(text.contains("5 earlier log lines were dropped"), "{text}");
         assert!(text.contains("line 0\n") && !text.contains(&format!("line {MAX_PENDING}\n")));
         let _ = std::fs::remove_dir_all(&dir);
@@ -537,7 +678,11 @@ mod tests {
             sink.write(&format!("line {i:02} with some padding\n"));
         }
         let text = read(&path);
-        assert_eq!(text.lines().filter(|l| l.starts_with("line ")).count(), 3, "{text}");
+        assert_eq!(
+            text.lines().filter(|l| l.starts_with("line ")).count(),
+            3,
+            "{text}"
+        );
         assert_eq!(text.matches("log file reached").count(), 1, "{text}");
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -548,23 +693,62 @@ mod tests {
         let dir = temp_dir("logger");
         let logger = AppLogger::new(Filter::parse(DEFAULT_FILTER), false);
         let record = |level, target: &'static str, msg: &'static str| {
-            logger.log(&log::Record::builder().level(level).target(target).args(format_args!("{msg}")).build());
+            logger.log(
+                &log::Record::builder()
+                    .level(level)
+                    .target(target)
+                    .args(format_args!("{msg}"))
+                    .build(),
+            );
         };
-        record(log::Level::Info, "wordcraft", "before the settings directory");
+        record(
+            log::Level::Info,
+            "wordcraft",
+            "before the settings directory",
+        );
         record(log::Level::Info, "wgpu_core::device", "too chatty");
         let path = logger.attach_dir(&dir).expect("attach");
         assert_eq!(path, dir.join(LOG_FILE));
         record(log::Level::Warn, "wgpu_hal::vulkan", "a real warning");
-        record(log::Level::Error, "wordcraft_render", "PNG encode: bad size 0×0");
+        record(
+            log::Level::Error,
+            "wordcraft_render",
+            "PNG encode: bad size 0×0",
+        );
         record(log::Level::Debug, "wordcraft", "below info");
         let text = read(&path);
         let lines: Vec<&str> = text.lines().collect();
         assert_eq!(lines.len(), 3, "{text}");
-        assert!(lines[0].contains(" INFO  [") && lines[0].ends_with("wordcraft: before the settings directory"), "{text}");
-        assert!(lines[1].ends_with("wgpu_hal::vulkan: a real warning"), "{text}");
-        assert!(lines[2].contains(" ERROR [") && lines[2].ends_with("wordcraft_render: PNG encode: bad size 0×0"), "{text}");
-        assert!(logger.enabled(&log::Metadata::builder().level(log::Level::Info).target("wordcraft_ui_egui").build()));
-        assert!(!logger.enabled(&log::Metadata::builder().level(log::Level::Info).target("naga").build()));
+        assert!(
+            lines[0].contains(" INFO  [")
+                && lines[0].ends_with("wordcraft: before the settings directory"),
+            "{text}"
+        );
+        assert!(
+            lines[1].ends_with("wgpu_hal::vulkan: a real warning"),
+            "{text}"
+        );
+        assert!(
+            lines[2].contains(" ERROR [")
+                && lines[2].ends_with("wordcraft_render: PNG encode: bad size 0×0"),
+            "{text}"
+        );
+        assert!(
+            logger.enabled(
+                &log::Metadata::builder()
+                    .level(log::Level::Info)
+                    .target("wordcraft_ui_egui")
+                    .build()
+            )
+        );
+        assert!(
+            !logger.enabled(
+                &log::Metadata::builder()
+                    .level(log::Level::Info)
+                    .target("naga")
+                    .build()
+            )
+        );
         // Attaching again rotates: the first log becomes `.1`.
         logger.attach_dir(&dir).expect("attach again");
         assert_eq!(read(&dir.join("wordcraft.1.log")), text);
@@ -583,7 +767,11 @@ mod tests {
                 std::thread::spawn(move || {
                     for i in 0..100 {
                         l.log(
-                            &log::Record::builder().level(log::Level::Info).target("wordcraft").args(format_args!("thread {t} record {i}")).build(),
+                            &log::Record::builder()
+                                .level(log::Level::Info)
+                                .target("wordcraft")
+                                .args(format_args!("thread {t} record {i}"))
+                                .build(),
                         );
                     }
                 })
@@ -594,7 +782,10 @@ mod tests {
         }
         let text = read(&path);
         assert_eq!(text.lines().count(), 800);
-        assert!(text.lines().all(|l| l.contains(" wordcraft: thread ")), "{text}");
+        assert!(
+            text.lines().all(|l| l.contains(" wordcraft: thread ")),
+            "{text}"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -605,9 +796,21 @@ mod tests {
         std::fs::create_dir_all(dir.parent().expect("parent")).expect("tmp");
         std::fs::write(&dir, "not a directory").expect("block");
         let logger = AppLogger::new(Filter::parse("info"), false);
-        logger.log(&log::Record::builder().level(log::Level::Error).target("x").args(format_args!("early")).build());
+        logger.log(
+            &log::Record::builder()
+                .level(log::Level::Error)
+                .target("x")
+                .args(format_args!("early"))
+                .build(),
+        );
         assert!(logger.attach_dir(&dir).is_err());
-        logger.log(&log::Record::builder().level(log::Level::Error).target("x").args(format_args!("still fine")).build());
+        logger.log(
+            &log::Record::builder()
+                .level(log::Level::Error)
+                .target("x")
+                .args(format_args!("still fine"))
+                .build(),
+        );
         // Nothing waits in memory for a file that won't come.
         let sink = logger.sink.lock().expect("sink");
         assert!(sink.pending.is_empty() && sink.file.is_none());
@@ -628,7 +831,13 @@ mod tests {
         .join();
         assert!(logger.sink.is_poisoned());
         let path = logger.attach_dir(&dir).expect("attach");
-        logger.log(&log::Record::builder().level(log::Level::Warn).target("wordcraft").args(format_args!("after the poison")).build());
+        logger.log(
+            &log::Record::builder()
+                .level(log::Level::Warn)
+                .target("wordcraft")
+                .args(format_args!("after the poison"))
+                .build(),
+        );
         assert!(read(&path).contains("wordcraft: after the poison"));
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -637,8 +846,14 @@ mod tests {
     fn panic_messages_leave_out_quoted_text() {
         // What std says when a string is sliced inside a character: the string is the user's text.
         let msg = "byte index 5 is not a char boundary; it is inside 'é' (bytes 4..6) of `Dear Ms Smith, my secret`";
-        assert_eq!(redact_quoted(msg), "byte index 5 is not a char boundary; it is inside 'é' (bytes 4..6) of `…`");
-        assert_eq!(redact_quoted("byte index 99 is out of range of `my diary`[...]"), "byte index 99 is out of range of `…`[...]");
+        assert_eq!(
+            redact_quoted(msg),
+            "byte index 5 is not a char boundary; it is inside 'é' (bytes 4..6) of `…`"
+        );
+        assert_eq!(
+            redact_quoted("byte index 99 is out of range of `my diary`[...]"),
+            "byte index 99 is out of range of `…`[...]"
+        );
         assert_eq!(redact_quoted("a `b` c `d` e"), "a `…` c `…` e");
         // An unpaired backtick hides the rest rather than risk leaking it.
         assert_eq!(redact_quoted("of `half a sentence"), "of `…");
@@ -654,10 +869,20 @@ mod tests {
     #[test]
     fn a_panic_report_names_the_place_and_the_redacted_message() {
         assert_eq!(
-            panic_report(Some("crates/engine/src/cmd/edit.rs:12:5"), Some("of `secret`"), None),
+            panic_report(
+                Some("crates/engine/src/cmd/edit.rs:12:5"),
+                Some("of `secret`"),
+                None
+            ),
             "panic at crates/engine/src/cmd/edit.rs:12:5: of `…`"
         );
-        assert_eq!(panic_report(None, None, None), "panic at an unknown place: (no message)");
-        assert_eq!(panic_report(Some("a.rs:1:1"), Some("boom"), Some("   0: main\n")), "panic at a.rs:1:1: boom\n   0: main");
+        assert_eq!(
+            panic_report(None, None, None),
+            "panic at an unknown place: (no message)"
+        );
+        assert_eq!(
+            panic_report(Some("a.rs:1:1"), Some("boom"), Some("   0: main\n")),
+            "panic at a.rs:1:1: boom\n   0: main"
+        );
     }
 }

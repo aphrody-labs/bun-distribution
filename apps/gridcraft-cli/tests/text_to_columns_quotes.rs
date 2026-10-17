@@ -21,6 +21,13 @@ fn text_to_columns_preserves_doubled_quotes() {
         .expect("run Gridcraft CLI");
     std::fs::remove_file(script).expect("remove script");
     std::fs::remove_dir(dir).expect("remove temp directory");
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
-    assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), "\"a\"\"b\",c");
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout).trim(),
+        "\"a\"\"b\",c"
+    );
 }

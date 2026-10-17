@@ -37,7 +37,9 @@ impl DirAssets {
 
 impl<R: tauri::Runtime> Assets<R> for DirAssets {
     fn get(&self, key: &AssetKey) -> Option<Cow<'_, [u8]>> {
-        std::fs::read(self.resolve(key.as_ref())?).ok().map(Cow::Owned)
+        std::fs::read(self.resolve(key.as_ref())?)
+            .ok()
+            .map(Cow::Owned)
     }
 
     fn iter(&self) -> Box<AssetsIter<'_>> {
@@ -60,9 +62,7 @@ fn report(text: String) {
 #[tauri_runtime_cef::cef_entry_point]
 fn main() {
     let Some(frontend) = std::env::var_os("APHRODY_SHELL_E2E_FRONTEND") else {
-        eprintln!(
-            "shell_e2e: set APHRODY_SHELL_E2E_FRONTEND (run bun run desktop:e2e)"
-        );
+        eprintln!("shell_e2e: set APHRODY_SHELL_E2E_FRONTEND (run bun run desktop:e2e)");
         std::process::exit(2);
     };
     let mut context: tauri::Context = tauri::generate_context!();
@@ -89,7 +89,10 @@ mod tests {
     #[test]
     fn assets_never_leave_their_directory() {
         let assets = DirAssets(PathBuf::from("/frontend"));
-        assert_eq!(assets.resolve("/pkg/a.js"), Some(PathBuf::from("/frontend/pkg/a.js")));
+        assert_eq!(
+            assets.resolve("/pkg/a.js"),
+            Some(PathBuf::from("/frontend/pkg/a.js"))
+        );
         assert_eq!(assets.resolve("/../etc/passwd"), None);
         assert_eq!(assets.resolve("/pkg/../../x"), None);
     }

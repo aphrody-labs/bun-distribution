@@ -66,14 +66,18 @@ impl DebugState {
 
         if std::mem::take(&mut self.gx_invalidate_requested) {
             emulator.gx.texture_hashes.clear();
-            emulator.render_sink.exec(gecko::host::GxAction::InvalidateCaches);
+            emulator
+                .render_sink
+                .exec(gecko::host::GxAction::InvalidateCaches);
         }
 
         // Dump action is for desktop only.
         self.gx_dump_requested = false;
 
         if let Some((matrix, enabled)) = self.freecam.take_action() {
-            emulator.render_sink.exec(gecko::host::GxAction::SetFreelook { matrix, enabled });
+            emulator
+                .render_sink
+                .exec(gecko::host::GxAction::SetFreelook { matrix, enabled });
         }
 
         self.debugger.tick(emulator);

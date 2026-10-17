@@ -18,7 +18,9 @@ const ZOOM: std::ops::RangeInclusive<f64> = 0.1..=10.0;
 /// Remove `path` if it holds state that would crash startup. Never fails: errors are logged.
 pub fn sanitize(path: Option<&Path>) {
     let Some(path) = path else { return };
-    let Ok(text) = std::fs::read_to_string(path) else { return };
+    let Ok(text) = std::fs::read_to_string(path) else {
+        return;
+    };
     if let Err(why) = check(&text) {
         log::warn!("ignoring saved window layout {}: {why}", path.display());
         if let Err(e) = std::fs::remove_file(path) {
@@ -30,12 +32,22 @@ pub fn sanitize(path: Option<&Path>) {
 /// `Err` names the first value that would crash startup.
 fn check(text: &str) -> Result<(), String> {
     // eframe stores a map of key → RON string; a file that doesn't parse is ignored by eframe.
-    let Ok(kv) = ron::from_str::<std::collections::HashMap<String, String>>(text) else { return Ok(()) };
+    let Ok(kv) = ron::from_str::<std::collections::HashMap<String, String>>(text) else {
+        return Ok(());
+    };
     for (key, value) in &kv {
         // eframe also skips an entry that doesn't parse.
-        let Ok(v) = ron::from_str::<ron::Value>(value) else { continue };
+        let Ok(v) = ron::from_str::<ron::Value>(value) else {
+            continue;
+        };
         floats_sane(&v, 0).map_err(|e| format!("{key}: {e}"))?;
-        let zoom = (key == "egui").then(|| field(&v, "options").and_then(|o| field(o, "zoom_factor")).and_then(as_f64)).flatten();
+        let zoom = (key == "egui")
+            .then(|| {
+                field(&v, "options")
+                    .and_then(|o| field(o, "zoom_factor"))
+                    .and_then(as_f64)
+            })
+            .flatten();
         if let Some(z) = zoom.filter(|z| !ZOOM.contains(z)) {
             return Err(format!("egui: zoom factor {z}"));
         }
@@ -55,7 +67,9 @@ fn floats_sane(v: &ron::Value, depth: usize) -> Result<(), String> {
         },
         ron::Value::Option(Some(inner)) => floats_sane(inner, depth + 1),
         ron::Value::Seq(items) => items.iter().try_for_each(|i| floats_sane(i, depth + 1)),
-        ron::Value::Map(m) => m.iter().try_for_each(|(k, v)| floats_sane(k, depth + 1).and_then(|()| floats_sane(v, depth + 1))),
+        ron::Value::Map(m) => m.iter().try_for_each(|(k, v)| {
+            floats_sane(k, depth + 1).and_then(|()| floats_sane(v, depth + 1))
+        }),
         _ => Ok(()),
     }
 }
@@ -81,7 +95,9 @@ mod tests {
     use super::check;
 
     fn file(window: &str, zoom: &str) -> String {
-        let egui = format!("(options:(zoom_factor:{zoom},max_passes:2),data:([(18446744073709551615,(ron:\"(x:1.0)\"))]))");
+        let egui = format!(
+            "(options:(zoom_factor:{zoom},max_passes:2),data:([(18446744073709551615,(ron:\"(x:1.0)\"))]))"
+        );
         format!("{{\"window\":{window:?},\"egui\":{egui:?}}}")
     }
 

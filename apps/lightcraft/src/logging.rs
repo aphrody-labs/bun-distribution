@@ -47,7 +47,11 @@ pub const DEFAULT_FILTER: &str = "warn,lightcraft*=info";
 /// `debug` for LightCraft's own crates (warnings and errors from everything else), any other value
 /// warnings and errors only. Else `RUST_LOG` as env_logger directives, else [`DEFAULT_FILTER`].
 pub fn filter_spec(lightcraft_log: Option<&str>, rust_log: Option<&str>) -> String {
-    let set = |v: Option<&str>| v.map(str::trim).filter(|v| !v.is_empty()).map(str::to_owned);
+    let set = |v: Option<&str>| {
+        v.map(str::trim)
+            .filter(|v| !v.is_empty())
+            .map(str::to_owned)
+    };
     if let Some(level) = set(lightcraft_log) {
         return match level.as_str() {
             "debug" => "warn,lightcraft*=debug".to_owned(),
@@ -69,7 +73,10 @@ impl Filter {
     /// Parse `spec`; unknown levels and empty parts are skipped. Without a bare level, targets no
     /// directive names log errors only.
     pub fn parse(spec: &str) -> Filter {
-        let mut f = Filter { default: LevelFilter::Error, directives: Vec::new() };
+        let mut f = Filter {
+            default: LevelFilter::Error,
+            directives: Vec::new(),
+        };
         for part in spec.split(',').map(str::trim).filter(|p| !p.is_empty()) {
             match part.split_once('=') {
                 Some((name, level)) => {
@@ -90,12 +97,19 @@ impl Filter {
 
     /// The level that applies to `target` (the most specific matching directive wins).
     pub fn level_for(&self, target: &str) -> LevelFilter {
-        self.directives.iter().filter(|(name, _)| matches(name, target)).max_by_key(|(name, _)| name.len()).map_or(self.default, |(_, level)| *level)
+        self.directives
+            .iter()
+            .filter(|(name, _)| matches(name, target))
+            .max_by_key(|(name, _)| name.len())
+            .map_or(self.default, |(_, level)| *level)
     }
 
     /// The most verbose level any target can reach (for `log::set_max_level`).
     pub fn max(&self) -> LevelFilter {
-        self.directives.iter().map(|(_, level)| *level).fold(self.default, Ord::max)
+        self.directives
+            .iter()
+            .map(|(_, level)| *level)
+            .fold(self.default, Ord::max)
     }
 }
 
@@ -108,7 +122,9 @@ fn parse_level(s: &str) -> Option<LevelFilter> {
 fn matches(name: &str, target: &str) -> bool {
     match name.strip_suffix('*') {
         Some(prefix) => target.starts_with(prefix),
-        None => target.strip_prefix(name).is_some_and(|rest| rest.is_empty() || rest.starts_with("::")),
+        None => target
+            .strip_prefix(name)
+            .is_some_and(|rest| rest.is_empty() || rest.starts_with("::")),
     }
 }
 
@@ -118,7 +134,13 @@ pub fn timestamp(t: SystemTime) -> String {
     let secs = since.as_secs();
     let (days, rem) = (secs / 86_400, secs % 86_400);
     let (y, m, d) = civil_from_days(days);
-    format!("{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}.{:03}Z", rem / 3600, rem % 3600 / 60, rem % 60, since.subsec_millis())
+    format!(
+        "{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}.{:03}Z",
+        rem / 3600,
+        rem % 3600 / 60,
+        rem % 60,
+        since.subsec_millis()
+    )
 }
 
 /// Days since 1970-01-01 to a proleptic Gregorian (year, month, day) (Howard Hinnant's
@@ -133,12 +155,19 @@ fn civil_from_days(days: u64) -> (u64, u64, u64) {
     let mp = (5 * doy + 2) / 153;
     let d = doy - (153 * mp + 2) / 5 + 1;
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = era.saturating_mul(400).saturating_add(yoe).saturating_add(u64::from(m <= 2));
+    let y = era
+        .saturating_mul(400)
+        .saturating_add(yoe)
+        .saturating_add(u64::from(m <= 2));
     (y, m, d)
 }
 
 fn numbered(dir: &Path, n: usize) -> PathBuf {
-    if n == 0 { dir.join(LOG_FILE) } else { dir.join(format!("lightcraft.{n}.log")) }
+    if n == 0 {
+        dir.join(LOG_FILE)
+    } else {
+        dir.join(format!("lightcraft.{n}.log"))
+    }
 }
 
 /// Shift the previous logs up one (`.log` → `.1.log` → … → `.<KEEP>.log`, the oldest dropped)
@@ -157,7 +186,13 @@ pub fn rotate(dir: &Path) -> std::io::Result<(PathBuf, File)> {
 }
 
 /// One formatted log line: `<timestamp> <LEVEL> [<thread>] <target>: <message>\n`.
-pub fn format_line(ts: &str, level: log::Level, thread: &str, target: &str, message: &str) -> String {
+pub fn format_line(
+    ts: &str,
+    level: log::Level,
+    thread: &str,
+    target: &str,
+    message: &str,
+) -> String {
     let message = message.strip_suffix('\n').unwrap_or(message);
     format!("{ts} {level:<5} [{thread}] {target}: {message}\n")
 }
@@ -175,7 +210,14 @@ pub struct Sink {
 
 impl Sink {
     pub fn new(max_bytes: u64) -> Sink {
-        Sink { file: None, pending: Vec::new(), dropped: 0, written: 0, max_bytes, capped: false }
+        Sink {
+            file: None,
+            pending: Vec::new(),
+            dropped: 0,
+            written: 0,
+            max_bytes,
+            capped: false,
+        }
     }
 
     /// Append `line` to the file, or keep it until [`Sink::attach`].
@@ -202,7 +244,10 @@ impl Sink {
             self.append(&line);
         }
         if self.dropped > 0 {
-            let note = format!("{} earlier log lines were dropped before the log file was opened\n", self.dropped);
+            let note = format!(
+                "{} earlier log lines were dropped before the log file was opened\n",
+                self.dropped
+            );
             self.dropped = 0;
             self.append(&note);
         }
@@ -220,11 +265,16 @@ impl Sink {
         if self.capped {
             return;
         }
-        let Some(file) = self.file.as_mut() else { return };
+        let Some(file) = self.file.as_mut() else {
+            return;
+        };
         let len = u64::try_from(line.len()).unwrap_or(u64::MAX);
         let text = if self.written.saturating_add(len) > self.max_bytes {
             self.capped = true;
-            format!("log file reached {} bytes; later records go to standard error only\n", self.max_bytes)
+            format!(
+                "log file reached {} bytes; later records go to standard error only\n",
+                self.max_bytes
+            )
         } else {
             self.written = self.written.saturating_add(len);
             line.to_owned()
@@ -246,7 +296,11 @@ pub struct AppLogger {
 
 impl AppLogger {
     pub fn new(filter: Filter, stderr: bool) -> AppLogger {
-        AppLogger { filter, stderr, sink: Mutex::new(Sink::new(MAX_FILE_BYTES)) }
+        AppLogger {
+            filter,
+            stderr,
+            sink: Mutex::new(Sink::new(MAX_FILE_BYTES)),
+        }
     }
 
     /// Rotate the logs in `dir` and send records to the fresh file; returns its path. On an error
@@ -268,14 +322,23 @@ impl AppLogger {
 
     /// No log file for this run (`LIGHTCRAFT_NO_PREFS`): log to standard error only.
     pub fn no_file(&self) {
-        self.sink.lock().unwrap_or_else(PoisonError::into_inner).no_file();
+        self.sink
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .no_file();
     }
 
     /// Add a panic report to the log file only (the default panic hook has printed it on standard
     /// error), whatever the filter. Skipped when the sink is busy: the panic may have happened on
     /// this very thread while it held the lock, and waiting would hang the app.
     pub fn record_panic(&self, thread: &str, report: &str) {
-        let line = format_line(&timestamp(SystemTime::now()), log::Level::Error, thread, "lightcraft", report);
+        let line = format_line(
+            &timestamp(SystemTime::now()),
+            log::Level::Error,
+            thread,
+            "lightcraft",
+            report,
+        );
         let mut sink = match self.sink.try_lock() {
             Ok(sink) => sink,
             Err(TryLockError::Poisoned(p)) => p.into_inner(),
@@ -296,13 +359,21 @@ impl log::Log for AppLogger {
         }
         // Formatted before the sink is locked, so a message that logs while it is formatted can't deadlock.
         let thread = std::thread::current();
-        let line =
-            format_line(&timestamp(SystemTime::now()), record.level(), thread.name().unwrap_or("?"), record.target(), &record.args().to_string());
+        let line = format_line(
+            &timestamp(SystemTime::now()),
+            record.level(),
+            thread.name().unwrap_or("?"),
+            record.target(),
+            &record.args().to_string(),
+        );
         if self.stderr {
             // No terminal (a Windows GUI build, a closed pipe) is not an error worth reporting.
             let _ = std::io::stderr().write_all(line.as_bytes());
         }
-        self.sink.lock().unwrap_or_else(PoisonError::into_inner).write(&line);
+        self.sink
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .write(&line);
     }
 
     fn flush(&self) {}
@@ -313,7 +384,10 @@ impl log::Log for AppLogger {
 pub fn install() -> Option<&'static AppLogger> {
     static LOGGER: OnceLock<AppLogger> = OnceLock::new();
     let var = |name| std::env::var(name).ok();
-    let filter = Filter::parse(&filter_spec(var("LIGHTCRAFT_LOG").as_deref(), var("RUST_LOG").as_deref()));
+    let filter = Filter::parse(&filter_spec(
+        var("LIGHTCRAFT_LOG").as_deref(),
+        var("RUST_LOG").as_deref(),
+    ));
     let max = filter.max();
     let logger = LOGGER.get_or_init(|| AppLogger::new(filter, true));
     log::set_logger(logger).ok()?;
@@ -328,8 +402,14 @@ pub fn record_panics(logger: &'static AppLogger) {
     std::panic::set_hook(Box::new(move |info| {
         previous(info);
         let thread = std::thread::current();
-        let at = info.location().map(|l| format!(" at {}:{}", l.file(), l.line())).unwrap_or_default();
-        let report = format!("panic{at}: {}", lightcraft_engine::guard::panic_message(info.payload()));
+        let at = info
+            .location()
+            .map(|l| format!(" at {}:{}", l.file(), l.line()))
+            .unwrap_or_default();
+        let report = format!(
+            "panic{at}: {}",
+            lightcraft_engine::guard::panic_message(info.payload())
+        );
         logger.record_panic(thread.name().unwrap_or("?"), &report);
     }));
 }
@@ -342,7 +422,11 @@ mod tests {
 
     fn temp_dir(tag: &str) -> PathBuf {
         static N: AtomicUsize = AtomicUsize::new(0);
-        let d = std::env::temp_dir().join(format!("lightcraft-logging-{tag}-{}-{}", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+        let d = std::env::temp_dir().join(format!(
+            "lightcraft-logging-{tag}-{}-{}",
+            std::process::id(),
+            N.fetch_add(1, Ordering::Relaxed)
+        ));
         let _ = std::fs::remove_dir_all(&d);
         d
     }
@@ -353,7 +437,13 @@ mod tests {
 
     fn record(logger: &AppLogger, level: log::Level, target: &str, msg: &str) {
         use log::Log;
-        logger.log(&log::Record::builder().level(level).target(target).args(format_args!("{msg}")).build());
+        logger.log(
+            &log::Record::builder()
+                .level(level)
+                .target(target)
+                .args(format_args!("{msg}"))
+                .build(),
+        );
     }
 
     /// The logger this replaced (`StderrLog`): warnings and errors from every target, `info` and
@@ -385,24 +475,50 @@ mod tests {
     /// `LIGHTCRAFT_LOG` keeps working exactly as it did with the old stderr-only logger.
     #[test]
     fn lightcraft_log_keeps_its_meaning() {
-        let targets =
-            ["lightcraft", "lightcraft::control_server", "lightcraft_engine::segment", "lightcraft_gpu", "wgpu_core::device", "naga", "eframe"];
-        let levels = [log::Level::Error, log::Level::Warn, log::Level::Info, log::Level::Debug, log::Level::Trace];
+        let targets = [
+            "lightcraft",
+            "lightcraft::control_server",
+            "lightcraft_engine::segment",
+            "lightcraft_gpu",
+            "wgpu_core::device",
+            "naga",
+            "eframe",
+        ];
+        let levels = [
+            log::Level::Error,
+            log::Level::Warn,
+            log::Level::Info,
+            log::Level::Debug,
+            log::Level::Trace,
+        ];
         for value in ["info", "debug", "warn", "error", "verbose", "INFO"] {
             let f = Filter::parse(&filter_spec(Some(value), None));
             for target in targets {
                 for level in levels {
-                    assert_eq!(level <= f.level_for(target), old_stderr_log_enabled(value, level, target), "LIGHTCRAFT_LOG={value} {level} {target}");
+                    assert_eq!(
+                        level <= f.level_for(target),
+                        old_stderr_log_enabled(value, level, target),
+                        "LIGHTCRAFT_LOG={value} {level} {target}"
+                    );
                 }
             }
         }
-        assert_eq!(Filter::parse(&filter_spec(Some("debug"), None)).max(), LevelFilter::Debug);
-        assert_eq!(Filter::parse(&filter_spec(Some("warn"), None)).max(), LevelFilter::Warn);
+        assert_eq!(
+            Filter::parse(&filter_spec(Some("debug"), None)).max(),
+            LevelFilter::Debug
+        );
+        assert_eq!(
+            Filter::parse(&filter_spec(Some("warn"), None)).max(),
+            LevelFilter::Warn
+        );
     }
 
     #[test]
     fn rust_log_replaces_the_default_and_lightcraft_log_wins_over_it() {
-        assert_eq!(filter_spec(None, Some("warn,wgpu_core=info")), "warn,wgpu_core=info");
+        assert_eq!(
+            filter_spec(None, Some("warn,wgpu_core=info")),
+            "warn,wgpu_core=info"
+        );
         let f = Filter::parse(&filter_spec(None, Some("debug")));
         assert_eq!(f.level_for("eframe"), LevelFilter::Debug);
         // The app's own variable is the more specific choice.
@@ -413,23 +529,46 @@ mod tests {
 
     #[test]
     fn directives_follow_env_logger_and_the_most_specific_one_wins() {
-        let f = Filter::parse("info,wgpu_core=error,lightcraft_pipeline=trace,lightcraft_pipeline::tiles=off");
+        let f = Filter::parse(
+            "info,wgpu_core=error,lightcraft_pipeline=trace,lightcraft_pipeline::tiles=off",
+        );
         assert_eq!(f.level_for("eframe"), LevelFilter::Info);
         assert_eq!(f.level_for("wgpu_core::instance"), LevelFilter::Error);
-        assert_eq!(f.level_for("lightcraft_pipeline::stage"), LevelFilter::Trace);
+        assert_eq!(
+            f.level_for("lightcraft_pipeline::stage"),
+            LevelFilter::Trace
+        );
         assert_eq!(f.level_for("lightcraft_pipeline::tiles"), LevelFilter::Off);
         assert_eq!(f.max(), LevelFilter::Trace);
         // A module name is matched at `::` boundaries, not as a bare prefix.
         assert_eq!(f.level_for("wgpu_core_extra"), LevelFilter::Info);
         // A trailing `*` is a prefix.
-        assert_eq!(Filter::parse("lightcraft*=debug").level_for("lightcraft_raw::cr2"), LevelFilter::Debug);
-        assert_eq!(Filter::parse("lightcraft*=debug").level_for("eframe"), LevelFilter::Error);
+        assert_eq!(
+            Filter::parse("lightcraft*=debug").level_for("lightcraft_raw::cr2"),
+            LevelFilter::Debug
+        );
+        assert_eq!(
+            Filter::parse("lightcraft*=debug").level_for("eframe"),
+            LevelFilter::Error
+        );
         // A bare target name sets that target to the most verbose level, as env_logger does.
-        assert_eq!(Filter::parse("naga").level_for("naga::front"), LevelFilter::Trace);
-        assert_eq!(Filter::parse("naga").level_for("eframe"), LevelFilter::Error);
+        assert_eq!(
+            Filter::parse("naga").level_for("naga::front"),
+            LevelFilter::Trace
+        );
+        assert_eq!(
+            Filter::parse("naga").level_for("eframe"),
+            LevelFilter::Error
+        );
         // Levels are case-insensitive and surrounding blanks are ignored.
-        assert_eq!(Filter::parse(" WARN , lightcraft = Debug ").level_for("lightcraft"), LevelFilter::Debug);
-        assert_eq!(Filter::parse(" WARN , lightcraft = Debug ").level_for("eframe"), LevelFilter::Warn);
+        assert_eq!(
+            Filter::parse(" WARN , lightcraft = Debug ").level_for("lightcraft"),
+            LevelFilter::Debug
+        );
+        assert_eq!(
+            Filter::parse(" WARN , lightcraft = Debug ").level_for("eframe"),
+            LevelFilter::Warn
+        );
     }
 
     #[test]
@@ -462,33 +601,72 @@ mod tests {
             let _ = f.max();
             let _ = filter_spec(Some(spec), Some(spec));
         }
-        assert_eq!(Filter::parse("warn,,lightcraft=DEBUG").level_for("lightcraft"), LevelFilter::Debug);
+        assert_eq!(
+            Filter::parse("warn,,lightcraft=DEBUG").level_for("lightcraft"),
+            LevelFilter::Debug
+        );
         // An unknown level is skipped: that target keeps the default.
-        assert_eq!(Filter::parse("nonsense=loud").level_for("nonsense"), LevelFilter::Error);
-        assert_eq!(Filter::parse("lightcraft=").level_for("lightcraft"), LevelFilter::Error);
+        assert_eq!(
+            Filter::parse("nonsense=loud").level_for("nonsense"),
+            LevelFilter::Error
+        );
+        assert_eq!(
+            Filter::parse("lightcraft=").level_for("lightcraft"),
+            LevelFilter::Error
+        );
         assert_eq!(Filter::parse("=debug").max(), LevelFilter::Error);
-        assert_eq!(Filter::parse("🦀=info").level_for("🦀::claw"), LevelFilter::Info);
+        assert_eq!(
+            Filter::parse("🦀=info").level_for("🦀::claw"),
+            LevelFilter::Info
+        );
     }
 
     #[test]
     fn timestamps_are_utc_with_milliseconds() {
         assert_eq!(timestamp(UNIX_EPOCH), "1970-01-01T00:00:00.000Z");
-        assert_eq!(timestamp(UNIX_EPOCH + Duration::from_millis(1_791_446_357_728)), "2026-10-08T07:59:17.728Z");
+        assert_eq!(
+            timestamp(UNIX_EPOCH + Duration::from_millis(1_791_446_357_728)),
+            "2026-10-08T07:59:17.728Z"
+        );
         // Leap day, and the day after it.
-        assert_eq!(timestamp(UNIX_EPOCH + Duration::from_secs(1_709_164_800)), "2024-02-29T00:00:00.000Z");
-        assert_eq!(timestamp(UNIX_EPOCH + Duration::from_secs(1_709_251_199)), "2024-02-29T23:59:59.000Z");
-        assert_eq!(timestamp(UNIX_EPOCH + Duration::from_secs(1_709_251_200)), "2024-03-01T00:00:00.000Z");
+        assert_eq!(
+            timestamp(UNIX_EPOCH + Duration::from_secs(1_709_164_800)),
+            "2024-02-29T00:00:00.000Z"
+        );
+        assert_eq!(
+            timestamp(UNIX_EPOCH + Duration::from_secs(1_709_251_199)),
+            "2024-02-29T23:59:59.000Z"
+        );
+        assert_eq!(
+            timestamp(UNIX_EPOCH + Duration::from_secs(1_709_251_200)),
+            "2024-03-01T00:00:00.000Z"
+        );
         // 2000 is a leap year (divisible by 400), 2100 is not.
-        assert_eq!(timestamp(UNIX_EPOCH + Duration::from_secs(951_782_400)), "2000-02-29T00:00:00.000Z");
-        assert_eq!(timestamp(UNIX_EPOCH + Duration::from_secs(4_107_542_400)), "2100-03-01T00:00:00.000Z");
+        assert_eq!(
+            timestamp(UNIX_EPOCH + Duration::from_secs(951_782_400)),
+            "2000-02-29T00:00:00.000Z"
+        );
+        assert_eq!(
+            timestamp(UNIX_EPOCH + Duration::from_secs(4_107_542_400)),
+            "2100-03-01T00:00:00.000Z"
+        );
         // Before the epoch (a clock set wrong) clamps instead of panicking.
-        assert_eq!(timestamp(UNIX_EPOCH - Duration::from_secs(5)), "1970-01-01T00:00:00.000Z");
+        assert_eq!(
+            timestamp(UNIX_EPOCH - Duration::from_secs(5)),
+            "1970-01-01T00:00:00.000Z"
+        );
     }
 
     #[test]
     fn a_line_carries_time_level_thread_target_and_message() {
         assert_eq!(
-            format_line("2026-10-08T07:59:17.728Z", log::Level::Info, "main", "lightcraft", "library /photos: 12 photos"),
+            format_line(
+                "2026-10-08T07:59:17.728Z",
+                log::Level::Info,
+                "main",
+                "lightcraft",
+                "library /photos: 12 photos"
+            ),
             "2026-10-08T07:59:17.728Z INFO  [main] lightcraft: library /photos: 12 photos\n"
         );
         // A multi-line message keeps its lines; the record still ends in one newline.
@@ -507,7 +685,10 @@ mod tests {
         assert_eq!(read(&dir.join(LOG_FILE)), "run 4");
         assert_eq!(read(&dir.join("lightcraft.1.log")), "run 3");
         assert_eq!(read(&dir.join("lightcraft.2.log")), "run 2");
-        assert!(!dir.join("lightcraft.3.log").exists(), "only {KEEP} old logs are kept");
+        assert!(
+            !dir.join("lightcraft.3.log").exists(),
+            "only {KEEP} old logs are kept"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -543,7 +724,10 @@ mod tests {
         }
         sink.attach(file);
         let text = read(&path);
-        assert_eq!(text.lines().filter(|l| l.starts_with("line ")).count(), MAX_PENDING);
+        assert_eq!(
+            text.lines().filter(|l| l.starts_with("line ")).count(),
+            MAX_PENDING
+        );
         assert!(text.contains("5 earlier log lines were dropped"), "{text}");
         assert!(text.contains("line 0\n") && !text.contains(&format!("line {MAX_PENDING}\n")));
         let _ = std::fs::remove_dir_all(&dir);
@@ -583,7 +767,11 @@ mod tests {
             sink.write(&format!("line {i:02} with some padding\n"));
         }
         let text = read(&path);
-        assert_eq!(text.lines().filter(|l| l.starts_with("line ")).count(), 3, "{text}");
+        assert_eq!(
+            text.lines().filter(|l| l.starts_with("line ")).count(),
+            3,
+            "{text}"
+        );
         assert_eq!(text.matches("log file reached").count(), 1, "{text}");
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -593,21 +781,63 @@ mod tests {
         use log::Log;
         let dir = temp_dir("logger");
         let logger = AppLogger::new(Filter::parse(DEFAULT_FILTER), false);
-        record(&logger, log::Level::Info, "lightcraft", "before the settings directory");
+        record(
+            &logger,
+            log::Level::Info,
+            "lightcraft",
+            "before the settings directory",
+        );
         record(&logger, log::Level::Info, "wgpu_core::device", "too chatty");
         let path = logger.attach_dir(&dir).expect("attach");
         assert_eq!(path, dir.join(LOG_FILE));
-        record(&logger, log::Level::Warn, "wgpu_hal::vulkan", "a real warning");
-        record(&logger, log::Level::Error, "lightcraft_engine::guard", "`develop.reset` failed unexpectedly: boom");
+        record(
+            &logger,
+            log::Level::Warn,
+            "wgpu_hal::vulkan",
+            "a real warning",
+        );
+        record(
+            &logger,
+            log::Level::Error,
+            "lightcraft_engine::guard",
+            "`develop.reset` failed unexpectedly: boom",
+        );
         record(&logger, log::Level::Debug, "lightcraft", "below info");
         let text = read(&path);
         let lines: Vec<&str> = text.lines().collect();
         assert_eq!(lines.len(), 3, "{text}");
-        assert!(lines[0].contains(" INFO  [") && lines[0].ends_with("lightcraft: before the settings directory"), "{text}");
-        assert!(lines[1].ends_with("wgpu_hal::vulkan: a real warning"), "{text}");
-        assert!(lines[2].contains(" ERROR [") && lines[2].ends_with("lightcraft_engine::guard: `develop.reset` failed unexpectedly: boom"), "{text}");
-        assert!(logger.enabled(&log::Metadata::builder().level(log::Level::Info).target("lightcraft_ui_egui").build()));
-        assert!(!logger.enabled(&log::Metadata::builder().level(log::Level::Info).target("naga").build()));
+        assert!(
+            lines[0].contains(" INFO  [")
+                && lines[0].ends_with("lightcraft: before the settings directory"),
+            "{text}"
+        );
+        assert!(
+            lines[1].ends_with("wgpu_hal::vulkan: a real warning"),
+            "{text}"
+        );
+        assert!(
+            lines[2].contains(" ERROR [")
+                && lines[2].ends_with(
+                    "lightcraft_engine::guard: `develop.reset` failed unexpectedly: boom"
+                ),
+            "{text}"
+        );
+        assert!(
+            logger.enabled(
+                &log::Metadata::builder()
+                    .level(log::Level::Info)
+                    .target("lightcraft_ui_egui")
+                    .build()
+            )
+        );
+        assert!(
+            !logger.enabled(
+                &log::Metadata::builder()
+                    .level(log::Level::Info)
+                    .target("naga")
+                    .build()
+            )
+        );
         // Attaching again rotates: the first log becomes `.1`.
         logger.attach_dir(&dir).expect("attach again");
         assert_eq!(read(&dir.join("lightcraft.1.log")), text);
@@ -624,7 +854,12 @@ mod tests {
                 let l = std::sync::Arc::clone(&logger);
                 std::thread::spawn(move || {
                     for i in 0..100 {
-                        record(&l, log::Level::Info, "lightcraft", &format!("thread {t} record {i}"));
+                        record(
+                            &l,
+                            log::Level::Info,
+                            "lightcraft",
+                            &format!("thread {t} record {i}"),
+                        );
                     }
                 })
             })
@@ -634,7 +869,10 @@ mod tests {
         }
         let text = read(&path);
         assert_eq!(text.lines().count(), 800);
-        assert!(text.lines().all(|l| l.contains(" lightcraft: thread ")), "{text}");
+        assert!(
+            text.lines().all(|l| l.contains(" lightcraft: thread ")),
+            "{text}"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -682,7 +920,12 @@ mod tests {
             logger.record_panic("main", "while the sink is held");
         }
         let text = read(&path);
-        assert!(text.contains(" ERROR [render] lightcraft: panicked at crates/x/src/lib.rs:3:5:\nboom\n"), "{text}");
+        assert!(
+            text.contains(
+                " ERROR [render] lightcraft: panicked at crates/x/src/lib.rs:3:5:\nboom\n"
+            ),
+            "{text}"
+        );
         assert!(!text.contains("while the sink is held"), "{text}");
         let _ = std::fs::remove_dir_all(&dir);
     }

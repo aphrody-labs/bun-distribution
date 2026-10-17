@@ -24,11 +24,13 @@ const TOP_FRACTION: f64 = 0.12;
 /// Register [`SHORTCUT`]. A failure (another application owns the accelerator) is logged and
 /// leaves the desktop running without the bar shortcut.
 pub fn register<R: Runtime>(app: &AppHandle<R>) {
-    let result = app.global_shortcut().on_shortcut(SHORTCUT, |app, _shortcut, event| {
-        if event.state() == ShortcutState::Pressed {
-            toggle(app);
-        }
-    });
+    let result = app
+        .global_shortcut()
+        .on_shortcut(SHORTCUT, |app, _shortcut, event| {
+            if event.state() == ShortcutState::Pressed {
+                toggle(app);
+            }
+        });
     if let Err(error) = result {
         log::error!("quick ask shortcut {SHORTCUT}: {error}");
     }
@@ -42,7 +44,9 @@ pub fn toggle<R: Runtime>(app: &AppHandle<R>) {
     };
     // A bar that was never shown is parked off-screen but mapped, so visibility alone is not enough.
     let on_screen = window.is_visible().unwrap_or(false)
-        && !window.outer_position().is_ok_and(|at| parking::is_parked(at.x, at.y));
+        && !window
+            .outer_position()
+            .is_ok_and(|at| parking::is_parked(at.x, at.y));
     let result = if on_screen {
         window.hide()
     } else {
@@ -109,18 +113,22 @@ pub fn act<R: Runtime>(window: &WebviewWindow<R>, action: QuickbarAction) -> Res
                 .and_then(|()| main.unminimize())
                 .and_then(|()| main.set_focus())
                 .map_err(|error| error.to_string())
-        },
+        }
         QuickbarAction::Resize { height } => {
             let height = height.clamp(120.0, 640.0);
             let width = window
                 .inner_size()
-                .and_then(|size| window.scale_factor().map(|scale| size.to_logical::<f64>(scale)))
+                .and_then(|size| {
+                    window
+                        .scale_factor()
+                        .map(|scale| size.to_logical::<f64>(scale))
+                })
                 .map_err(|error| error.to_string())?
                 .width;
             window
                 .set_size(tauri::LogicalSize::new(width, height))
                 .map_err(|error| error.to_string())
-        },
+        }
     }
 }
 

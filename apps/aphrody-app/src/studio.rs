@@ -37,9 +37,11 @@ pub async fn studio_native_chat(
     max_tokens: Option<u32>,
 ) -> Result<Value, String> {
     use aphrody_llama_server::{Role, discover_running};
-    let state = discover_running(Role::Chat).filter(|state| state.ready).ok_or_else(|| {
-        "aucun modèle de chat local prêt : en charger un depuis Modèles".to_string()
-    })?;
+    let state = discover_running(Role::Chat)
+        .filter(|state| state.ready)
+        .ok_or_else(|| {
+            "aucun modèle de chat local prêt : en charger un depuis Modèles".to_string()
+        })?;
     let body = serde_json::json!({
         "model": state.alias,
         "messages": messages,
@@ -48,14 +50,19 @@ pub async fn studio_native_chat(
         "stream": false,
     });
     let response = reqwest::Client::new()
-        .post(format!("http://127.0.0.1:{}/v1/chat/completions", state.port))
+        .post(format!(
+            "http://127.0.0.1:{}/v1/chat/completions",
+            state.port
+        ))
         .json(&body)
         .send()
         .await
         .map_err(|error| format!("modèle local injoignable : {error}"))?;
     let status = response.status();
-    let value: Value =
-        response.json().await.map_err(|error| format!("réponse invalide : {error}"))?;
+    let value: Value = response
+        .json()
+        .await
+        .map_err(|error| format!("réponse invalide : {error}"))?;
     if status.is_success() {
         Ok(value)
     } else {
@@ -75,7 +82,9 @@ pub async fn studio_google_drive_authorize(
     use tauri_plugin_aphrody::opener::OpenerExt;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     main_window_only(&window)?;
-    let home = std::env::var_os("HOME").map(std::path::PathBuf::from).ok_or("HOME absent")?;
+    let home = std::env::var_os("HOME")
+        .map(std::path::PathBuf::from)
+        .ok_or("HOME absent")?;
     let private = home.join(".aphrody/private/google");
     let client: Value = serde_json::from_str(
         &std::fs::read_to_string(private.join("aphrody-oauth-client.json"))
@@ -92,10 +101,13 @@ pub async fn studio_google_drive_authorize(
     let (client_id, client_secret) = (field("client_id")?, field("client_secret")?);
     let (auth_uri, token_uri) = (field("auth_uri")?, field("token_uri")?);
 
-    let listener =
-        tokio::net::TcpListener::bind("127.0.0.1:0").await.map_err(|error| error.to_string())?;
-    let redirect =
-        format!("http://localhost:{}", listener.local_addr().map_err(|e| e.to_string())?.port());
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .map_err(|error| error.to_string())?;
+    let redirect = format!(
+        "http://localhost:{}",
+        listener.local_addr().map_err(|e| e.to_string())?.port()
+    );
     let state = format!(
         "{:x}",
         std::time::SystemTime::now()
@@ -113,12 +125,17 @@ pub async fn studio_google_drive_authorize(
         .append_pair("access_type", "offline")
         .append_pair("prompt", "consent")
         .append_pair("state", &state);
-    app.opener().open_url(consent.as_str(), None::<&str>).map_err(|error| error.to_string())?;
+    app.opener()
+        .open_url(consent.as_str(), None::<&str>)
+        .map_err(|error| error.to_string())?;
 
     let accept = async {
         let (mut stream, _) = listener.accept().await.map_err(|error| error.to_string())?;
         let mut buffer = vec![0_u8; 8192];
-        let read = stream.read(&mut buffer).await.map_err(|error| error.to_string())?;
+        let read = stream
+            .read(&mut buffer)
+            .await
+            .map_err(|error| error.to_string())?;
         let request = String::from_utf8_lossy(&buffer[..read]).into_owned();
         let target = request.split_whitespace().nth(1).unwrap_or("/").to_owned();
         let page = "<!doctype html><meta charset=utf-8><title>Aphrody</title><p>Autorisation reçue, vous pouvez revenir dans Aphrody.</p>";
@@ -155,8 +172,9 @@ pub async fn studio_google_drive_authorize(
         .json()
         .await
         .map_err(|error| format!("réponse de jeton invalide : {error}"))?;
-    let access_token =
-        tokens["access_token"].as_str().ok_or_else(|| format!("jeton absent : {tokens}"))?;
+    let access_token = tokens["access_token"]
+        .as_str()
+        .ok_or_else(|| format!("jeton absent : {tokens}"))?;
     let refresh_token = tokens["refresh_token"]
         .as_str()
         .ok_or("refresh_token absent (consentement hors ligne refusé)")?;
@@ -167,8 +185,11 @@ pub async fn studio_google_drive_authorize(
         "obtained_at": std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?.as_secs(),
     });
     let path = private.join("drive-oauth-token.json");
-    std::fs::write(&path, serde_json::to_vec_pretty(&stored).map_err(|e| e.to_string())?)
-        .map_err(|error| error.to_string())?;
+    std::fs::write(
+        &path,
+        serde_json::to_vec_pretty(&stored).map_err(|e| e.to_string())?,
+    )
+    .map_err(|error| error.to_string())?;
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -273,7 +294,9 @@ pub async fn studio_a2a_send_envelope(envelope: Value) -> Result<Value, String> 
     use tokio::io::AsyncWriteExt;
     let repo_root = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
     let coord_dir = repo_root.join(".coord");
-    tokio::fs::create_dir_all(&coord_dir).await.map_err(|e| e.to_string())?;
+    tokio::fs::create_dir_all(&coord_dir)
+        .await
+        .map_err(|e| e.to_string())?;
 
     let to = envelope["to"].as_str().unwrap_or("codex");
     let filename = format!("inbox-to-{to}.jsonl");
@@ -289,7 +312,9 @@ pub async fn studio_a2a_send_envelope(envelope: Value) -> Result<Value, String> 
         .await
         .map_err(|e| e.to_string())?;
 
-    file.write_all(line.as_bytes()).await.map_err(|e| e.to_string())?;
+    file.write_all(line.as_bytes())
+        .await
+        .map_err(|e| e.to_string())?;
     Ok(serde_json::json!({ "sent": true, "path": target.to_string_lossy(), "envelope": envelope }))
 }
 
@@ -300,8 +325,9 @@ pub async fn studio_mcp_tools_list(
     broker: tauri::State<'_, crate::broker::AppServerBroker>,
 ) -> Result<Value, String> {
     main_window_only(&window)?;
-    let response =
-        broker.call(serde_json::json!({"id": 0, "method": "tools/list", "params": {}})).await?;
+    let response = broker
+        .call(serde_json::json!({"id": 0, "method": "tools/list", "params": {}}))
+        .await?;
     tools_inventory_from_response(&response)
 }
 
@@ -321,8 +347,14 @@ fn tools_inventory_from_response(response: &Value) -> Result<Value, String> {
     let tools = data
         .iter()
         .map(|tool| {
-            let name = tool.get("name").and_then(Value::as_str).ok_or("Invalid tool name")?;
-            let description = tool.get("description").and_then(Value::as_str).unwrap_or("");
+            let name = tool
+                .get("name")
+                .and_then(Value::as_str)
+                .ok_or("Invalid tool name")?;
+            let description = tool
+                .get("description")
+                .and_then(Value::as_str)
+                .unwrap_or("");
             Ok(serde_json::json!({"name": name, "description": description, "ui": null}))
         })
         .collect::<Result<Vec<_>, String>>()?;

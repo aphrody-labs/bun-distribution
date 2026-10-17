@@ -43,7 +43,9 @@ fn start(dir: &std::path::Path) -> FigApp {
 /// Draw two frames (the first only sets the fonts up).
 fn frames(fig: &mut FigApp, ctx: &egui::Context) {
     for _ in 0..2 {
-        ctx.run_ui(egui::RawInput::default(), |ui| fig.ui(ui)).textures_delta.clear();
+        ctx.run_ui(egui::RawInput::default(), |ui| fig.ui(ui))
+            .textures_delta
+            .clear();
     }
 }
 
@@ -53,16 +55,34 @@ fn plugins_are_kept_when_the_app_is_killed() {
     let folder = plugin(&dir);
     let ctx = egui::Context::default();
     let mut fig = start(&dir);
-    assert!(fig.run("plugin.import", json!({"path": folder.to_string_lossy()})).is_some());
+    assert!(
+        fig.run("plugin.import", json!({"path": folder.to_string_lossy()}))
+            .is_some()
+    );
     frames(&mut fig, &ctx);
     // Killed: no quit, so nothing saves on the way out.
     drop(fig);
     let mut fig = start(&dir);
-    assert_eq!(fig.session.prefs.plugins.iter().map(|p| p.manifest.id.as_str()).collect::<Vec<_>>(), [ID], "the plugin is still installed");
+    assert_eq!(
+        fig.session
+            .prefs
+            .plugins
+            .iter()
+            .map(|p| p.manifest.id.as_str())
+            .collect::<Vec<_>>(),
+        [ID],
+        "the plugin is still installed"
+    );
     assert!(fig.run("plugin.remove", json!({"id": ID})).is_some());
     frames(&mut fig, &ctx);
     drop(fig);
-    assert!(start(&dir).session.prefs.plugins.is_empty(), "the removal was kept too");
-    assert!(!dir.join("state.json.tmp").exists(), "no temporary file is left behind");
+    assert!(
+        start(&dir).session.prefs.plugins.is_empty(),
+        "the removal was kept too"
+    );
+    assert!(
+        !dir.join("state.json.tmp").exists(),
+        "no temporary file is left behind"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }

@@ -49,7 +49,14 @@ pub struct WebAudioOut {
 /// The Settings ▸ Audio factory: Web Audio's default output (`None` without Web Audio).
 pub fn open(_: &effectcraft_ui_egui::audio::AudioOutput) -> Option<Box<dyn AudioDevice>> {
     let rate = sample_rate();
-    (rate > 0.0).then(|| Box::new(WebAudioOut { rate: rate as u32, feed: None, posted: 0, buf: Vec::new() }) as Box<dyn AudioDevice>)
+    (rate > 0.0).then(|| {
+        Box::new(WebAudioOut {
+            rate: rate as u32,
+            feed: None,
+            posted: 0,
+            buf: Vec::new(),
+        }) as Box<dyn AudioDevice>
+    })
 }
 
 fn worklet_url() -> String {

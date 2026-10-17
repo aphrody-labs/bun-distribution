@@ -37,7 +37,7 @@ fn main() -> ExitCode {
             Err(error) => {
                 eprintln!("aphrody-app: {error}");
                 ExitCode::FAILURE
-            },
+            }
         };
     }
     aphrody_app_lib::run();

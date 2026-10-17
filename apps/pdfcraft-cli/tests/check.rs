@@ -10,7 +10,8 @@ struct Workdir(PathBuf);
 
 impl Workdir {
     fn new(test: &str) -> Self {
-        let dir = std::env::temp_dir().join(format!("pdfcraft-cli-check-{test}-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("pdfcraft-cli-check-{test}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("input/nested")).unwrap();
         let objects = [
@@ -29,7 +30,9 @@ impl Workdir {
         for offset in offsets {
             bytes.extend_from_slice(format!("{offset:010} 00000 n \n").as_bytes());
         }
-        bytes.extend_from_slice(format!("trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n").as_bytes());
+        bytes.extend_from_slice(
+            format!("trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n").as_bytes(),
+        );
         std::fs::write(dir.join("input/a.pdf"), &bytes).unwrap();
         std::fs::write(dir.join("input/nested/b.PDF"), &bytes).unwrap();
         Self(dir)
@@ -51,12 +54,19 @@ impl Workdir {
             if Instant::now() >= deadline {
                 child.kill().unwrap();
                 let output = child.wait_with_output().unwrap();
-                panic!("check did not finish scanning directories: {}", String::from_utf8_lossy(&output.stderr));
+                panic!(
+                    "check did not finish scanning directories: {}",
+                    String::from_utf8_lossy(&output.stderr)
+                );
             }
             std::thread::sleep(Duration::from_millis(10));
         }
         let output = child.wait_with_output().unwrap();
-        assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
         serde_json::from_slice(&std::fs::read(report).unwrap()).unwrap()
     }
 }
@@ -68,7 +78,11 @@ impl Drop for Workdir {
 }
 
 fn assert_two_valid_pdfs(results: &[serde_json::Value]) {
-    assert_eq!(results.len(), 2, "each PDF should be checked once: {results:?}");
+    assert_eq!(
+        results.len(),
+        2,
+        "each PDF should be checked once: {results:?}"
+    );
     for result in results {
         assert_eq!(result["status"], "ok", "{result}");
         assert_eq!(result["pages"], 1, "{result}");

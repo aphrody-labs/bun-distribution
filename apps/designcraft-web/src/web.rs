@@ -37,13 +37,17 @@ pub fn start() {
             log::error!("no document");
             return;
         };
-        let Some(canvas) = document.get_element_by_id(CANVAS_ID).and_then(|e| e.dyn_into::<web_sys::HtmlCanvasElement>().ok()) else {
+        let Some(canvas) = document
+            .get_element_by_id(CANVAS_ID)
+            .and_then(|e| e.dyn_into::<web_sys::HtmlCanvasElement>().ok())
+        else {
             log::error!("missing <canvas id=\"{CANVAS_ID}\">");
             return;
         };
         let mut options = eframe::WebOptions::default();
         if has_query_flag(&query(), "webgl")
-            && let eframe::egui_wgpu::WgpuSetup::CreateNew(create) = &mut options.wgpu_options.wgpu_setup
+            && let eframe::egui_wgpu::WgpuSetup::CreateNew(create) =
+                &mut options.wgpu_options.wgpu_setup
         {
             create.instance_descriptor.backends = eframe::wgpu::Backends::GL;
         }
@@ -53,10 +57,16 @@ pub fn start() {
                 options,
                 Box::new(move |cc| {
                     if let Some(rs) = &cc.wgpu_render_state {
-                        log::info!("designcraft-web: wgpu backend {:?}", rs.adapter.get_info().backend);
+                        log::info!(
+                            "designcraft-web: wgpu backend {:?}",
+                            rs.adapter.get_info().backend
+                        );
                     }
                     let inbox: Inbox = Inbox::default();
-                    let mut app = DesignApp::new(Session::new(), services(inbox.clone(), cc.egui_ctx.clone()));
+                    let mut app = DesignApp::new(
+                        Session::new(),
+                        services(inbox.clone(), cc.egui_ctx.clone()),
+                    );
                     if has_query_flag(&query(), "sample") {
                         let _ = app.run("file.newSample", serde_json::json!({}));
                     }
@@ -74,7 +84,9 @@ pub fn start() {
 }
 
 fn query() -> String {
-    web_sys::window().and_then(|w| w.location().search().ok()).unwrap_or_default()
+    web_sys::window()
+        .and_then(|w| w.location().search().ok())
+        .unwrap_or_default()
 }
 
 /// Wraps the app to read dropped files asynchronously (browsers can't read them synchronously)
@@ -92,10 +104,21 @@ impl eframe::App for WebShell {
             let inbox = self.inbox.clone();
             let ctx = ctx.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                let name = f.path().file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "dropped".into());
+                let name = f
+                    .path()
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_else(|| "dropped".into());
                 match f.bytes_async().await {
                     Ok(bytes) => {
-                        inbox.lock().unwrap_or_else(|e| e.into_inner()).push(ImportedFile { request, name, bytes });
+                        inbox
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner())
+                            .push(ImportedFile {
+                                request,
+                                name,
+                                bytes,
+                            });
                         ctx.request_repaint();
                     }
                     Err(e) => log::error!("couldn't read dropped file {name}: {e}"),
@@ -133,7 +156,14 @@ fn services(inbox: Inbox, ctx: egui::Context) -> Services {
                     return;
                 };
                 let bytes = file.read().await;
-                inbox.lock().unwrap_or_else(|e| e.into_inner()).push(ImportedFile { request, name: file.file_name(), bytes });
+                inbox
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .push(ImportedFile {
+                        request,
+                        name: file.file_name(),
+                        bytes,
+                    });
                 ctx.request_repaint();
             });
         })),
@@ -153,7 +183,10 @@ fn services(inbox: Inbox, ctx: egui::Context) -> Services {
 /// Trigger a browser download of `bytes` named after the last component of `path`.
 fn download(path: &str, bytes: &[u8]) -> Result<(), String> {
     let js = |e: wasm_bindgen::JsValue| format!("{e:?}");
-    let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "designcraft".into());
+    let name = std::path::Path::new(path)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| "designcraft".into());
     let window = web_sys::window().ok_or("no window")?;
     let document = window.document().ok_or("no document")?;
     let parts = js_sys::Array::of1(&js_sys::Uint8Array::from(bytes));
@@ -161,7 +194,11 @@ fn download(path: &str, bytes: &[u8]) -> Result<(), String> {
     opts.set_type(mime_for(&name));
     let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&parts, &opts).map_err(js)?;
     let url = web_sys::Url::create_object_url_with_blob(&blob).map_err(js)?;
-    let a: web_sys::HtmlAnchorElement = document.create_element("a").map_err(js)?.dyn_into().map_err(|_| "not an anchor")?;
+    let a: web_sys::HtmlAnchorElement = document
+        .create_element("a")
+        .map_err(js)?
+        .dyn_into()
+        .map_err(|_| "not an anchor")?;
     a.set_href(&url);
     a.set_download(&name);
     a.style().set_property("display", "none").map_err(js)?;
@@ -173,6 +210,8 @@ fn download(path: &str, bytes: &[u8]) -> Result<(), String> {
     let revoke = wasm_bindgen::closure::Closure::once_into_js(move || {
         web_sys::Url::revoke_object_url(&url).ok();
     });
-    window.set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), 10_000).map_err(js)?;
+    window
+        .set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), 10_000)
+        .map_err(js)?;
     Ok(())
 }

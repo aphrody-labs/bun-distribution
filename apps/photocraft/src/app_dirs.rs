@@ -45,7 +45,10 @@ pub fn current() -> &'static DataDir {
     static DIR: OnceLock<DataDir> = OnceLock::new();
     DIR.get_or_init(|| {
         let exe = std::env::current_exe().ok();
-        let d = resolve(|k| std::env::var_os(k), exe.as_deref().and_then(Path::parent));
+        let d = resolve(
+            |k| std::env::var_os(k),
+            exe.as_deref().and_then(Path::parent),
+        );
         if let Some(w) = &d.warning {
             log::warn!("{w}");
             eprintln!("photocraft: {w}");
@@ -63,20 +66,42 @@ pub fn config_dir() -> Option<PathBuf> {
 /// Resolve the data directory from the environment (`env`) and the executable's folder.
 pub fn resolve(env: impl Fn(&str) -> Option<OsString>, exe_dir: Option<&Path>) -> DataDir {
     if let Some(d) = env("PHOTOCRAFT_CONFIG_DIR").filter(|d| !d.is_empty()) {
-        return DataDir { dir: Some(PathBuf::from(d)), mode: Mode::Override, warning: None };
+        return DataDir {
+            dir: Some(PathBuf::from(d)),
+            mode: Mode::Override,
+            warning: None,
+        };
     }
     let platform = platform_dir(&env);
     let Some((exe_dir, marker)) = exe_dir.and_then(|d| portable_marker(d).map(|m| (d, m))) else {
-        return DataDir { dir: platform, mode: Mode::Platform, warning: None };
+        return DataDir {
+            dir: platform,
+            mode: Mode::Platform,
+            warning: None,
+        };
     };
     let data = exe_dir.join(PORTABLE_DATA_DIR);
     match ensure_writable(&data) {
-        Ok(()) => DataDir { dir: Some(data), mode: Mode::Portable, warning: None },
+        Ok(()) => DataDir {
+            dir: Some(data),
+            mode: Mode::Portable,
+            warning: None,
+        },
         Err(e) => {
-            let fallback = platform.as_ref().map_or_else(|| "nowhere (no user folder found)".to_string(), |p| p.display().to_string());
-            let warning =
-                format!("portable mode ({} found) but {} isn't writable ({e}); settings are kept in {fallback} instead", marker.display(), data.display());
-            DataDir { dir: platform, mode: Mode::Platform, warning: Some(warning) }
+            let fallback = platform.as_ref().map_or_else(
+                || "nowhere (no user folder found)".to_string(),
+                |p| p.display().to_string(),
+            );
+            let warning = format!(
+                "portable mode ({} found) but {} isn't writable ({e}); settings are kept in {fallback} instead",
+                marker.display(),
+                data.display()
+            );
+            DataDir {
+                dir: platform,
+                mode: Mode::Platform,
+                warning: Some(warning),
+            }
         }
     }
 }
@@ -88,14 +113,23 @@ pub fn platform_dir(env: &impl Fn(&str) -> Option<OsString>) -> Option<PathBuf> 
         return home.map(|h| h.join("Library/Application Support/Photocraft"));
     }
     if cfg!(windows) {
-        return env("APPDATA").filter(|a| !a.is_empty()).map(|a| PathBuf::from(a).join("Photocraft"));
+        return env("APPDATA")
+            .filter(|a| !a.is_empty())
+            .map(|a| PathBuf::from(a).join("Photocraft"));
     }
-    env("XDG_CONFIG_HOME").filter(|x| !x.is_empty()).map(PathBuf::from).or_else(|| home.map(|h| h.join(".config"))).map(|c| c.join("photocraft"))
+    env("XDG_CONFIG_HOME")
+        .filter(|x| !x.is_empty())
+        .map(PathBuf::from)
+        .or_else(|| home.map(|h| h.join(".config")))
+        .map(|c| c.join("photocraft"))
 }
 
 /// The first portable marker file in `exe_dir`, if any.
 pub fn portable_marker(exe_dir: &Path) -> Option<PathBuf> {
-    PORTABLE_MARKERS.iter().map(|m| exe_dir.join(m)).find(|p| p.is_file())
+    PORTABLE_MARKERS
+        .iter()
+        .map(|m| exe_dir.join(m))
+        .find(|p| p.is_file())
 }
 
 /// Create `dir` and prove a file can be written in it (a folder can exist yet be read-only).
@@ -116,14 +150,21 @@ mod tests {
 
     fn temp(tag: &str) -> PathBuf {
         static N: AtomicUsize = AtomicUsize::new(0);
-        let d = std::env::temp_dir().join(format!("photocraft-app-dirs-{tag}-{}-{}", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+        let d = std::env::temp_dir().join(format!(
+            "photocraft-app-dirs-{tag}-{}-{}",
+            std::process::id(),
+            N.fetch_add(1, Ordering::Relaxed)
+        ));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
     }
 
     fn env_of(pairs: &[(&str, &Path)]) -> impl Fn(&str) -> Option<OsString> + use<> {
-        let m: HashMap<String, OsString> = pairs.iter().map(|(k, v)| (k.to_string(), v.as_os_str().to_owned())).collect();
+        let m: HashMap<String, OsString> = pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.as_os_str().to_owned()))
+            .collect();
         move |k| m.get(k).cloned()
     }
 
@@ -146,10 +187,16 @@ mod tests {
         let dir = d.dir.unwrap();
         assert_eq!(Some(dir.clone()), platform_dir(&env));
         assert!(!dir.starts_with(&exe));
-        assert!(!exe.join(PORTABLE_DATA_DIR).exists(), "no portable folder without a marker");
+        assert!(
+            !exe.join(PORTABLE_DATA_DIR).exists(),
+            "no portable folder without a marker"
+        );
         // The convention per platform.
         if cfg!(target_os = "macos") {
-            assert_eq!(dir, root.join("home/Library/Application Support/Photocraft"));
+            assert_eq!(
+                dir,
+                root.join("home/Library/Application Support/Photocraft")
+            );
         } else if cfg!(windows) {
             assert_eq!(dir, root.join("appdata").join("Photocraft"));
         } else {
@@ -171,12 +218,24 @@ mod tests {
             let dir = d.dir.unwrap();
             assert_eq!(dir, exe.join(PORTABLE_DATA_DIR));
             assert!(dir.is_dir(), "the data folder is created");
-            assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0, "the write probe is removed");
+            assert_eq!(
+                std::fs::read_dir(&dir).unwrap().count(),
+                0,
+                "the write probe is removed"
+            );
             // Every derived path sits under the exe dir.
-            for sub in ["preferences.json", "Presets", "Recovery", crate::gpu_startup::MARKER_FILE] {
+            for sub in [
+                "preferences.json",
+                "Presets",
+                "Recovery",
+                crate::gpu_startup::MARKER_FILE,
+            ] {
                 assert!(dir.join(sub).starts_with(&exe));
             }
-            assert!(!root.join("home").exists() && !root.join("appdata").exists(), "nothing written to the user folder");
+            assert!(
+                !root.join("home").exists() && !root.join("appdata").exists(),
+                "nothing written to the user folder"
+            );
             let _ = std::fs::remove_dir_all(&root);
         }
     }
@@ -203,7 +262,10 @@ mod tests {
         assert_eq!(d.mode, Mode::Platform);
         assert_eq!(d.dir, platform_dir(&env));
         let w = d.warning.unwrap();
-        assert!(w.contains("portable") && w.contains("isn't writable"), "{w}");
+        assert!(
+            w.contains("portable") && w.contains("isn't writable"),
+            "{w}"
+        );
         // No user folder at all: still no panic, just no directory.
         let d = resolve(|_| None, Some(&exe));
         assert!(d.dir.is_none() && d.warning.is_some());
@@ -228,7 +290,14 @@ mod tests {
         let d = resolve(|_| None, None);
         assert_eq!((d.mode, d.dir), (Mode::Platform, None));
         let empty = PathBuf::new();
-        let d = resolve(env_of(&[("PHOTOCRAFT_CONFIG_DIR", &empty), ("HOME", &empty), ("APPDATA", &empty)]), None);
+        let d = resolve(
+            env_of(&[
+                ("PHOTOCRAFT_CONFIG_DIR", &empty),
+                ("HOME", &empty),
+                ("APPDATA", &empty),
+            ]),
+            None,
+        );
         assert_eq!(d.dir, None, "empty variables are ignored");
     }
 }

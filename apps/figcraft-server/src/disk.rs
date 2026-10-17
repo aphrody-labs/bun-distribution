@@ -36,7 +36,9 @@ const RECORD_HEADER: usize = 8;
 pub fn free_bytes(path: &Path) -> Option<u64> {
     #[cfg(unix)]
     {
-        rustix::fs::statvfs(path).ok().map(|s| s.f_bavail.saturating_mul(s.f_frsize))
+        rustix::fs::statvfs(path)
+            .ok()
+            .map(|s| s.f_bavail.saturating_mul(s.f_frsize))
     }
     #[cfg(not(unix))]
     {
@@ -47,7 +49,10 @@ pub fn free_bytes(path: &Path) -> Option<u64> {
 
 /// `path` with `.tmp` added: where its next version is written first.
 pub fn temp_of(path: &Path) -> PathBuf {
-    let mut name = path.file_name().map(|n| n.to_os_string()).unwrap_or_default();
+    let mut name = path
+        .file_name()
+        .map(|n| n.to_os_string())
+        .unwrap_or_default();
     name.push(".tmp");
     path.with_file_name(name)
 }
@@ -100,15 +105,23 @@ pub fn read_capped(path: &Path, max: u64) -> Result<Vec<u8>, String> {
     let f = File::open(path).map_err(|e| format!("can't open {}: {e}", name(path)))?;
     let len = f.metadata().map_err(|e| e.to_string())?.len();
     if len > max {
-        return Err(format!("{} is {} bytes, over the {max}-byte cap", name(path), len));
+        return Err(format!(
+            "{} is {} bytes, over the {max}-byte cap",
+            name(path),
+            len
+        ));
     }
     let mut bytes = Vec::with_capacity(usize::try_from(len).unwrap_or(0));
-    f.take(max).read_to_end(&mut bytes).map_err(|e| format!("can't read {}: {e}", name(path)))?;
+    f.take(max)
+        .read_to_end(&mut bytes)
+        .map_err(|e| format!("can't read {}: {e}", name(path)))?;
     Ok(bytes)
 }
 
 fn name(path: &Path) -> String {
-    path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()
+    path.file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default()
 }
 
 fn crc(bytes: &[u8]) -> u32 {
@@ -116,11 +129,15 @@ fn crc(bytes: &[u8]) -> u32 {
 }
 
 fn u32_at(b: &[u8], at: usize) -> Option<u32> {
-    b.get(at..at + 4).and_then(|s| s.try_into().ok()).map(u32::from_le_bytes)
+    b.get(at..at + 4)
+        .and_then(|s| s.try_into().ok())
+        .map(u32::from_le_bytes)
 }
 
 fn u64_at(b: &[u8], at: usize) -> Option<u64> {
-    b.get(at..at + 8).and_then(|s| s.try_into().ok()).map(u64::from_le_bytes)
+    b.get(at..at + 8)
+        .and_then(|s| s.try_into().ok())
+        .map(u64::from_le_bytes)
 }
 
 /// A snapshot file's bytes.
@@ -143,7 +160,11 @@ fn snapshot_body(bytes: &[u8]) -> Result<(u64, &[u8]), String> {
     if bytes.get(4) != Some(&FORMAT) {
         return Err("the snapshot is in a format this version doesn't read".into());
     }
-    let (Some(generation), Some(sum), Some(body)) = (u64_at(bytes, 5), u32_at(bytes, 13), bytes.get(SNAP_HEADER..)) else {
+    let (Some(generation), Some(sum), Some(body)) = (
+        u64_at(bytes, 5),
+        u32_at(bytes, 13),
+        bytes.get(SNAP_HEADER..),
+    ) else {
         return Err("the snapshot is cut short".into());
     };
     if crc(body) != sum {
@@ -160,7 +181,8 @@ pub fn check_snapshot(bytes: &[u8]) -> Result<u64, String> {
 /// A snapshot's generation and session state.
 pub fn decode_snapshot(bytes: &[u8]) -> Result<(u64, SessionState), String> {
     let (generation, body) = snapshot_body(bytes)?;
-    let state = message::decode::<SessionState>(body, body.len()).map_err(|e| format!("the snapshot can't be read: {e}"))?;
+    let state = message::decode::<SessionState>(body, body.len())
+        .map_err(|e| format!("the snapshot can't be read: {e}"))?;
     Ok((generation, state))
 }
 
@@ -212,7 +234,10 @@ pub fn read_log(bytes: &[u8]) -> Result<LogRead, String> {
             break;
         };
         let start = at + RECORD_HEADER;
-        let Some(body) = usize::try_from(len).ok().and_then(|n| bytes.get(start..start.checked_add(n)?)) else {
+        let Some(body) = usize::try_from(len)
+            .ok()
+            .and_then(|n| bytes.get(start..start.checked_add(n)?))
+        else {
             damaged = Some(format!("a record cut short at byte {at}"));
             break;
         };
@@ -229,5 +254,9 @@ pub fn read_log(bytes: &[u8]) -> Result<LogRead, String> {
         }
         at = start + body.len();
     }
-    Ok(LogRead { generation, entries, damaged })
+    Ok(LogRead {
+        generation,
+        entries,
+        damaged,
+    })
 }

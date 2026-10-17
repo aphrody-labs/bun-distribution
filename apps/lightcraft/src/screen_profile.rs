@@ -14,8 +14,13 @@ use objc2_app_kit::{NSApplication, NSScreen};
 pub fn icc() -> Option<Vec<u8>> {
     let mtm = MainThreadMarker::new()?;
     let app = NSApplication::sharedApplication(mtm);
-    let window = app.mainWindow().or_else(|| app.keyWindow()).or_else(|| app.windows().firstObject());
-    let screen = window.and_then(|w| w.screen()).or_else(|| NSScreen::mainScreen(mtm))?;
+    let window = app
+        .mainWindow()
+        .or_else(|| app.keyWindow())
+        .or_else(|| app.windows().firstObject());
+    let screen = window
+        .and_then(|w| w.screen())
+        .or_else(|| NSScreen::mainScreen(mtm))?;
     let icc = screen.colorSpace()?.ICCProfileData()?.to_vec();
     (!icc.is_empty()).then_some(icc)
 }

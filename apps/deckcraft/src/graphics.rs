@@ -31,16 +31,28 @@ mod tests {
     #[test]
     fn windows_default_initializes_only_dx12() {
         // eframe's own default (PRIMARY | GL) would initialize OpenGL as well.
-        let WgpuSetup::CreateNew(eframe_default) = NativeOptions::default().wgpu_options.wgpu_setup else {
+        let WgpuSetup::CreateNew(eframe_default) = NativeOptions::default().wgpu_options.wgpu_setup
+        else {
             panic!("default native options must create a wgpu instance");
         };
-        assert!(eframe_default.instance_descriptor.backends.contains(Backends::GL));
+        assert!(
+            eframe_default
+                .instance_descriptor
+                .backends
+                .contains(Backends::GL)
+        );
         assert_eq!(configured_backends(None), Backends::DX12);
     }
 
     #[test]
     fn explicit_backend_override_is_preserved() {
-        for backends in [Backends::VULKAN, Backends::GL, Backends::DX12, Backends::VULKAN | Backends::DX12, Backends::empty()] {
+        for backends in [
+            Backends::VULKAN,
+            Backends::GL,
+            Backends::DX12,
+            Backends::VULKAN | Backends::DX12,
+            Backends::empty(),
+        ] {
             assert_eq!(configured_backends(Some(backends)), backends);
         }
     }

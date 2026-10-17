@@ -49,7 +49,11 @@ impl Bridge {
             return None;
         }
         let origin = window.location().origin().ok()?;
-        Some(Self { window, parent, origin })
+        Some(Self {
+            window,
+            parent,
+            origin,
+        })
     }
 
     /// Make this the bridge [`deliver`] uses.
@@ -58,7 +62,10 @@ impl Bridge {
     }
 
     pub fn post_ready(&self) {
-        self.send(&[("type", "cadcraft:ready".into()), ("version", env!("CARGO_PKG_VERSION").into())]);
+        self.send(&[
+            ("type", "cadcraft:ready".into()),
+            ("version", env!("CARGO_PKG_VERSION").into()),
+        ]);
     }
 
     pub fn post_failed(&self, error: &str) {
@@ -69,27 +76,39 @@ impl Bridge {
     pub fn listen(&self, inbox: crate::upload::Inbox) {
         let parent = self.parent.clone();
         let origin = self.origin.clone();
-        let on_message = Closure::<dyn FnMut(web_sys::MessageEvent)>::new(move |event: web_sys::MessageEvent| {
-            if event.origin() != origin || !event.source().is_some_and(|s| js_sys::Object::is(&s, &parent)) {
-                return;
-            }
-            let data = event.data();
-            if string(&data, "type").as_deref() != Some("cadcraft:open") {
-                return;
-            }
-            let name = string(&data, "name")
-                .filter(|n| !n.trim().is_empty())
-                .map(|n| n.chars().take(MAX_NAME_CHARS).collect())
-                .unwrap_or_else(|| "Drawing.dxf".to_string());
-            // Refuse an oversized drawing before copying it into the app's memory.
-            let Some(array) = byte_array(&data) else { return };
-            if let Some(e) = CadApp::open_size_error(&name, u64::from(array.length())) {
-                inbox.refuse(e);
-                return;
-            }
-            inbox.receive(name, array.to_vec());
-        });
-        if self.window.add_event_listener_with_callback("message", on_message.as_ref().unchecked_ref()).is_ok() {
+        let on_message = Closure::<dyn FnMut(web_sys::MessageEvent)>::new(
+            move |event: web_sys::MessageEvent| {
+                if event.origin() != origin
+                    || !event
+                        .source()
+                        .is_some_and(|s| js_sys::Object::is(&s, &parent))
+                {
+                    return;
+                }
+                let data = event.data();
+                if string(&data, "type").as_deref() != Some("cadcraft:open") {
+                    return;
+                }
+                let name = string(&data, "name")
+                    .filter(|n| !n.trim().is_empty())
+                    .map(|n| n.chars().take(MAX_NAME_CHARS).collect())
+                    .unwrap_or_else(|| "Drawing.dxf".to_string());
+                // Refuse an oversized drawing before copying it into the app's memory.
+                let Some(array) = byte_array(&data) else {
+                    return;
+                };
+                if let Some(e) = CadApp::open_size_error(&name, u64::from(array.length())) {
+                    inbox.refuse(e);
+                    return;
+                }
+                inbox.receive(name, array.to_vec());
+            },
+        );
+        if self
+            .window
+            .add_event_listener_with_callback("message", on_message.as_ref().unchecked_ref())
+            .is_ok()
+        {
             // The listener lives as long as the page.
             on_message.forget();
         }
@@ -98,15 +117,21 @@ impl Bridge {
     /// After each frame: tell the parent when unsaved changes appear or go away.
     pub fn report_dirty(&self, app: &CadApp, reported: &DirtyReport) {
         let dirty = app.session.docs.iter().any(|d| d.is_dirty());
-        if reported.0.get() != Some(dirty) && self.send(&[("type", "cadcraft:dirty".into()), ("dirty", dirty.into())]) {
+        if reported.0.get() != Some(dirty)
+            && self.send(&[("type", "cadcraft:dirty".into()), ("dirty", dirty.into())])
+        {
             reported.0.set(Some(dirty));
         }
     }
 
     fn post_save(&self, name: &str, bytes: &[u8]) -> Result<(), String> {
         let buffer = js_sys::Uint8Array::from(bytes).buffer();
-        let message = message(&[("type", "cadcraft:save".into()), ("name", name.into()), ("bytes", buffer.clone().into())])
-            .ok_or_else(|| "couldn't build the message".to_string())?;
+        let message = message(&[
+            ("type", "cadcraft:save".into()),
+            ("name", name.into()),
+            ("bytes", buffer.clone().into()),
+        ])
+        .ok_or_else(|| "couldn't build the message".to_string())?;
         self.parent
             .post_message_with_transfer(&message, &self.origin, &js_sys::Array::of1(&buffer))
             .map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))
@@ -121,7 +146,9 @@ impl Bridge {
 /// The engine's delivery hook in host mode ([`cadcraft_engine::cmd::file::set_deliver`]): hand
 /// the file to the parent page. `Ok` once it was posted; the engine then counts a drawing as saved.
 pub fn deliver(name: &str, _mime: &str, bytes: &[u8]) -> Result<(), String> {
-    let bridge = BRIDGE.with(|b| b.borrow().clone()).ok_or("the page that embeds CADCraft is gone")?;
+    let bridge = BRIDGE
+        .with(|b| b.borrow().clone())
+        .ok_or("the page that embeds CADCraft is gone")?;
     bridge.post_save(name, bytes)
 }
 
@@ -134,7 +161,9 @@ fn message(fields: &[(&str, JsValue)]) -> Option<js_sys::Object> {
 }
 
 fn string(data: &JsValue, key: &str) -> Option<String> {
-    js_sys::Reflect::get(data, &JsValue::from_str(key)).ok()?.as_string()
+    js_sys::Reflect::get(data, &JsValue::from_str(key))
+        .ok()?
+        .as_string()
 }
 
 /// `bytes` (an `ArrayBuffer` or `Uint8Array`) as a view, not yet copied.

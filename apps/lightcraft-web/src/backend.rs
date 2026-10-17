@@ -7,7 +7,10 @@ use js_sys::{Reflect, Uint8Array};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{FileSystemDirectoryHandle, FileSystemFileHandle, FileSystemGetDirectoryOptions, FileSystemGetFileOptions, IdbDatabase};
+use web_sys::{
+    FileSystemDirectoryHandle, FileSystemFileHandle, FileSystemGetDirectoryOptions,
+    FileSystemGetFileOptions, IdbDatabase,
+};
 
 const IDB_NAME: &str = "lightcraft";
 const IDB_STORE: &str = "files";
@@ -19,7 +22,12 @@ pub enum Backend {
 }
 
 fn err(e: JsValue) -> String {
-    e.as_string().or_else(|| e.dyn_ref::<js_sys::Error>().map(|e| String::from(e.message()))).unwrap_or_else(|| format!("{e:?}"))
+    e.as_string()
+        .or_else(|| {
+            e.dyn_ref::<js_sys::Error>()
+                .map(|e| String::from(e.message()))
+        })
+        .unwrap_or_else(|| format!("{e:?}"))
 }
 
 /// `navigator.storage` in a window or a worker.
@@ -102,14 +110,20 @@ impl Backend {
     async fn open_idb() -> Result<Backend, String> {
         let f = indexed_db().ok_or("no IndexedDB")?;
         let req = f.open_with_u32(IDB_NAME, 1).map_err(err)?;
-        let upgrade = Closure::<dyn FnMut(web_sys::IdbVersionChangeEvent)>::new(move |e: web_sys::IdbVersionChangeEvent| {
-            if let Some(db) = e.target().and_then(|t| t.dyn_into::<web_sys::IdbOpenDbRequest>().ok()).and_then(|r| r.result().ok()) {
-                let db: IdbDatabase = db.unchecked_into();
-                if !db.object_store_names().contains(IDB_STORE) {
-                    let _ = db.create_object_store(IDB_STORE);
+        let upgrade = Closure::<dyn FnMut(web_sys::IdbVersionChangeEvent)>::new(
+            move |e: web_sys::IdbVersionChangeEvent| {
+                if let Some(db) = e
+                    .target()
+                    .and_then(|t| t.dyn_into::<web_sys::IdbOpenDbRequest>().ok())
+                    .and_then(|r| r.result().ok())
+                {
+                    let db: IdbDatabase = db.unchecked_into();
+                    if !db.object_store_names().contains(IDB_STORE) {
+                        let _ = db.create_object_store(IDB_STORE);
+                    }
                 }
-            }
-        });
+            },
+        );
         req.set_onupgradeneeded(Some(upgrade.as_ref().unchecked_ref()));
         let db = idb_req(&req).await?;
         drop(upgrade);
@@ -125,7 +139,11 @@ impl Backend {
     }
 
     /// The directory holding `path`'s last component (created when `create`).
-    async fn parent(root: &FileSystemDirectoryHandle, path: &str, create: bool) -> Result<Option<(FileSystemDirectoryHandle, String)>, String> {
+    async fn parent(
+        root: &FileSystemDirectoryHandle,
+        path: &str,
+        create: bool,
+    ) -> Result<Option<(FileSystemDirectoryHandle, String)>, String> {
         let mut parts: Vec<&str> = path.split('/').filter(|p| !p.is_empty()).collect();
         let name = parts.pop().ok_or("empty path")?.to_string();
         let mut dir = root.clone();
@@ -144,8 +162,14 @@ impl Backend {
         Ok(Some((dir, name)))
     }
 
-    async fn opfs_file(root: &FileSystemDirectoryHandle, path: &str, create: bool) -> Result<Option<FileSystemFileHandle>, String> {
-        let Some((dir, name)) = Self::parent(root, path, create).await? else { return Ok(None) };
+    async fn opfs_file(
+        root: &FileSystemDirectoryHandle,
+        path: &str,
+        create: bool,
+    ) -> Result<Option<FileSystemFileHandle>, String> {
+        let Some((dir, name)) = Self::parent(root, path, create).await? else {
+            return Ok(None);
+        };
         let opts = FileSystemGetFileOptions::new();
         opts.set_create(create);
         match JsFuture::from(dir.get_file_handle_with_options(&name, &opts)).await {
@@ -155,9 +179,18 @@ impl Backend {
         }
     }
 
-    fn idb_store(db: &IdbDatabase, write: bool) -> Result<(web_sys::IdbTransaction, web_sys::IdbObjectStore), String> {
-        let mode = if write { web_sys::IdbTransactionMode::Readwrite } else { web_sys::IdbTransactionMode::Readonly };
-        let tx = db.transaction_with_str_and_mode(IDB_STORE, mode).map_err(err)?;
+    fn idb_store(
+        db: &IdbDatabase,
+        write: bool,
+    ) -> Result<(web_sys::IdbTransaction, web_sys::IdbObjectStore), String> {
+        let mode = if write {
+            web_sys::IdbTransactionMode::Readwrite
+        } else {
+            web_sys::IdbTransactionMode::Readonly
+        };
+        let tx = db
+            .transaction_with_str_and_mode(IDB_STORE, mode)
+            .map_err(err)?;
         let store = tx.object_store(IDB_STORE).map_err(err)?;
         Ok((tx, store))
     }
@@ -166,8 +199,13 @@ impl Backend {
     pub async fn read(&self, path: &str) -> Result<Option<Vec<u8>>, String> {
         match self {
             Backend::Opfs(root) => {
-                let Some(h) = Self::opfs_file(root, path, false).await? else { return Ok(None) };
-                let file: web_sys::File = JsFuture::from(h.get_file()).await.map_err(err)?.unchecked_into();
+                let Some(h) = Self::opfs_file(root, path, false).await? else {
+                    return Ok(None);
+                };
+                let file: web_sys::File = JsFuture::from(h.get_file())
+                    .await
+                    .map_err(err)?
+                    .unchecked_into();
                 let buf = JsFuture::from(file.array_buffer()).await.map_err(err)?;
                 Ok(Some(Uint8Array::new(&buf).to_vec()))
             }
@@ -188,20 +226,39 @@ impl Backend {
     }
 
     /// Write `data` at `offset` keeping the bytes before it (`None`: replace the file). Atomic.
-    pub async fn write_at(&self, path: &str, offset: Option<usize>, data: &[u8]) -> Result<(), String> {
+    pub async fn write_at(
+        &self,
+        path: &str,
+        offset: Option<usize>,
+        data: &[u8],
+    ) -> Result<(), String> {
         match self {
             Backend::Opfs(root) => {
-                let h = Self::opfs_file(root, path, true).await?.ok_or("can't create file")?;
+                let h = Self::opfs_file(root, path, true)
+                    .await?
+                    .ok_or("can't create file")?;
                 let opts = web_sys::FileSystemCreateWritableOptions::new();
                 opts.set_keep_existing_data(offset.is_some());
                 let w: web_sys::FileSystemWritableFileStream =
-                    JsFuture::from(h.create_writable_with_options(&opts)).await.map_err(err)?.unchecked_into();
+                    JsFuture::from(h.create_writable_with_options(&opts))
+                        .await
+                        .map_err(err)?
+                        .unchecked_into();
                 let res = async {
                     if let Some(off) = offset {
-                        JsFuture::from(w.truncate_with_f64(off as f64).map_err(err)?).await.map_err(err)?;
-                        JsFuture::from(w.seek_with_f64(off as f64).map_err(err)?).await.map_err(err)?;
+                        JsFuture::from(w.truncate_with_f64(off as f64).map_err(err)?)
+                            .await
+                            .map_err(err)?;
+                        JsFuture::from(w.seek_with_f64(off as f64).map_err(err)?)
+                            .await
+                            .map_err(err)?;
                     }
-                    JsFuture::from(w.write_with_js_u8_array(&Uint8Array::from(data)).map_err(err)?).await.map_err(err)?;
+                    JsFuture::from(
+                        w.write_with_js_u8_array(&Uint8Array::from(data))
+                            .map_err(err)?,
+                    )
+                    .await
+                    .map_err(err)?;
                     Ok::<(), String>(())
                 }
                 .await;
@@ -219,7 +276,11 @@ impl Backend {
                     // read-modify-write inside one transaction
                     Some(off) => {
                         let old = idb_req(&store.get(&path.into()).map_err(err)?).await?;
-                        let mut v = if old.is_undefined() || old.is_null() { Vec::new() } else { Uint8Array::new(&old).to_vec() };
+                        let mut v = if old.is_undefined() || old.is_null() {
+                            Vec::new()
+                        } else {
+                            Uint8Array::new(&old).to_vec()
+                        };
                         v.truncate(off);
                         v.extend_from_slice(data);
                         Uint8Array::from(&v[..])
@@ -247,10 +308,20 @@ impl Backend {
     pub async fn remove(&self, path: &str) -> Result<(), String> {
         match self {
             Backend::Opfs(root) => {
-                let Some((dir, name)) = Self::parent(root, path, false).await? else { return Ok(()) };
+                let Some((dir, name)) = Self::parent(root, path, false).await? else {
+                    return Ok(());
+                };
                 match JsFuture::from(dir.remove_entry(&name)).await {
                     Ok(_) => Ok(()),
-                    Err(e) if Reflect::get(&e, &"name".into()).ok().and_then(|n| n.as_string()).as_deref() == Some("NotFoundError") => Ok(()),
+                    Err(e)
+                        if Reflect::get(&e, &"name".into())
+                            .ok()
+                            .and_then(|n| n.as_string())
+                            .as_deref()
+                            == Some("NotFoundError") =>
+                    {
+                        Ok(())
+                    }
                     Err(e) => Err(err(e)),
                 }
             }
@@ -267,19 +338,30 @@ impl Backend {
         match self {
             Backend::Opfs(root) => {
                 // `parent` of a child path is `dir` itself
-                let Some((handle, _)) = Self::parent(root, &format!("{dir}/-"), false).await? else { return Ok(Vec::new()) };
+                let Some((handle, _)) = Self::parent(root, &format!("{dir}/-"), false).await?
+                else {
+                    return Ok(Vec::new());
+                };
                 dir_keys(&handle).await
             }
             Backend::Idb(db) => {
                 let (_tx, store) = Self::idb_store(db, false)?;
                 let prefix = format!("{dir}/");
-                let range = web_sys::IdbKeyRange::bound(&prefix.as_str().into(), &format!("{prefix}\u{ffff}").into()).map_err(err)?;
+                let range = web_sys::IdbKeyRange::bound(
+                    &prefix.as_str().into(),
+                    &format!("{prefix}\u{ffff}").into(),
+                )
+                .map_err(err)?;
                 let keys = idb_req(&store.get_all_keys_with_key(&range).map_err(err)?).await?;
                 let arr: js_sys::Array = keys.unchecked_into();
                 Ok(arr
                     .iter()
                     .filter_map(|k| k.as_string())
-                    .filter_map(|k| k.strip_prefix(&prefix).filter(|r| !r.contains('/')).map(str::to_string))
+                    .filter_map(|k| {
+                        k.strip_prefix(&prefix)
+                            .filter(|r| !r.contains('/'))
+                            .map(str::to_string)
+                    })
                     .collect())
             }
         }
@@ -292,7 +374,9 @@ impl Backend {
                 for name in dir_keys(root).await? {
                     let opts = web_sys::FileSystemRemoveOptions::new();
                     opts.set_recursive(true);
-                    JsFuture::from(root.remove_entry_with_options(&name, &opts)).await.map_err(err)?;
+                    JsFuture::from(root.remove_entry_with_options(&name, &opts))
+                        .await
+                        .map_err(err)?;
                 }
                 Ok(())
             }
@@ -310,11 +394,19 @@ async fn dir_keys(dir: &FileSystemDirectoryHandle) -> Result<Vec<String>, String
     let keys = dir.keys();
     let mut out = Vec::new();
     loop {
-        let next = JsFuture::from(keys.next().map_err(err)?).await.map_err(err)?;
-        if Reflect::get(&next, &"done".into()).ok().is_some_and(|d| d.is_truthy()) {
+        let next = JsFuture::from(keys.next().map_err(err)?)
+            .await
+            .map_err(err)?;
+        if Reflect::get(&next, &"done".into())
+            .ok()
+            .is_some_and(|d| d.is_truthy())
+        {
             break;
         }
-        if let Some(k) = Reflect::get(&next, &"value".into()).ok().and_then(|v| v.as_string()) {
+        if let Some(k) = Reflect::get(&next, &"value".into())
+            .ok()
+            .and_then(|v| v.as_string())
+        {
             out.push(k);
         }
     }
@@ -339,7 +431,10 @@ pub fn request_persistence(on_result: impl FnOnce(bool) + 'static) {
                 Ok(p) => JsFuture::from(p).await.ok().is_some_and(|v| v.is_truthy()),
                 Err(_) => false,
             };
-        log::info!("lightcraft: persistent storage {}", if granted { "granted" } else { "not granted" });
+        log::info!(
+            "lightcraft: persistent storage {}",
+            if granted { "granted" } else { "not granted" }
+        );
         on_result(granted);
     });
 }

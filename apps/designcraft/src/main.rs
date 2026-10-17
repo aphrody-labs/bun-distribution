@@ -8,8 +8,18 @@
 //!
 //! The graphics backend (DirectX 12, Vulkan, Metal or OpenGL) is chosen in `gpu` before the window
 //! exists, with a fallback for a driver that crashes at start-up; `WGPU_BACKEND` overrides it.
-#![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![cfg_attr(
+    all(target_os = "windows", not(debug_assertions)),
+    windows_subsystem = "windows"
+)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod control_server;
 mod gpu;
@@ -88,7 +98,8 @@ fn preserve_documents_on_exit(app: &mut DesignApp) -> Result<(), String> {
     }
     // Also discard stale recovery for clean documents (for example, Undo back to the saved
     // state after the last timer tick). Never choose a fallback recovery path here.
-    app.run("file.recovery.save", serde_json::json!({})).map(|_| ())
+    app.run("file.recovery.save", serde_json::json!({}))
+        .map(|_| ())
 }
 
 /// `DESIGNCRAFT_NO_PREFS`: read and write nothing in the settings directory (tests, demos).
@@ -142,13 +153,34 @@ struct OpenFilter {
 
 fn open_filters(purpose: &str) -> &'static [OpenFilter] {
     match purpose {
-        "swatches" => &[OpenFilter { name: "Swatch Exchange (ASE)", extensions: &["ase"] }],
-        "script" => &[OpenFilter { name: "Script", extensions: &["dcscript", "txt", "json"] }],
-        "icc" => &[OpenFilter { name: "ICC profile", extensions: &["icc", "icm"] }],
-        "book" => &[OpenFilter { name: "Book", extensions: &["dcbook"] }],
-        "xml" => &[OpenFilter { name: "XML", extensions: &["xml"] }],
-        "library" => &[OpenFilter { name: "Object Library", extensions: &["dclib"] }],
-        "dataMerge" => &[OpenFilter { name: "Data source (CSV, TSV, text, Excel)", extensions: &["csv", "tsv", "tab", "txt", "xlsx"] }],
+        "swatches" => &[OpenFilter {
+            name: "Swatch Exchange (ASE)",
+            extensions: &["ase"],
+        }],
+        "script" => &[OpenFilter {
+            name: "Script",
+            extensions: &["dcscript", "txt", "json"],
+        }],
+        "icc" => &[OpenFilter {
+            name: "ICC profile",
+            extensions: &["icc", "icm"],
+        }],
+        "book" => &[OpenFilter {
+            name: "Book",
+            extensions: &["dcbook"],
+        }],
+        "xml" => &[OpenFilter {
+            name: "XML",
+            extensions: &["xml"],
+        }],
+        "library" => &[OpenFilter {
+            name: "Object Library",
+            extensions: &["dclib"],
+        }],
+        "dataMerge" => &[OpenFilter {
+            name: "Data source (CSV, TSV, text, Excel)",
+            extensions: &["csv", "tsv", "tab", "txt", "xlsx"],
+        }],
         "place" => &[
             OpenFilter {
                 name: "Graphics and text",
@@ -185,15 +217,33 @@ fn open_filters(purpose: &str) -> &'static [OpenFilter] {
             },
             OpenFilter {
                 name: "Graphics",
-                extensions: &["png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "bmp", "psd", "svg", "pdf", "ai", "eps"],
+                extensions: &[
+                    "png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "bmp", "psd", "svg", "pdf",
+                    "ai", "eps",
+                ],
             },
-            OpenFilter { name: "Text (Word, RTF, plain, Excel)", extensions: &["docx", "rtf", "txt", "md", "xlsx"] },
-            OpenFilter { name: "Video and sound", extensions: &["mp4", "m4v", "mov", "webm", "mp3", "m4a", "wav", "ogg"] },
+            OpenFilter {
+                name: "Text (Word, RTF, plain, Excel)",
+                extensions: &["docx", "rtf", "txt", "md", "xlsx"],
+            },
+            OpenFilter {
+                name: "Video and sound",
+                extensions: &["mp4", "m4v", "mov", "webm", "mp3", "m4a", "wav", "ogg"],
+            },
         ],
         _ => &[
-            OpenFilter { name: "DesignCraft or IDML", extensions: &["designcraft", "idml"] },
-            OpenFilter { name: "DesignCraft", extensions: &["designcraft"] },
-            OpenFilter { name: "InDesign Markup (IDML)", extensions: &["idml"] },
+            OpenFilter {
+                name: "DesignCraft or IDML",
+                extensions: &["designcraft", "idml"],
+            },
+            OpenFilter {
+                name: "DesignCraft",
+                extensions: &["designcraft"],
+            },
+            OpenFilter {
+                name: "InDesign Markup (IDML)",
+                extensions: &["idml"],
+            },
         ],
     }
 }
@@ -207,9 +257,19 @@ fn services() -> Services {
             }
             dialog.pick_file().map(|p| p.to_string_lossy().to_string())
         })),
-        pick_save: Some(Box::new(|name: &str| rfd::FileDialog::new().set_file_name(name).save_file().map(|p| p.to_string_lossy().to_string()))),
-        read: Some(Box::new(|p: &str| std::fs::read(p).map_err(|e| e.to_string()))),
-        write: Some(Box::new(|p: &str, b: &[u8]| designcraft_engine::atomic::write_atomic(std::path::Path::new(p), b).map_err(|e| e.to_string()))),
+        pick_save: Some(Box::new(|name: &str| {
+            rfd::FileDialog::new()
+                .set_file_name(name)
+                .save_file()
+                .map(|p| p.to_string_lossy().to_string())
+        })),
+        read: Some(Box::new(|p: &str| {
+            std::fs::read(p).map_err(|e| e.to_string())
+        })),
+        write: Some(Box::new(|p: &str, b: &[u8]| {
+            designcraft_engine::atomic::write_atomic(std::path::Path::new(p), b)
+                .map_err(|e| e.to_string())
+        })),
         ..Default::default()
     }
 }
@@ -221,10 +281,15 @@ const APP_ID: &str = "ai.storyteller.designcraft";
 /// elsewhere the full tile. Regenerate with `packaging/icons.sh`.
 fn app_icon() -> Option<egui::IconData> {
     #[cfg(target_os = "macos")]
-    let png: &[u8] = include_bytes!("../../../assets/designcraft/app-icon/designcraft-macos-512.png");
+    let png: &[u8] =
+        include_bytes!("../../../assets/designcraft/app-icon/designcraft-macos-512.png");
     #[cfg(not(target_os = "macos"))]
-    let png: &[u8] = include_bytes!("../../../assets/designcraft/app-icon/hicolor/256x256/apps/ai.storyteller.designcraft.png");
-    eframe::icon_data::from_png_bytes(png).map_err(|e| log::warn!("app icon: {e}")).ok()
+    let png: &[u8] = include_bytes!(
+        "../../../assets/designcraft/app-icon/hicolor/256x256/apps/ai.storyteller.designcraft.png"
+    );
+    eframe::icon_data::from_png_bytes(png)
+        .map_err(|e| log::warn!("app icon: {e}"))
+        .ok()
 }
 
 /// The control port from `--control <port>` or `DESIGNCRAFT_CONTROL_PORT` (`source`); a value that
@@ -242,7 +307,10 @@ fn main() -> eframe::Result {
     // First, so every start-up record (and the engine's panic hook, installed with the first
     // Session) is captured; see `logging`.
     let logger = logging::install();
-    let mut control_port = control_port_from("DESIGNCRAFT_CONTROL_PORT", std::env::var("DESIGNCRAFT_CONTROL_PORT").ok());
+    let mut control_port = control_port_from(
+        "DESIGNCRAFT_CONTROL_PORT",
+        std::env::var("DESIGNCRAFT_CONTROL_PORT").ok(),
+    );
     let mut files = Vec::new();
     let mut sample = false;
     let mut args = std::env::args().skip(1);
@@ -261,7 +329,11 @@ fn main() -> eframe::Result {
     // leaves no file behind. Records logged until now are written to it first.
     if let (Some(logger), Some(dir)) = (logger, profile::config_dir()) {
         match logger.attach_dir(&dir.join("logs")) {
-            Ok(path) => log::info!("DesignCraft {}, log file {}", env!("CARGO_PKG_VERSION"), path.display()),
+            Ok(path) => log::info!(
+                "DesignCraft {}, log file {}",
+                env!("CARGO_PKG_VERSION"),
+                path.display()
+            ),
             // Standard error only by now (`attach_dir` gave up on the file); unlike `eprintln!`, never panics.
             Err(e) => log::warn!("no log file: {e}"),
         }
@@ -283,9 +355,17 @@ fn main() -> eframe::Result {
     }
     // The graphics backend, decided before the window exists: a driver that faults takes the
     // process down before any Rust code can catch it (see `gpu`).
-    let gpu = gpu::Startup::begin(if no_prefs() { None } else { profile::config_dir().map(|d| d.join(gpu::FILE)) }, env!("CARGO_PKG_VERSION"));
+    let gpu = gpu::Startup::begin(
+        if no_prefs() {
+            None
+        } else {
+            profile::config_dir().map(|d| d.join(gpu::FILE))
+        },
+        env!("CARGO_PKG_VERSION"),
+    );
     if let Some(s) = &gpu
-        && let eframe::egui_wgpu::WgpuSetup::CreateNew(create) = &mut options.wgpu_options.wgpu_setup
+        && let eframe::egui_wgpu::WgpuSetup::CreateNew(create) =
+            &mut options.wgpu_options.wgpu_setup
     {
         create.instance_descriptor.backends = s.backends();
     }
@@ -316,7 +396,14 @@ fn main() -> eframe::Result {
             if let Some(rs) = &cc.wgpu_render_state {
                 // What a bug report needs to know about the graphics driver.
                 let info = rs.adapter.get_info();
-                log::info!("graphics: {} on {:?} ({:?}; driver {} {})", info.name, info.backend, info.device_type, info.driver, info.driver_info);
+                log::info!(
+                    "graphics: {} on {:?} ({:?}; driver {} {})",
+                    info.name,
+                    info.backend,
+                    info.device_type,
+                    info.driver,
+                    info.driver_info
+                );
                 if let (Some(s), Some(backend)) = (gpu.as_mut(), gpu::Backend::of(info.backend)) {
                     s.started_with(backend);
                 }
@@ -324,14 +411,24 @@ fn main() -> eframe::Result {
             let mut session = Session::new();
             // Crash recovery: reopen what a previous run left unsaved, then keep it current.
             session.recovery_dir = profile::recovery_dir();
-            let recovered = session.execute("file.recovery.open", &serde_json::json!({})).ok();
+            let recovered = session
+                .execute("file.recovery.open", &serde_json::json!({}))
+                .ok();
             let mut app = DesignApp::new(session, services());
             if let Some(line) = gpu.as_ref().and_then(gpu::Startup::status_line) {
                 app.status(line);
             }
             // Recovered documents matter more than the graphics note; both are in the log.
-            if let Some(n) = recovered.as_ref().and_then(|r| r["opened"].as_array()).map(Vec::len).filter(|n| *n > 0) {
-                app.status(format!("Recovered {n} unsaved document{} from the last session.", if n == 1 { "" } else { "s" }));
+            if let Some(n) = recovered
+                .as_ref()
+                .and_then(|r| r["opened"].as_array())
+                .map(Vec::len)
+                .filter(|n| *n > 0)
+            {
+                app.status(format!(
+                    "Recovered {n} unsaved document{} from the last session.",
+                    if n == 1 { "" } else { "s" }
+                ));
             }
             load_prefs(&mut app);
             app.integrated_titlebar = cfg!(target_os = "macos");
@@ -362,27 +459,59 @@ fn main() -> eframe::Result {
 mod tests {
     #[test]
     fn control_port_values_that_are_not_ports_are_ignored() {
-        assert_eq!(super::control_port_from("--control", Some("7979".into())), Some(7979));
-        assert_eq!(super::control_port_from("--control", Some(" 7979 ".into())), Some(7979));
+        assert_eq!(
+            super::control_port_from("--control", Some("7979".into())),
+            Some(7979)
+        );
+        assert_eq!(
+            super::control_port_from("--control", Some(" 7979 ".into())),
+            Some(7979)
+        );
         assert_eq!(super::control_port_from("--control", None), None);
         for bad in ["", "abc", "-1", "65536", "99999999999999999999"] {
-            assert_eq!(super::control_port_from("--control", Some(bad.into())), None, "{bad:?}");
+            assert_eq!(
+                super::control_port_from("--control", Some(bad.into())),
+                None,
+                "{bad:?}"
+            );
         }
     }
 
     #[test]
     fn data_merge_open_dialog_lists_table_extensions() {
         let filters = super::open_filters("dataMerge");
-        let exts: Vec<&str> = filters.iter().flat_map(|filter| filter.extensions.iter().copied()).collect();
+        let exts: Vec<&str> = filters
+            .iter()
+            .flat_map(|filter| filter.extensions.iter().copied())
+            .collect();
         for ext in ["csv", "tsv", "tab", "txt", "xlsx"] {
-            assert!(exts.contains(&ext), "{ext} is missing from the dataMerge dialog: {exts:?}");
+            assert!(
+                exts.contains(&ext),
+                "{ext} is missing from the dataMerge dialog: {exts:?}"
+            );
         }
-        assert!(!exts.iter().any(|ext| *ext == "designcraft" || *ext == "idml"), "dataMerge must not fall through to the document filters: {exts:?}");
+        assert!(
+            !exts
+                .iter()
+                .any(|ext| *ext == "designcraft" || *ext == "idml"),
+            "dataMerge must not fall through to the document filters: {exts:?}"
+        );
         let place = super::open_filters("place");
-        assert!(place.len() > 1, "the place dialog keeps a filter for each kind of file");
-        assert!(place.iter().any(|filter| filter.extensions.contains(&"png")));
+        assert!(
+            place.len() > 1,
+            "the place dialog keeps a filter for each kind of file"
+        );
+        assert!(
+            place
+                .iter()
+                .any(|filter| filter.extensions.contains(&"png"))
+        );
         let documents = super::open_filters("");
-        assert!(documents.iter().any(|filter| filter.extensions.contains(&"designcraft")));
+        assert!(
+            documents
+                .iter()
+                .any(|filter| filter.extensions.contains(&"designcraft"))
+        );
     }
 }
 
@@ -398,8 +527,14 @@ mod atomic_writer_tests {
                 let _ = std::fs::remove_dir_all(&self.0);
             }
         }
-        let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-        let dir = std::env::temp_dir().join(format!("designcraft-desktop-atomic-{}-{stamp}", std::process::id()));
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "designcraft-desktop-atomic-{}-{stamp}",
+            std::process::id()
+        ));
         std::fs::create_dir(&dir).unwrap();
         let fixture = Fixture(dir);
         let target = fixture.0.join(format!("{}.png", "a".repeat(243)));
@@ -413,10 +548,21 @@ mod atomic_writer_tests {
         write(alias.to_str().unwrap(), b"complete new export").unwrap();
         let mut observed = Vec::new();
         reader.read_to_end(&mut observed).unwrap();
-        assert!(observed == old, "desktop export changed bytes under an existing reader");
+        assert!(
+            observed == old,
+            "desktop export changed bytes under an existing reader"
+        );
         assert_eq!(std::fs::read(&target).unwrap(), b"complete new export");
-        assert_eq!(std::fs::metadata(&target).unwrap().permissions().mode() & 0o777, 0o600);
-        assert!(std::fs::symlink_metadata(alias).unwrap().file_type().is_symlink());
+        assert_eq!(
+            std::fs::metadata(&target).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+        assert!(
+            std::fs::symlink_metadata(alias)
+                .unwrap()
+                .file_type()
+                .is_symlink()
+        );
     }
 }
 
@@ -428,9 +574,13 @@ mod exit_recovery_tests {
     fn dirty_app(label: &str) -> (DesignApp, std::path::PathBuf) {
         let mut app = DesignApp::new(Session::new(), Services::default());
         app.run("file.new", json!({})).unwrap();
-        app.run("frame.create", json!({"rect": [20, 20, 120, 120]})).unwrap();
+        app.run("frame.create", json!({"rect": [20, 20, 120, 120]}))
+            .unwrap();
         let uid = app.session.active().unwrap().uid;
-        let dir = std::env::temp_dir().join(format!("designcraft-exit-{label}-{}-{uid}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!(
+            "designcraft-exit-{label}-{}-{uid}",
+            std::process::id()
+        ));
         assert!(!dir.exists());
         app.session.recovery_dir = Some(dir.clone());
         (app, dir)
@@ -439,7 +589,11 @@ mod exit_recovery_tests {
     fn close_frame(app: &mut DesignApp, ctx: &egui::Context, close: bool) {
         let mut raw = egui::RawInput::default();
         if close {
-            raw.viewports.entry(egui::ViewportId::ROOT).or_default().events.push(egui::ViewportEvent::Close);
+            raw.viewports
+                .entry(egui::ViewportId::ROOT)
+                .or_default()
+                .events
+                .push(egui::ViewportEvent::Close);
         }
         let mut out = ctx.run_ui(raw, |ui| app.logic(ui.ctx()));
         out.textures_delta.clear();
@@ -449,20 +603,41 @@ mod exit_recovery_tests {
     fn exit_recovery_preserves_latest_dirty_document_without_mutating_it() {
         let (mut app, dir) = dirty_app("latest");
         app.run("file.recovery.save", json!({})).unwrap();
-        app.run("frame.create", json!({"rect": [200, 200, 300, 300]})).unwrap();
+        app.run("frame.create", json!({"rect": [200, 200, 300, 300]}))
+            .unwrap();
         let d = app.session.active().unwrap();
-        let (uid, revision, saved_revision, doc, selection, undo, redo) =
-            (d.uid, d.revision, d.saved_revision, d.doc.clone(), d.selection.items.clone(), d.history.undo.len(), d.history.redo.len());
+        let (uid, revision, saved_revision, doc, selection, undo, redo) = (
+            d.uid,
+            d.revision,
+            d.saved_revision,
+            d.doc.clone(),
+            d.selection.items.clone(),
+            d.history.undo.len(),
+            d.history.redo.len(),
+        );
         preserve_documents_on_exit(&mut app).unwrap();
         let current = app.session.active().unwrap();
         assert_eq!(
-            (current.uid, current.revision, current.saved_revision, &current.selection.items, current.history.undo.len(), current.history.redo.len()),
+            (
+                current.uid,
+                current.revision,
+                current.saved_revision,
+                &current.selection.items,
+                current.history.undo.len(),
+                current.history.redo.len()
+            ),
             (uid, revision, saved_revision, &selection, undo, redo)
         );
         assert!(std::sync::Arc::ptr_eq(&current.doc, &doc));
         assert!(current.is_dirty());
-        let recovered = designcraft_engine::cmd::from_bytes(&std::fs::read(dir.join(format!("{uid}.designcraft"))).unwrap()).unwrap();
-        assert_eq!(serde_json::to_value(&recovered).unwrap(), serde_json::to_value(doc.as_ref()).unwrap());
+        let recovered = designcraft_engine::cmd::from_bytes(
+            &std::fs::read(dir.join(format!("{uid}.designcraft"))).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            serde_json::to_value(&recovered).unwrap(),
+            serde_json::to_value(doc.as_ref()).unwrap()
+        );
         std::fs::remove_dir_all(dir).unwrap();
     }
 
@@ -477,8 +652,14 @@ mod exit_recovery_tests {
         assert!(!app.session.active().unwrap().is_dirty());
         let doc = app.session.active().unwrap().doc.clone();
         preserve_documents_on_exit(&mut app).unwrap();
-        assert!(!entry.exists(), "clean exit must not resurrect the pre-Undo edits");
-        assert!(std::sync::Arc::ptr_eq(&app.session.active().unwrap().doc, &doc));
+        assert!(
+            !entry.exists(),
+            "clean exit must not resurrect the pre-Undo edits"
+        );
+        assert!(std::sync::Arc::ptr_eq(
+            &app.session.active().unwrap().doc,
+            &doc
+        ));
         std::fs::remove_dir_all(dir).unwrap();
     }
 
@@ -487,14 +668,21 @@ mod exit_recovery_tests {
         let (mut app, dir) = dirty_app("failure");
         let doc = app.session.active().unwrap().doc.clone();
         app.session.recovery_dir = None;
-        assert!(preserve_documents_on_exit(&mut app).unwrap_err().contains("unavailable"));
+        assert!(
+            preserve_documents_on_exit(&mut app)
+                .unwrap_err()
+                .contains("unavailable")
+        );
         std::fs::create_dir(&dir).unwrap();
         let blocked = dir.join("not-a-directory");
         std::fs::write(&blocked, b"preserve this file").unwrap();
         app.session.recovery_dir = Some(blocked.clone());
         assert!(preserve_documents_on_exit(&mut app).is_err());
         assert_eq!(std::fs::read(&blocked).unwrap(), b"preserve this file");
-        assert!(std::sync::Arc::ptr_eq(&app.session.active().unwrap().doc, &doc));
+        assert!(std::sync::Arc::ptr_eq(
+            &app.session.active().unwrap().doc,
+            &doc
+        ));
         assert!(app.session.active().unwrap().is_dirty());
         assert_eq!(app.session.documents().len(), 1);
         std::fs::remove_dir_all(dir).unwrap();
@@ -506,44 +694,79 @@ mod exit_recovery_tests {
             let (mut app, dir) = dirty_app(case);
             if case == "incomplete" {
                 app.run("file.new", json!({})).unwrap();
-                app.run("frame.create", json!({"rect": [20, 20, 120, 120]})).unwrap();
+                app.run("frame.create", json!({"rect": [20, 20, 120, 120]}))
+                    .unwrap();
             }
             app.run("file.recovery.save", json!({})).unwrap();
             let first_uid = app.session.documents()[0].uid;
             let ctx = egui::Context::default();
             close_frame(&mut app, &ctx, true);
-            app.ui.dialog.as_mut().unwrap().fields.insert("discard".into(), json!(true));
+            app.ui
+                .dialog
+                .as_mut()
+                .unwrap()
+                .fields
+                .insert("discard".into(), json!(true));
             designcraft_ui_egui::dialogs::confirm(&mut app).unwrap();
             close_frame(&mut app, &ctx, false);
             if case == "stale" {
-                app.run("frame.create", json!({"rect": [200, 200, 300, 300]})).unwrap();
+                app.run("frame.create", json!({"rect": [200, 200, 300, 300]}))
+                    .unwrap();
             } else if case == "new" {
                 app.run("file.new", json!({})).unwrap();
-                app.run("frame.create", json!({"rect": [20, 20, 120, 120]})).unwrap();
+                app.run("frame.create", json!({"rect": [20, 20, 120, 120]}))
+                    .unwrap();
             }
             let active = app.session.active().unwrap().uid;
             let before: Vec<_> = app
                 .session
                 .documents()
                 .iter()
-                .map(|d| (d.uid, d.revision, d.doc.clone(), d.selection.items.clone(), d.history.undo.len(), d.history.redo.len()))
+                .map(|d| {
+                    (
+                        d.uid,
+                        d.revision,
+                        d.doc.clone(),
+                        d.selection.items.clone(),
+                        d.history.undo.len(),
+                        d.history.redo.len(),
+                    )
+                })
                 .collect();
             preserve_documents_on_exit(&mut app).unwrap();
             if case == "complete" {
                 assert!(app.session.documents().is_empty());
-                assert!(!dir.join(format!("{first_uid}.designcraft")).exists(), "accepted Don't Save must not be recovered");
+                assert!(
+                    !dir.join(format!("{first_uid}.designcraft")).exists(),
+                    "accepted Don't Save must not be recovered"
+                );
             } else {
                 assert_eq!(app.session.documents().len(), before.len(), "{case}");
                 assert_eq!(app.session.active().unwrap().uid, active, "{case}");
-                for (d, (uid, revision, doc, selection, undo, redo)) in app.session.documents().iter().zip(before) {
+                for (d, (uid, revision, doc, selection, undo, redo)) in
+                    app.session.documents().iter().zip(before)
+                {
                     assert_eq!(
-                        (d.uid, d.revision, &d.selection.items, d.history.undo.len(), d.history.redo.len()),
+                        (
+                            d.uid,
+                            d.revision,
+                            &d.selection.items,
+                            d.history.undo.len(),
+                            d.history.redo.len()
+                        ),
                         (uid, revision, &selection, undo, redo),
                         "{case}"
                     );
                     assert!(std::sync::Arc::ptr_eq(&d.doc, &doc), "{case}");
-                    let recovered = designcraft_engine::cmd::from_bytes(&std::fs::read(dir.join(format!("{uid}.designcraft"))).unwrap()).unwrap();
-                    assert_eq!(serde_json::to_value(&recovered).unwrap(), serde_json::to_value(doc.as_ref()).unwrap(), "{case}");
+                    let recovered = designcraft_engine::cmd::from_bytes(
+                        &std::fs::read(dir.join(format!("{uid}.designcraft"))).unwrap(),
+                    )
+                    .unwrap();
+                    assert_eq!(
+                        serde_json::to_value(&recovered).unwrap(),
+                        serde_json::to_value(doc.as_ref()).unwrap(),
+                        "{case}"
+                    );
                 }
             }
             std::fs::remove_dir_all(dir).unwrap();

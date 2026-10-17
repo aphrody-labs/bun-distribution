@@ -20,7 +20,10 @@ fn main() -> std::io::Result<()> {
         .set("ProductName", "PhotoCraft")
         .set("FileDescription", "PhotoCraft command-line interface")
         .set("CompanyName", "Learning Machines LLC")
-        .set("LegalCopyright", "Copyright (c) the PhotoCraft authors. MIT OR Apache-2.0.")
+        .set(
+            "LegalCopyright",
+            "Copyright (c) the PhotoCraft authors. MIT OR Apache-2.0.",
+        )
         .set("OriginalFilename", "photocraft-cli.exe")
         .set("InternalName", "photocraft-cli");
     if let Err(err) = res.compile() {

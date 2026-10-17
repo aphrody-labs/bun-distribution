@@ -21,7 +21,8 @@ fn cfg(dir: &std::path::Path) -> StoreConfig {
 fn doc(name: &str) -> Document {
     let mut d = Document::new(name);
     let page = d.first_page().unwrap();
-    d.create(page, NodeKind::Rectangle, "Card", 0.0, 0.0, 100.0, 60.0).unwrap();
+    d.create(page, NodeKind::Rectangle, "Card", 0.0, 0.0, 100.0, 60.0)
+        .unwrap();
     d.repair();
     d
 }
@@ -40,9 +41,13 @@ fn publish(store: &mut Store, name: &str) -> (String, String, String) {
 
 /// A client in `server` (as the hub would let it in) and what it was told.
 fn join(server: &mut Server, access: Access) -> Client {
-    let ClientMsg::Hello(h) = Client::hello("f", "", "Ada", "#FF8800") else { panic!() };
+    let ClientMsg::Hello(h) = Client::hello("f", "", "Ada", "#FF8800") else {
+        panic!()
+    };
     let (_, out) = server.join_as(h, access).unwrap();
-    let Some(Outgoing::To(_, w)) = out.into_iter().next() else { panic!() };
+    let Some(Outgoing::To(_, w)) = out.into_iter().next() else {
+        panic!()
+    };
     Client::join(w).unwrap()
 }
 
@@ -72,8 +77,18 @@ fn files_links_and_access() {
     // Each link lets in with its access; anything else doesn't.
     assert_eq!(store.admit(&id, &edit).unwrap().access, Access::Edit);
     assert_eq!(store.admit(&id, &view).unwrap().access, Access::View);
-    assert!(store.admit(&id, "WrongWrongWrongWrong00").unwrap_err().contains("isn't valid"));
-    assert!(store.admit("0000000000000000", &edit).unwrap_err().contains("isn't on the server"));
+    assert!(
+        store
+            .admit(&id, "WrongWrongWrongWrong00")
+            .unwrap_err()
+            .contains("isn't valid")
+    );
+    assert!(
+        store
+            .admit("0000000000000000", &edit)
+            .unwrap_err()
+            .contains("isn't on the server")
+    );
     // Tokens are kept only as hashes.
     let on_disk = fs::read_to_string(dir.path().join(FILES).join(&id).join(LINKS)).unwrap();
     assert!(!on_disk.contains(&edit) && !on_disk.contains(&view));
@@ -82,7 +97,10 @@ fn files_links_and_access() {
     let review = store.create_link(&id, Access::View, " Review\n").unwrap();
     assert_eq!(review.link.label, "Review");
     assert_eq!(store.links(&id).unwrap().len(), 3);
-    assert_eq!(store.admit(&id, &review.token).unwrap().link.as_deref(), Some(review.link.id.as_str()));
+    assert_eq!(
+        store.admit(&id, &review.token).unwrap().link.as_deref(),
+        Some(review.link.id.as_str())
+    );
     store.revoke(&id, &review.link.id).unwrap();
     assert!(store.admit(&id, &review.token).is_err());
     assert!(store.admit(&id, &view).is_ok());
@@ -97,7 +115,10 @@ fn files_links_and_access() {
 #[test]
 fn a_file_survives_a_crash_and_compacts() {
     let dir = TempDir::new("crash");
-    let c = StoreConfig { compact_after: 1000, ..cfg(dir.path()) };
+    let c = StoreConfig {
+        compact_after: 1000,
+        ..cfg(dir.path())
+    };
     let (id, before, seq) = {
         let mut store = Store::open(dir.path(), c.clone()).unwrap();
         let (id, _, _) = publish(&mut store, "Crash");
@@ -119,9 +140,12 @@ fn a_file_survives_a_crash_and_compacts() {
     assert_eq!(server.seq(), seq);
     // Compaction: everyone left; the snapshot has it all and the log starts over.
     assert!(store.idle(&id, &mut server));
-    let snap = disk::decode_snapshot(&fs::read(dir.path().join(FILES).join(&id).join(SNAPSHOT)).unwrap()).unwrap();
+    let snap =
+        disk::decode_snapshot(&fs::read(dir.path().join(FILES).join(&id).join(SNAPSHOT)).unwrap())
+            .unwrap();
     assert_eq!(snap.1.seq, seq);
-    let log = disk::read_log(&fs::read(dir.path().join(FILES).join(&id).join(LOG)).unwrap()).unwrap();
+    let log =
+        disk::read_log(&fs::read(dir.path().join(FILES).join(&id).join(LOG)).unwrap()).unwrap();
     assert_eq!(log.generation, snap.0);
     assert!(log.entries.is_empty());
     assert_eq!(store.list(&|_| None)[0].seq, seq, "the description follows");
@@ -130,13 +154,19 @@ fn a_file_survives_a_crash_and_compacts() {
 #[test]
 fn a_long_log_is_compacted_while_open() {
     let dir = TempDir::new("compact");
-    let c = StoreConfig { compact_after: 3, ..cfg(dir.path()) };
+    let c = StoreConfig {
+        compact_after: 3,
+        ..cfg(dir.path())
+    };
     let mut store = Store::open(dir.path(), c.clone()).unwrap();
     let (id, _, _) = publish(&mut store, "Busy");
     let mut server = store.open(&id).unwrap();
     let mut a = join(&mut server, Access::Edit);
     store.changed(&id, &mut server);
-    let generation = || disk::check_snapshot(&fs::read(dir.path().join(FILES).join(&id).join(SNAPSHOT)).unwrap()).unwrap();
+    let generation = || {
+        disk::check_snapshot(&fs::read(dir.path().join(FILES).join(&id).join(SNAPSHOT)).unwrap())
+            .unwrap()
+    };
     assert_eq!(generation(), 1);
     for i in 0..3 {
         rename(&mut server, &mut a, &format!("P{i}"));
@@ -158,7 +188,10 @@ fn damaged_files_are_skipped_and_reported() {
     let dir = TempDir::new("damaged");
     let (bad_snapshot, bad_meta, cut_log, good) = {
         let mut store = Store::open(dir.path(), cfg(dir.path())).unwrap();
-        let ids: Vec<String> = ["A", "B", "C", "D"].iter().map(|n| publish(&mut store, n).0).collect();
+        let ids: Vec<String> = ["A", "B", "C", "D"]
+            .iter()
+            .map(|n| publish(&mut store, n).0)
+            .collect();
         // C gets a log with entries.
         let mut server = store.open(&ids[2]).unwrap();
         let mut c = join(&mut server, Access::Edit);
@@ -168,7 +201,12 @@ fn damaged_files_are_skipped_and_reported() {
         rename(&mut server, &mut c, "Lost");
         store.changed(&ids[2], &mut server);
         store.flush();
-        (ids[0].clone(), ids[1].clone(), ids[2].clone(), ids[3].clone())
+        (
+            ids[0].clone(),
+            ids[1].clone(),
+            ids[2].clone(),
+            ids[3].clone(),
+        )
     };
     let folder = |id: &str| dir.path().join(FILES).join(id);
     // A: a flipped byte in its snapshot; B: garbage description; C: its log cut mid-record;
@@ -184,18 +222,32 @@ fn damaged_files_are_skipped_and_reported() {
     fs::create_dir_all(dir.path().join(FILES).join("not a file id")).unwrap();
     let mut store = Store::open(dir.path(), cfg(dir.path())).unwrap();
     let problems = store.problems().join("\n");
-    assert!(problems.contains(&bad_snapshot) && problems.contains("checksum"), "{problems}");
-    assert!(problems.contains(&bad_meta) && problems.contains(META), "{problems}");
+    assert!(
+        problems.contains(&bad_snapshot) && problems.contains("checksum"),
+        "{problems}"
+    );
+    assert!(
+        problems.contains(&bad_meta) && problems.contains(META),
+        "{problems}"
+    );
     assert!(problems.contains("not a file id"), "{problems}");
     assert_eq!(store.len(), 2, "C and D are served");
     // Nothing is deleted.
     assert!(folder(&bad_snapshot).exists() && folder(&bad_meta).exists());
-    assert!(!disk::temp_of(&folder(&good).join(SNAPSHOT)).exists(), "the leftover is gone");
+    assert!(
+        !disk::temp_of(&folder(&good).join(SNAPSHOT)).exists(),
+        "the leftover is gone"
+    );
     // C opens without the cut-short record, and says so.
     let server = store.open(&cut_log).unwrap();
     let page = server.document().first_page().unwrap();
     assert_eq!(server.document().node(page).unwrap().name, "Kept");
-    assert!(store.problems().iter().any(|p| p.contains(&cut_log) && p.contains("cut short")));
+    assert!(
+        store
+            .problems()
+            .iter()
+            .any(|p| p.contains(&cut_log) && p.contains("cut short"))
+    );
     // Damage after startup: the file can't be opened, with a reason for the person joining.
     fs::write(folder(&good).join(SNAPSHOT), b"FCSN garbage").unwrap();
     assert!(store.open(&good).unwrap_err().contains("can't be opened"));
@@ -205,24 +257,66 @@ fn damaged_files_are_skipped_and_reported() {
 #[test]
 fn caps_hold() {
     let dir = TempDir::new("caps");
-    let c = StoreConfig { max_files: 1, max_links: 3, ..cfg(dir.path()) };
+    let c = StoreConfig {
+        max_files: 1,
+        max_links: 3,
+        ..cfg(dir.path())
+    };
     let mut store = Store::open(dir.path(), c).unwrap();
     let (id, _, _) = publish(&mut store, "One");
-    assert!(store.publish("Two", &snapshot(doc("Two"))).unwrap_err().contains("at most 1"));
+    assert!(
+        store
+            .publish("Two", &snapshot(doc("Two")))
+            .unwrap_err()
+            .contains("at most 1")
+    );
     store.create_link(&id, Access::View, "").unwrap();
-    assert!(store.create_link(&id, Access::View, "").unwrap_err().contains("at most 3"));
+    assert!(
+        store
+            .create_link(&id, Access::View, "")
+            .unwrap_err()
+            .contains("at most 3")
+    );
     let dir2 = TempDir::new("caps-size");
-    let mut tiny = Store::open(dir2.path(), StoreConfig { max_file_bytes: 64, ..cfg(dir2.path()) }).unwrap();
-    assert!(tiny.publish("Big", &snapshot(doc("Big"))).unwrap_err().contains("MiB"));
-    assert!(tiny.publish("Junk", &[figcraft_collab::Change::Delete { id: figcraft_doc::NodeId(1) }]).is_err());
+    let mut tiny = Store::open(
+        dir2.path(),
+        StoreConfig {
+            max_file_bytes: 64,
+            ..cfg(dir2.path())
+        },
+    )
+    .unwrap();
+    assert!(
+        tiny.publish("Big", &snapshot(doc("Big")))
+            .unwrap_err()
+            .contains("MiB")
+    );
+    assert!(
+        tiny.publish(
+            "Junk",
+            &[figcraft_collab::Change::Delete {
+                id: figcraft_doc::NodeId(1)
+            }]
+        )
+        .is_err()
+    );
 }
 
 #[test]
 fn one_server_per_data_directory() {
     let dir = TempDir::new("lock");
     let first = Store::open(dir.path(), cfg(dir.path())).unwrap();
-    assert!(Store::open(dir.path(), cfg(dir.path())).err().unwrap().contains("is using"));
-    assert!(Store::try_open(dir.path(), cfg(dir.path())).unwrap().is_none());
+    assert!(
+        Store::open(dir.path(), cfg(dir.path()))
+            .err()
+            .unwrap()
+            .contains("is using")
+    );
+    assert!(
+        Store::try_open(dir.path(), cfg(dir.path()))
+            .unwrap()
+            .is_none()
+    );
     let key = first.key().to_string();
     drop(first);
     let again = Store::open(dir.path(), cfg(dir.path())).unwrap();
@@ -244,7 +338,9 @@ fn temporary_directories_are_removed() {
 #[test]
 fn random_bytes_never_panic_the_readers() {
     let mut rng = Rng::new(7);
-    let state = Server::new(doc("Fuzz"), "", figcraft_collab::Limits::default()).state().unwrap();
+    let state = Server::new(doc("Fuzz"), "", figcraft_collab::Limits::default())
+        .state()
+        .unwrap();
     let snap = disk::encode_snapshot(3, &state).unwrap();
     let mut log = disk::log_header(3);
     log.extend(disk::record(&figcraft_collab::Journal::Issued { client: 9 }).unwrap());

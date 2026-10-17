@@ -10,7 +10,9 @@
 pub fn system() -> wordcraft_engine::Region {
     // Runs without preferences (agents' and screenshot runs) behave the same on every machine:
     // en-US unless `WORDCRAFT_REGION` says otherwise.
-    if std::env::var_os("WORDCRAFT_NO_PREFS").is_some() && std::env::var_os("WORDCRAFT_REGION").is_none() {
+    if std::env::var_os("WORDCRAFT_NO_PREFS").is_some()
+        && std::env::var_os("WORDCRAFT_REGION").is_none()
+    {
         return wordcraft_engine::Region::default();
     }
     let region = wordcraft_ui_egui::i18n::system_region();

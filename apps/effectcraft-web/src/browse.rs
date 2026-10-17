@@ -66,7 +66,12 @@ fn storage_tree() -> VirtualTree {
         if !persisted || path.starts_with(FOLDERS) {
             continue;
         }
-        t.add_file(&format!("{STORAGE}{path}"), &path, size as u64, Some((modified / 1000.0) as u64));
+        t.add_file(
+            &format!("{STORAGE}{path}"),
+            &path,
+            size as u64,
+            Some((modified / 1000.0) as u64),
+        );
     }
     t
 }
@@ -78,12 +83,19 @@ fn add_folder(v: &Value) -> Option<String> {
     st.folders.remove(&format!("{FOLDERS}/{name}"));
     st.folders.add_dir(&format!("{FOLDERS}/{name}"));
     for e in v["entries"].as_array().into_iter().flatten() {
-        let Some(rel) = e["path"].as_str() else { continue };
+        let Some(rel) = e["path"].as_str() else {
+            continue;
+        };
         let path = format!("{FOLDERS}/{rel}");
         if e["dir"].as_bool() == Some(true) {
             st.folders.add_dir(&path);
         } else {
-            st.folders.add_file(&path, &path, e["size"].as_u64().unwrap_or(0), e["modified"].as_u64());
+            st.folders.add_file(
+                &path,
+                &path,
+                e["size"].as_u64().unwrap_or(0),
+                e["modified"].as_u64(),
+            );
         }
     }
     st.open.retain(|n| *n != name);
@@ -93,11 +105,19 @@ fn add_folder(v: &Value) -> Option<String> {
 }
 
 fn to_value(v: &JsValue) -> Value {
-    js_sys::JSON::stringify(v).ok().and_then(|s| s.as_string()).and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(Value::Null)
+    js_sys::JSON::stringify(v)
+        .ok()
+        .and_then(|s| s.as_string())
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or(Value::Null)
 }
 
 /// Run a promise; on success, `then` gets its value (as JSON) on the UI thread.
-fn spawn(p: js_sys::Promise, what: &'static str, then: impl FnOnce(&mut effectcraft_ui_egui::EffectcraftApp, Value) + 'static) {
+fn spawn(
+    p: js_sys::Promise,
+    what: &'static str,
+    then: impl FnOnce(&mut effectcraft_ui_egui::EffectcraftApp, Value) + 'static,
+) {
     wasm_bindgen_futures::spawn_local(async move {
         match wasm_bindgen_futures::JsFuture::from(p).await {
             Ok(v) => {
@@ -116,7 +136,10 @@ fn spawn(p: js_sys::Promise, what: &'static str, then: impl FnOnce(&mut effectcr
 }
 
 fn go(app: &mut effectcraft_ui_egui::EffectcraftApp, path: &str) {
-    if let Err(e) = app.session.execute("mediaBrowser.go", json!({"path": path})) {
+    if let Err(e) = app
+        .session
+        .execute("mediaBrowser.go", json!({"path": path}))
+    {
         app.ui.status = e.to_string();
     }
 }
@@ -144,12 +167,21 @@ impl Browser for WebBrowser {
 
     fn places(&self) -> Vec<(String, String)> {
         let mut v = vec![("Browser Storage".to_string(), STORAGE.to_string())];
-        v.extend(state().open.iter().map(|n| (n.clone(), format!("{FOLDERS}/{n}"))));
+        v.extend(
+            state()
+                .open
+                .iter()
+                .map(|n| (n.clone(), format!("{FOLDERS}/{n}"))),
+        );
         v
     }
 
     fn list(&self, dir: &str, importable_only: bool) -> Result<Vec<Entry>, String> {
-        let dir = if dir.len() > 1 { dir.trim_end_matches('/') } else { dir };
+        let dir = if dir.len() > 1 {
+            dir.trim_end_matches('/')
+        } else {
+            dir
+        };
         if dir == STORAGE || dir.starts_with(&format!("{STORAGE}/")) {
             return storage_tree().list(dir, importable_only);
         }
@@ -164,8 +196,17 @@ impl Browser for WebBrowser {
             return Ok(vec![]);
         }
         st.folders.list(dir, importable_only).map_err(|e| {
-            let name = dir.trim_start_matches(FOLDERS).trim_start_matches('/').split('/').next().unwrap_or("");
-            if st.disconnected.iter().any(|d| d == name) { format!("{name}: click Reconnect {name} to allow access again") } else { e }
+            let name = dir
+                .trim_start_matches(FOLDERS)
+                .trim_start_matches('/')
+                .split('/')
+                .next()
+                .unwrap_or("");
+            if st.disconnected.iter().any(|d| d == name) {
+                format!("{name}: click Reconnect {name} to allow access again")
+            } else {
+                e
+            }
         })
     }
 
@@ -179,7 +220,11 @@ impl Browser for WebBrowser {
     }
 
     fn fetch(&self, paths: &[String], params: &Value) -> bool {
-        let missing: Vec<String> = paths.iter().filter(|p| p.starts_with(&format!("{FOLDERS}/")) && crate::files::get(p).is_none()).cloned().collect();
+        let missing: Vec<String> = paths
+            .iter()
+            .filter(|p| p.starts_with(&format!("{FOLDERS}/")) && crate::files::get(p).is_none())
+            .cloned()
+            .collect();
         if missing.is_empty() {
             return true;
         }
@@ -189,20 +234,31 @@ impl Browser for WebBrowser {
                 match wasm_bindgen_futures::JsFuture::from(read(p)).await {
                     Ok(b) => crate::files::put(p, js_sys::Uint8Array::new(&b).to_vec().into()),
                     Err(e) => {
-                        let msg = format!("{p}: {}", e.as_string().unwrap_or_else(|| "cannot read the file (reconnect its folder)".into()));
+                        let msg = format!(
+                            "{p}: {}",
+                            e.as_string().unwrap_or_else(|| {
+                                "cannot read the file (reconnect its folder)".into()
+                            })
+                        );
                         crate::post(move |app| app.ui.status = msg);
                         return;
                     }
                 }
             }
-            crate::post(move |app| match app.session.execute("mediaBrowser.import", params) {
-                Ok(r) => {
-                    if let Some(errs) = r["errors"].as_array().filter(|e| !e.is_empty()) {
-                        app.ui.status = errs.iter().filter_map(|e| e.as_str()).collect::<Vec<_>>().join("; ");
+            crate::post(
+                move |app| match app.session.execute("mediaBrowser.import", params) {
+                    Ok(r) => {
+                        if let Some(errs) = r["errors"].as_array().filter(|e| !e.is_empty()) {
+                            app.ui.status = errs
+                                .iter()
+                                .filter_map(|e| e.as_str())
+                                .collect::<Vec<_>>()
+                                .join("; ");
+                        }
                     }
-                }
-                Err(e) => app.ui.status = e.to_string(),
-            });
+                    Err(e) => app.ui.status = e.to_string(),
+                },
+            );
         });
         false
     }
@@ -224,7 +280,10 @@ impl Browser for WebBrowser {
         match id {
             "openFolder" => {
                 if !can_pick_folder() {
-                    return Err("this browser cannot open folders (use Add Files… or Upload Folder…)".into());
+                    return Err(
+                        "this browser cannot open folders (use Add Files… or Upload Folder…)"
+                            .into(),
+                    );
                 }
                 spawn(pick_folder(), "Open Folder", |app, v| {
                     if let Some(n) = add_folder(&v) {
@@ -234,7 +293,11 @@ impl Browser for WebBrowser {
                 Ok(json!({"pending": true}))
             }
             "addFiles" | "uploadFolder" => {
-                let what = if id == "uploadFolder" { "Upload Folder…" } else { "Add Files…" };
+                let what = if id == "uploadFolder" {
+                    "Upload Folder…"
+                } else {
+                    "Add Files…"
+                };
                 let p = pick_files(id == "uploadFolder");
                 wasm_bindgen_futures::spawn_local(async move {
                     let list = match wasm_bindgen_futures::JsFuture::from(p).await {
@@ -249,16 +312,26 @@ impl Browser for WebBrowser {
                     let (mut n, mut unread) = (0, vec![]);
                     for f in list.iter() {
                         let get = |key: &str| js_sys::Reflect::get(&f, &key.into()).ok();
-                        let Some(path) = get("path").and_then(|v| v.as_string()) else { continue };
+                        let Some(path) = get("path").and_then(|v| v.as_string()) else {
+                            continue;
+                        };
                         match get("bytes").and_then(|b| b.dyn_into::<js_sys::Uint8Array>().ok()) {
                             Some(bytes) => {
-                                crate::files::put(&format!("/{}", path.trim_start_matches('/')), bytes.to_vec().into());
+                                crate::files::put(
+                                    &format!("/{}", path.trim_start_matches('/')),
+                                    bytes.to_vec().into(),
+                                );
                                 n += 1;
                             }
-                            None => unread.push(match get("error").and_then(|e| e.as_string()).filter(|e| !e.is_empty()) {
-                                Some(why) => format!("{path} ({why})"),
-                                None => path,
-                            }),
+                            None => unread.push(
+                                match get("error")
+                                    .and_then(|e| e.as_string())
+                                    .filter(|e| !e.is_empty())
+                                {
+                                    Some(why) => format!("{path} ({why})"),
+                                    None => path,
+                                },
+                            ),
                         }
                     }
                     // Cancelled: nothing to report.
@@ -268,7 +341,10 @@ impl Browser for WebBrowser {
                     crate::post(move |app| {
                         app.ui.status = format!("{n} file(s) added to Browser Storage");
                         if !unread.is_empty() {
-                            app.ui.status += &format!(". Could not read {}: try {what} again", unread.join(", "));
+                            app.ui.status += &format!(
+                                ". Could not read {}: try {what} again",
+                                unread.join(", ")
+                            );
                         }
                         go(app, STORAGE);
                     });

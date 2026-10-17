@@ -61,7 +61,8 @@ impl Handle {
                 o.set_number_of_inputs(0);
                 o.set_number_of_outputs(1);
                 o.set_output_channel_count(&js_sys::Array::of1(&2.into()));
-                let node = web_sys::AudioWorkletNode::new_with_options(&ctx, "filmcraft-output", &o)?;
+                let node =
+                    web_sys::AudioWorkletNode::new_with_options(&ctx, "filmcraft-output", &o)?;
                 node.connect_with_audio_node(&ctx.destination())?;
                 Ok(node)
             }
@@ -70,17 +71,24 @@ impl Handle {
             match r {
                 Ok(node) => {
                     let w = Rc::downgrade(&st);
-                    let on_msg = Closure::<dyn FnMut(web_sys::MessageEvent)>::new(move |e: web_sys::MessageEvent| {
-                        let Some(st) = w.upgrade() else { return };
-                        let d = e.data();
-                        let num = |k: &str| js_sys::Reflect::get(&d, &k.into()).ok().and_then(|v| v.as_f64()).unwrap_or(0.0);
-                        let mut s = st.borrow_mut();
-                        if num("gen") as u32 == s.generation {
-                            s.played = num("played") as u64;
-                            s.played_at = num("time");
-                            s.reported = true;
-                        }
-                    });
+                    let on_msg = Closure::<dyn FnMut(web_sys::MessageEvent)>::new(
+                        move |e: web_sys::MessageEvent| {
+                            let Some(st) = w.upgrade() else { return };
+                            let d = e.data();
+                            let num = |k: &str| {
+                                js_sys::Reflect::get(&d, &k.into())
+                                    .ok()
+                                    .and_then(|v| v.as_f64())
+                                    .unwrap_or(0.0)
+                            };
+                            let mut s = st.borrow_mut();
+                            if num("gen") as u32 == s.generation {
+                                s.played = num("played") as u64;
+                                s.played_at = num("time");
+                                s.reported = true;
+                            }
+                        },
+                    );
                     if let Ok(port) = node.port() {
                         port.set_onmessage(Some(on_msg.as_ref().unchecked_ref()));
                     }
@@ -103,7 +111,11 @@ impl Handle {
                 }
             });
             for ev in ["pointerdown", "keydown"] {
-                let _ = doc.add_event_listener_with_callback_and_bool(ev, resume.as_ref().unchecked_ref(), true);
+                let _ = doc.add_event_listener_with_callback_and_bool(
+                    ev,
+                    resume.as_ref().unchecked_ref(),
+                    true,
+                );
             }
             resume.forget();
         }

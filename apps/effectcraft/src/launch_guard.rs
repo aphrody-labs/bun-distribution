@@ -48,18 +48,33 @@ impl Launch {
     /// launch stopped as its window opened (where OpenGL exists: not macOS), and leave this
     /// launch's marker. `env_override`: `WGPU_BACKEND` is set.
     pub fn begin(dir: Option<&Path>, env_override: bool) -> Launch {
-        let Some(dir) = dir.filter(|_| !env_override) else { return Launch::default() };
+        let Some(dir) = dir.filter(|_| !env_override) else {
+            return Launch::default();
+        };
         let prefs_path = dir.join(PREFS_FILE);
-        let mut prefs = std::fs::read_to_string(&prefs_path).map(|t| Prefs::from_json(&t)).unwrap_or_default();
+        let mut prefs = std::fs::read_to_string(&prefs_path)
+            .map(|t| Prefs::from_json(&t))
+            .unwrap_or_default();
         let marker = dir.join(MARKER);
         // Locked by another launch that is still opening its window: not a crash.
-        let held = File::open(&marker).is_ok_and(|f| matches!(f.try_lock(), Err(std::fs::TryLockError::WouldBlock)));
+        let held = File::open(&marker)
+            .is_ok_and(|f| matches!(f.try_lock(), Err(std::fs::TryLockError::WouldBlock)));
         let mut notice = None;
-        if marker.exists() && !held && prefs.startup.window_graphics == "auto" && cfg!(not(target_os = "macos")) {
+        if marker.exists()
+            && !held
+            && prefs.startup.window_graphics == "auto"
+            && cfg!(not(target_os = "macos"))
+        {
             prefs.startup.window_graphics = "gl".into();
-            match std::fs::create_dir_all(dir).and_then(|()| std::fs::write(&prefs_path, prefs.to_json())) {
-                Ok(()) => log::warn!("the last launch stopped as its window opened: switching Window Graphics to OpenGL"),
-                Err(e) => log::warn!("the last launch stopped as its window opened; saving Window Graphics failed: {e}"),
+            match std::fs::create_dir_all(dir)
+                .and_then(|()| std::fs::write(&prefs_path, prefs.to_json()))
+            {
+                Ok(()) => log::warn!(
+                    "the last launch stopped as its window opened: switching Window Graphics to OpenGL"
+                ),
+                Err(e) => log::warn!(
+                    "the last launch stopped as its window opened; saving Window Graphics failed: {e}"
+                ),
             }
             notice = Some(
                 "EffectCraft's last launch stopped as its window opened, so it now draws with OpenGL \
@@ -69,7 +84,8 @@ impl Launch {
             );
         }
         let backends = (prefs.startup.window_graphics == "gl").then_some(Backends::GL);
-        let (marker, lock) = match std::fs::create_dir_all(dir).and_then(|()| File::create(&marker)) {
+        let (marker, lock) = match std::fs::create_dir_all(dir).and_then(|()| File::create(&marker))
+        {
             // Where locks aren't available the guard works as before.
             Ok(f) => (Some(marker), f.try_lock().is_ok().then_some(f)),
             Err(e) => {
@@ -77,7 +93,13 @@ impl Launch {
                 (None, None)
             }
         };
-        Launch { backends, notice, marker, lock, first_frame: None }
+        Launch {
+            backends,
+            notice,
+            marker,
+            lock,
+            first_frame: None,
+        }
     }
 
     /// The window drew a frame. Until the launch has settled, returns how long that still takes
@@ -117,7 +139,9 @@ impl Launch {
 pub fn opengl_failed(dir: Option<&Path>) {
     let Some(dir) = dir else { return };
     let prefs_path = dir.join(PREFS_FILE);
-    let mut prefs = std::fs::read_to_string(&prefs_path).map(|t| Prefs::from_json(&t)).unwrap_or_default();
+    let mut prefs = std::fs::read_to_string(&prefs_path)
+        .map(|t| Prefs::from_json(&t))
+        .unwrap_or_default();
     prefs.startup.window_graphics = "auto".into();
     if let Err(e) = std::fs::write(&prefs_path, prefs.to_json()) {
         log::warn!("saving Window Graphics failed: {e}");
@@ -130,7 +154,9 @@ mod tests {
     use super::*;
 
     fn window_graphics(dir: &Path) -> String {
-        Prefs::from_json(&std::fs::read_to_string(dir.join(PREFS_FILE)).unwrap_or_default()).startup.window_graphics
+        Prefs::from_json(&std::fs::read_to_string(dir.join(PREFS_FILE)).unwrap_or_default())
+            .startup
+            .window_graphics
     }
 
     /// A launch that never drew switches the next one to OpenGL, which then stays (#243).
@@ -145,7 +171,10 @@ mod tests {
         assert!(dir.join(MARKER).exists());
         let t0 = Instant::now();
         assert_eq!(l.frame_drawn_at(t0), Some(SETTLE));
-        assert!(l.frame_drawn_at(t0 + SETTLE / 2).is_some_and(|left| left <= SETTLE / 2));
+        assert!(
+            l.frame_drawn_at(t0 + SETTLE / 2)
+                .is_some_and(|left| left <= SETTLE / 2)
+        );
         assert!(dir.join(MARKER).exists());
         assert_eq!(l.frame_drawn_at(t0 + SETTLE), None);
         assert!(!dir.join(MARKER).exists());
@@ -155,14 +184,22 @@ mod tests {
         // …makes the next one use OpenGL and say so, once.
         let mut l = Launch::begin(Some(&dir), false);
         if cfg!(target_os = "macos") {
-            assert_eq!((l.backends, l.notice.is_some()), (None, false), "no OpenGL on macOS");
+            assert_eq!(
+                (l.backends, l.notice.is_some()),
+                (None, false),
+                "no OpenGL on macOS"
+            );
         } else {
             assert_eq!(l.backends, Some(Backends::GL));
             assert!(l.notice.is_some());
             assert_eq!(window_graphics(&dir), "gl", "saved in Settings");
             l.exited();
             let l = Launch::begin(Some(&dir), false);
-            assert_eq!((l.backends, l.notice.is_some()), (Some(Backends::GL), false), "it stays, without the notice");
+            assert_eq!(
+                (l.backends, l.notice.is_some()),
+                (Some(Backends::GL), false),
+                "it stays, without the notice"
+            );
         }
         // `WGPU_BACKEND` wins, and leaves no marker.
         let _ = std::fs::remove_file(dir.join(MARKER));
@@ -210,7 +247,11 @@ mod tests {
         assert_eq!(window_graphics(&dir), "auto");
         drop(_first);
         if cfg!(not(target_os = "macos")) {
-            assert_eq!(Launch::begin(Some(&dir), false).backends, Some(Backends::GL), "a real crash still switches");
+            assert_eq!(
+                Launch::begin(Some(&dir), false).backends,
+                Some(Backends::GL),
+                "a real crash still switches"
+            );
             opengl_failed(Some(&dir));
             assert_eq!(window_graphics(&dir), "auto");
             assert_eq!(Launch::begin(Some(&dir), false).backends, None);

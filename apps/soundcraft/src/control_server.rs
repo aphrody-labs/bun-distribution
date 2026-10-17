@@ -20,13 +20,17 @@ pub fn start(port: u16, ctx: egui::Context) -> Receiver<ControlRequest> {
     let actual = listener.local_addr().map(|a| a.port()).unwrap_or(port);
     log::info!("control server listening on 127.0.0.1:{actual}");
     println!("SOUNDCRAFT_CONTROL_PORT={actual}");
-    let spawned = std::thread::Builder::new().name("soundcraft-control".into()).spawn(move || {
-        for stream in listener.incoming().flatten() {
-            let tx = tx.clone();
-            let ctx = ctx.clone();
-            let _ = std::thread::Builder::new().name("soundcraft-control-conn".into()).spawn(move || serve(stream, tx, ctx));
-        }
-    });
+    let spawned = std::thread::Builder::new()
+        .name("soundcraft-control".into())
+        .spawn(move || {
+            for stream in listener.incoming().flatten() {
+                let tx = tx.clone();
+                let ctx = ctx.clone();
+                let _ = std::thread::Builder::new()
+                    .name("soundcraft-control-conn".into())
+                    .spawn(move || serve(stream, tx, ctx));
+            }
+        });
     if let Err(e) = spawned {
         log::error!("control thread failed: {e}");
     }
@@ -44,14 +48,20 @@ fn serve(stream: TcpStream, tx: Sender<ControlRequest>, ctx: egui::Context) {
         let reply = match serde_json::from_str::<Value>(&line) {
             Ok(msg) => {
                 let id = msg.get("id").cloned().unwrap_or(Value::Null);
-                let method = msg.get("method").and_then(Value::as_str).unwrap_or("").to_string();
+                let method = msg
+                    .get("method")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_string();
                 let params = msg.get("params").cloned().unwrap_or(json!({}));
                 let (req, rrx) = ControlRequest::new(method, params);
                 if tx.send(req).is_err() {
                     break;
                 }
                 ctx.request_repaint();
-                let mut r = rrx.recv_timeout(Duration::from_secs(90)).unwrap_or_else(|_| json!({"ok": false, "error": "timeout"}));
+                let mut r = rrx
+                    .recv_timeout(Duration::from_secs(90))
+                    .unwrap_or_else(|_| json!({"ok": false, "error": "timeout"}));
                 if let Some(o) = r.as_object_mut() {
                     o.insert("id".into(), id);
                 }

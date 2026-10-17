@@ -68,7 +68,12 @@ impl Bench {
         let idle = app.renderer.queued() == 0 && app.renderer.in_flight() == 0;
         match self.phase {
             Phase::Idle => {
-                let thumbs = app.renderer.textures.keys().filter(|s| matches!(s, Slot::Thumb(_) | Slot::ThumbQuick(_))).count();
+                let thumbs = app
+                    .renderer
+                    .textures
+                    .keys()
+                    .filter(|s| matches!(s, Slot::Thumb(_) | Slot::ThumbQuick(_)))
+                    .count();
                 if idle && thumbs > 0 && self.frames > 3 {
                     self.thumbs_done_ms = Some(now - self.start_ms);
                     let first = app.session.visible().first().copied();
@@ -98,8 +103,15 @@ impl Bench {
                             // release: the full-resolution render after the drag
                             let key = Self::main_key(app).unwrap_or(0);
                             let _ = app.run("develop.endInteraction", json!({}));
-                            let _ = app.run("develop.set", json!({"control": "light.exposure", "value": 0.0}));
-                            self.phase = Phase::Step { i: STEPS, t0: now, key };
+                            let _ = app.run(
+                                "develop.set",
+                                json!({"control": "light.exposure", "value": 0.0}),
+                            );
+                            self.phase = Phase::Step {
+                                i: STEPS,
+                                t0: now,
+                                key,
+                            };
                         }
                     } else {
                         self.final_ms = dt;
@@ -116,7 +128,10 @@ impl Bench {
     fn issue(&mut self, app: &mut LightcraftApp, i: usize, now: f64) {
         let key = Self::main_key(app).unwrap_or(0);
         let v = 0.15 * (i as f64 + 1.0);
-        let _ = app.run("develop.set", json!({"control": "light.exposure", "value": v}));
+        let _ = app.run(
+            "develop.set",
+            json!({"control": "light.exposure", "value": v}),
+        );
         self.phase = Phase::Step { i, t0: now, key };
     }
 
@@ -124,8 +139,17 @@ impl Bench {
         let mut d = self.drafts.clone();
         d.sort_by(f64::total_cmp);
         let median = d.get(d.len() / 2).copied().unwrap_or(0.0);
-        let mean = if d.is_empty() { 0.0 } else { d.iter().sum::<f64>() / d.len() as f64 };
-        let tex = app.renderer.textures.get(&Slot::Main).map(|t| t.size).unwrap_or([0, 0]);
+        let mean = if d.is_empty() {
+            0.0
+        } else {
+            d.iter().sum::<f64>() / d.len() as f64
+        };
+        let tex = app
+            .renderer
+            .textures
+            .get(&Slot::Main)
+            .map(|t| t.size)
+            .unwrap_or([0, 0]);
         let r = |x: f64| (x * 10.0).round() / 10.0;
         json!({
             "first_frame_ms": self.first_frame_ms.map(r),

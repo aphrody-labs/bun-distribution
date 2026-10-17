@@ -12,7 +12,14 @@
 //! soundcraft-cli parity [--write PATH]            parity report (markdown)
 //! soundcraft-cli plugins                          list built-in plugins
 //! ```
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use serde_json::{Value, json};
 use soundcraft_automation::{Backend, Headless, Remote, mcp::Server};
@@ -30,7 +37,10 @@ macro_rules! outln {
 }
 
 fn arg_value(args: &[String], flag: &str) -> Option<String> {
-    args.iter().position(|a| a == flag).and_then(|i| args.get(i + 1)).cloned()
+    args.iter()
+        .position(|a| a == flag)
+        .and_then(|i| args.get(i + 1))
+        .cloned()
 }
 
 fn fail(msg: impl std::fmt::Display) -> ExitCode {
@@ -52,7 +62,9 @@ fn help_text() -> String {
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let Some(cmd) = args.first().cloned() else {
-        eprintln!("usage: soundcraft-cli <info|convert|run|script|commands|describe|app|mcp|parity|plugins> …  (see --help)");
+        eprintln!(
+            "usage: soundcraft-cli <info|convert|run|script|commands|describe|app|mcp|parity|plugins> …  (see --help)"
+        );
         return ExitCode::FAILURE;
     };
     let rest: Vec<String> = args.iter().skip(1).cloned().collect();
@@ -76,7 +88,13 @@ fn main() -> ExitCode {
         "parity" => parity(&rest),
         "plugins" => {
             for p in soundcraft_dsp::plugins() {
-                outln!("{:<20} {:<22} {:?}{}", p.id, p.name, p.category, if p.is_instrument { " (instrument)" } else { "" });
+                outln!(
+                    "{:<20} {:<22} {:?}{}",
+                    p.id,
+                    p.name,
+                    p.category,
+                    if p.is_instrument { " (instrument)" } else { "" }
+                );
             }
             ExitCode::SUCCESS
         }
@@ -88,7 +106,9 @@ fn main() -> ExitCode {
 }
 
 fn info(args: &[String]) -> ExitCode {
-    let Some(path) = args.first() else { return fail("info FILE") };
+    let Some(path) = args.first() else {
+        return fail("info FILE");
+    };
     if path.ends_with(".scraft") {
         let mut e = Engine::default();
         match soundcraft_engine::io::open_session(&mut e, path) {
@@ -102,7 +122,9 @@ fn info(args: &[String]) -> ExitCode {
         Ok(b) => b,
         Err(e) => return fail(format!("{path}: {e}")),
     };
-    let ext = std::path::Path::new(path).extension().and_then(|x| x.to_str());
+    let ext = std::path::Path::new(path)
+        .extension()
+        .and_then(|x| x.to_str());
     match soundcraft_audio_io::probe(&bytes, ext) {
         Ok(i) => {
             outln!("{}", serde_json::to_string_pretty(&json!({"format": i.format, "sample_format": i.sample_format, "sample_rate": i.sample_rate, "channels": i.channels, "frames": i.frames, "seconds": i.duration_secs(), "bwf": i.bwf})).unwrap_or_default());
@@ -113,12 +135,16 @@ fn info(args: &[String]) -> ExitCode {
 }
 
 fn convert(args: &[String]) -> ExitCode {
-    let (Some(input), Some(output)) = (args.first(), args.get(1)) else { return fail("convert IN OUT") };
+    let (Some(input), Some(output)) = (args.first(), args.get(1)) else {
+        return fail("convert IN OUT");
+    };
     let bytes = match std::fs::read(input) {
         Ok(b) => b,
         Err(e) => return fail(format!("{input}: {e}")),
     };
-    let ext = std::path::Path::new(input).extension().and_then(|x| x.to_str());
+    let ext = std::path::Path::new(input)
+        .extension()
+        .and_then(|x| x.to_str());
     let (_, mut buf) = match soundcraft_audio_io::decode(&bytes, ext) {
         Ok(x) => x,
         Err(e) => return fail(format!("{input}: {e}")),
@@ -130,19 +156,39 @@ fn convert(args: &[String]) -> ExitCode {
     if args.iter().any(|a| a == "--normalize") {
         soundcraft_dsp::offline::normalize(&mut buf.channels, -0.1, false);
     }
-    let out_ext = std::path::Path::new(output).extension().and_then(|x| x.to_str()).unwrap_or("wav").to_ascii_lowercase();
+    let out_ext = std::path::Path::new(output)
+        .extension()
+        .and_then(|x| x.to_str())
+        .unwrap_or("wav")
+        .to_ascii_lowercase();
     let Some(format) = soundcraft_audio_io::encode_format_for(&out_ext) else {
-        return fail(format!("{output}: cannot write `.{out_ext}` files (supported: {})", soundcraft_audio_io::ENCODE_EXTENSIONS));
+        return fail(format!(
+            "{output}: cannot write `.{out_ext}` files (supported: {})",
+            soundcraft_audio_io::ENCODE_EXTENSIONS
+        ));
     };
     let bit_depth = match arg_value(args, "--bit-depth").as_deref() {
         Some("16") => soundcraft_audio_io::BitDepth::Int16,
         Some("32") | Some("32f") => soundcraft_audio_io::BitDepth::Float32,
         _ => soundcraft_audio_io::BitDepth::Int24,
     };
-    let opts = soundcraft_audio_io::EncodeOptions { format, bit_depth, dither: true, bwf: None };
-    match soundcraft_audio_io::encode(&buf, &opts).map_err(|e| e.to_string()).and_then(|b| std::fs::write(output, b).map_err(|e| e.to_string())) {
+    let opts = soundcraft_audio_io::EncodeOptions {
+        format,
+        bit_depth,
+        dither: true,
+        bwf: None,
+    };
+    match soundcraft_audio_io::encode(&buf, &opts)
+        .map_err(|e| e.to_string())
+        .and_then(|b| std::fs::write(output, b).map_err(|e| e.to_string()))
+    {
         Ok(()) => {
-            outln!("wrote {output} ({} ch, {} Hz, {:.2} s)", buf.num_channels(), buf.sample_rate, buf.duration_secs());
+            outln!(
+                "wrote {output} ({} ch, {} Hz, {:.2} s)",
+                buf.num_channels(),
+                buf.sample_rate,
+                buf.duration_secs()
+            );
             ExitCode::SUCCESS
         }
         Err(e) => fail(e),
@@ -151,7 +197,10 @@ fn convert(args: &[String]) -> ExitCode {
 
 /// One stderr line per media file a session refers to but could not load (the exit code is unchanged).
 fn missing_warnings(missing: &[String]) -> Vec<String> {
-    missing.iter().map(|m| format!("warning: missing media: {m}")).collect()
+    missing
+        .iter()
+        .map(|m| format!("warning: missing media: {m}"))
+        .collect()
 }
 
 fn warn_missing(missing: &[String]) {
@@ -194,20 +243,27 @@ fn finish(e: &mut Engine, args: &[String]) -> ExitCode {
         }
     }
     if args.iter().any(|a| a == "--inspect") {
-        outln!("{}", serde_json::to_string_pretty(&soundcraft_engine::inspect::session(e, false)).unwrap_or_default());
+        outln!(
+            "{}",
+            serde_json::to_string_pretty(&soundcraft_engine::inspect::session(e, false))
+                .unwrap_or_default()
+        );
     }
     ExitCode::SUCCESS
 }
 
 /// `12.5` → seconds; anything else is passed through as a time string.
 fn time_arg(s: &str) -> Value {
-    s.parse::<f64>().map_or_else(|_| json!(s), |f| json!({"seconds": f}))
+    s.parse::<f64>()
+        .map_or_else(|_| json!(s), |f| json!({"seconds": f}))
 }
 
 /// `ID` or `ID=JSON` → command id and params; malformed JSON is an error, not `{}`.
 fn parse_cmd_spec(spec: &str) -> Result<(String, Value), String> {
     match spec.split_once('=') {
-        Some((id, p)) => serde_json::from_str::<Value>(p).map(|v| (id.to_string(), v)).map_err(|err| format!("{id}: bad JSON: {err}")),
+        Some((id, p)) => serde_json::from_str::<Value>(p)
+            .map(|v| (id.to_string(), v))
+            .map_err(|err| format!("{id}: bad JSON: {err}")),
         None => Ok((spec.to_string(), json!({}))),
     }
 }
@@ -238,7 +294,9 @@ fn run(args: &[String]) -> ExitCode {
 }
 
 fn script(args: &[String]) -> ExitCode {
-    let Some(path) = args.first() else { return fail("script FILE") };
+    let Some(path) = args.first() else {
+        return fail("script FILE");
+    };
     let text = match std::fs::read_to_string(path) {
         Ok(t) => t,
         Err(e) => return fail(format!("{path}: {e}")),
@@ -275,7 +333,13 @@ fn commands(args: &[String]) -> ExitCode {
     let filter = args.first().cloned().unwrap_or_default();
     let e = Engine::default();
     for c in soundcraft_engine::command_specs() {
-        if !filter.is_empty() && !c.id.contains(&filter) && !c.label.to_ascii_lowercase().contains(&filter.to_ascii_lowercase()) {
+        if !filter.is_empty()
+            && !c.id.contains(&filter)
+            && !c
+                .label
+                .to_ascii_lowercase()
+                .contains(&filter.to_ascii_lowercase())
+        {
             continue;
         }
         let i = c.info(&e);
@@ -285,10 +349,15 @@ fn commands(args: &[String]) -> ExitCode {
 }
 
 fn describe(args: &[String]) -> ExitCode {
-    let Some(id) = args.first() else { return fail("describe ID") };
+    let Some(id) = args.first() else {
+        return fail("describe ID");
+    };
     match soundcraft_engine::find_command(id) {
         Some(c) => {
-            outln!("{}", serde_json::to_string_pretty(&c.info(&Engine::default())).unwrap_or_default());
+            outln!(
+                "{}",
+                serde_json::to_string_pretty(&c.info(&Engine::default())).unwrap_or_default()
+            );
             ExitCode::SUCCESS
         }
         None => fail(format!("unknown command `{id}`")),
@@ -324,19 +393,28 @@ fn app_request(method: &str, params: Value) -> (String, Value) {
     if is_control_method(method) || !method.contains('.') {
         (method.to_string(), params)
     } else {
-        ("engine.execute".to_string(), json!({"command": method, "params": params}))
+        (
+            "engine.execute".to_string(),
+            json!({"command": method, "params": params}),
+        )
     }
 }
 
 fn app(args: &[String]) -> ExitCode {
-    let port = arg_value(args, "--port").or_else(|| std::env::var("SOUNDCRAFT_CONTROL_PORT").ok()).unwrap_or_else(|| "7979".into());
+    let port = arg_value(args, "--port")
+        .or_else(|| std::env::var("SOUNDCRAFT_CONTROL_PORT").ok())
+        .unwrap_or_else(|| "7979".into());
     let positional: Vec<&String> = args
         .iter()
         .enumerate()
-        .filter(|(i, a)| !(a.starts_with("--") || (*i > 0 && args.get(i - 1).is_some_and(|p| p == "--port"))))
+        .filter(|(i, a)| {
+            !(a.starts_with("--") || (*i > 0 && args.get(i - 1).is_some_and(|p| p == "--port")))
+        })
         .map(|(_, a)| a)
         .collect();
-    let Some(method) = positional.first() else { return fail("app [--port P] METHOD [JSON]") };
+    let Some(method) = positional.first() else {
+        return fail("app [--port P] METHOD [JSON]");
+    };
     let params = match positional.get(1) {
         Some(p) => match serde_json::from_str::<Value>(p) {
             Ok(v) => v,
@@ -363,7 +441,11 @@ fn mcp(args: &[String]) -> ExitCode {
         let mut s = Server::new(Remote::new(&port));
         s.serve(stdin.lock(), stdout.lock())
     } else {
-        let e = if args.iter().any(|a| a == "--demo") { soundcraft_engine::demo::demo_engine() } else { Engine::default() };
+        let e = if args.iter().any(|a| a == "--demo") {
+            soundcraft_engine::demo::demo_engine()
+        } else {
+            Engine::default()
+        };
         let mut s = Server::new(Headless::new(e));
         s.serve(stdin.lock(), stdout.lock())
     };
@@ -384,7 +466,12 @@ fn parity(args: &[String]) -> ExitCode {
         p["implemented"], p["total"], p["percent"]
     ));
     for m in p["per_menu"].as_array().cloned().unwrap_or_default() {
-        md.push_str(&format!("| {} | {} | {} |\n", m["menu"].as_str().unwrap_or(""), m["implemented"], m["total"]));
+        md.push_str(&format!(
+            "| {} | {} | {} |\n",
+            m["menu"].as_str().unwrap_or(""),
+            m["implemented"],
+            m["total"]
+        ));
     }
     md.push_str("\n## Not yet implemented\n\n");
     for m in p["missing"].as_array().cloned().unwrap_or_default() {
@@ -394,7 +481,12 @@ fn parity(args: &[String]) -> ExitCode {
         if let Err(e) = std::fs::write(&path, &md) {
             return fail(format!("{path}: {e}"));
         }
-        outln!("wrote {path}: {}% ({}/{})", p["percent"], p["implemented"], p["total"]);
+        outln!(
+            "wrote {path}: {}% ({}/{})",
+            p["percent"],
+            p["implemented"],
+            p["total"]
+        );
     } else {
         outln!("{md}");
     }
@@ -417,7 +509,13 @@ mod tests {
         assert_eq!(m, "engine.execute");
         let (m, _) = app_request("track.new", json!({}));
         assert_eq!(m, "engine.execute");
-        for method in ["session.inspect", "engine.commands", "engine.parity", "ui.screenshot", "app.quit"] {
+        for method in [
+            "session.inspect",
+            "engine.commands",
+            "engine.parity",
+            "ui.screenshot",
+            "app.quit",
+        ] {
             assert_eq!(app_request(method, json!({})).0, method);
         }
     }
@@ -426,13 +524,25 @@ mod tests {
     fn missing_media_gets_one_warning_each() {
         assert!(missing_warnings(&[]).is_empty());
         let w = missing_warnings(&["a.wav".to_string(), "b.wav: decode failed".to_string()]);
-        assert_eq!(w, vec!["warning: missing media: a.wav", "warning: missing media: b.wav: decode failed"]);
+        assert_eq!(
+            w,
+            vec![
+                "warning: missing media: a.wav",
+                "warning: missing media: b.wav: decode failed"
+            ]
+        );
     }
 
     #[test]
     fn cmd_spec_parses_id_and_json() {
-        assert_eq!(parse_cmd_spec("a.b").unwrap(), ("a.b".to_string(), json!({})));
-        assert_eq!(parse_cmd_spec("a.b={\"x\":1}").unwrap(), ("a.b".to_string(), json!({"x": 1})));
+        assert_eq!(
+            parse_cmd_spec("a.b").unwrap(),
+            ("a.b".to_string(), json!({}))
+        );
+        assert_eq!(
+            parse_cmd_spec("a.b={\"x\":1}").unwrap(),
+            ("a.b".to_string(), json!({"x": 1}))
+        );
     }
 
     #[test]
@@ -445,7 +555,9 @@ mod tests {
     fn help_text_is_only_the_usage_block() {
         let help = help_text();
         assert!(help.starts_with("soundcraft-cli info FILE"));
-        assert!(help.ends_with("soundcraft-cli plugins                          list built-in plugins"));
+        assert!(
+            help.ends_with("soundcraft-cli plugins                          list built-in plugins")
+        );
         assert!(!help.contains("```"));
         assert!(!help.contains("#![") && !help.contains("use serde_json"));
     }

@@ -134,16 +134,30 @@ fn mpeg_details(src: &filmcraft_codecs::MpegSource) -> Value {
 pub fn probe(path: &str, image_sequence: bool) -> Result<Value, String> {
     if image_sequence {
         use filmcraft_media::sequence::{ImageSequenceSource, Numbered, sequence_frames};
-        let n = Numbered::parse(path).ok_or_else(|| format!("{path}: not a numbered still image"))?;
-        let dir = if n.dir.is_empty() { ".".to_string() } else { n.dir.clone() };
-        let names: Vec<String> =
-            std::fs::read_dir(&dir).map_err(|e| format!("{dir}: {e}"))?.flatten().map(|e| e.file_name().to_string_lossy().to_string()).collect();
+        let n =
+            Numbered::parse(path).ok_or_else(|| format!("{path}: not a numbered still image"))?;
+        let dir = if n.dir.is_empty() {
+            ".".to_string()
+        } else {
+            n.dir.clone()
+        };
+        let names: Vec<String> = std::fs::read_dir(&dir)
+            .map_err(|e| format!("{dir}: {e}"))?
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().to_string())
+            .collect();
         let frames = sequence_frames(&n, &names);
-        let name = std::path::Path::new(path).file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+        let name = std::path::Path::new(path)
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
         let loader: filmcraft_media::sequence::FrameLoader = Arc::new(|p: &str| std::fs::read(p));
         // the timebase of a fresh install (Settings ▸ Media ▸ Indeterminate Media Timebase)
-        let src = ImageSequenceSource::new(&name, frames, filmcraft_time::FrameRate::FPS_29_97, loader).map_err(|e| format!("{path}: {e}"))?;
-        let mut v = serde_json::to_value(filmcraft_media::MediaSource::info(&src)).unwrap_or_default();
+        let src =
+            ImageSequenceSource::new(&name, frames, filmcraft_time::FrameRate::FPS_29_97, loader)
+                .map_err(|e| format!("{path}: {e}"))?;
+        let mut v =
+            serde_json::to_value(filmcraft_media::MediaSource::info(&src)).unwrap_or_default();
         v["imageSequence"] = json!({
             "first": src.frame_path(0),
             "firstNumber": n.number,
@@ -153,29 +167,40 @@ pub fn probe(path: &str, image_sequence: bool) -> Result<Value, String> {
         });
         return Ok(v);
     }
-    let bytes: Arc<[u8]> = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?.into();
-    let name = std::path::Path::new(path).file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| path.to_string());
+    let bytes: Arc<[u8]> = std::fs::read(path)
+        .map_err(|e| format!("{path}: {e}"))?
+        .into();
+    let name = std::path::Path::new(path)
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| path.to_string());
     let head = &bytes[..bytes.len().min(70_000)];
     if filmcraft_mxf::sniff(head) {
-        let src = filmcraft_codecs::MxfSource::open(&name, bytes).map_err(|e| format!("{path}: {e}"))?;
-        let mut v = serde_json::to_value(filmcraft_media::MediaSource::info(&src)).unwrap_or_default();
+        let src =
+            filmcraft_codecs::MxfSource::open(&name, bytes).map_err(|e| format!("{path}: {e}"))?;
+        let mut v =
+            serde_json::to_value(filmcraft_media::MediaSource::info(&src)).unwrap_or_default();
         v["mxf"] = mxf_details(&src);
         return Ok(v);
     }
     if filmcraft_codecs::mpeg::sniff(head) {
-        let src = filmcraft_codecs::MpegSource::open(&name, bytes).map_err(|e| format!("{path}: {e}"))?;
-        let mut v = serde_json::to_value(filmcraft_media::MediaSource::info(&src)).unwrap_or_default();
+        let src =
+            filmcraft_codecs::MpegSource::open(&name, bytes).map_err(|e| format!("{path}: {e}"))?;
+        let mut v =
+            serde_json::to_value(filmcraft_media::MediaSource::info(&src)).unwrap_or_default();
         v["mpeg"] = mpeg_details(&src);
         return Ok(v);
     }
     if filmcraft_ogg::sniff(head)
         && let Ok(src) = filmcraft_codecs::OggSource::open(&name, bytes.clone())
     {
-        let mut v = serde_json::to_value(filmcraft_media::MediaSource::info(&src)).unwrap_or_default();
+        let mut v =
+            serde_json::to_value(filmcraft_media::MediaSource::info(&src)).unwrap_or_default();
         v["ogg"] = ogg_details(&src);
         return Ok(v);
     }
-    let src = filmcraft_codecs::open_bytes(&name, bytes.clone()).map_err(|e| format!("{path}: {e}"))?;
+    let src =
+        filmcraft_codecs::open_bytes(&name, bytes.clone()).map_err(|e| format!("{path}: {e}"))?;
     let mut v = serde_json::to_value(src.info()).unwrap_or_default();
     if filmcraft_media::wav::sniff(head)
         && let Ok(w) = filmcraft_media::wav::WavSource::parse(&name, bytes)

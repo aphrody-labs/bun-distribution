@@ -55,7 +55,10 @@ fn clamp_limit(limit: Option<usize>) -> usize {
 }
 
 fn index_path(app: &AppHandle) -> Result<PathBuf, String> {
-    let dir = app.path().app_data_dir().map_err(|e| format!("cannot resolve app data dir: {e}"))?;
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("cannot resolve app data dir: {e}"))?;
     std::fs::create_dir_all(&dir).map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
     Ok(dir.join("explorer-index.sqlite"))
 }
@@ -113,7 +116,9 @@ fn flatten(tree: &MftTree, base: &Path, limit: usize) -> (Vec<ExplorerEntry>, us
         }
     }
     entries.sort_by(|a, b| {
-        b.is_dir.cmp(&a.is_dir).then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+        b.is_dir
+            .cmp(&a.is_dir)
+            .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
     });
     (entries, total)
 }
@@ -145,7 +150,12 @@ fn build_tree(root: &str, limit: usize) -> Result<ExplorerTree, String> {
     }
     let tree = build_tree_walk(&base);
     let (entries, total) = flatten(&tree, &base, limit);
-    Ok(ExplorerTree { source: "walk", truncated: total > entries.len(), entries, total })
+    Ok(ExplorerTree {
+        source: "walk",
+        truncated: total > entries.len(),
+        entries,
+        total,
+    })
 }
 
 fn join_err(error: tauri::Error) -> String {
@@ -232,7 +242,11 @@ mod tests {
         assert_eq!(tree.total, 3);
         assert!(!tree.truncated);
         assert!(tree.entries[0].is_dir, "directories first");
-        let b = tree.entries.iter().find(|e| e.name == "b.txt").expect("b.txt");
+        let b = tree
+            .entries
+            .iter()
+            .find(|e| e.name == "b.txt")
+            .expect("b.txt");
         assert_eq!(Path::new(&b.path), dir.path().join("sub").join("b.txt"));
         assert!(tree.entries.iter().any(|e| e.name == ".h" && e.hidden));
     }

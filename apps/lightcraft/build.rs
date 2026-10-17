@@ -15,8 +15,14 @@ fn main() {
     let mut res = winresource::WindowsResource::new();
     res.set_icon("../../assets/lightcraft/app-icon/lightcraft.ico")
         .set("ProductName", "LightCraft")
-        .set("FileDescription", "LightCraft photo library and raw developer")
-        .set("LegalCopyright", "Copyright (c) the LightCraft authors. MIT OR Apache-2.0.")
+        .set(
+            "FileDescription",
+            "LightCraft photo library and raw developer",
+        )
+        .set(
+            "LegalCopyright",
+            "Copyright (c) the LightCraft authors. MIT OR Apache-2.0.",
+        )
         .set("OriginalFilename", "lightcraft.exe")
         .set("InternalName", "lightcraft");
     if let Err(e) = res.compile() {

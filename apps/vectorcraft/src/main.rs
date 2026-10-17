@@ -13,12 +13,17 @@
 //! `--automation-write-root` (or `VECTORCRAFT_AUTOMATION_READ_ROOT` / `_WRITE_ROOT`) confine the
 //! files its requests read and write (`vectorcraft_engine::file_access`); the person at the
 //! keyboard isn't confined.
-#![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
+#![cfg_attr(
+    all(target_os = "windows", not(debug_assertions)),
+    windows_subsystem = "windows"
+)]
 
 #[cfg(all(feature = "windows7", any(feature = "wgpu", feature = "accessibility")))]
 compile_error!("windows7 requires --no-default-features (wgpu and accessibility must be disabled)");
 #[cfg(all(windows, feature = "windows7", not(target_vendor = "win7")))]
-compile_error!("windows7 requires --target x86_64-win7-windows-msvc; the ordinary Windows target still imports newer APIs");
+compile_error!(
+    "windows7 requires --target x86_64-win7-windows-msvc; the ordinary Windows target still imports newer APIs"
+);
 #[cfg(all(target_vendor = "win7", not(feature = "windows7")))]
 compile_error!("the win7 target requires --no-default-features --features windows7");
 
@@ -204,7 +209,9 @@ fn read_prefs() -> Option<vectorcraft_ui_egui::UiState> {
     if !prefs_enabled() {
         return None;
     }
-    let bytes = prefs_path().and_then(|p| std::fs::read(p).ok()).or_else(|| legacy_prefs_path().and_then(|p| std::fs::read(p).ok()))?;
+    let bytes = prefs_path()
+        .and_then(|p| std::fs::read(p).ok())
+        .or_else(|| legacy_prefs_path().and_then(|p| std::fs::read(p).ok()))?;
     decode_saved_prefs(&bytes)
 }
 
@@ -215,14 +222,18 @@ fn decode_saved_prefs(bytes: &[u8]) -> Option<vectorcraft_ui_egui::UiState> {
 
     fn recover(object: &mut Map<String, Value>, hidden_key: &str) {
         if let Some(layout) = object.get("docking")
-            && serde_json::from_value::<vectorcraft_ui_egui::UiState>(json!({"docking": layout})).is_err()
+            && serde_json::from_value::<vectorcraft_ui_egui::UiState>(json!({"docking": layout}))
+                .is_err()
         {
             object.remove("docking");
         }
         if let Some(hidden) = object.get_mut(hidden_key) {
             if let Value::Object(entries) = hidden {
                 entries.retain(|panel, location| {
-                    serde_json::from_value::<vectorcraft_ui_egui::UiState>(json!({"docking_hidden": {panel: location}})).is_ok()
+                    serde_json::from_value::<vectorcraft_ui_egui::UiState>(
+                        json!({"docking_hidden": {panel: location}}),
+                    )
+                    .is_ok()
                 });
             } else {
                 object.remove(hidden_key);
@@ -309,21 +320,41 @@ fn dialog_for<D: DialogSettings>(d: D, request: &PickRequest) -> D {
     let pick = match request {
         PickRequest::Open(pick) | PickRequest::Save(pick) => pick,
         PickRequest::OpenMany => {
-            return fileio::place_filters().fold(d.title(vectorcraft_ui_egui::i18n::t("Place")), |d, (name, exts)| {
-                d.filter(vectorcraft_ui_egui::i18n::tr_ctx(vectorcraft_ui_egui::i18n::current(), "file-filter", name), exts)
-            });
+            return fileio::place_filters().fold(
+                d.title(vectorcraft_ui_egui::i18n::t("Place")),
+                |d, (name, exts)| {
+                    d.filter(
+                        vectorcraft_ui_egui::i18n::tr_ctx(
+                            vectorcraft_ui_egui::i18n::current(),
+                            "file-filter",
+                            name,
+                        ),
+                        exts,
+                    )
+                },
+            );
         }
         PickRequest::Folder => return d,
     };
-    let d = pick
-        .filters
-        .iter()
-        .fold(d, |d, (name, exts)| d.filter(vectorcraft_ui_egui::i18n::tr_ctx(vectorcraft_ui_egui::i18n::current(), "file-filter", name), exts));
+    let d = pick.filters.iter().fold(d, |d, (name, exts)| {
+        d.filter(
+            vectorcraft_ui_egui::i18n::tr_ctx(
+                vectorcraft_ui_egui::i18n::current(),
+                "file-filter",
+                name,
+            ),
+            exts,
+        )
+    });
     let d = match &pick.folder {
         Some(folder) => d.folder(folder),
         None => d,
     };
-    if pick.name.is_empty() { d } else { d.file_name(&pick.name) }
+    if pick.name.is_empty() {
+        d
+    } else {
+        d.file_name(&pick.name)
+    }
 }
 
 /// A native file dialog for `request` over `parent` (on Linux the portal then shows it over the
@@ -338,7 +369,11 @@ fn file_dialog(request: &PickRequest, parent: &Parent) -> rfd::FileDialog {
 
 /// Before `request`'s dialog shows: a save dialog's folder (the Templates folder) may not exist yet.
 fn make_folder(request: &PickRequest) {
-    if let PickRequest::Save(FilePick { folder: Some(folder), .. }) = request {
+    if let PickRequest::Save(FilePick {
+        folder: Some(folder),
+        ..
+    }) = request
+    {
         let _ = std::fs::create_dir_all(folder);
     }
 }
@@ -353,7 +388,10 @@ fn show_dialog(dialog: rfd::FileDialog, request: &PickRequest) -> Vec<String> {
         PickRequest::Save(_) => dialog.save_file().into_iter().collect(),
         PickRequest::Folder => dialog.pick_folder().into_iter().collect(),
     };
-    paths.into_iter().map(|p| p.to_string_lossy().to_string()).collect()
+    paths
+        .into_iter()
+        .map(|p| p.to_string_lossy().to_string())
+        .collect()
 }
 
 /// Show the dialog for `request` over `parent` now → the paths picked.
@@ -367,13 +405,18 @@ fn pick_now(request: PickRequest, parent: &Parent) -> Vec<String> {
 /// one asked for any other way (a bug: outside a command, a dialog's OK or a button) picks nothing.
 #[cfg(target_os = "macos")]
 fn pick_now(request: PickRequest, _parent: &Parent) -> Vec<String> {
-    log::error!("no file dialog shown for {request:?}: macOS shows them as sheets, from commands, dialogs' OK and buttons only");
+    log::error!(
+        "no file dialog shown for {request:?}: macOS shows them as sheets, from commands, dialogs' OK and buttons only"
+    );
     Vec::new()
 }
 
 /// File → Show in Folder: select `path` in Finder / Explorer, or open its folder elsewhere.
 fn reveal(path: &str) -> Result<(), String> {
-    reveal_command(path).spawn().map(|_| ()).map_err(|e| format!("can't show {path}: {e}"))
+    reveal_command(path)
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| format!("can't show {path}: {e}"))
 }
 
 #[cfg(target_os = "macos")]
@@ -395,7 +438,10 @@ fn reveal_command(path: &str) -> std::process::Command {
 
 #[cfg(not(any(target_os = "macos", windows)))]
 fn reveal_command(path: &str) -> std::process::Command {
-    let folder = std::path::Path::new(path).parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(std::path::Path::new("."));
+    let folder = std::path::Path::new(path)
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(std::path::Path::new("."));
     let mut c = std::process::Command::new("xdg-open");
     c.arg(folder);
     c
@@ -410,7 +456,11 @@ fn write_file(path: &str, bytes: &[u8]) -> Result<(), String> {
 /// receiver. Shown on the UI thread, nothing would answer the compositor meanwhile, which then
 /// offers to kill the window as not responding (#592).
 #[cfg(not(target_os = "macos"))]
-fn start_pick(request: PickRequest, parent: &Parent, ui: &egui::Context) -> Option<std::sync::mpsc::Receiver<Vec<String>>> {
+fn start_pick(
+    request: PickRequest,
+    parent: &Parent,
+    ui: &egui::Context,
+) -> Option<std::sync::mpsc::Receiver<Vec<String>>> {
     let dialog = file_dialog(&request, parent);
     let (tx, rx) = std::sync::mpsc::channel();
     let ui = ui.clone();
@@ -435,14 +485,25 @@ type SheetAnswer = std::pin::Pin<Box<dyn std::future::Future<Output = Vec<String
 /// the handler, and winit's panic there, inside an AppKit callback, aborted the app. The sheet
 /// returns at once and the window keeps running; a thread of its own waits for the answer.
 #[cfg(target_os = "macos")]
-fn start_pick(request: PickRequest, parent: &Parent, ui: &egui::Context) -> Option<std::sync::mpsc::Receiver<Vec<String>>> {
+fn start_pick(
+    request: PickRequest,
+    parent: &Parent,
+    ui: &egui::Context,
+) -> Option<std::sync::mpsc::Receiver<Vec<String>>> {
     use winit::raw_window_handle::HasWindowHandle as _;
     // rfd runs the panel modally after all unless it has the running app's window to hold the
     // sheet (and from another thread it can't reach the window): no dialog then (`pick_now`).
     let mtm = objc2::MainThreadMarker::new();
-    let running = mtm.is_some_and(|mtm| objc2_app_kit::NSApplication::sharedApplication(mtm).isRunning());
-    let Some(window) = parent.as_ref().filter(|w| running && w.window_handle().is_ok()) else {
-        log::error!("no window to show the file dialog on (main thread: {}, running: {running})", mtm.is_some());
+    let running =
+        mtm.is_some_and(|mtm| objc2_app_kit::NSApplication::sharedApplication(mtm).isRunning());
+    let Some(window) = parent
+        .as_ref()
+        .filter(|w| running && w.window_handle().is_ok())
+    else {
+        log::error!(
+            "no window to show the file dialog on (main thread: {}, running: {running})",
+            mtm.is_some()
+        );
         return None;
     };
     // The thread first, so the answer of a sheet once shown always has somewhere to go.
@@ -489,29 +550,51 @@ fn start_pick(request: PickRequest, parent: &Parent, ui: &egui::Context) -> Opti
 
 /// The host's services; `ui` is woken when a file dialog answers.
 fn services(parent: Parent, ui: egui::Context) -> Services {
-    let (p1, p2, p3, p4, p5) = (parent.clone(), parent.clone(), parent.clone(), parent.clone(), parent);
+    let (p1, p2, p3, p4, p5) = (
+        parent.clone(),
+        parent.clone(),
+        parent.clone(),
+        parent.clone(),
+        parent,
+    );
     Services {
-        pick_open: Some(Box::new(move |pick: &FilePick| pick_now(PickRequest::Open(pick.clone()), &p1).into_iter().next())),
+        pick_open: Some(Box::new(move |pick: &FilePick| {
+            pick_now(PickRequest::Open(pick.clone()), &p1)
+                .into_iter()
+                .next()
+        })),
         pick_open_multi: Some(Box::new(move || pick_now(PickRequest::OpenMany, &p2))),
-        pick_save: Some(Box::new(move |pick: &FilePick| pick_now(PickRequest::Save(pick.clone()), &p3).into_iter().next())),
+        pick_save: Some(Box::new(move |pick: &FilePick| {
+            pick_now(PickRequest::Save(pick.clone()), &p3)
+                .into_iter()
+                .next()
+        })),
         // Linux shows dialogs on a thread of their own (#592), macOS as sheets (#867); Windows
         // dialogs run the window's events while they are open.
-        start_pick: cfg!(unix).then(|| Box::new(move |request: PickRequest| start_pick(request, &p5, &ui)) as vectorcraft_ui_egui::picks::StartPick),
+        start_pick: cfg!(unix).then(|| {
+            Box::new(move |request: PickRequest| start_pick(request, &p5, &ui))
+                as vectorcraft_ui_egui::picks::StartPick
+        }),
         dialogs_are_sheets: cfg!(target_os = "macos"),
-        read: Some(Box::new(|p: &str| std::fs::read(p).map_err(|e| e.to_string()))),
+        read: Some(Box::new(|p: &str| {
+            std::fs::read(p).map_err(|e| e.to_string())
+        })),
         write: Some(Box::new(write_file)),
         // Background Save and Export write from a worker thread.
         write_shared: Some(std::sync::Arc::new(write_file)),
         // Native saves stream into the file as they are encoded.
-        stream_shared: Some(std::sync::Arc::new(|p: &str, fill: &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>| {
-            fileio::write_file_with(p, fill).map_err(|e| e.to_string())
-        })),
+        stream_shared: Some(std::sync::Arc::new(
+            |p: &str, fill: &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>| {
+                fileio::write_file_with(p, fill).map_err(|e| e.to_string())
+            },
+        )),
         // Every format Copy offers and Paste reads (menu-bar Paste never sees egui's Paste event).
         system_clipboard: Some(clipboard::system_clipboard()),
         // Linux checks whether Paste has something to take on a background thread: an X11 clipboard
         // owner that never answers holds a read for up to 4 s. Windows only asks which formats the
         // clipboard holds and macOS asks the pasteboard server, so they check in line.
-        clipboard_probe: cfg!(target_os = "linux").then(|| Box::new(clipboard::system_clipboard) as ClipboardProbeFactory),
+        clipboard_probe: cfg!(target_os = "linux")
+            .then(|| Box::new(clipboard::system_clipboard) as ClipboardProbeFactory),
         // Help → Discord / website / GitHub, the Discord button, About and Home links.
         open_url: Some(Box::new(|url: &str| {
             let _ = webbrowser::open(url);
@@ -519,7 +602,9 @@ fn services(parent: Parent, ui: egui::Context) -> Services {
         reveal: Some(Box::new(reveal)),
         // Links panel: Edit Original; Package: Show Package. Relink to Folder and Package pick folders.
         open_file: Some(Box::new(open_file)),
-        pick_folder: Some(Box::new(move || pick_now(PickRequest::Folder, &p4).into_iter().next())),
+        pick_folder: Some(Box::new(move || {
+            pick_now(PickRequest::Folder, &p4).into_iter().next()
+        })),
         // File → Print: the system's printers and print queue.
         print: Some(Box::new(printing::SystemPrint)),
         ..Default::default()
@@ -541,7 +626,9 @@ fn open_file(path: &str) -> Result<(), String> {
     let mut c = std::process::Command::new("xdg-open");
     #[cfg(not(windows))]
     c.arg(path);
-    c.spawn().map(|_| ()).map_err(|e| format!("can't open {path}: {e}"))
+    c.spawn()
+        .map(|_| ())
+        .map_err(|e| format!("can't open {path}: {e}"))
 }
 
 /// The window, Dock, taskbar and app-switcher icon (`assets/app-icon/`, see its README). macOS gets
@@ -549,9 +636,12 @@ fn open_file(path: &str) -> Result<(), String> {
 /// `packaging/linux/ai.storyteller.vectorcraft.desktop` so Wayland docks find the launcher icon.
 fn app_icon() -> egui::IconData {
     #[cfg(target_os = "macos")]
-    let png: &[u8] = include_bytes!("../../../assets/vectorcraft/app-icon/vectorcraft-macos-512.png");
+    let png: &[u8] =
+        include_bytes!("../../../assets/vectorcraft/app-icon/vectorcraft-macos-512.png");
     #[cfg(not(target_os = "macos"))]
-    let png: &[u8] = include_bytes!("../../../assets/vectorcraft/app-icon/hicolor/256x256/apps/ai.storyteller.vectorcraft.png");
+    let png: &[u8] = include_bytes!(
+        "../../../assets/vectorcraft/app-icon/hicolor/256x256/apps/ai.storyteller.vectorcraft.png"
+    );
     eframe::icon_data::from_png_bytes(png).unwrap_or_default()
 }
 
@@ -570,7 +660,12 @@ fn set_taskbar_icon(w: &winit::window::Window) {
 /// "name (backend, kind)" of the adapter the window renders with, for Help › About and bug reports.
 #[cfg(feature = "wgpu")]
 fn adapter_summary(info: &eframe::wgpu::AdapterInfo) -> String {
-    format!("{} ({:?}, {:?})", info.name.trim(), info.backend, info.device_type)
+    format!(
+        "{} ({:?}, {:?})",
+        info.name.trim(),
+        info.backend,
+        info.device_type
+    )
 }
 
 /// Windows and Linux: no OS title bar; the app bar is the title bar (`vectorcraft_ui_egui::titlebar`).
@@ -581,7 +676,15 @@ const CUSTOM_TITLEBAR: bool = !cfg!(target_os = "macos");
 /// User Interface › System Title Bar asks for the system's. Read from the saved preferences
 /// before the window opens; a missing or unreadable value keeps the default.
 fn custom_titlebar(saved: Option<&vectorcraft_ui_egui::UiState>) -> bool {
-    CUSTOM_TITLEBAR && !saved.map(|ui| ui.engine_prefs.get("systemTitleBar").and_then(serde_json::Value::as_bool).unwrap_or(false)).unwrap_or(false)
+    CUSTOM_TITLEBAR
+        && !saved
+            .map(|ui| {
+                ui.engine_prefs
+                    .get("systemTitleBar")
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(false)
+            })
+            .unwrap_or(false)
 }
 
 fn native_options(custom_titlebar: bool) -> eframe::NativeOptions {
@@ -607,14 +710,27 @@ fn main() -> std::process::ExitCode {
     // Validate roots before logging, font scans, preferences or the window: a missing value
     // must not clear an environment root and start the control channel without confinement.
     let mut control = automation_args::ControlArg::default();
-    let root_env = |name: &str| std::env::var_os(name).filter(|v| !v.is_empty()).map(std::path::PathBuf::from);
-    let mut roots_args =
-        automation_args::AutomationArgs::new(root_env("VECTORCRAFT_AUTOMATION_READ_ROOT"), root_env("VECTORCRAFT_AUTOMATION_WRITE_ROOT"));
+    let root_env = |name: &str| {
+        std::env::var_os(name)
+            .filter(|v| !v.is_empty())
+            .map(std::path::PathBuf::from)
+    };
+    let mut roots_args = automation_args::AutomationArgs::new(
+        root_env("VECTORCRAFT_AUTOMATION_READ_ROOT"),
+        root_env("VECTORCRAFT_AUTOMATION_WRITE_ROOT"),
+    );
     let mut files = Vec::new();
-    let mut in_window_menus = std::env::var_os("VECTORCRAFT_IN_WINDOW_MENUS").is_some_and(|v| !v.is_empty() && v != "0");
+    let mut in_window_menus =
+        std::env::var_os("VECTORCRAFT_IN_WINDOW_MENUS").is_some_and(|v| !v.is_empty() && v != "0");
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
-        match roots_args.consume(&a, &mut args).and_then(|root| if root { Ok(true) } else { control.consume(&a, &mut args) }) {
+        match roots_args.consume(&a, &mut args).and_then(|root| {
+            if root {
+                Ok(true)
+            } else {
+                control.consume(&a, &mut args)
+            }
+        }) {
             Ok(true) => continue,
             Ok(false) => {}
             Err(e) => {
@@ -631,17 +747,23 @@ fn main() -> std::process::ExitCode {
             _ => files.push(a),
         }
     }
-    let automation_args::AutomationArgs { read_root, write_root, .. } = roots_args;
+    let automation_args::AutomationArgs {
+        read_root,
+        write_root,
+        ..
+    } = roots_args;
     // After the arguments: `--control` and `--version` win over a bad environment value.
     let control_port = match control.port {
         Some(port) => Some(port),
-        None => match automation_args::env_control_port(std::env::var_os("VECTORCRAFT_CONTROL_PORT")) {
-            Ok(port) => port,
-            Err(e) => {
-                eprintln!("vectorcraft: {e}");
-                return std::process::ExitCode::FAILURE;
+        None => {
+            match automation_args::env_control_port(std::env::var_os("VECTORCRAFT_CONTROL_PORT")) {
+                Ok(port) => port,
+                Err(e) => {
+                    eprintln!("vectorcraft: {e}");
+                    return std::process::ExitCode::FAILURE;
+                }
             }
-        },
+        }
     };
     // Before desktop services, so every start-up warning is recorded (`logging`).
     let logger = logging::install();
@@ -660,7 +782,11 @@ fn main() -> std::process::ExitCode {
     if let Some(logger) = logger {
         match log_dir().filter(|_| prefs_enabled()) {
             Some(dir) => match logger.attach_dir(&dir) {
-                Ok(path) => log::info!("VectorCraft {}, log file {}", env!("CARGO_PKG_VERSION"), path.display()),
+                Ok(path) => log::info!(
+                    "VectorCraft {}, log file {}",
+                    env!("CARGO_PKG_VERSION"),
+                    path.display()
+                ),
                 // Standard error only by now (`attach_dir` gave up on the file); unlike `eprintln!`, never panics.
                 Err(e) => log::warn!("no log file: {e}"),
             },
@@ -671,7 +797,9 @@ fn main() -> std::process::ExitCode {
     // leaving agents unconfined. Without a control port there is nothing to confine.
     let roots = if control_port.is_none() {
         if read_root.is_some() || write_root.is_some() {
-            log::warn!("--automation-read-root and --automation-write-root confine the control channel: ignored without --control");
+            log::warn!(
+                "--automation-read-root and --automation-write-root confine the control channel: ignored without --control"
+            );
         }
         None
     } else {
@@ -687,7 +815,10 @@ fn main() -> std::process::ExitCode {
     let saved = read_prefs();
     let saved_window = saved.as_ref().and_then(|ui| ui.window);
     #[cfg(feature = "wgpu")]
-    let gpu_pref = saved.as_ref().and_then(|ui| ui.engine_prefs.get("gpuPreference")).and_then(serde_json::Value::as_str);
+    let gpu_pref = saved
+        .as_ref()
+        .and_then(|ui| ui.engine_prefs.get("gpuPreference"))
+        .and_then(serde_json::Value::as_str);
     #[cfg(feature = "wgpu")]
     let power_env = eframe::wgpu::PowerPreference::from_env();
     #[cfg(feature = "wgpu")]
@@ -705,9 +836,18 @@ fn main() -> std::process::ExitCode {
     #[cfg(feature = "wgpu")]
     if !chosen_gpu {
         let listed: Vec<String> = displays.iter().map(ToString::to_string).collect();
-        log::info!("display GPUs (PCI vendor:device): {}", if listed.is_empty() { "unknown".to_string() } else { listed.join(", ") });
+        log::info!(
+            "display GPUs (PCI vendor:device): {}",
+            if listed.is_empty() {
+                "unknown".to_string()
+            } else {
+                listed.join(", ")
+            }
+        );
     } else {
-        log::info!("graphics processor chosen by the user ({power:?}): which GPU drives the display isn't considered");
+        log::info!(
+            "graphics processor chosen by the user ({power:?}): which GPU drives the display isn't considered"
+        );
     }
     #[cfg(feature = "wgpu")]
     let startup = std::sync::Arc::new(gpu::Startup::default());
@@ -718,16 +858,23 @@ fn main() -> std::process::ExitCode {
     #[cfg(target_os = "linux")]
     let options = {
         let mut options = options;
-        let pref = saved.as_ref().and_then(|ui| ui.engine_prefs.get("linuxDisplayServer")).and_then(serde_json::Value::as_str);
+        let pref = saved
+            .as_ref()
+            .and_then(|ui| ui.engine_prefs.get("linuxDisplayServer"))
+            .and_then(serde_json::Value::as_str);
         if xwayland::wanted(pref, |name| std::env::var_os(name)) {
             if xwayland::x11_libraries_found() {
-                log::info!("opening the window through XWayland (Preferences › Performance › Linux Display Server)");
+                log::info!(
+                    "opening the window through XWayland (Preferences › Performance › Linux Display Server)"
+                );
                 use winit::platform::x11::EventLoopBuilderExtX11 as _;
                 options.event_loop_builder = Some(Box::new(|builder| {
                     builder.with_x11();
                 }));
             } else {
-                log::warn!("Linux Display Server is X11, but the X11 libraries aren't all installed: opening the window on Wayland");
+                log::warn!(
+                    "Linux Display Server is X11, but the X11 libraries aren't all installed: opening the window on Wayland"
+                );
             }
         }
         options
@@ -739,29 +886,41 @@ fn main() -> std::process::ExitCode {
         // composites it, so the window answers the pointer a frame sooner (#444).
         options.wgpu_options.surface = eframe::egui_wgpu::SurfaceConfig::LOW_LATENCY;
         // Only adapters that can show the window, in the order `gpu` gives (#306, #502).
-        if let eframe::egui_wgpu::WgpuSetup::CreateNew(create) = &mut options.wgpu_options.wgpu_setup {
-            create.native_adapter_selector = Some(gpu::selector(power, displays, compositor, startup.clone()));
+        if let eframe::egui_wgpu::WgpuSetup::CreateNew(create) =
+            &mut options.wgpu_options.wgpu_setup
+        {
+            create.native_adapter_selector =
+                Some(gpu::selector(power, displays, compositor, startup.clone()));
             // Nothing draws or dispatches indirectly, so wgpu's check of indirect arguments only
             // costs a compute shader at start-up, one some drivers can't compile (OCLP-patched
             // Metal on an Iris Pro, #651). `WGPU_VALIDATION_INDIRECT_CALL=1` turns it back on.
-            create.instance_descriptor.flags =
-                (eframe::wgpu::InstanceFlags::from_build_config() - eframe::wgpu::InstanceFlags::VALIDATION_INDIRECT_CALL).with_env();
-            create.instance_descriptor.backends = gpu::backends(create.instance_descriptor.backends, std::env::var_os("WGPU_BACKEND").is_some());
+            create.instance_descriptor.flags = (eframe::wgpu::InstanceFlags::from_build_config()
+                - eframe::wgpu::InstanceFlags::VALIDATION_INDIRECT_CALL)
+                .with_env();
+            create.instance_descriptor.backends = gpu::backends(
+                create.instance_descriptor.backends,
+                std::env::var_os("WGPU_BACKEND").is_some(),
+            );
             // DX12 shaders compile with FXC, part of Windows: wgpu's default loads whichever
             // dxcompiler.dll the search path finds, and one without its dxil.dll fails every shader,
             // losing the device before the first frame (#1194). `WGPU_DX12_COMPILER` picks another.
-            create.instance_descriptor.backend_options.dx12.shader_compiler =
+            create
+                .instance_descriptor
+                .backend_options
+                .dx12
+                .shader_compiler =
                 eframe::wgpu::Dx12Compiler::from_env().unwrap_or(eframe::wgpu::Dx12Compiler::Fxc);
             // The window's surface may be as large as the adapter allows, not eframe's fixed
             // 8192 px: a window stretched over several monitors, or grown by a display scale
             // change, otherwise fails to configure its surface and the app closes (#1459).
             let device = create.device_descriptor.clone();
-            create.device_descriptor = std::sync::Arc::new(move |adapter: &eframe::wgpu::Adapter| {
-                let mut descriptor = device(adapter);
-                let limit = &mut descriptor.required_limits.max_texture_dimension_2d;
-                *limit = gpu::surface_limit(*limit, adapter.limits().max_texture_dimension_2d);
-                descriptor
-            });
+            create.device_descriptor =
+                std::sync::Arc::new(move |adapter: &eframe::wgpu::Adapter| {
+                    let mut descriptor = device(adapter);
+                    let limit = &mut descriptor.required_limits.max_texture_dimension_2d;
+                    *limit = gpu::surface_limit(*limit, adapter.limits().max_texture_dimension_2d);
+                    descriptor
+                });
         }
         options
     };
@@ -780,7 +939,10 @@ fn main() -> std::process::ExitCode {
             "VectorCraft",
             options,
             Box::new(move |cc| {
-                let mut app = VectorcraftApp::new(Session::new(), services(cc.winit_window().cloned(), cc.egui_ctx.clone()));
+                let mut app = VectorcraftApp::new(
+                    Session::new(),
+                    services(cc.winit_window().cloned(), cc.egui_ctx.clone()),
+                );
                 load_prefs(&mut app, saved);
                 // Fit the window to its monitor, or put it back where it was (still hidden).
                 if let Some(w) = cc.winit_window() {
@@ -789,20 +951,37 @@ fn main() -> std::process::ExitCode {
                     set_taskbar_icon(w);
                 }
                 // User Defined swatch and graphic style libraries live next to the preferences.
-                let swatches = prefs_path().and_then(|p| Some(p.parent()?.join("Swatches").to_string_lossy().to_string()));
+                let swatches = prefs_path()
+                    .and_then(|p| Some(p.parent()?.join("Swatches").to_string_lossy().to_string()));
                 app.session.swatch_libraries.set_user_dir(swatches);
-                let styles = prefs_path().and_then(|p| Some(p.parent()?.join("Graphic Styles").to_string_lossy().to_string()));
+                let styles = prefs_path().and_then(|p| {
+                    Some(
+                        p.parent()?
+                            .join("Graphic Styles")
+                            .to_string_lossy()
+                            .to_string(),
+                    )
+                });
                 app.session.style_libraries.set_user_dir(styles);
                 // So do the Libraries panel's libraries; runs without preferences (agents' test
                 // runs) keep theirs for the session only, never touching the user's.
                 if prefs_enabled() {
-                    let libraries = prefs_path().and_then(|p| Some(p.parent()?.join("Libraries").to_string_lossy().to_string()));
+                    let libraries = prefs_path().and_then(|p| {
+                        Some(p.parent()?.join("Libraries").to_string_lossy().to_string())
+                    });
                     app.session.libraries.set_dir(libraries);
                 }
                 // Data Recovery copies live next to the preferences too (none for runs without
                 // preferences, such as agents' test runs, unless the recoveryFolder preference is set).
                 if std::env::var_os("VECTORCRAFT_NO_PREFS").is_none() {
-                    let recovery = prefs_path().and_then(|p| Some(p.parent()?.join("Data Recovery").to_string_lossy().to_string()));
+                    let recovery = prefs_path().and_then(|p| {
+                        Some(
+                            p.parent()?
+                                .join("Data Recovery")
+                                .to_string_lossy()
+                                .to_string(),
+                        )
+                    });
                     app.session.recovery.set_default_folder(recovery);
                 }
                 let graphics_loss = GraphicsLoss::default();
@@ -824,7 +1003,9 @@ fn main() -> std::process::ExitCode {
                     }
                     app.graphics_adapter = Some(summary);
                     let (loss, ctx) = (graphics_loss.clone(), cc.egui_ctx.clone());
-                    rs.device.set_device_lost_callback(move |reason, msg| loss.report(&ctx, format!("{reason:?}: {msg}")));
+                    rs.device.set_device_lost_callback(move |reason, msg| {
+                        loss.report(&ctx, format!("{reason:?}: {msg}"))
+                    });
                 }
                 #[cfg(feature = "windows7")]
                 {
@@ -838,7 +1019,11 @@ fn main() -> std::process::ExitCode {
                         // Everywhere the app doesn't say whose work it is (worker threads), the
                         // roots hold: unconfined is only what the person at the keyboard does.
                         file_access::confine_process(roots.clone());
-                        log::info!("control channel confined to the automation roots: read {:?}, write {:?}", roots.read_root(), roots.write_root());
+                        log::info!(
+                            "control channel confined to the automation roots: read {:?}, write {:?}",
+                            roots.read_root(),
+                            roots.write_root()
+                        );
                     }
                 }
                 #[cfg(target_os = "macos")]
@@ -855,7 +1040,12 @@ fn main() -> std::process::ExitCode {
                 // The first frame is due from now (`gpu::watch_first_frame`).
                 #[cfg(feature = "wgpu")]
                 created.ready();
-                Ok(Box::new(App { app, graphics_loss, graphics_lost: false, frames: 0 }))
+                Ok(Box::new(App {
+                    app,
+                    graphics_loss,
+                    graphics_lost: false,
+                    frames: 0,
+                }))
             }),
         )
     });
@@ -877,50 +1067,76 @@ mod tests {
     use super::*;
 
     fn ui_state_with_prefs(engine_prefs: serde_json::Value) -> vectorcraft_ui_egui::UiState {
-        vectorcraft_ui_egui::UiState { engine_prefs, ..Default::default() }
+        vectorcraft_ui_egui::UiState {
+            engine_prefs,
+            ..Default::default()
+        }
     }
 
     #[test]
     fn unreadable_saved_docking_keeps_preferences_and_every_workspace() {
         use serde_json::json;
         let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
-        app.run("window.panel.float", json!({"panel":"layers"})).unwrap();
+        app.run("window.panel.float", json!({"panel":"layers"}))
+            .unwrap();
         app.ui.toolbar = false;
         app.ui.engine_prefs = json!({"interfaceLanguage":"fr", "uiBrightness":"light"});
-        app.ui.custom_workspaces =
-            vec![vectorcraft_ui_egui::workspaces::capture(&app.ui, "Future"), vectorcraft_ui_egui::workspaces::capture(&app.ui, "Valid")];
+        app.ui.custom_workspaces = vec![
+            vectorcraft_ui_egui::workspaces::capture(&app.ui, "Future"),
+            vectorcraft_ui_egui::workspaces::capture(&app.ui, "Valid"),
+        ];
         let original = serde_json::to_value(&app.ui).unwrap();
         let valid_location = original["docking_hidden"]["layers"].clone();
         assert!(valid_location.is_object());
-        for invalid_layout in [json!({"root":{"FutureNode":{}},"floating":[]}), json!(false)] {
-            for invalid_hidden in [json!({"layers":{"placement":{"FuturePlacement":{}}},"swatches":valid_location}), json!(["malformed"])] {
+        for invalid_layout in [
+            json!({"root":{"FutureNode":{}},"floating":[]}),
+            json!(false),
+        ] {
+            for invalid_hidden in [
+                json!({"layers":{"placement":{"FuturePlacement":{}}},"swatches":valid_location}),
+                json!(["malformed"]),
+            ] {
                 let mut raw = original.clone();
                 raw["docking"] = invalid_layout.clone();
                 raw["docking_hidden"] = invalid_hidden.clone();
                 raw["custom_workspaces"][0]["docking"] = invalid_layout.clone();
                 raw["custom_workspaces"][0]["dockingHidden"] = invalid_hidden.clone();
-                assert!(serde_json::from_value::<vectorcraft_ui_egui::UiState>(raw.clone()).is_err(), "runtime serde stays strict");
+                assert!(
+                    serde_json::from_value::<vectorcraft_ui_egui::UiState>(raw.clone()).is_err(),
+                    "runtime serde stays strict"
+                );
                 let loaded = decode_saved_prefs(&serde_json::to_vec(&raw).unwrap()).unwrap();
                 assert_eq!(loaded.engine_prefs, app.ui.engine_prefs);
                 assert!(!loaded.toolbar);
                 assert!(loaded.docking.is_none());
                 assert!(!loaded.docking_hidden.contains_key("layers"));
                 if invalid_hidden.is_object() {
-                    assert_eq!(serde_json::to_value(loaded.docking_hidden.get("swatches")).unwrap(), valid_location);
+                    assert_eq!(
+                        serde_json::to_value(loaded.docking_hidden.get("swatches")).unwrap(),
+                        valid_location
+                    );
                 } else {
                     assert!(loaded.docking_hidden.is_empty());
                 }
                 assert_eq!(loaded.custom_workspaces.len(), 2);
                 assert_eq!(loaded.custom_workspaces[0].name, "Future");
                 assert!(loaded.custom_workspaces[0].docking.is_none());
-                assert!(!loaded.custom_workspaces[0].docking_hidden.contains_key("layers"));
-                assert_eq!(serde_json::to_value(&loaded.custom_workspaces[1]).unwrap(), original["custom_workspaces"][1]);
+                assert!(
+                    !loaded.custom_workspaces[0]
+                        .docking_hidden
+                        .contains_key("layers")
+                );
+                assert_eq!(
+                    serde_json::to_value(&loaded.custom_workspaces[1]).unwrap(),
+                    original["custom_workspaces"][1]
+                );
             }
         }
         let roundtrip = decode_saved_prefs(&serde_json::to_vec(&original).unwrap()).unwrap();
         assert_eq!(serde_json::to_value(roundtrip).unwrap(), original);
         assert!(
-            decode_saved_prefs(&serde_json::to_vec(&json!({"toolbar":"invalid"})).unwrap()).is_none(),
+            decode_saved_prefs(&serde_json::to_vec(&json!({"toolbar":"invalid"})).unwrap())
+                .is_none(),
             "unrelated fields retain normal strict parsing"
         );
     }
@@ -929,26 +1145,39 @@ mod tests {
     fn the_system_title_bar_preference_keeps_the_window_decorations() {
         // Preferences › User Interface › System Title Bar gives the window back its system
         // decorations on Windows and Linux; macOS always has them.
-        assert_eq!(super::custom_titlebar(None), super::CUSTOM_TITLEBAR, "no preferences: the default");
+        assert_eq!(
+            super::custom_titlebar(None),
+            super::CUSTOM_TITLEBAR,
+            "no preferences: the default"
+        );
         let off = ui_state_with_prefs(serde_json::json!({"systemTitleBar": false}));
         assert_eq!(super::custom_titlebar(Some(&off)), super::CUSTOM_TITLEBAR);
         let on = ui_state_with_prefs(serde_json::json!({"systemTitleBar": true}));
         assert!(!super::custom_titlebar(Some(&on)));
-        assert_eq!(super::native_options(false).viewport.decorations, Some(true));
+        assert_eq!(
+            super::native_options(false).viewport.decorations,
+            Some(true)
+        );
         if super::CUSTOM_TITLEBAR {
-            assert_eq!(super::native_options(true).viewport.decorations, Some(false));
+            assert_eq!(
+                super::native_options(true).viewport.decorations,
+                Some(false)
+            );
         }
     }
 
     /// The file extensions the macOS bundle declares: its document types and its own exported type.
     fn plist_extensions(plist: &str) -> Vec<&str> {
-        ["<key>CFBundleTypeExtensions</key>", "<key>public.filename-extension</key>"]
-            .iter()
-            .flat_map(|key| plist.split(key).skip(1))
-            .filter_map(|rest| rest.split("</array>").next())
-            .flat_map(|array| array.split("<string>").skip(1))
-            .filter_map(|s| s.split("</string>").next())
-            .collect()
+        [
+            "<key>CFBundleTypeExtensions</key>",
+            "<key>public.filename-extension</key>",
+        ]
+        .iter()
+        .flat_map(|key| plist.split(key).skip(1))
+        .filter_map(|rest| rest.split("</array>").next())
+        .flat_map(|array| array.split("<string>").skip(1))
+        .filter_map(|s| s.split("</string>").next())
+        .collect()
     }
 
     /// Finder offers the app for every file File › Open reads (#295, #354) but Photoshop documents
@@ -958,15 +1187,31 @@ mod tests {
     fn the_macos_bundle_opens_every_readable_format() {
         let plist = include_str!("../packaging/macos/Info.plist.in");
         let declared = plist_extensions(plist);
-        for e in fileio::OPEN_EXTS.iter().filter(|e| !fileio::UNASSOCIATED_EXTS.contains(e)) {
+        for e in fileio::OPEN_EXTS
+            .iter()
+            .filter(|e| !fileio::UNASSOCIATED_EXTS.contains(e))
+        {
             assert!(declared.contains(e), "Info.plist.in doesn't declare .{e}");
         }
         for e in &declared {
-            assert!(fileio::OPEN_EXTS.contains(e), "Info.plist.in declares .{e}, which the app doesn't open");
+            assert!(
+                fileio::OPEN_EXTS.contains(e),
+                "Info.plist.in declares .{e}, which the app doesn't open"
+            );
         }
-        assert!(!plist.contains("<key>NSDocumentClass</key>"), "not an NSDocument app: AppKit would refuse the files");
+        assert!(
+            !plist.contains("<key>NSDocumentClass</key>"),
+            "not an NSDocument app: AppKit would refuse the files"
+        );
         let types = plist.matches("<key>CFBundleTypeName</key>").count();
-        assert!(types > 1 && plist.matches("<key>LSHandlerRank</key>").count() == types, "every document type has a rank");
-        assert_eq!(plist.matches("<string>Owner</string>").count(), 2, "only VectorCraft documents and templates are owned");
+        assert!(
+            types > 1 && plist.matches("<key>LSHandlerRank</key>").count() == types,
+            "every document type has a rank"
+        );
+        assert_eq!(
+            plist.matches("<string>Owner</string>").count(),
+            2,
+            "only VectorCraft documents and templates are owned"
+        );
     }
 }

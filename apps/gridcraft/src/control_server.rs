@@ -14,13 +14,17 @@ const MAX_LINE: usize = 64 * 1024 * 1024;
 pub fn start(port: u16, ctx: egui::Context) -> std::io::Result<Receiver<ControlRequest>> {
     let listener = TcpListener::bind(("127.0.0.1", port))?;
     let (tx, rx) = channel();
-    std::thread::Builder::new().name("control".into()).spawn(move || {
-        for stream in listener.incoming().flatten() {
-            let tx = tx.clone();
-            let ctx = ctx.clone();
-            let _ = std::thread::Builder::new().name("control-conn".into()).spawn(move || serve(stream, tx, ctx));
-        }
-    })?;
+    std::thread::Builder::new()
+        .name("control".into())
+        .spawn(move || {
+            for stream in listener.incoming().flatten() {
+                let tx = tx.clone();
+                let ctx = ctx.clone();
+                let _ = std::thread::Builder::new()
+                    .name("control-conn".into())
+                    .spawn(move || serve(stream, tx, ctx));
+            }
+        })?;
     log::info!("control channel listening on 127.0.0.1:{port}");
     Ok(rx)
 }
@@ -35,18 +39,30 @@ fn serve(stream: TcpStream, tx: Sender<ControlRequest>, ctx: egui::Context) {
             continue;
         }
         if line.len() > MAX_LINE {
-            let _ = writeln!(out, "{}", json!({"ok": false, "error": "request too large"}));
+            let _ = writeln!(
+                out,
+                "{}",
+                json!({"ok": false, "error": "request too large"})
+            );
             continue;
         }
         let msg: Json = match serde_json::from_str(&line) {
             Ok(v) => v,
             Err(e) => {
-                let _ = writeln!(out, "{}", json!({"ok": false, "error": format!("invalid JSON: {e}")}));
+                let _ = writeln!(
+                    out,
+                    "{}",
+                    json!({"ok": false, "error": format!("invalid JSON: {e}")})
+                );
                 continue;
             }
         };
         let id = msg.get("id").cloned().unwrap_or(Json::Null);
-        let method = msg.get("method").and_then(Json::as_str).unwrap_or("").to_string();
+        let method = msg
+            .get("method")
+            .and_then(Json::as_str)
+            .unwrap_or("")
+            .to_string();
         let params = msg.get("params").cloned().unwrap_or(json!({}));
         let (req, rx) = ControlRequest::new(method, params);
         if tx.send(req).is_err() {

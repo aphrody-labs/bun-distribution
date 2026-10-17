@@ -8,8 +8,18 @@
 //!
 //! `log` records go to standard error and `<settings dir>/logs/deckcraft.log` (`RUST_LOG` sets the
 //! levels); see [`logging`].
-#![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![cfg_attr(
+    all(target_os = "windows", not(debug_assertions)),
+    windows_subsystem = "windows"
+)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod audio;
@@ -41,13 +51,16 @@ impl eframe::App for App {
 /// The per-user settings directory: `ui.json`, `prefs.json` and `logs/` live here.
 fn config_dir() -> Option<std::path::PathBuf> {
     if cfg!(target_os = "macos") {
-        std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join("Library/Application Support/DeckCraft"))
+        std::env::var_os("HOME")
+            .map(|h| std::path::PathBuf::from(h).join("Library/Application Support/DeckCraft"))
     } else if cfg!(windows) {
         std::env::var_os("APPDATA").map(|a| std::path::PathBuf::from(a).join("DeckCraft"))
     } else {
         std::env::var_os("XDG_CONFIG_HOME")
             .map(std::path::PathBuf::from)
-            .or_else(|| std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".config")))
+            .or_else(|| {
+                std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".config"))
+            })
             .map(|c| c.join("deckcraft"))
     }
 }
@@ -94,10 +107,16 @@ fn services() -> Services {
         pick_open: Some(Box::new(|purpose: &str| {
             let d = rfd::FileDialog::new();
             let d = match purpose {
-                "picture" => d.add_filter("Pictures", &["png", "jpg", "jpeg", "gif", "webp", "bmp", "tif", "tiff"]),
+                "picture" => d.add_filter(
+                    "Pictures",
+                    &["png", "jpg", "jpeg", "gif", "webp", "bmp", "tif", "tiff"],
+                ),
                 "audio" => d.add_filter(
                     "Audio",
-                    &["wav", "mp3", "m4a", "m4b", "aac", "flac", "ogg", "oga", "opus", "aif", "aiff", "aifc", "caf", "wma", "weba", "mka"],
+                    &[
+                        "wav", "mp3", "m4a", "m4b", "aac", "flac", "ogg", "oga", "opus", "aif",
+                        "aiff", "aifc", "caf", "wma", "weba", "mka",
+                    ],
                 ),
                 "video" => d.add_filter("Video", &["mp4", "m4v", "mov", "webm", "mkv", "wmv"]),
                 _ => d
@@ -108,15 +127,29 @@ fn services() -> Services {
             };
             d.pick_file().map(|p| p.to_string_lossy().to_string())
         })),
-        pick_save: Some(Box::new(|name: &str| rfd::FileDialog::new().set_file_name(name).save_file().map(|p| p.to_string_lossy().to_string()))),
-        read: Some(Box::new(|p: &str| std::fs::read(p).map_err(|e| e.to_string()))),
-        write: Some(Box::new(|p: &str, b: &[u8]| std::fs::write(p, b).map_err(|e| e.to_string()))),
+        pick_save: Some(Box::new(|name: &str| {
+            rfd::FileDialog::new()
+                .set_file_name(name)
+                .save_file()
+                .map(|p| p.to_string_lossy().to_string())
+        })),
+        read: Some(Box::new(|p: &str| {
+            std::fs::read(p).map_err(|e| e.to_string())
+        })),
+        write: Some(Box::new(|p: &str, b: &[u8]| {
+            std::fs::write(p, b).map_err(|e| e.to_string())
+        })),
         clipboard_image: Some(Box::new(|| {
             let mut cb = arboard::Clipboard::new().ok()?;
             let img = cb.get_image().ok()?;
-            let rgba = image::RgbaImage::from_raw(img.width as u32, img.height as u32, img.bytes.into_owned())?;
+            let rgba = image::RgbaImage::from_raw(
+                img.width as u32,
+                img.height as u32,
+                img.bytes.into_owned(),
+            )?;
             let mut out = Vec::new();
-            rgba.write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png).ok()?;
+            rgba.write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)
+                .ok()?;
             Some(out)
         })),
         // Media is mixed and clocked by the output device; `DECKCRAFT_NO_AUDIO` plays silently.
@@ -130,15 +163,21 @@ fn services() -> Services {
 const APP_ID: &str = "ai.storyteller.deckcraft";
 
 fn app_icon() -> Option<egui::IconData> {
-    let png: &[u8] = include_bytes!("../../../assets/deckcraft/app-icon/hicolor/256x256/apps/ai.storyteller.deckcraft.png");
-    eframe::icon_data::from_png_bytes(png).map_err(|e| log::warn!("app icon: {e}")).ok()
+    let png: &[u8] = include_bytes!(
+        "../../../assets/deckcraft/app-icon/hicolor/256x256/apps/ai.storyteller.deckcraft.png"
+    );
+    eframe::icon_data::from_png_bytes(png)
+        .map_err(|e| log::warn!("app icon: {e}"))
+        .ok()
 }
 
 fn main() -> eframe::Result {
     // First, so every start-up record (and the engine's panic hook, installed with the first
     // Session) is captured; see `logging`.
     let logger = logging::install();
-    let mut control_port: Option<u16> = std::env::var("DECKCRAFT_CONTROL_PORT").ok().and_then(|p| p.parse().ok());
+    let mut control_port: Option<u16> = std::env::var("DECKCRAFT_CONTROL_PORT")
+        .ok()
+        .and_then(|p| p.parse().ok());
     let mut files = Vec::new();
     let mut sample = false;
     let mut show = false;
@@ -155,7 +194,12 @@ fn main() -> eframe::Result {
             _ => files.push(a),
         }
     }
-    log::info!("DeckCraft {} ({} {})", env!("CARGO_PKG_VERSION"), std::env::consts::OS, std::env::consts::ARCH);
+    log::info!(
+        "DeckCraft {} ({} {})",
+        env!("CARGO_PKG_VERSION"),
+        std::env::consts::OS,
+        std::env::consts::ARCH
+    );
     // The log file lives under the settings directory; opened after the arguments, so `--version`
     // leaves no file behind. Records logged until now are written to it first.
     if let Some(logger) = logger {
@@ -164,7 +208,9 @@ fn main() -> eframe::Result {
             Some(Err(e)) => log::warn!("no log file: {e}"),
             None => {
                 logger.stderr_only();
-                log::warn!("no log file: no settings directory (HOME, XDG_CONFIG_HOME or APPDATA is not set)");
+                log::warn!(
+                    "no log file: no settings directory (HOME, XDG_CONFIG_HOME or APPDATA is not set)"
+                );
             }
         }
     }
@@ -202,10 +248,19 @@ fn main() -> eframe::Result {
             // AutoRecover: reopen what a previous run left unsaved, then keep it current.
             if std::env::var_os("DECKCRAFT_NO_RECOVERY").is_none() {
                 app.session.recovery_dir = deckcraft_engine::recovery::default_dir();
-                if let Ok(v) = app.session.execute("file.recovery.open", &serde_json::json!({}))
-                    && let Some(n) = v.get("opened").and_then(|o| o.as_array()).map(Vec::len).filter(|n| *n > 0)
+                if let Ok(v) = app
+                    .session
+                    .execute("file.recovery.open", &serde_json::json!({}))
+                    && let Some(n) = v
+                        .get("opened")
+                        .and_then(|o| o.as_array())
+                        .map(Vec::len)
+                        .filter(|n| *n > 0)
                 {
-                    app.set_status(format!("Recovered {n} unsaved presentation{} from the last session", if n == 1 { "" } else { "s" }));
+                    app.set_status(format!(
+                        "Recovered {n} unsaved presentation{} from the last session",
+                        if n == 1 { "" } else { "s" }
+                    ));
                 }
             }
             app.integrated_titlebar = cfg!(target_os = "macos");

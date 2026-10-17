@@ -14,7 +14,11 @@ fn root(name: &str) -> std::path::PathBuf {
 
 fn edited() -> Session {
     let mut s = Session::new();
-    s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+    )
+    .unwrap();
     s
 }
 
@@ -33,8 +37,17 @@ fn a_crashed_runs_unsaved_documents_come_back() {
     assert_eq!(recover(&root, &mut next), 1);
     let ds = next.docs.first().unwrap();
     assert!(ds.is_dirty() && ds.path.is_none());
-    assert_eq!(next.doc().unwrap().node(next.doc().unwrap().pages[0]).map(|p| p.children.len()), Some(1));
-    assert!(std::fs::read_dir(&root).unwrap().next().is_none(), "the folder is gone");
+    assert_eq!(
+        next.doc()
+            .unwrap()
+            .node(next.doc().unwrap().pages[0])
+            .map(|p| p.children.len()),
+        Some(1)
+    );
+    assert!(
+        std::fs::read_dir(&root).unwrap().next().is_none(),
+        "the folder is gone"
+    );
     let _ = std::fs::remove_dir_all(&root);
 }
 
@@ -44,19 +57,37 @@ fn copies_follow_saves_and_a_normal_quit_leaves_nothing() {
     let mut s = edited();
     let mut r = Recovery::start(&root).unwrap();
     r.write(&s, true);
-    let dir = std::fs::read_dir(&root).unwrap().flatten().next().unwrap().path();
-    let copies =
-        |d: &std::path::Path| std::fs::read_dir(d).unwrap().flatten().filter(|f| f.path().extension().is_some_and(|e| e == "figcraft")).count();
+    let dir = std::fs::read_dir(&root)
+        .unwrap()
+        .flatten()
+        .next()
+        .unwrap()
+        .path();
+    let copies = |d: &std::path::Path| {
+        std::fs::read_dir(d)
+            .unwrap()
+            .flatten()
+            .filter(|f| f.path().extension().is_some_and(|e| e == "figcraft"))
+            .count()
+    };
     assert_eq!(copies(&dir), 1);
     // Saved: the copy goes.
     s.ds_mut().unwrap().mark_saved();
     r.write(&s, true);
     assert_eq!(copies(&dir), 0);
     // Changes pending while the interval runs: it asks to be woken for them.
-    s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 4, "height": 4})).unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 0, "y": 0, "width": 4, "height": 4}),
+    )
+    .unwrap();
     assert!(r.tick(&s, 0.0).is_none());
     assert!(r.tick(&s, 1.0).is_none(), "copied at 0 s: nothing new");
-    s.execute("shape.rectangle", &json!({"x": 9, "y": 0, "width": 4, "height": 4})).unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 9, "y": 0, "width": 4, "height": 4}),
+    )
+    .unwrap();
     assert!(r.tick(&s, 1.0).is_some_and(|w| w > 0.0));
     r.finish();
     assert!(!dir.exists(), "a normal quit removes the copies");

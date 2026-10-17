@@ -23,7 +23,10 @@ impl AppleEvents {
     /// that launched the app (a Finder double-click) is caught too.
     pub fn install() -> Self {
         let (registration, inbox) = Registration::install();
-        Self { _registration: registration, inbox }
+        Self {
+            _registration: registration,
+            inbox,
+        }
     }
 
     /// The queue the app drains every frame ([`poll`]); events arriving later wake `ctx`.

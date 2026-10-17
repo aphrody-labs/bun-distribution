@@ -36,15 +36,39 @@ fn contact_sheet_exports_pdf_and_protects_originals() {
         if target != input {
             std::fs::write(&target, b"existing sidecar").unwrap();
         }
-        let (ok, _, _) = run_cli(&["--import", input.to_str().unwrap(), "export.contactSheet", &format!("path={}", target.display())], None);
+        let (ok, _, _) = run_cli(
+            &[
+                "--import",
+                input.to_str().unwrap(),
+                "export.contactSheet",
+                &format!("path={}", target.display()),
+            ],
+            None,
+        );
         assert!(!ok, "overwrote protected file");
     }
     assert_eq!(std::fs::read(&input).unwrap(), before);
-    assert_eq!(std::fs::read(input.with_extension("xmp")).unwrap(), b"existing sidecar");
+    assert_eq!(
+        std::fs::read(input.with_extension("xmp")).unwrap(),
+        b"existing sidecar"
+    );
     let prior = std::fs::read(&out).unwrap();
-    let (ok, _, _) = run_cli(&["--import", input.to_str().unwrap(), "export.contactSheet", &format!("path={}", out.display()), "columns=0"], None);
+    let (ok, _, _) = run_cli(
+        &[
+            "--import",
+            input.to_str().unwrap(),
+            "export.contactSheet",
+            &format!("path={}", out.display()),
+            "columns=0",
+        ],
+        None,
+    );
     assert!(!ok);
-    assert_eq!(std::fs::read(&out).unwrap(), prior, "failed export changed prior output");
+    assert_eq!(
+        std::fs::read(&out).unwrap(),
+        prior,
+        "failed export changed prior output"
+    );
 }
 
 fn tmp(name: &str) -> std::path::PathBuf {
@@ -54,8 +78,13 @@ fn tmp(name: &str) -> std::path::PathBuf {
 }
 
 fn gradient_png(path: &std::path::Path) {
-    let img = lightcraft_raster::Rgba8::from_fn(120, 80, |x, y| [(x * 2) as u8, (y * 3) as u8, 100, 255]);
-    let png = lightcraft_codecs::encode_png(&lightcraft_codecs::EncodeImage::rgba8(&img), &Default::default()).unwrap();
+    let img =
+        lightcraft_raster::Rgba8::from_fn(120, 80, |x, y| [(x * 2) as u8, (y * 3) as u8, 100, 255]);
+    let png = lightcraft_codecs::encode_png(
+        &lightcraft_codecs::EncodeImage::rgba8(&img),
+        &Default::default(),
+    )
+    .unwrap();
     std::fs::write(path, png).unwrap();
 }
 
@@ -64,30 +93,58 @@ fn calibrate_reads_raf_inputs_and_reports_bad_files() {
     let input = tmp("invalid.RAF");
     std::fs::write(&input, b"FUJIFILMCCD-RAW").unwrap();
     let out = tmp("raf-profiles");
-    let result = Command::new(BIN).args(["calibrate", "--out"]).arg(&out).arg(&input).output().unwrap();
+    let result = Command::new(BIN)
+        .args(["calibrate", "--out"])
+        .arg(&out)
+        .arg(&input)
+        .output()
+        .unwrap();
     assert!(!result.status.success());
     let stderr = String::from_utf8_lossy(&result.stderr);
-    assert!(stderr.contains("1 of 1 raw files"), "RAF was silently ignored: {stderr}");
-    assert!(stderr.contains("invalid.RAF") && stderr.contains("no profile written"), "{stderr}");
-    assert!(!out.join("X-T4.json").exists(), "bad input must not produce a profile");
+    assert!(
+        stderr.contains("1 of 1 raw files"),
+        "RAF was silently ignored: {stderr}"
+    );
+    assert!(
+        stderr.contains("invalid.RAF") && stderr.contains("no profile written"),
+        "{stderr}"
+    );
+    assert!(
+        !out.join("X-T4.json").exists(),
+        "bad input must not produce a profile"
+    );
 }
 
 fn mean(path: &std::path::Path) -> f64 {
     let d = lightcraft_codecs::decode(&std::fs::read(path).unwrap(), Default::default()).unwrap();
     let img = d.to_srgb8();
-    img.data.iter().map(|p| (p[0] as u32 + p[1] as u32 + p[2] as u32) as f64).sum::<f64>() / (3 * img.data.len()) as f64
+    img.data
+        .iter()
+        .map(|p| (p[0] as u32 + p[1] as u32 + p[2] as u32) as f64)
+        .sum::<f64>()
+        / (3 * img.data.len()) as f64
 }
 
 #[test]
 fn mcp_over_stdio_sets_exposure_and_renders() {
     let input = tmp("in.png");
     gradient_png(&input);
-    let mut child =
-        Command::new(BIN).args(["mcp", input.to_str().unwrap()]).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().unwrap();
+    let mut child = Command::new(BIN)
+        .args(["mcp", input.to_str().unwrap()])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
     let mut stdin = child.stdin.take().unwrap();
     let mut stdout = BufReader::new(child.stdout.take().unwrap());
     let mut rpc = |id: u64, method: &str, params: Value| -> Value {
-        writeln!(stdin, "{}", json!({"jsonrpc": "2.0", "id": id, "method": method, "params": params})).unwrap();
+        writeln!(
+            stdin,
+            "{}",
+            json!({"jsonrpc": "2.0", "id": id, "method": method, "params": params})
+        )
+        .unwrap();
         stdin.flush().unwrap();
         let mut line = String::new();
         stdout.read_line(&mut line).unwrap();
@@ -95,17 +152,33 @@ fn mcp_over_stdio_sets_exposure_and_renders() {
         assert_eq!(v["id"], id);
         v
     };
-    let init = rpc(1, "initialize", json!({"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "cli-test", "version": "0"}}));
+    let init = rpc(
+        1,
+        "initialize",
+        json!({"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "cli-test", "version": "0"}}),
+    );
     assert_eq!(init["result"]["protocolVersion"], "2025-06-18");
     let tools = rpc(2, "tools/list", json!({}));
     assert!(tools["result"]["tools"].as_array().unwrap().len() > 50);
     let base = tmp("base.png");
     let bright = tmp("bright.png");
-    let r = rpc(3, "tools/call", json!({"name": "render_photo", "arguments": {"path": base.to_str().unwrap()}}));
+    let r = rpc(
+        3,
+        "tools/call",
+        json!({"name": "render_photo", "arguments": {"path": base.to_str().unwrap()}}),
+    );
     assert_eq!(r["result"]["isError"], false, "{r}");
-    let r = rpc(4, "tools/call", json!({"name": "set_develop", "arguments": {"values": {"light.exposure": 1.0}}}));
+    let r = rpc(
+        4,
+        "tools/call",
+        json!({"name": "set_develop", "arguments": {"values": {"light.exposure": 1.0}}}),
+    );
     assert_eq!(r["result"]["isError"], false, "{r}");
-    let r = rpc(5, "tools/call", json!({"name": "render_photo", "arguments": {"path": bright.to_str().unwrap()}}));
+    let r = rpc(
+        5,
+        "tools/call",
+        json!({"name": "render_photo", "arguments": {"path": bright.to_str().unwrap()}}),
+    );
     assert_eq!(r["result"]["isError"], false, "{r}");
     assert_eq!(r["result"]["content"][0]["type"], "image");
     drop(stdin);
@@ -121,10 +194,27 @@ fn render_subcommand() {
     gradient_png(&input);
     let plain = tmp("r-plain.png");
     let out = tmp("r-out.jpg");
-    let st = Command::new(BIN).args(["render", input.to_str().unwrap(), "-o", plain.to_str().unwrap()]).status().unwrap();
+    let st = Command::new(BIN)
+        .args([
+            "render",
+            input.to_str().unwrap(),
+            "-o",
+            plain.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
     assert!(st.success());
     let st = Command::new(BIN)
-        .args(["render", input.to_str().unwrap(), "-o", out.to_str().unwrap(), "--set", "light.exposure=1", "--size", "60"])
+        .args([
+            "render",
+            input.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+            "--set",
+            "light.exposure=1",
+            "--size",
+            "60",
+        ])
         .status()
         .unwrap();
     assert!(st.success());
@@ -134,7 +224,17 @@ fn render_subcommand() {
     assert_eq!((d.width, d.height), (120, 80));
     assert!(mean(&out) > mean(&plain) + 10.0);
     // Bad control id fails cleanly.
-    let o = Command::new(BIN).args(["render", input.to_str().unwrap(), "-o", out.to_str().unwrap(), "--set", "nope=1"]).output().unwrap();
+    let o = Command::new(BIN)
+        .args([
+            "render",
+            input.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+            "--set",
+            "nope=1",
+        ])
+        .output()
+        .unwrap();
     assert!(!o.status.success());
     assert!(String::from_utf8_lossy(&o.stderr).contains("unknown control"));
 }
@@ -149,12 +249,29 @@ fn render_refuses_to_overwrite_its_input() {
     std::fs::create_dir_all(dir.join("sub")).unwrap();
     let other_spelling = dir.join("sub/../self-in.png");
     for out in [&input, &other_spelling] {
-        let o =
-            Command::new(BIN).args(["render", input.to_str().unwrap(), "-o", out.to_str().unwrap(), "--set", "light.exposure=1"]).output().unwrap();
+        let o = Command::new(BIN)
+            .args([
+                "render",
+                input.to_str().unwrap(),
+                "-o",
+                out.to_str().unwrap(),
+                "--set",
+                "light.exposure=1",
+            ])
+            .output()
+            .unwrap();
         assert!(!o.status.success());
-        assert!(String::from_utf8_lossy(&o.stderr).contains("never writes over an original"), "{}", String::from_utf8_lossy(&o.stderr));
+        assert!(
+            String::from_utf8_lossy(&o.stderr).contains("never writes over an original"),
+            "{}",
+            String::from_utf8_lossy(&o.stderr)
+        );
     }
-    assert_eq!(std::fs::read(&input).unwrap(), before, "the input is untouched");
+    assert_eq!(
+        std::fs::read(&input).unwrap(),
+        before,
+        "the input is untouched"
+    );
 }
 
 #[test]
@@ -163,18 +280,42 @@ fn render_export_options() {
     gradient_png(&input);
     let out = tmp("o-out.tif");
     let st = Command::new(BIN)
-        .args(["render", input.to_str().unwrap(), "-o", out.to_str().unwrap()])
-        .args(["--opt", "shortEdge=40", "--opt", "colorSpace=displayP3", "--opt", "bitDepth=16"])
+        .args([
+            "render",
+            input.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .args([
+            "--opt",
+            "shortEdge=40",
+            "--opt",
+            "colorSpace=displayP3",
+            "--opt",
+            "bitDepth=16",
+        ])
         .status()
         .unwrap();
     assert!(st.success());
     let d = lightcraft_codecs::decode(&std::fs::read(&out).unwrap(), Default::default()).unwrap();
     assert_eq!((d.width, d.height), (60, 40));
-    assert_eq!(d.space.named, Some(lightcraft_codecs::NamedSpace::DisplayP3));
+    assert_eq!(
+        d.space.named,
+        Some(lightcraft_codecs::NamedSpace::DisplayP3)
+    );
     // original + sidecar named after the output
     let out = tmp("o-copy.png");
     let st = Command::new(BIN)
-        .args(["render", input.to_str().unwrap(), "-o", out.to_str().unwrap(), "--set", "light.exposure=1", "--opt", "format=original"])
+        .args([
+            "render",
+            input.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+            "--set",
+            "light.exposure=1",
+            "--opt",
+            "format=original",
+        ])
         .status()
         .unwrap();
     assert!(st.success());
@@ -182,17 +323,41 @@ fn render_export_options() {
     let xmp = std::fs::read_to_string(out.with_extension("xmp")).unwrap();
     assert!(xmp.contains("exposure"), "{xmp}");
     // unknown extension fails with a hint
-    let o = Command::new(BIN).args(["render", input.to_str().unwrap(), "-o", tmp("x.bmp").to_str().unwrap()]).output().unwrap();
-    assert!(!o.status.success() && String::from_utf8_lossy(&o.stderr).contains("unknown extension"));
+    let o = Command::new(BIN)
+        .args([
+            "render",
+            input.to_str().unwrap(),
+            "-o",
+            tmp("x.bmp").to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        !o.status.success() && String::from_utf8_lossy(&o.stderr).contains("unknown extension")
+    );
 }
 
 #[test]
 fn commands_subcommand_lists_registry() {
-    let o = Command::new(BIN).args(["commands", "--json"]).output().unwrap();
+    let o = Command::new(BIN)
+        .args(["commands", "--json"])
+        .output()
+        .unwrap();
     assert!(o.status.success());
     let v: Value = serde_json::from_slice(&o.stdout).unwrap();
-    let ids: Vec<&str> = v.as_array().unwrap().iter().filter_map(|c| c["id"].as_str()).collect();
-    for id in ["develop.set", "photo.rate", "library.import", "edit.undo", "app.export"] {
+    let ids: Vec<&str> = v
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|c| c["id"].as_str())
+        .collect();
+    for id in [
+        "develop.set",
+        "photo.rate",
+        "library.import",
+        "edit.undo",
+        "app.export",
+    ] {
         assert!(ids.contains(&id), "{id}");
     }
     let o = Command::new(BIN).arg("controls").output().unwrap();
@@ -220,11 +385,23 @@ fn snapshot_subcommand_renders_the_ui_headlessly() {
     )
     .unwrap();
     let o = Command::new(BIN)
-        .args(["snapshot", "--demo", "--script", script.to_str().unwrap(), "-o", a.to_str().unwrap(), "--size", "640x400"])
+        .args([
+            "snapshot",
+            "--demo",
+            "--script",
+            script.to_str().unwrap(),
+            "-o",
+            a.to_str().unwrap(),
+            "--size",
+            "640x400",
+        ])
         .output()
         .unwrap();
     assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
-    let replies: Vec<Value> = String::from_utf8_lossy(&o.stdout).lines().map(|l| serde_json::from_str(l).unwrap()).collect();
+    let replies: Vec<Value> = String::from_utf8_lossy(&o.stdout)
+        .lines()
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
     assert_eq!(replies.len(), 6);
     assert!(replies.iter().all(|r| r["ok"] == true), "{replies:?}");
     for (p, dimmed) in [(&a, false), (&b, true)] {
@@ -234,7 +411,18 @@ fn snapshot_subcommand_renders_the_ui_headlessly() {
         assert_eq!(mean(p) < mean(&a) - 2.0, dimmed, "{}", p.display());
     }
     // no script: one settled screenshot, at 2× scale
-    let o = Command::new(BIN).args(["snapshot", "-o", a.to_str().unwrap(), "--size", "320x240", "--scale", "2"]).output().unwrap();
+    let o = Command::new(BIN)
+        .args([
+            "snapshot",
+            "-o",
+            a.to_str().unwrap(),
+            "--size",
+            "320x240",
+            "--scale",
+            "2",
+        ])
+        .output()
+        .unwrap();
     assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
     let d = lightcraft_codecs::decode(&std::fs::read(&a).unwrap(), Default::default()).unwrap();
     assert_eq!((d.width, d.height), (640, 480));
@@ -257,16 +445,34 @@ fn snapshot_script_failure_exits_non_zero() {
     .unwrap();
     let _ = std::fs::remove_file(&out);
     let o = Command::new(BIN)
-        .args(["snapshot", "--demo", "--script", script.to_str().unwrap(), "-o", out.to_str().unwrap(), "--size", "320x200"])
+        .args([
+            "snapshot",
+            "--demo",
+            "--script",
+            script.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+            "--size",
+            "320x200",
+        ])
         .output()
         .unwrap();
     let stderr = String::from_utf8_lossy(&o.stderr);
-    assert!(!o.status.success(), "a failed scripted request must fail the run\n{stderr}");
+    assert!(
+        !o.status.success(),
+        "a failed scripted request must fail the run\n{stderr}"
+    );
     assert!(stderr.contains("1 scripted request(s) failed"), "{stderr}");
-    let replies: Vec<Value> = String::from_utf8_lossy(&o.stdout).lines().map(|l| serde_json::from_str(l).unwrap()).collect();
+    let replies: Vec<Value> = String::from_utf8_lossy(&o.stdout)
+        .lines()
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
     assert_eq!(replies.len(), 2, "{replies:?}");
     assert_eq!(replies[0]["ok"], false, "{replies:?}");
-    assert!(replies[0]["error"].as_str().unwrap_or("").contains("grid"), "{replies:?}");
+    assert!(
+        replies[0]["error"].as_str().unwrap_or("").contains("grid"),
+        "{replies:?}"
+    );
     assert_eq!(replies[1]["ok"], true, "{replies:?}");
     // continue-and-report: the final screenshot is still written
     let d = lightcraft_codecs::decode(&std::fs::read(&out).unwrap(), Default::default()).unwrap();
@@ -276,19 +482,46 @@ fn snapshot_script_failure_exits_non_zero() {
 #[test]
 fn snapshot_ui_zoom_keeps_requested_pixel_dimensions() {
     let script = tmp("snap-ui-zoom.jsonl");
-    std::fs::write(&script, format!("{}\n{}\n", json!({"method": "ui.zoomFactor", "params": {"factor": 1.1}}), json!({"method": "ui.inspect"})))
-        .unwrap();
+    std::fs::write(
+        &script,
+        format!(
+            "{}\n{}\n",
+            json!({"method": "ui.zoomFactor", "params": {"factor": 1.1}}),
+            json!({"method": "ui.inspect"})
+        ),
+    )
+    .unwrap();
     for (size, scale, expected) in [("400x240", "1", (400, 240)), ("345x200", "0.9", (311, 180))] {
         let out = tmp(&format!("snap-ui-zoom-{scale}.png"));
         let o = Command::new(BIN)
-            .args(["snapshot", "--script", script.to_str().unwrap(), "-o", out.to_str().unwrap(), "--size", size, "--scale", scale])
+            .args([
+                "snapshot",
+                "--script",
+                script.to_str().unwrap(),
+                "-o",
+                out.to_str().unwrap(),
+                "--size",
+                size,
+                "--scale",
+                scale,
+            ])
             .output()
             .unwrap();
         assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
-        let replies: Vec<Value> = String::from_utf8_lossy(&o.stdout).lines().map(|line| serde_json::from_str(line).unwrap()).collect();
-        assert!(replies.iter().all(|reply| reply["ok"] == true), "{replies:?}");
-        assert!(replies[1]["result"]["pixelsPerPoint"].as_f64().unwrap() > scale.parse::<f64>().unwrap());
-        let decoded = lightcraft_codecs::decode(&std::fs::read(out).unwrap(), Default::default()).unwrap();
+        let replies: Vec<Value> = String::from_utf8_lossy(&o.stdout)
+            .lines()
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect();
+        assert!(
+            replies.iter().all(|reply| reply["ok"] == true),
+            "{replies:?}"
+        );
+        assert!(
+            replies[1]["result"]["pixelsPerPoint"].as_f64().unwrap()
+                > scale.parse::<f64>().unwrap()
+        );
+        let decoded =
+            lightcraft_codecs::decode(&std::fs::read(out).unwrap(), Default::default()).unwrap();
         assert_eq!((decoded.width, decoded.height), expected);
     }
 }
@@ -299,7 +532,11 @@ fn snapshot_defaults_to_cpu_without_gpu_environment_overrides() {
     let script = tmp("default-cpu.jsonl");
     std::fs::write(
         &script,
-        format!("{}\n{}\n", json!({"method": "engine.execute", "params": {"command": "app.gpu"}}), json!({"method": "ui.screenshot"})),
+        format!(
+            "{}\n{}\n",
+            json!({"method": "engine.execute", "params": {"command": "app.gpu"}}),
+            json!({"method": "ui.screenshot"})
+        ),
     )
     .unwrap();
     let image = tmp("default-cpu.png");
@@ -307,18 +544,44 @@ fn snapshot_defaults_to_cpu_without_gpu_environment_overrides() {
         .env_remove("LIGHTCRAFT_GPU")
         .env_remove("LIGHTCRAFT_GPU_BACKEND")
         .env_remove("WGPU_BACKEND")
-        .args(["snapshot", "--demo", "--script", script.to_str().unwrap(), "-o", image.to_str().unwrap(), "--size", "480x320"])
+        .args([
+            "snapshot",
+            "--demo",
+            "--script",
+            script.to_str().unwrap(),
+            "-o",
+            image.to_str().unwrap(),
+            "--size",
+            "480x320",
+        ])
         .output()
         .unwrap();
-    assert!(output.status.success(), "status {}: {}", output.status, String::from_utf8_lossy(&output.stderr));
-    let replies: Vec<Value> = String::from_utf8_lossy(&output.stdout).lines().map(|line| serde_json::from_str(line).unwrap()).collect();
-    assert!(replies.iter().all(|reply| reply["ok"] == true), "{replies:?}");
+    assert!(
+        output.status.success(),
+        "status {}: {}",
+        output.status,
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let replies: Vec<Value> = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    assert!(
+        replies.iter().all(|reply| reply["ok"] == true),
+        "{replies:?}"
+    );
     let gpu = &replies[0]["result"];
     assert_eq!(gpu["enabled"], false, "{gpu}");
     assert_eq!(gpu["available"], false, "{gpu}");
     assert_eq!(gpu["adapter"], Value::Null, "no device is created: {gpu}");
-    assert!(gpu["reason"].as_str().is_some_and(|reason| reason.contains("preference")), "{gpu}");
-    let decoded = lightcraft_codecs::decode(&std::fs::read(image).unwrap(), Default::default()).unwrap();
+    assert!(
+        gpu["reason"]
+            .as_str()
+            .is_some_and(|reason| reason.contains("preference")),
+        "{gpu}"
+    );
+    let decoded =
+        lightcraft_codecs::decode(&std::fs::read(image).unwrap(), Default::default()).unwrap();
     assert_eq!((decoded.width, decoded.height), (480, 320));
 }
 
@@ -337,36 +600,86 @@ fn snapshot_starts_without_a_gpu() {
         ),
     )
     .unwrap();
-    for (var, value, reason) in [("LIGHTCRAFT_GPU", "0", "LIGHTCRAFT_GPU=0"), ("LIGHTCRAFT_GPU_BACKEND", "off", "LIGHTCRAFT_GPU_BACKEND=off")] {
+    for (var, value, reason) in [
+        ("LIGHTCRAFT_GPU", "0", "LIGHTCRAFT_GPU=0"),
+        (
+            "LIGHTCRAFT_GPU_BACKEND",
+            "off",
+            "LIGHTCRAFT_GPU_BACKEND=off",
+        ),
+    ] {
         let out = tmp(&format!("nogpu-{var}.png"));
         let o = Command::new(BIN)
             .env_remove("LIGHTCRAFT_GPU")
             .env_remove("LIGHTCRAFT_GPU_BACKEND")
             .env(var, value)
-            .args(["snapshot", "--demo", "--script", script.to_str().unwrap(), "-o", out.to_str().unwrap(), "--size", "480x320"])
+            .args([
+                "snapshot",
+                "--demo",
+                "--script",
+                script.to_str().unwrap(),
+                "-o",
+                out.to_str().unwrap(),
+                "--size",
+                "480x320",
+            ])
             .output()
             .unwrap();
-        assert!(o.status.success(), "{var}: {}", String::from_utf8_lossy(&o.stderr));
-        let replies: Vec<Value> = String::from_utf8_lossy(&o.stdout).lines().map(|l| serde_json::from_str(l).unwrap()).collect();
+        assert!(
+            o.status.success(),
+            "{var}: {}",
+            String::from_utf8_lossy(&o.stderr)
+        );
+        let replies: Vec<Value> = String::from_utf8_lossy(&o.stdout)
+            .lines()
+            .map(|l| serde_json::from_str(l).unwrap())
+            .collect();
         assert!(replies.iter().all(|r| r["ok"] == true), "{replies:?}");
         let gpu = &replies[1]["result"];
         assert_eq!(gpu["available"], false, "{var}: {gpu}");
-        assert_eq!(gpu["adapter"], Value::Null, "{var}: no device was created: {gpu}");
-        assert!(gpu["reason"].as_str().is_some_and(|r| r.contains(reason)), "{var}: {gpu}");
-        let d = lightcraft_codecs::decode(&std::fs::read(&out).unwrap(), Default::default()).unwrap();
+        assert_eq!(
+            gpu["adapter"],
+            Value::Null,
+            "{var}: no device was created: {gpu}"
+        );
+        assert!(
+            gpu["reason"].as_str().is_some_and(|r| r.contains(reason)),
+            "{var}: {gpu}"
+        );
+        let d =
+            lightcraft_codecs::decode(&std::fs::read(&out).unwrap(), Default::default()).unwrap();
         assert_eq!((d.width, d.height), (480, 320));
     }
 }
 
 fn run_cli(args: &[&str], stdin: Option<&str>) -> (bool, Vec<Value>, String) {
-    let mut child = Command::new(BIN).arg("run").args(args).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
+    let mut child = Command::new(BIN)
+        .arg("run")
+        .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
     if let Some(text) = stdin {
-        child.stdin.take().unwrap().write_all(text.as_bytes()).unwrap();
+        child
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(text.as_bytes())
+            .unwrap();
     }
     drop(child.stdin.take());
     let o = child.wait_with_output().unwrap();
-    let lines = String::from_utf8_lossy(&o.stdout).lines().map(|l| serde_json::from_str(l).unwrap()).collect();
-    (o.status.success(), lines, String::from_utf8_lossy(&o.stderr).to_string())
+    let lines = String::from_utf8_lossy(&o.stdout)
+        .lines()
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
+    (
+        o.status.success(),
+        lines,
+        String::from_utf8_lossy(&o.stderr).to_string(),
+    )
 }
 
 #[test]
@@ -376,7 +689,11 @@ fn run_subcommand_chains_commands_and_persists_a_library() {
     let lib = tmp("run-lib");
     let _ = std::fs::remove_dir_all(&lib);
     let out = tmp("run-out.jpg");
-    let (lib_s, in_s, out_s) = (lib.to_str().unwrap(), input.to_str().unwrap(), out.to_str().unwrap());
+    let (lib_s, in_s, out_s) = (
+        lib.to_str().unwrap(),
+        input.to_str().unwrap(),
+        out.to_str().unwrap(),
+    );
     // import into a library, edit, export, in one invocation
     let (ok, lines, err) = run_cli(
         &[
@@ -424,18 +741,31 @@ fn devices_are_listed_and_imported_from() {
     let _ = std::fs::remove_dir_all(&base);
     std::fs::create_dir_all(base.join("CARD/DCIM/100TEST")).unwrap();
     gradient_png(&base.join("CARD/DCIM/100TEST/IMG_0001.png"));
-    let o = Command::new(BIN).env("LIGHTCRAFT_DEVICE_ROOTS", &base).args(["run", "--demo", "library.devices"]).output().unwrap();
+    let o = Command::new(BIN)
+        .env("LIGHTCRAFT_DEVICE_ROOTS", &base)
+        .args(["run", "--demo", "library.devices"])
+        .output()
+        .unwrap();
     assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
-    let line: Value = serde_json::from_slice(o.stdout.split(|b| *b == b'\n').next().unwrap()).unwrap();
+    let line: Value =
+        serde_json::from_slice(o.stdout.split(|b| *b == b'\n').next().unwrap()).unwrap();
     let dev = &line["result"][0];
     assert_eq!(dev["name"], "CARD", "{line}");
     // the import review of its DCIM folder finds the photo
     let dcim = dev["path"].as_str().unwrap().to_string();
     // JSON-escaped: a Windows path has backslashes
     let paths = serde_json::to_string(&[&dcim]).unwrap();
-    let o = Command::new(BIN).args(["run", "library.importPreview", &format!("paths={paths}")]).output().unwrap();
-    let line: Value = serde_json::from_slice(o.stdout.split(|b| *b == b'\n').next().unwrap()).unwrap();
-    assert_eq!(line["result"]["candidates"].as_array().map(Vec::len), Some(1), "{line}");
+    let o = Command::new(BIN)
+        .args(["run", "library.importPreview", &format!("paths={paths}")])
+        .output()
+        .unwrap();
+    let line: Value =
+        serde_json::from_slice(o.stdout.split(|b| *b == b'\n').next().unwrap()).unwrap();
+    assert_eq!(
+        line["result"]["candidates"].as_array().map(Vec::len),
+        Some(1),
+        "{line}"
+    );
 }
 
 /// Issue #99: a library open in one process (here `mcp --library`) is refused by a second one,
@@ -445,17 +775,29 @@ fn a_library_open_in_another_process_is_refused() {
     let lib = tmp("locked-lib");
     let _ = std::fs::remove_dir_all(&lib);
     let lib_s = lib.to_str().unwrap();
-    let mut holder =
-        Command::new(BIN).args(["mcp", "--library", lib_s]).stdin(Stdio::piped()).stdout(Stdio::null()).stderr(Stdio::piped()).spawn().unwrap();
+    let mut holder = Command::new(BIN)
+        .args(["mcp", "--library", lib_s])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
     let mut err = BufReader::new(holder.stderr.take().unwrap());
     let mut line = String::new();
     while !line.contains("opened library") {
         line.clear();
-        assert!(err.read_line(&mut line).unwrap() > 0, "mcp exited before opening the library");
+        assert!(
+            err.read_line(&mut line).unwrap() > 0,
+            "mcp exited before opening the library"
+        );
     }
     let (ok, _, stderr) = run_cli(&["--library", lib_s, "library.info"], None);
     assert!(!ok);
-    assert!(stderr.contains("already open in lightcraft-cli") && stderr.contains(&format!("process {}", holder.id())), "{stderr}");
+    assert!(
+        stderr.contains("already open in lightcraft-cli")
+            && stderr.contains(&format!("process {}", holder.id())),
+        "{stderr}"
+    );
     assert!(stderr.contains("mcp --connect"), "{stderr}");
 
     drop(holder.stdin.take()); // EOF: the server exits and lets go of the library
@@ -472,7 +814,10 @@ fn a_library_open_in_another_process_is_refused() {
 fn connect_failure_hint_names_the_attempted_port() {
     let (ok, _lines, err) = run_cli(&["--connect", "127.0.0.1:18437", "ui.inspect"], None);
     assert!(!ok);
-    assert!(err.contains("--control 18437"), "the hint must name the port it tried: {err}");
+    assert!(
+        err.contains("--control 18437"),
+        "the hint must name the port it tried: {err}"
+    );
     assert!(!err.contains("--control 7980"), "{err}");
 }
 
@@ -485,7 +830,10 @@ fn connect_bare_port_is_treated_as_loopback_port() {
     // Bare port: the failure hint names that port.
     let (ok, _lines, err) = run_cli(&["--connect", "18437", "ui.inspect"], None);
     assert!(!ok);
-    assert!(err.contains("--control 18437"), "bare port must reach the hint: {err}");
+    assert!(
+        err.contains("--control 18437"),
+        "bare port must reach the hint: {err}"
+    );
     assert!(!err.contains("--control 7980"), "{err}");
     // `<host>:<port>` still works (issue #167 case).
     let (ok, _lines, err) = run_cli(&["--connect", "127.0.0.1:18437", "ui.inspect"], None);
@@ -507,7 +855,12 @@ fn warnings_are_logged_on_stderr() {
     let out = tmp("log-out.jpg");
     let run = |level: &str| {
         let o = Command::new(BIN)
-            .args(["render", input.to_str().unwrap(), "-o", out.to_str().unwrap()])
+            .args([
+                "render",
+                input.to_str().unwrap(),
+                "-o",
+                out.to_str().unwrap(),
+            ])
             .env("LIGHTCRAFT_GPU_BACKEND", "bogus")
             .env("RUST_LOG", level)
             .env_remove("LIGHTCRAFT_LOG")
@@ -519,20 +872,38 @@ fn warnings_are_logged_on_stderr() {
         stderr
     };
     let warn = run("warn");
-    assert!(warn.contains("LIGHTCRAFT_GPU_BACKEND=bogus names no known backend"), "{warn}");
+    assert!(
+        warn.contains("LIGHTCRAFT_GPU_BACKEND=bogus names no known backend"),
+        "{warn}"
+    );
     let off = run("off");
     assert!(!off.contains("names no known backend"), "{off}");
 }
 
 #[test]
 fn snapshot_rejects_invalid_dimensions_before_creating_an_image() {
-    for (index, (size, scale)) in
-        [("NaNx100", "1"), ("100x100", "inf"), ("9000x9000", "1"), ("9000x100", "2"), ("100x100", "0.001")].into_iter().enumerate()
+    for (index, (size, scale)) in [
+        ("NaNx100", "1"),
+        ("100x100", "inf"),
+        ("9000x9000", "1"),
+        ("9000x100", "2"),
+        ("100x100", "0.001"),
+    ]
+    .into_iter()
+    .enumerate()
     {
         let image = tmp(&format!("invalid-viewport-{index}.png"));
-        let output = Command::new(BIN).args(["snapshot", "--size", size, "--scale", scale, "-o"]).arg(&image).output().unwrap();
+        let output = Command::new(BIN)
+            .args(["snapshot", "--size", size, "--scale", scale, "-o"])
+            .arg(&image)
+            .output()
+            .unwrap();
         assert!(!output.status.success());
-        assert!(String::from_utf8_lossy(&output.stderr).contains("snapshot: bad --size/--scale"), "{}", String::from_utf8_lossy(&output.stderr));
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains("snapshot: bad --size/--scale"),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
         assert!(!image.exists());
     }
 }
@@ -540,10 +911,19 @@ fn snapshot_rejects_invalid_dimensions_before_creating_an_image() {
 #[test]
 fn snapshot_preserves_fractional_scale_rounding() {
     let image = tmp("fractional-scale-rounding.png");
-    let output =
-        Command::new(BIN).env("LIGHTCRAFT_GPU", "0").args(["snapshot", "--size", "345x200", "--scale", "0.9", "-o"]).arg(&image).output().unwrap();
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
-    let decoded = lightcraft_codecs::decode(&std::fs::read(image).unwrap(), Default::default()).unwrap();
+    let output = Command::new(BIN)
+        .env("LIGHTCRAFT_GPU", "0")
+        .args(["snapshot", "--size", "345x200", "--scale", "0.9", "-o"])
+        .arg(&image)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let decoded =
+        lightcraft_codecs::decode(&std::fs::read(image).unwrap(), Default::default()).unwrap();
     assert_eq!((decoded.width, decoded.height), (311, 180));
 }
 
@@ -567,13 +947,20 @@ fn snapshot_leaves_desktop_gpu_preferences_untouched() {
     let script = dir.join("preferences.jsonl");
     std::fs::write(
         &script,
-        format!("{}\n{}\n", json!({"method": "engine.execute", "params": {"command": "app.gpu"}}), json!({"method": "ui.inspect"})),
+        format!(
+            "{}\n{}\n",
+            json!({"method": "engine.execute", "params": {"command": "app.gpu"}}),
+            json!({"method": "ui.inspect"})
+        ),
     )
     .unwrap();
     for gpu_environment in [None, Some("1")] {
         let image = dir.join(format!("{}.png", gpu_environment.unwrap_or("default")));
         let mut cmd = Command::new(BIN);
-        cmd.env("XDG_CONFIG_HOME", &config).env_remove("LIGHTCRAFT_GPU").env_remove("LIGHTCRAFT_GPU_BACKEND").env_remove("WGPU_BACKEND");
+        cmd.env("XDG_CONFIG_HOME", &config)
+            .env_remove("LIGHTCRAFT_GPU")
+            .env_remove("LIGHTCRAFT_GPU_BACKEND")
+            .env_remove("WGPU_BACKEND");
         if let Some(value) = gpu_environment {
             cmd.env("LIGHTCRAFT_GPU", value);
         }
@@ -587,14 +974,28 @@ fn snapshot_leaves_desktop_gpu_preferences_untouched() {
             .args(["--size", "480x320"])
             .output()
             .unwrap();
-        assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
-        let replies: Vec<Value> = String::from_utf8_lossy(&output.stdout).lines().map(|line| serde_json::from_str(line).unwrap()).collect();
-        assert!(replies.iter().all(|reply| reply["ok"] == true), "{replies:?}");
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let replies: Vec<Value> = String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect();
+        assert!(
+            replies.iter().all(|reply| reply["ok"] == true),
+            "{replies:?}"
+        );
         assert_eq!(replies[0]["result"]["enabled"], false);
         assert_eq!(replies[0]["result"]["available"], false);
         assert_eq!(replies[0]["result"]["adapter"], Value::Null);
         assert_eq!(replies[1]["result"]["ui"]["settings"]["gpu"], false);
-        assert_eq!(std::fs::read(&ui_path).unwrap(), saved, "snapshot changed the desktop preferences");
+        assert_eq!(
+            std::fs::read(&ui_path).unwrap(),
+            saved,
+            "snapshot changed the desktop preferences"
+        );
         assert!(!app_config.join("ui.json.tmp").exists());
         assert!(image.exists());
     }
@@ -628,19 +1029,46 @@ fn denoise_serve_runs_tiles_for_another_computer() {
     };
     let onnx = dir.join("model.onnx");
     std::fs::write(&onnx, lightcraft_denoise::synthetic::unet_onnx(64, 8, 2, 7)).unwrap();
-    std::fs::write(dir.join("denoise-model.json"), serde_json::to_vec(&manifest).unwrap()).unwrap();
+    std::fs::write(
+        dir.join("denoise-model.json"),
+        serde_json::to_vec(&manifest).unwrap(),
+    )
+    .unwrap();
     std::fs::write(models.join("settings.json"), r#"{"model": "synthetic"}"#).unwrap();
     let sha = lightcraft_denoise::hash::sha256_file(&onnx).unwrap();
 
     // without its token the server doesn't start
-    let o = Command::new(BIN).args(["denoise-serve", "--models", models.to_str().unwrap(), "--token-env", "LC_TEST_NO_SUCH_VAR"]).output().unwrap();
-    assert!(!o.status.success() && String::from_utf8_lossy(&o.stderr).contains("LC_TEST_NO_SUCH_VAR"));
+    let o = Command::new(BIN)
+        .args([
+            "denoise-serve",
+            "--models",
+            models.to_str().unwrap(),
+            "--token-env",
+            "LC_TEST_NO_SUCH_VAR",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        !o.status.success() && String::from_utf8_lossy(&o.stderr).contains("LC_TEST_NO_SUCH_VAR")
+    );
 
-    let port = std::net::TcpListener::bind("127.0.0.1:0").unwrap().local_addr().unwrap().port();
+    let port = std::net::TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port();
     let addr = format!("127.0.0.1:{port}");
     let token = "cli-test-token-0123456789";
     let mut child = Command::new(BIN)
-        .args(["denoise-serve", "--models", models.to_str().unwrap(), "--listen", &addr, "--run-on", "cpu"])
+        .args([
+            "denoise-serve",
+            "--models",
+            models.to_str().unwrap(),
+            "--listen",
+            &addr,
+            "--run-on",
+            "cpu",
+        ])
         .env("LIGHTCRAFT_DENOISE_TOKEN", token)
         .stderr(Stdio::piped())
         .spawn()
@@ -649,18 +1077,32 @@ fn denoise_serve_runs_tiles_for_another_computer() {
     let mut err = BufReader::new(child.stderr.take().unwrap());
     let mut banner = String::new();
     err.read_line(&mut banner).unwrap();
-    assert!(banner.contains("synthetic 1") && banner.contains(&addr), "{banner}");
+    assert!(
+        banner.contains("synthetic 1") && banner.contains(&addr),
+        "{banner}"
+    );
 
     let remote = Remote::new(&addr, token, &sha, 64);
     let info = remote.hello().unwrap();
     assert!(info.device.starts_with("CPU"), "{info:?}");
     let (input, _) = lightcraft_denoise::runtime::test_tile(64);
     let got = remote.try_run(&input).unwrap().unwrap();
-    let want = lightcraft_denoise::runtime::CpuRunner::load(&onnx, &manifest).unwrap().run(&input).unwrap();
+    let want = lightcraft_denoise::runtime::CpuRunner::load(&onnx, &manifest)
+        .unwrap()
+        .run(&input)
+        .unwrap();
     let scale = want.iter().fold(1e-9f32, |m, v| m.max(v.abs()));
-    let worst = want.iter().zip(&got).fold(0f32, |m, (a, b)| m.max((a - b).abs())) / scale;
+    let worst = want
+        .iter()
+        .zip(&got)
+        .fold(0f32, |m, (a, b)| m.max((a - b).abs()))
+        / scale;
     assert!(worst < 5e-3, "remote vs local: {worst}");
-    assert!(Remote::new(&addr, "a-wrong-token-000000", &sha, 64).hello().is_err());
+    assert!(
+        Remote::new(&addr, "a-wrong-token-000000", &sha, 64)
+            .hello()
+            .is_err()
+    );
     let _ = child.kill();
     let _ = child.wait();
     let _ = std::fs::remove_dir_all(&models);

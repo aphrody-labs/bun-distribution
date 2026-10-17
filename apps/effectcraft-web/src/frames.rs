@@ -95,12 +95,24 @@ pub struct WebFrames;
 impl WebFrames {
     /// Start `n` frame workers; `gpu`: each opens its own WebGPU device where it can.
     pub fn start(n: usize, gpu: bool) -> WebFrames {
-        let on: OnMessage = Closure::new(|index: u32, json: JsValue, bytes: JsValue, error: JsValue| on_message(index, json, bytes, error));
+        let on: OnMessage = Closure::new(
+            |index: u32, json: JsValue, bytes: JsValue, error: JsValue| {
+                on_message(index, json, bytes, error)
+            },
+        );
         STATE.with(|s| {
             let mut s = s.borrow_mut();
             for _ in 0..n {
-                let index = frame_worker_start(&crate::page_url(""), on.as_ref().unchecked_ref(), gpu);
-                s.workers.push(Fw { index, mirror: Mirror::default(), files: HashMap::new(), busy: None, alive: true, gpu: None });
+                let index =
+                    frame_worker_start(&crate::page_url(""), on.as_ref().unchecked_ref(), gpu);
+                s.workers.push(Fw {
+                    index,
+                    mirror: Mirror::default(),
+                    files: HashMap::new(),
+                    busy: None,
+                    alive: true,
+                    gpu: None,
+                });
             }
         });
         HANDLER.with(|h| *h.borrow_mut() = Some(on));
@@ -113,16 +125,28 @@ impl WebFrames {
             let mut s = s.borrow_mut();
             s.next_id += 1;
             let id = s.next_id;
-            let Some(k) = s.workers.iter().position(|w| w.alive && w.busy.is_none()) else { return Err((done, "no idle frame worker".to_string())) };
+            let Some(k) = s.workers.iter().position(|w| w.alive && w.busy.is_none()) else {
+                return Err((done, "no idle frame worker".to_string()));
+            };
             // Footage the worker hasn't got yet.
             let w = &mut s.workers[k];
             for p in footage_files(&job.project) {
-                let Some((d, version)) = crate::files::get_versioned(&p) else { continue };
+                let Some((d, version)) = crate::files::get_versioned(&p) else {
+                    continue;
+                };
                 if w.files.get(&p) == Some(&version) {
                     continue;
                 }
                 let bytes = js_sys::Uint8Array::from(&d[..]);
-                frame_worker_post(w.index, &obj(&[("type", "file".into()), ("path", p.as_str().into()), ("bytes", bytes.into())]), &js_sys::Array::new());
+                frame_worker_post(
+                    w.index,
+                    &obj(&[
+                        ("type", "file".into()),
+                        ("path", p.as_str().into()),
+                        ("bytes", bytes.into()),
+                    ]),
+                    &js_sys::Array::new(),
+                );
                 w.files.insert(p, version);
             }
             let sync = w.mirror.sync(job.revision, &job.project);
@@ -131,16 +155,35 @@ impl WebFrames {
             if let Some(m) = sync {
                 let t = serde_json::to_string(&m).unwrap_or_default();
                 sent = t.len() as u64;
-                frame_worker_post(index, &obj(&[("type", "frame".into()), ("json", t.into())]), &js_sys::Array::new());
+                frame_worker_post(
+                    index,
+                    &obj(&[("type", "frame".into()), ("json", t.into())]),
+                    &js_sys::Array::new(),
+                );
             }
             let disk = job.disk_key.map(|k| format!("{k:032x}"));
             // Layer buffers from the disk cache: what to read before rendering.
             let layers = crate::diskcache::active();
             let prefetch = crate::diskcache::layer_prefetch(64);
-            let req = FrameMsg::Render { id, revision: job.revision, comp: job.comp, time: job.t, opts: Box::new(job.opts), disk, layers, prefetch };
+            let req = FrameMsg::Render {
+                id,
+                revision: job.revision,
+                comp: job.comp,
+                time: job.t,
+                opts: Box::new(job.opts),
+                disk,
+                layers,
+                prefetch,
+            };
             frame_worker_post(
                 index,
-                &obj(&[("type", "frame".into()), ("json", serde_json::to_string(&req).unwrap_or_default().into())]),
+                &obj(&[
+                    ("type", "frame".into()),
+                    (
+                        "json",
+                        serde_json::to_string(&req).unwrap_or_default().into(),
+                    ),
+                ]),
                 &js_sys::Array::new(),
             );
             s.workers[k].busy = Some((id, done));
@@ -166,7 +209,12 @@ impl RemoteFrames for WebFrames {
     }
 
     fn gpu(&self) -> bool {
-        STATE.with(|s| s.borrow().workers.iter().any(|w| w.alive && matches!(w.gpu, Some(Ok(_)))))
+        STATE.with(|s| {
+            s.borrow()
+                .workers
+                .iter()
+                .any(|w| w.alive && matches!(w.gpu, Some(Ok(_))))
+        })
     }
 
     fn disk(&self) -> bool {
@@ -185,7 +233,12 @@ impl RemoteFrames for WebFrames {
                     match crate::diskcache::read(k).await {
                         Some(f) => {
                             STATE.with(|s| s.borrow_mut().disk_hits += 1);
-                            done(Ok(RemoteFrame { width: f.width, height: f.height, rgba: f.rgba, ms: 0.0 }));
+                            done(Ok(RemoteFrame {
+                                width: f.width,
+                                height: f.height,
+                                rgba: f.rgba,
+                                ms: 0.0,
+                            }));
                         }
                         None => WebFrames.render(job, done),
                     }
@@ -207,23 +260,45 @@ fn on_message(index: u32, json: JsValue, bytes: JsValue, error: JsValue) {
         let st = &mut *s;
         let w = st.workers.iter_mut().find(|w| w.index == index)?;
         if let Some(e) = error.as_string() {
-            log::warn!("frame worker {index}: {e}; frames render on the page's thread if none is left");
+            log::warn!(
+                "frame worker {index}: {e}; frames render on the page's thread if none is left"
+            );
             w.alive = false;
             return w.busy.take().map(|(_, d)| (d, Err(e)));
         }
         let reply: FrameReply = serde_json::from_str(&json.as_string()?).ok()?;
         match reply {
-            FrameReply::Frame { id, width, height, ms, passes, gpu, layer_misses, layer_hits } => {
+            FrameReply::Frame {
+                id,
+                width,
+                height,
+                ms,
+                passes,
+                gpu,
+                layer_misses,
+                layer_hits,
+            } => {
                 crate::diskcache::note_layers(&layer_misses, &layer_hits);
                 let (_, d) = w.busy.take_if(|b| b.0 == id)?;
-                let rgba = bytes.dyn_into::<js_sys::Uint8Array>().map(|b| b.to_vec()).unwrap_or_default();
+                let rgba = bytes
+                    .dyn_into::<js_sys::Uint8Array>()
+                    .map(|b| b.to_vec())
+                    .unwrap_or_default();
                 st.rendered += 1;
                 st.last_ms = ms;
                 if gpu {
                     st.gpu_frames += 1;
                     st.last_passes = passes;
                 }
-                Some((d, Ok(RemoteFrame { width, height, rgba, ms })))
+                Some((
+                    d,
+                    Ok(RemoteFrame {
+                        width,
+                        height,
+                        rgba,
+                        ms,
+                    }),
+                ))
             }
             FrameReply::Failed { id, error, .. } => {
                 st.failed += 1;
@@ -244,7 +319,10 @@ fn on_message(index: u32, json: JsValue, bytes: JsValue, error: JsValue) {
             FrameReply::Info { gpu, error } => {
                 match (&gpu, &error) {
                     (Some(g), _) => log::info!("frame worker {index}: GPU {g}"),
-                    (None, e) => log::info!("frame worker {index}: CPU only ({})", e.as_deref().unwrap_or("no GPU")),
+                    (None, e) => log::info!(
+                        "frame worker {index}: CPU only ({})",
+                        e.as_deref().unwrap_or("no GPU")
+                    ),
                 }
                 w.gpu = Some(gpu.ok_or_else(|| error.unwrap_or_default()));
                 None
@@ -263,10 +341,17 @@ pub fn relay_segs(segs: &[effectcraft_engine::offload::SegData]) {
     if segs.is_empty() {
         return;
     }
-    let t = serde_json::to_string(&FrameMsg::Segs { segs: segs.to_vec() }).unwrap_or_default();
+    let t = serde_json::to_string(&FrameMsg::Segs {
+        segs: segs.to_vec(),
+    })
+    .unwrap_or_default();
     STATE.with(|s| {
         for w in s.borrow().workers.iter().filter(|w| w.alive) {
-            frame_worker_post(w.index, &obj(&[("type", "frame".into()), ("json", t.as_str().into())]), &js_sys::Array::new());
+            frame_worker_post(
+                w.index,
+                &obj(&[("type", "frame".into()), ("json", t.as_str().into())]),
+                &js_sys::Array::new(),
+            );
         }
     });
 }
@@ -276,7 +361,11 @@ pub fn purge() {
     let t = serde_json::to_string(&FrameMsg::Purge).unwrap_or_default();
     STATE.with(|s| {
         for w in s.borrow().workers.iter().filter(|w| w.alive) {
-            frame_worker_post(w.index, &obj(&[("type", "frame".into()), ("json", t.as_str().into())]), &js_sys::Array::new());
+            frame_worker_post(
+                w.index,
+                &obj(&[("type", "frame".into()), ("json", t.as_str().into())]),
+                &js_sys::Array::new(),
+            );
         }
     });
 }
@@ -324,10 +413,16 @@ thread_local! {
 /// of channels more than 4 levels apart). Rejects when no worker is idle (try again).
 #[wasm_bindgen(js_name = workerFrameCheck)]
 pub fn worker_frame_check(params: JsValue) -> js_sys::Promise {
-    let get = |k: &str| js_sys::Reflect::get(&params, &k.into()).ok().filter(|v| !v.is_undefined());
+    let get = |k: &str| {
+        js_sys::Reflect::get(&params, &k.into())
+            .ok()
+            .filter(|v| !v.is_undefined())
+    };
     let time = get("time").and_then(|v| v.as_f64());
     let scale = get("scale").and_then(|v| v.as_f64()).unwrap_or(0.5);
-    let backend = get("backend").and_then(|v| v.as_string()).unwrap_or_else(|| "gpu".into());
+    let backend = get("backend")
+        .and_then(|v| v.as_string())
+        .unwrap_or_else(|| "gpu".into());
     js_sys::Promise::new(&mut |resolve, reject| {
         let backend = backend.clone();
         crate::post(move |app| {
@@ -336,7 +431,9 @@ pub fn worker_frame_check(params: JsValue) -> js_sys::Promise {
                 let _ = reject.call1(&JsValue::NULL, &"no active composition".into());
                 return;
             };
-            let t = time.map(effectcraft_engine::time::Tick::from_seconds_f64).unwrap_or_else(|| s.time());
+            let t = time
+                .map(effectcraft_engine::time::Tick::from_seconds_f64)
+                .unwrap_or_else(|| s.time());
             let mut opts = app.frame_opts(comp, scale);
             opts.backend = match backend.as_str() {
                 "cpu" => effectcraft_engine::render::Backend::Cpu,
@@ -347,19 +444,38 @@ pub fn worker_frame_check(params: JsValue) -> js_sys::Promise {
                 let mut r = effectcraft_engine::render::Renderer::new(
                     &s.project,
                     s.footage.as_ref(),
-                    effectcraft_engine::render::RenderOpts { backend: effectcraft_engine::render::Backend::Cpu, ..opts },
+                    effectcraft_engine::render::RenderOpts {
+                        backend: effectcraft_engine::render::Backend::Cpu,
+                        ..opts
+                    },
                 );
                 r.expr = s.expr.as_deref();
                 let img = r.comp_frame(comp, t);
-                (img.width, img.height, effectcraft_engine::remote::rgba8_premultiplied(&img))
+                (
+                    img.width,
+                    img.height,
+                    effectcraft_engine::remote::rgba8_premultiplied(&img),
+                )
             };
             let id = STATE.with(|st| {
                 let mut st = st.borrow_mut();
                 st.next_id += 1;
                 st.next_id
             });
-            CHECKS.with(|c| c.borrow_mut().insert(id, (resolve.clone(), reject.clone(), local, js_sys::Date::now())));
-            let job = RemoteJob { project: s.project.clone(), revision: s.revision, comp, t, opts, disk_key: None };
+            CHECKS.with(|c| {
+                c.borrow_mut().insert(
+                    id,
+                    (resolve.clone(), reject.clone(), local, js_sys::Date::now()),
+                )
+            });
+            let job = RemoteJob {
+                project: s.project.clone(),
+                revision: s.revision,
+                comp,
+                t,
+                opts,
+                disk_key: None,
+            };
             WebFrames.render(
                 job,
                 Box::new(move |r: Result<RemoteFrame, String>| {
@@ -402,7 +518,11 @@ fn post_reply(r: &FrameReply, px: Option<&[u8]>) {
         Some(px) => {
             let buf = js_sys::Uint8Array::from(px).buffer();
             scope.post_message_with_transfer(
-                &obj(&[("type", "frameReply".into()), ("json", t.into()), ("bytes", buf.clone().into())]),
+                &obj(&[
+                    ("type", "frameReply".into()),
+                    ("json", t.into()),
+                    ("bytes", buf.clone().into()),
+                ]),
                 &js_sys::Array::of1(&buf),
             )
         }
@@ -414,8 +534,13 @@ fn post_reply(r: &FrameReply, px: Option<&[u8]>) {
 }
 
 fn new_server() -> FrameServer {
-    let mut s = FrameServer::new(crate::worker::pool(), Some(Arc::new(effectcraft_expr::Expressions)));
-    s.set_layer_store(Some(Arc::new(effectcraft_engine::render::PrefetchStore::default())));
+    let mut s = FrameServer::new(
+        crate::worker::pool(),
+        Some(Arc::new(effectcraft_expr::Expressions)),
+    );
+    s.set_layer_store(Some(Arc::new(
+        effectcraft_engine::render::PrefetchStore::default(),
+    )));
     s
 }
 
@@ -426,18 +551,30 @@ fn new_server() -> FrameServer {
 pub async fn worker_frame_init(gpu: bool) {
     let mut server = new_server();
     let info = if !gpu {
-        FrameReply::Info { gpu: None, error: Some("GPU frame workers are off (?nogpuworkers)".into()) }
+        FrameReply::Info {
+            gpu: None,
+            error: Some("GPU frame workers are off (?nogpuworkers)".into()),
+        }
     } else if !has_web_gpu() {
-        FrameReply::Info { gpu: None, error: Some("no WebGPU in workers".into()) }
+        FrameReply::Info {
+            gpu: None,
+            error: Some("no WebGPU in workers".into()),
+        }
     } else {
         match Gpu::request_deferred().await {
             Ok(g) => {
                 let name = effectcraft_engine::render::Accelerator::name(&g);
                 server.set_accel(Some(Arc::new(g.clone())));
                 GPU.with(|c| *c.borrow_mut() = Some(g));
-                FrameReply::Info { gpu: Some(name), error: None }
+                FrameReply::Info {
+                    gpu: Some(name),
+                    error: None,
+                }
             }
-            Err(e) => FrameReply::Info { gpu: None, error: Some(e) },
+            Err(e) => FrameReply::Info {
+                gpu: None,
+                error: Some(e),
+            },
         }
     };
     SERVER.with(|c| *c.borrow_mut() = Some(server));
@@ -457,7 +594,12 @@ pub async fn worker_frame(json: String) {
         }
     };
     let (disk, layers) = match &msg {
-        FrameMsg::Render { disk, layers, prefetch, .. } => {
+        FrameMsg::Render {
+            disk,
+            layers,
+            prefetch,
+            ..
+        } => {
             if *layers {
                 prefetch_layers(prefetch).await;
             }
@@ -467,17 +609,36 @@ pub async fn worker_frame(json: String) {
     };
     let mut replies = SERVER.with(|c| c.borrow_mut().get_or_insert_with(new_server).handle(msg));
     while SERVER.with(|c| c.borrow().as_ref().is_some_and(|s| s.waiting())) {
-        let Some(g) = GPU.with(|c| c.borrow().clone()) else { break };
+        let Some(g) = GPU.with(|c| c.borrow().clone()) else {
+            break;
+        };
         g.settled().await;
-        replies = SERVER.with(|c| c.borrow_mut().as_mut().map(|s| s.resume()).unwrap_or_default());
+        replies = SERVER.with(|c| {
+            c.borrow_mut()
+                .as_mut()
+                .map(|s| s.resume())
+                .unwrap_or_default()
+        });
     }
     for (r, px) in replies {
         post_reply(&r, px.as_deref());
         if let (FrameReply::Frame { width, height, .. }, Some(px), Some(key)) = (&r, &px, &disk) {
             let entry = effectcraft_engine::render::disk_cache::frame_entry(*width, *height, px);
             let name = format!("{key}.ecc");
-            match JsFuture::from(crate::diskcache::cache_write(&name, js_sys::Uint8Array::from(&entry[..]))).await {
-                Ok(n) => post_reply(&FrameReply::Stored { key: key.clone(), bytes: n.as_f64().unwrap_or(entry.len() as f64) as u64, layer: false }, None),
+            match JsFuture::from(crate::diskcache::cache_write(
+                &name,
+                js_sys::Uint8Array::from(&entry[..]),
+            ))
+            .await
+            {
+                Ok(n) => post_reply(
+                    &FrameReply::Stored {
+                        key: key.clone(),
+                        bytes: n.as_f64().unwrap_or(entry.len() as f64) as u64,
+                        layer: false,
+                    },
+                    None,
+                ),
                 Err(e) => log::warn!("frame worker: disk cache write failed: {e:?}"),
             }
         }
@@ -489,13 +650,19 @@ pub async fn worker_frame(json: String) {
 
 /// Read the layer entries the page named into the server's store (those it lacks).
 async fn prefetch_layers(keys: &[String]) {
-    let Some(store) = SERVER.with(|c| c.borrow().as_ref().and_then(|s| s.layer_store().cloned())) else { return };
+    let Some(store) = SERVER.with(|c| c.borrow().as_ref().and_then(|s| s.layer_store().cloned()))
+    else {
+        return;
+    };
     for k in keys {
-        let Ok(key) = u128::from_str_radix(k, 16) else { continue };
+        let Ok(key) = u128::from_str_radix(k, 16) else {
+            continue;
+        };
         if store.has(key) {
             continue;
         }
-        let name = crate::diskcache::name_of(effectcraft_engine::render::disk_cache::Kind::Layer, key);
+        let name =
+            crate::diskcache::name_of(effectcraft_engine::render::disk_cache::Kind::Layer, key);
         if let Ok(b) = JsFuture::from(crate::diskcache::cache_read(&name)).await
             && let Ok(b) = b.dyn_into::<js_sys::Uint8Array>()
         {
@@ -506,11 +673,27 @@ async fn prefetch_layers(keys: &[String]) {
 
 /// Write the slow layer buffers of the frame just rendered and report them.
 async fn store_layers() {
-    let Some(store) = SERVER.with(|c| c.borrow().as_ref().and_then(|s| s.layer_store().cloned())) else { return };
+    let Some(store) = SERVER.with(|c| c.borrow().as_ref().and_then(|s| s.layer_store().cloned()))
+    else {
+        return;
+    };
     for (key, entry) in store.take_writes() {
-        let name = crate::diskcache::name_of(effectcraft_engine::render::disk_cache::Kind::Layer, key);
-        match JsFuture::from(crate::diskcache::cache_write(&name, js_sys::Uint8Array::from(&entry[..]))).await {
-            Ok(n) => post_reply(&FrameReply::Stored { key: format!("{key:032x}"), bytes: n.as_f64().unwrap_or(entry.len() as f64) as u64, layer: true }, None),
+        let name =
+            crate::diskcache::name_of(effectcraft_engine::render::disk_cache::Kind::Layer, key);
+        match JsFuture::from(crate::diskcache::cache_write(
+            &name,
+            js_sys::Uint8Array::from(&entry[..]),
+        ))
+        .await
+        {
+            Ok(n) => post_reply(
+                &FrameReply::Stored {
+                    key: format!("{key:032x}"),
+                    bytes: n.as_f64().unwrap_or(entry.len() as f64) as u64,
+                    layer: true,
+                },
+                None,
+            ),
             Err(e) => log::warn!("frame worker: layer cache write failed: {e:?}"),
         }
     }

@@ -48,7 +48,7 @@ fn parse(mut args: impl Iterator<Item = OsString>) -> Result<DaemonArgs, String>
             "--role" => {
                 let name = value()?.to_string_lossy().into_owned();
                 role = Some(Role::parse(&name).ok_or_else(|| format!("unknown role `{name}`"))?);
-            },
+            }
             other => return Err(format!("unknown argument `{other}`")),
         }
     }
@@ -72,28 +72,31 @@ pub fn run_if_requested(args: impl IntoIterator<Item = OsString>) -> Option<Exit
             eprintln!("{DAEMON_ARG}: {message}");
             eprintln!("usage: {DAEMON_ARG} --state-root <dir> --role <chat|embed|rerank>");
             return Some(ExitCode::from(2));
-        },
+        }
     };
     // reqwest is built with `rustls-no-provider`: install the process-wide crypto provider before
     // any HTTP client exists (building one without it panics).
     let _ = rustls::crypto::ring::default_provider().install_default();
-    let runtime = match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(error) => {
             eprintln!("{DAEMON_ARG}: cannot start the runtime: {error}");
             return Some(ExitCode::FAILURE);
-        },
+        }
     };
     let dirs = StateDirs::new(args.state_root);
     Some(match runtime.block_on(daemon::run(&dirs, args.role)) {
         Ok(reason) => {
             eprintln!("{DAEMON_ARG}[{}]: exiting ({reason:?})", args.role.as_str());
             ExitCode::SUCCESS
-        },
+        }
         Err(error) => {
             eprintln!("{DAEMON_ARG}[{}]: {error}", args.role.as_str());
             ExitCode::FAILURE
-        },
+        }
     })
 }
 
@@ -120,26 +123,48 @@ mod tests {
             parse(os(&["--state-root", "/tmp/aphrody-state", "--role", "chat"]).into_iter());
         assert_eq!(
             parsed,
-            Ok(DaemonArgs { state_root: PathBuf::from("/tmp/aphrody-state"), role: Role::Chat })
+            Ok(DaemonArgs {
+                state_root: PathBuf::from("/tmp/aphrody-state"),
+                role: Role::Chat
+            })
         );
         // The order of the flags does not matter.
         let parsed = parse(os(&["--role", "rerank", "--state-root", "state"]).into_iter());
         assert_eq!(
             parsed,
-            Ok(DaemonArgs { state_root: PathBuf::from("state"), role: Role::Rerank })
+            Ok(DaemonArgs {
+                state_root: PathBuf::from("state"),
+                role: Role::Rerank
+            })
         );
     }
 
     #[test]
     fn usage_errors_are_reported_not_guessed() {
-        assert!(parse(os(&["--role", "chat"]).into_iter()).unwrap_err().contains("--state-root"));
-        assert!(parse(os(&["--state-root", "x"]).into_iter()).unwrap_err().contains("--role"));
-        assert!(parse(os(&["--state-root"]).into_iter()).unwrap_err().contains("needs a value"));
+        assert!(
+            parse(os(&["--role", "chat"]).into_iter())
+                .unwrap_err()
+                .contains("--state-root")
+        );
+        assert!(
+            parse(os(&["--state-root", "x"]).into_iter())
+                .unwrap_err()
+                .contains("--role")
+        );
+        assert!(
+            parse(os(&["--state-root"]).into_iter())
+                .unwrap_err()
+                .contains("needs a value")
+        );
         assert!(
             parse(os(&["--role", "tts", "--state-root", "x"]).into_iter())
                 .unwrap_err()
                 .contains("unknown role")
         );
-        assert!(parse(os(&["--bogus"]).into_iter()).unwrap_err().contains("unknown argument"));
+        assert!(
+            parse(os(&["--bogus"]).into_iter())
+                .unwrap_err()
+                .contains("unknown argument")
+        );
     }
 }

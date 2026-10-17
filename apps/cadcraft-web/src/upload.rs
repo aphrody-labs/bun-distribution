@@ -27,19 +27,26 @@ pub struct Inbox {
 
 impl Inbox {
     pub fn new(ctx: &egui::Context) -> Self {
-        Inbox { files: Rc::default(), ctx: ctx.clone() }
+        Inbox {
+            files: Rc::default(),
+            ctx: ctx.clone(),
+        }
     }
 
     /// Show the browser's file picker and return at once. A chosen file arrives through
     /// [`Self::drain`]; cancelling the picker does nothing.
     pub fn pick(&self) {
         if let Err(e) = self.show_picker() {
-            self.push(Err(format!("Open: the browser's file picker is not available ({e})")));
+            self.push(Err(format!(
+                "Open: the browser's file picker is not available ({e})"
+            )));
         }
     }
 
     fn show_picker(&self) -> Result<(), String> {
-        let document = web_sys::window().and_then(|w| w.document()).ok_or("no browser document")?;
+        let document = web_sys::window()
+            .and_then(|w| w.document())
+            .ok_or("no browser document")?;
         let body = document.body().ok_or("the page has no body")?;
         if let Some(old) = document.get_element_by_id(INPUT_ID) {
             old.remove();
@@ -52,7 +59,9 @@ impl Inbox {
         input.set_type("file");
         input.set_accept(ACCEPT);
         input.set_id(INPUT_ID);
-        input.set_attribute("style", "display:none").map_err(js_error)?;
+        input
+            .set_attribute("style", "display:none")
+            .map_err(js_error)?;
         let (inbox, chosen) = (self.clone(), input.clone());
         // Called once, when a file was chosen (browsers don't fire `change` on cancel).
         let on_change = wasm_bindgen::closure::Closure::once_into_js(move || {
@@ -82,7 +91,11 @@ impl Inbox {
         let name = file.name();
         // `File.size` is a whole number of bytes; anything else counts as too large.
         let size = file.size();
-        let len = if size.is_finite() && size >= 0.0 { size as u64 } else { u64::MAX };
+        let len = if size.is_finite() && size >= 0.0 {
+            size as u64
+        } else {
+            u64::MAX
+        };
         if let Some(e) = CadApp::open_size_error(&name, len) {
             return self.push(Err(e));
         }

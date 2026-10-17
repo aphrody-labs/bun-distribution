@@ -51,7 +51,9 @@ fn masque_depuis(
             max: teinte_max.unwrap_or(360.0),
             sat: saturation.unwrap_or(0.25),
         }),
-        autre => Err(format!("unknown mask \"{autre}\" (alpha, sombre or teinte)")),
+        autre => Err(format!(
+            "unknown mask \"{autre}\" (alpha, sombre or teinte)"
+        )),
     }
 }
 
@@ -178,7 +180,10 @@ fn mesure_dto(m: &aphrody_identity::pixel::Mesure) -> MesureDto {
             .map(|c| CouleurDto {
                 part_pct: c.part_pct,
                 hex: c.hex.clone(),
-                oklch: format!("oklch({:.4} {:.4} {:.2})", c.oklch[0], c.oklch[1], c.oklch[2]),
+                oklch: format!(
+                    "oklch({:.4} {:.4} {:.2})",
+                    c.oklch[0], c.oklch[1], c.oklch[2]
+                ),
                 teinte_deg: c.hsl[0],
             })
             .collect(),
@@ -192,11 +197,20 @@ fn reglages_depuis(
     masque: Masque,
 ) -> Result<Reglages, String> {
     let boite = match boite {
-        Some(b) if b.len() == 4 => Some(Boite { x0: b[0], y0: b[1], x1: b[2], y1: b[3] }),
+        Some(b) if b.len() == 4 => Some(Boite {
+            x0: b[0],
+            y0: b[1],
+            x1: b[2],
+            y1: b[3],
+        }),
         Some(_) => return Err("the box takes exactly 4 values: x0 y0 x1 y1".into()),
         None => None,
     };
-    let mut r = Reglages { masque, boite, ..Reglages::default() };
+    let mut r = Reglages {
+        masque,
+        boite,
+        ..Reglages::default()
+    };
     if let Some(k) = k {
         r.k = k.max(1) as usize;
     }
@@ -287,8 +301,9 @@ pub fn planche_fichiers(
     let mut images = Vec::with_capacity(chemins.len());
     for chemin in chemins {
         let p = std::path::Path::new(chemin);
-        let nom_sprite =
-            p.file_stem().map_or_else(|| chemin.clone(), |s| s.to_string_lossy().into_owned());
+        let nom_sprite = p
+            .file_stem()
+            .map_or_else(|| chemin.clone(), |s| s.to_string_lossy().into_owned());
         images.push((nom_sprite, charger(chemin)?));
     }
     let (img, feuille) = planche(&images, colonnes.map(|c| c.max(1) as usize), nom).map_err(err)?;
@@ -330,7 +345,10 @@ pub fn pet_frame_png_b64(animation: &str, index: u32) -> Result<String, String> 
         .animation(animation)
         .ok_or_else(|| format!("animation \"{animation}\" is not part of the pet"))?;
     let frame = anim.frames.get(index as usize).ok_or_else(|| {
-        format!("frame {index} is missing: the animation has {}", anim.frames.len())
+        format!(
+            "frame {index} is missing: the animation has {}",
+            anim.frames.len()
+        )
     })?;
     let rgba = pet.extract(frame).map_err(err)?;
     let (w, h) = (frame.atlas_rect.width, frame.atlas_rect.height);
@@ -443,7 +461,9 @@ mod tests {
         let etat = pet_etat().expect("bundled pet loads");
         for animation in &etat.animations {
             let b64 = pet_frame_png_b64(animation, 0).expect("frame 0 extracts");
-            let png = base64::engine::general_purpose::STANDARD.decode(b64).expect("valid base64");
+            let png = base64::engine::general_purpose::STANDARD
+                .decode(b64)
+                .expect("valid base64");
             assert_eq!(&png[..8], PNG_SIGNATURE);
         }
     }

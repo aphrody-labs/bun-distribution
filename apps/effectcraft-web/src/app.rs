@@ -34,8 +34,12 @@ pub(crate) fn set_worker() {
 /// `rel` resolved against the page's URL (`worker.js`, `audio-worklet.js`); `""` = the page's
 /// folder.
 pub fn page_url(rel: &str) -> String {
-    let href = web_sys::window().and_then(|w| w.location().href().ok()).unwrap_or_default();
-    web_sys::Url::new_with_base(if rel.is_empty() { ".//" } else { rel }, &href).map(|u| u.href()).unwrap_or_else(|_| rel.to_string())
+    let href = web_sys::window()
+        .and_then(|w| w.location().href().ok())
+        .unwrap_or_default();
+    web_sys::Url::new_with_base(if rel.is_empty() { ".//" } else { rel }, &href)
+        .map(|u| u.href())
+        .unwrap_or_else(|_| rel.to_string())
 }
 
 thread_local! {
@@ -60,7 +64,9 @@ pub fn repaint() {
 
 /// Open a project or import media from table paths (picked or dropped files).
 pub(crate) fn open_or_import(app: &mut EffectcraftApp, paths: Vec<String>) {
-    let (projects, media): (Vec<String>, Vec<String>) = paths.into_iter().partition(|p| p.to_ascii_lowercase().ends_with(".ecproj"));
+    let (projects, media): (Vec<String>, Vec<String>) = paths
+        .into_iter()
+        .partition(|p| p.to_ascii_lowercase().ends_with(".ecproj"));
     if let Some(p) = projects.last()
         && let Err(e) = app.session.execute("file.open", json!({"path": p}))
     {
@@ -70,7 +76,11 @@ pub(crate) fn open_or_import(app: &mut EffectcraftApp, paths: Vec<String>) {
         match app.session.execute("file.import", json!({"paths": media})) {
             Ok(r) => {
                 if let Some(errs) = r["errors"].as_array().filter(|e| !e.is_empty()) {
-                    app.ui.status = errs.iter().filter_map(|e| e.as_str()).collect::<Vec<_>>().join("; ");
+                    app.ui.status = errs
+                        .iter()
+                        .filter_map(|e| e.as_str())
+                        .collect::<Vec<_>>()
+                        .join("; ");
                 }
             }
             Err(e) => app.ui.status = e.to_string(),
@@ -96,7 +106,13 @@ impl eframe::App for WebApp {
             f(&mut self.app);
         }
         // Files dropped on the page: read them, then open/import.
-        let dropped: Vec<web_sys::File> = ctx.input(|i| i.raw.dropped_files.iter().filter_map(|f| f.web_file().cloned()).collect());
+        let dropped: Vec<web_sys::File> = ctx.input(|i| {
+            i.raw
+                .dropped_files
+                .iter()
+                .filter_map(|f| f.web_file().cloned())
+                .collect()
+        });
         if !dropped.is_empty() {
             files::read_files(dropped, |paths| post(move |app| open_or_import(app, paths)));
         }
@@ -108,7 +124,10 @@ impl eframe::App for WebApp {
         if self.persist {
             persist::snapshot(&self.app.session, ctx.input(|i| i.time), 1.0);
         }
-        api::set_info("gpu", json!({"compositor": self.app.gpu_adapter(), "viewerOnGpu": self.app.viewer_on_gpu()}));
+        api::set_info(
+            "gpu",
+            json!({"compositor": self.app.gpu_adapter(), "viewerOnGpu": self.app.viewer_on_gpu()}),
+        );
         api::set_info("frameWorkers", frames::stats());
         // Settings ▸ Disk ▸ Disk Cache (frames in the Origin Private File System).
         let d = &self.app.session.prefs.disk;
@@ -122,7 +141,9 @@ impl eframe::App for WebApp {
 }
 
 fn query() -> Option<web_sys::UrlSearchParams> {
-    web_sys::window().and_then(|w| w.location().search().ok()).and_then(|s| web_sys::UrlSearchParams::new_with_str(&s).ok())
+    web_sys::window()
+        .and_then(|w| w.location().search().ok())
+        .and_then(|s| web_sys::UrlSearchParams::new_with_str(&s).ok())
 }
 
 fn query_flag(name: &str) -> bool {
@@ -145,7 +166,9 @@ pub fn session() -> Session {
         expr: Some(Arc::new(effectcraft_expr::Expressions)),
         expr_check: Some(effectcraft_expr::check_syntax),
         script: Some(effectcraft_host::script::runner),
-        exporter: Some(Arc::new(effectcraft_host::FileExporter { sink: Some(files::export_sink()) })),
+        exporter: Some(Arc::new(effectcraft_host::FileExporter {
+            sink: Some(files::export_sink()),
+        })),
         config: Some(Arc::new(persist::config())),
         offload: (!query_flag("noworkers")).then(|| {
             // Job workers render on a WebGPU device of their own (`?nogpuworkers`: their CPU).
@@ -161,21 +184,35 @@ pub fn session() -> Session {
 /// Browser file pickers in place of the desktop's file dialogs.
 fn install_hooks(app: &mut EffectcraftApp) {
     app.hooks.pick_files = Some(Box::new(|exts: &[&str]| {
-        let accept = exts.iter().map(|e| format!(".{e}")).collect::<Vec<_>>().join(",");
-        if let Err(e) = files::pick(&accept, true, |paths| post(move |app| open_or_import(app, paths))) {
+        let accept = exts
+            .iter()
+            .map(|e| format!(".{e}"))
+            .collect::<Vec<_>>()
+            .join(",");
+        if let Err(e) = files::pick(&accept, true, |paths| {
+            post(move |app| open_or_import(app, paths))
+        }) {
             log::warn!("file picker: {e:?}");
         }
         // the import happens when the browser hands over the files
         Vec::new()
     }));
     app.hooks.pick_open_project = Some(Box::new(|| {
-        if let Err(e) = files::pick(".ecproj", false, |paths| post(move |app| open_or_import(app, paths))) {
+        if let Err(e) = files::pick(".ecproj", false, |paths| {
+            post(move |app| open_or_import(app, paths))
+        }) {
             log::warn!("file picker: {e:?}");
         }
         None
     }));
     // Saving downloads the file: the chosen name is all a "save dialog" needs.
-    app.hooks.pick_save = Some(Box::new(|name: &str| Some(files::path_for(if name.is_empty() { "Untitled Project.ecproj" } else { name }))));
+    app.hooks.pick_save = Some(Box::new(|name: &str| {
+        Some(files::path_for(if name.is_empty() {
+            "Untitled Project.ecproj"
+        } else {
+            name
+        }))
+    }));
     app.hooks.audio_device = Some(Box::new(audio::open));
     app.hooks.audio_devices = Some(Box::new(|| vec!["Browser default output".into()]));
 }
@@ -184,8 +221,13 @@ fn install_hooks(app: &mut EffectcraftApp) {
 #[wasm_bindgen]
 pub async fn start(canvas_id: String) -> Result<(), JsValue> {
     eframe::WebLogger::init(log::LevelFilter::Info).ok();
-    let doc = web_sys::window().and_then(|w| w.document()).ok_or("no document")?;
-    let canvas: web_sys::HtmlCanvasElement = doc.get_element_by_id(&canvas_id).ok_or("no canvas")?.dyn_into()?;
+    let doc = web_sys::window()
+        .and_then(|w| w.document())
+        .ok_or("no document")?;
+    let canvas: web_sys::HtmlCanvasElement = doc
+        .get_element_by_id(&canvas_id)
+        .ok_or("no canvas")?
+        .dyn_into()?;
     let empty = query_flag("empty");
     let home = query_flag("home");
     // Browser storage: settings, recent projects, imported media, saved projects, auto-saves and
@@ -198,7 +240,10 @@ pub async fn start(canvas_id: String) -> Result<(), JsValue> {
             0
         }
     };
-    api::set_info("storage", json!({"backend": persist::backend(), "entries": stored, "loadMs": js_sys::Date::now() - t0}));
+    api::set_info(
+        "storage",
+        json!({"backend": persist::backend(), "entries": stored, "loadMs": js_sys::Date::now() - t0}),
+    );
     audio::install_unlock();
     browse::restore();
     diskcache::init();
@@ -212,7 +257,8 @@ pub async fn start(canvas_id: String) -> Result<(), JsValue> {
                 CTX.with(|c| *c.borrow_mut() = Some(cc.egui_ctx.clone()));
                 // The page owns this shared presentation device; worker devices retain their
                 // separate owned-device handlers. No browser error-scope future is blocked on.
-                let gpu_failures = effectcraft_ui_egui::gpu_failure::GpuFailureBridge::new(&cc.egui_ctx);
+                let gpu_failures =
+                    effectcraft_ui_egui::gpu_failure::GpuFailureBridge::new(&cc.egui_ctx);
                 if let Some(rs) = &cc.wgpu_render_state {
                     let errors = gpu_failures.clone();
                     rs.device.on_uncaptured_error(Arc::new(move |error| {
@@ -253,16 +299,33 @@ pub async fn start(canvas_id: String) -> Result<(), JsValue> {
                 // Viewer frames render in frame workers (`?frameworkers=N`, 0 or `?noworkers`:
                 // on the page's thread), each on its own WebGPU device where the browser has
                 // WebGPU in workers (`?nogpuworkers`: their CPU).
-                let n = if query_flag("noworkers") { 0 } else { query_value("frameworkers").and_then(|v| v.parse().ok()).unwrap_or(2usize).min(8) };
+                let n = if query_flag("noworkers") {
+                    0
+                } else {
+                    query_value("frameworkers")
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or(2usize)
+                        .min(8)
+                };
                 if n > 0 {
-                    app.frames.set_remote(Some(Arc::new(frames::WebFrames::start(n, !query_flag("nogpuworkers")))));
+                    app.frames
+                        .set_remote(Some(Arc::new(frames::WebFrames::start(
+                            n,
+                            !query_flag("nogpuworkers"),
+                        ))));
                 }
                 let (tx, rx) = std::sync::mpsc::channel();
                 api::set_sender(tx);
                 app = app.with_control(rx);
-                let backend = cc.wgpu_render_state.as_ref().map(|rs| format!("{:?}", rs.adapter.get_info().backend));
+                let backend = cc
+                    .wgpu_render_state
+                    .as_ref()
+                    .map(|rs| format!("{:?}", rs.adapter.get_info().backend));
                 api::set_info("backend", json!(backend));
-                Ok(Box::new(WebApp { app, persist: !empty }))
+                Ok(Box::new(WebApp {
+                    app,
+                    persist: !empty,
+                }))
             }),
         )
         .await?;

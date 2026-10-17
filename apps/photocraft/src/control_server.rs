@@ -9,7 +9,8 @@ use std::time::Instant;
 
 use photocraft_automation::budgets::write_reply;
 use photocraft_automation::security::{
-    ConnectionLimiter, LineRead, MAX_CONNECTIONS, MAX_REQUEST_BYTES, authentication_reply, configure_stream, read_bounded_line, repeat_auth_reply,
+    ConnectionLimiter, LineRead, MAX_CONNECTIONS, MAX_REQUEST_BYTES, authentication_reply,
+    configure_stream, read_bounded_line, repeat_auth_reply,
 };
 use photocraft_ui_egui::ControlRequest;
 use photocraft_ui_egui::control::REPLY_DEADLINE;
@@ -31,7 +32,11 @@ pub fn start(port: u16, token: String, ctx: egui::Context) -> Receiver<ControlRe
         for mut stream in listener.incoming().flatten() {
             let Some(permit) = limiter.try_acquire() else {
                 let _ = configure_stream(&stream);
-                let _ = writeln!(stream, "{}", json!({"id": null, "ok": false, "error": "connection limit reached"}));
+                let _ = writeln!(
+                    stream,
+                    "{}",
+                    json!({"id": null, "ok": false, "error": "connection limit reached"})
+                );
                 continue;
             };
             let tx = tx.clone();
@@ -88,7 +93,11 @@ fn serve(stream: TcpStream, token: &str, tx: Sender<ControlRequest>, ctx: egui::
         let reply = match serde_json::from_str::<Value>(&line) {
             Ok(msg) => {
                 let id = msg.get("id").cloned().unwrap_or(Value::Null);
-                let method = msg.get("method").and_then(Value::as_str).unwrap_or("").to_string();
+                let method = msg
+                    .get("method")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_string();
                 let params = msg.get("params").cloned().unwrap_or(json!({}));
                 let deadline = Instant::now() + REPLY_DEADLINE;
                 let (mut req, rrx) = ControlRequest::new(method, params);
@@ -98,8 +107,9 @@ fn serve(stream: TcpStream, token: &str, tx: Sender<ControlRequest>, ctx: egui::
                     break;
                 }
                 ctx.request_repaint();
-                let mut r =
-                    rrx.recv_timeout(deadline.saturating_duration_since(Instant::now())).unwrap_or_else(|_| json!({"ok": false, "error": dispatch.give_up()}));
+                let mut r = rrx
+                    .recv_timeout(deadline.saturating_duration_since(Instant::now()))
+                    .unwrap_or_else(|_| json!({"ok": false, "error": dispatch.give_up()}));
                 if let Some(o) = r.as_object_mut() {
                     o.insert("id".into(), id);
                 }
@@ -136,16 +146,34 @@ mod tests {
         let handler = std::thread::spawn(move || {
             let first = rx.recv_timeout(Duration::from_secs(5)).unwrap();
             assert_eq!(first.method, "test.large");
-            assert!(first.deadline.is_some_and(|deadline| deadline > std::time::Instant::now()), "native requests carry their reply deadline");
-            first.reply.send(json!({"ok": true, "result": "x".repeat(MAX_RESPONSE_BYTES)})).unwrap();
+            assert!(
+                first
+                    .deadline
+                    .is_some_and(|deadline| deadline > std::time::Instant::now()),
+                "native requests carry their reply deadline"
+            );
+            first
+                .reply
+                .send(json!({"ok": true, "result": "x".repeat(MAX_RESPONSE_BYTES)}))
+                .unwrap();
             let second = rx.recv_timeout(Duration::from_secs(5)).unwrap();
             assert_eq!(second.method, "test.small");
-            second.reply.send(json!({"ok": true, "result": "still serving"})).unwrap();
+            second
+                .reply
+                .send(json!({"ok": true, "result": "still serving"}))
+                .unwrap();
         });
         let mut stream = TcpStream::connect(addr).unwrap();
-        stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .unwrap();
         let mut reader = BufReader::new(stream.try_clone().unwrap());
-        writeln!(stream, "{}", json!({"id": 1, "method": "auth", "params": {"token": TOKEN}})).unwrap();
+        writeln!(
+            stream,
+            "{}",
+            json!({"id": 1, "method": "auth", "params": {"token": TOKEN}})
+        )
+        .unwrap();
         let mut line = String::new();
         reader.read_line(&mut line).unwrap();
         assert_eq!(serde_json::from_str::<Value>(&line).unwrap()["ok"], true);
@@ -155,7 +183,12 @@ mod tests {
         let rejected: Value = serde_json::from_str(&line).unwrap();
         assert_eq!(rejected["id"], 2);
         assert_eq!(rejected["ok"], false);
-        assert!(rejected["error"].as_str().unwrap().contains("operation may have completed"));
+        assert!(
+            rejected["error"]
+                .as_str()
+                .unwrap()
+                .contains("operation may have completed")
+        );
         writeln!(stream, "{}", json!({"id": 3, "method": "test.small"})).unwrap();
         line.clear();
         reader.read_line(&mut line).unwrap();
@@ -181,12 +214,21 @@ mod tests {
         let handler = std::thread::spawn(move || {
             let req = rx.recv_timeout(Duration::from_secs(5)).unwrap();
             assert_eq!(req.method, "test.after");
-            req.reply.send(json!({"ok": true, "result": "still serving"})).unwrap();
+            req.reply
+                .send(json!({"ok": true, "result": "still serving"}))
+                .unwrap();
         });
         let mut stream = TcpStream::connect(addr).unwrap();
-        stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .unwrap();
         let mut reader = BufReader::new(stream.try_clone().unwrap());
-        writeln!(stream, "{}", json!({"id": "auth", "method": "auth", "params": {"token": TOKEN}})).unwrap();
+        writeln!(
+            stream,
+            "{}",
+            json!({"id": "auth", "method": "auth", "params": {"token": TOKEN}})
+        )
+        .unwrap();
         let mut line = String::new();
         reader.read_line(&mut line).unwrap();
         assert_eq!(serde_json::from_str::<Value>(&line).unwrap()["ok"], true);
@@ -195,9 +237,18 @@ mod tests {
         reader.read_line(&mut line).unwrap();
         let bad: Value = serde_json::from_str(&line).unwrap();
         let bad = bad.as_object().unwrap();
-        assert_eq!(bad.get("id"), Some(&Value::Null), "bad JSON reply must carry `id: null`: {line}");
+        assert_eq!(
+            bad.get("id"),
+            Some(&Value::Null),
+            "bad JSON reply must carry `id: null`: {line}"
+        );
         assert_eq!(bad.get("ok"), Some(&Value::Bool(false)));
-        assert!(bad.get("error").and_then(Value::as_str).unwrap().starts_with("bad JSON: "));
+        assert!(
+            bad.get("error")
+                .and_then(Value::as_str)
+                .unwrap()
+                .starts_with("bad JSON: ")
+        );
         writeln!(stream, "{}", json!({"id": 7, "method": "test.after"})).unwrap();
         line.clear();
         reader.read_line(&mut line).unwrap();
@@ -222,15 +273,27 @@ mod tests {
         });
         let handler = std::thread::spawn(move || {
             let req = rx.recv_timeout(Duration::from_secs(5)).unwrap();
-            assert_eq!(req.method, "test.after", "a repeat auth must not reach the UI dispatcher");
-            req.reply.send(json!({"ok": true, "result": "still serving"})).unwrap();
+            assert_eq!(
+                req.method, "test.after",
+                "a repeat auth must not reach the UI dispatcher"
+            );
+            req.reply
+                .send(json!({"ok": true, "result": "still serving"}))
+                .unwrap();
         });
         let mut stream = TcpStream::connect(addr).unwrap();
-        stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .unwrap();
         let mut reader = BufReader::new(stream.try_clone().unwrap());
         let mut line = String::new();
         for id in ["auth", "again"] {
-            writeln!(stream, "{}", json!({"id": id, "method": "auth", "params": {"token": TOKEN}})).unwrap();
+            writeln!(
+                stream,
+                "{}",
+                json!({"id": id, "method": "auth", "params": {"token": TOKEN}})
+            )
+            .unwrap();
             line.clear();
             reader.read_line(&mut line).unwrap();
         }

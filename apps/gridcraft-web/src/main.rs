@@ -12,7 +12,14 @@
 //! `?host=parent` (inside an `<iframe>`) talks to a same-origin parent page instead: it sends the
 //! workbook to open and stores what GridCraft saves (`host`), and `&author=` names the user for
 //! notes and comments.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 #[cfg(target_arch = "wasm32")]
 mod host;
@@ -26,5 +33,7 @@ fn main() {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
-    eprintln!("gridcraft-web only runs in the browser: build it with `trunk build --release` in apps/gridcraft-web");
+    eprintln!(
+        "gridcraft-web only runs in the browser: build it with `trunk build --release` in apps/gridcraft-web"
+    );
 }

@@ -44,28 +44,40 @@ pub fn from_js(v: &JsValue) -> Value {
     if v.is_undefined() || v.is_null() {
         return Value::Null;
     }
-    js_sys::JSON::stringify(v).ok().and_then(|s| s.as_string()).and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(Value::Null)
+    js_sys::JSON::stringify(v)
+        .ok()
+        .and_then(|s| s.as_string())
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or(Value::Null)
 }
 
 /// Resolve the promises of answered control requests (called every frame).
 pub fn poll_replies() {
     WAITING.with(|w| {
-        w.borrow_mut().retain(|(rx, resolve, reject)| match rx.try_recv() {
-            Ok(v) => {
-                if v.get("ok").and_then(Value::as_bool) == Some(true) {
-                    let _ = resolve.call1(&JsValue::NULL, &to_js(v.get("result").unwrap_or(&Value::Null)));
-                } else {
-                    let msg = v.get("error").and_then(Value::as_str).unwrap_or("error").to_string();
-                    let _ = reject.call1(&JsValue::NULL, &js_sys::Error::new(&msg));
+        w.borrow_mut()
+            .retain(|(rx, resolve, reject)| match rx.try_recv() {
+                Ok(v) => {
+                    if v.get("ok").and_then(Value::as_bool) == Some(true) {
+                        let _ = resolve.call1(
+                            &JsValue::NULL,
+                            &to_js(v.get("result").unwrap_or(&Value::Null)),
+                        );
+                    } else {
+                        let msg = v
+                            .get("error")
+                            .and_then(Value::as_str)
+                            .unwrap_or("error")
+                            .to_string();
+                        let _ = reject.call1(&JsValue::NULL, &js_sys::Error::new(&msg));
+                    }
+                    false
                 }
-                false
-            }
-            Err(TryRecvError::Empty) => true,
-            Err(TryRecvError::Disconnected) => {
-                let _ = reject.call1(&JsValue::NULL, &js_sys::Error::new("request dropped"));
-                false
-            }
-        });
+                Err(TryRecvError::Empty) => true,
+                Err(TryRecvError::Disconnected) => {
+                    let _ = reject.call1(&JsValue::NULL, &js_sys::Error::new("request dropped"));
+                    false
+                }
+            });
     });
 }
 
@@ -74,11 +86,19 @@ pub fn request(method: &str, params: Value) -> js_sys::Promise {
     let method = method.to_string();
     let p = js_sys::Promise::new(&mut |resolve, reject| {
         let (req, rx) = ControlRequest::new(method.clone(), params.clone());
-        let sent = TX.with(|t| t.borrow().as_ref().map(|tx| tx.send(req).is_ok()).unwrap_or(false));
+        let sent = TX.with(|t| {
+            t.borrow()
+                .as_ref()
+                .map(|tx| tx.send(req).is_ok())
+                .unwrap_or(false)
+        });
         if sent {
             WAITING.with(|w| w.borrow_mut().push((rx, resolve, reject)));
         } else {
-            let _ = reject.call1(&JsValue::NULL, &js_sys::Error::new("FilmCraft is not running yet"));
+            let _ = reject.call1(
+                &JsValue::NULL,
+                &js_sys::Error::new("FilmCraft is not running yet"),
+            );
         }
     });
     crate::repaint();
@@ -97,7 +117,10 @@ fn files_of(v: &JsValue) -> Vec<web_sys::File> {
         return (0..list.length()).filter_map(|i| list.get(i)).collect();
     }
     if js_sys::Array::is_array(v) {
-        return js_sys::Array::from(v).iter().filter_map(|x| x.dyn_into::<web_sys::File>().ok()).collect();
+        return js_sys::Array::from(v)
+            .iter()
+            .filter_map(|x| x.dyn_into::<web_sys::File>().ok())
+            .collect();
     }
     Vec::new()
 }
@@ -110,7 +133,15 @@ pub async fn fetch_file(url: &str, name: Option<String>) -> Result<web_sys::File
         return Err(format!("{url}: HTTP {}", resp.status()).into());
     }
     let blob: web_sys::Blob = JsFuture::from(resp.blob()?).await?.dyn_into()?;
-    let name = name.unwrap_or_else(|| url.split(['?', '#']).next().unwrap_or(url).rsplit('/').next().unwrap_or("media").to_string());
+    let name = name.unwrap_or_else(|| {
+        url.split(['?', '#'])
+            .next()
+            .unwrap_or(url)
+            .rsplit('/')
+            .next()
+            .unwrap_or("media")
+            .to_string()
+    });
     let parts = js_sys::Array::of1(&blob);
     web_sys::File::new_with_blob_sequence(&parts, &name)
 }
@@ -121,23 +152,40 @@ pub fn install() -> Result<(), JsValue> {
     set_fn(
         &obj,
         "request",
-        Closure::<dyn Fn(String, JsValue) -> js_sys::Promise>::new(|method: String, params: JsValue| {
-            let p = from_js(&params);
-            request(&method, if p.is_null() { json!({}) } else { p })
-        })
+        Closure::<dyn Fn(String, JsValue) -> js_sys::Promise>::new(
+            |method: String, params: JsValue| {
+                let p = from_js(&params);
+                request(&method, if p.is_null() { json!({}) } else { p })
+            },
+        )
         .into_js_value(),
     )?;
     set_fn(
         &obj,
         "execute",
-        Closure::<dyn Fn(String, JsValue) -> js_sys::Promise>::new(|command: String, params: JsValue| {
-            let p = from_js(&params);
-            request("engine.execute", json!({"command": command, "params": if p.is_null() { json!({}) } else { p }}))
-        })
+        Closure::<dyn Fn(String, JsValue) -> js_sys::Promise>::new(
+            |command: String, params: JsValue| {
+                let p = from_js(&params);
+                request(
+                    "engine.execute",
+                    json!({"command": command, "params": if p.is_null() { json!({}) } else { p }}),
+                )
+            },
+        )
         .into_js_value(),
     )?;
-    set_fn(&obj, "commands", Closure::<dyn Fn() -> js_sys::Promise>::new(|| request("engine.commands", json!({}))).into_js_value())?;
-    set_fn(&obj, "inspect", Closure::<dyn Fn() -> js_sys::Promise>::new(|| request("ui.inspect", json!({}))).into_js_value())?;
+    set_fn(
+        &obj,
+        "commands",
+        Closure::<dyn Fn() -> js_sys::Promise>::new(|| request("engine.commands", json!({})))
+            .into_js_value(),
+    )?;
+    set_fn(
+        &obj,
+        "inspect",
+        Closure::<dyn Fn() -> js_sys::Promise>::new(|| request("ui.inspect", json!({})))
+            .into_js_value(),
+    )?;
     set_fn(
         &obj,
         "screenshot",
@@ -162,7 +210,12 @@ pub fn install() -> Result<(), JsValue> {
         &obj,
         "files",
         Closure::<dyn Fn() -> JsValue>::new(|| {
-            to_js(&Value::Array(crate::fs::list().into_iter().map(|(p, n, k)| json!({"path": p, "size": n, "kind": k})).collect()))
+            to_js(&Value::Array(
+                crate::fs::list()
+                    .into_iter()
+                    .map(|(p, n, k)| json!({"path": p, "size": n, "kind": k}))
+                    .collect(),
+            ))
         })
         .into_js_value(),
     )?;
@@ -171,7 +224,8 @@ pub fn install() -> Result<(), JsValue> {
         "readFile",
         Closure::<dyn Fn(String) -> js_sys::Promise>::new(|path: String| {
             future_to_promise(caught(async move {
-                let blob = crate::fs::blob(&path).ok_or_else(|| JsValue::from_str(&format!("{path}: not found")))?;
+                let blob = crate::fs::blob(&path)
+                    .ok_or_else(|| JsValue::from_str(&format!("{path}: not found")))?;
                 let buf = JsFuture::from(blob.array_buffer()).await?;
                 Ok(js_sys::Uint8Array::new(&buf).into())
             }))
@@ -205,9 +259,15 @@ pub fn install() -> Result<(), JsValue> {
             future_to_promise(caught(async move {
                 let file = match src.as_string() {
                     Some(url) => fetch_file(&url, None).await?,
-                    None => files_of(&src).into_iter().next().ok_or("need a File or URL")?,
+                    None => files_of(&src)
+                        .into_iter()
+                        .next()
+                        .ok_or("need a File or URL")?,
                 };
-                crate::import::open_project_file(file).await.map(|v| to_js(&v)).map_err(|e| JsValue::from(js_sys::Error::new(&e)))
+                crate::import::open_project_file(file)
+                    .await
+                    .map(|v| to_js(&v))
+                    .map_err(|e| JsValue::from(js_sys::Error::new(&e)))
             }))
         })
         .into_js_value(),
@@ -218,7 +278,9 @@ pub fn install() -> Result<(), JsValue> {
 }
 
 /// `f`, rejecting with an [`as_error`] `Error`.
-async fn caught(f: impl std::future::Future<Output = Result<JsValue, JsValue>>) -> Result<JsValue, JsValue> {
+async fn caught(
+    f: impl std::future::Future<Output = Result<JsValue, JsValue>>,
+) -> Result<JsValue, JsValue> {
     f.await.map_err(as_error)
 }
 

@@ -13,7 +13,14 @@
 //! lightcraft-cli calibrate [--max N] [--out DIR] FOLDERS/FILES…
 //! ```
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod alloc_release;
 
@@ -142,10 +149,14 @@ fn main() -> ExitCode {
     // (LIGHTCRAFT_DHAT_FILE, default dhat-heap.json).
     #[cfg(feature = "dhat-heap")]
     let _heap = {
-        let file = std::env::var("LIGHTCRAFT_DHAT_FILE").unwrap_or_else(|_| "dhat-heap.json".into());
+        let file =
+            std::env::var("LIGHTCRAFT_DHAT_FILE").unwrap_or_else(|_| "dhat-heap.json".into());
         lightcraft_engine::memory::set_heap_stats(|| {
             let s = dhat::HeapStats::get();
-            lightcraft_engine::memory::HeapUsage { current: s.curr_bytes as u64, peak: s.max_bytes as u64 }
+            lightcraft_engine::memory::HeapUsage {
+                current: s.curr_bytes as u64,
+                peak: s.max_bytes as u64,
+            }
         });
         dhat::Profiler::builder().file_name(file).build()
     };
@@ -186,15 +197,22 @@ fn main() -> ExitCode {
 
 /// Raw files below `path` (or `path` itself), skipping hidden and NAS metadata folders.
 fn raw_files(path: &Path, out: &mut Vec<std::path::PathBuf>, depth: usize) {
-    let is_raw =
-        |p: &Path| p.extension().and_then(|e| e.to_str()).is_some_and(|e| ["arw", "nef", "nrw", "raf"].iter().any(|x| e.eq_ignore_ascii_case(x)));
+    let is_raw = |p: &Path| {
+        p.extension().and_then(|e| e.to_str()).is_some_and(|e| {
+            ["arw", "nef", "nrw", "raf"]
+                .iter()
+                .any(|x| e.eq_ignore_ascii_case(x))
+        })
+    };
     if path.is_file() {
         if is_raw(path) {
             out.push(path.to_path_buf());
         }
         return;
     }
-    let Ok(entries) = std::fs::read_dir(path) else { return };
+    let Ok(entries) = std::fs::read_dir(path) else {
+        return;
+    };
     if depth > 32 {
         return;
     }
@@ -214,7 +232,11 @@ fn calibrate(args: &[String]) -> Result<(), String> {
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
-            "--max" => max = take_value(args, &mut i, "--max")?.parse().map_err(|_| "--max needs a number".to_string())?,
+            "--max" => {
+                max = take_value(args, &mut i, "--max")?
+                    .parse()
+                    .map_err(|_| "--max needs a number".to_string())?
+            }
             "--out" => out = Some(take_value(args, &mut i, "--out")?.into()),
             a if a.starts_with("--") => return Err(format!("unknown option `{a}`")),
             f => inputs.push(f.to_string()),
@@ -233,11 +255,17 @@ fn calibrate(args: &[String]) -> Result<(), String> {
     let found = files.len();
     if max > 0 && files.len() > max {
         // spread over all folders (dates, scenes) rather than the first N
-        files = (0..max).filter_map(|k| files.get(k * found / max).cloned()).collect();
+        files = (0..max)
+            .filter_map(|k| files.get(k * found / max).cloned())
+            .collect();
     }
     eprintln!("calibrate: {} of {found} raw files", files.len());
-    let dir = out.or_else(lightcraft_engine::camera_profiles::dir).ok_or("no profiles folder: pass --out DIR")?;
-    let workers = std::thread::available_parallelism().map_or(4, |n| n.get()).clamp(1, 6);
+    let dir = out
+        .or_else(lightcraft_engine::camera_profiles::dir)
+        .ok_or("no profiles folder: pass --out DIR")?;
+    let workers = std::thread::available_parallelism()
+        .map_or(4, |n| n.get())
+        .clamp(1, 6);
     let next = std::sync::atomic::AtomicUsize::new(0);
     let done = std::sync::atomic::AtomicUsize::new(0);
     let pools: Vec<lightcraft_engine::camera_profiles::Pool> = std::thread::scope(|scope| {
@@ -245,12 +273,22 @@ fn calibrate(args: &[String]) -> Result<(), String> {
             .map(|_| {
                 scope.spawn(|| {
                     let mut pool = lightcraft_engine::camera_profiles::Pool::default();
-                    while let Some(path) = files.get(next.fetch_add(1, std::sync::atomic::Ordering::Relaxed)) {
-                        let result = std::fs::read(path).map_err(|e| e.to_string()).and_then(|bytes| pool.add(&bytes));
+                    while let Some(path) =
+                        files.get(next.fetch_add(1, std::sync::atomic::Ordering::Relaxed))
+                    {
+                        let result = std::fs::read(path)
+                            .map_err(|e| e.to_string())
+                            .and_then(|bytes| pool.add(&bytes));
                         let n = done.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
                         match result {
-                            Ok(Some(model)) => eprintln!("[{n}/{}] {} ({model})", files.len(), path.display()),
-                            Ok(None) => eprintln!("[{n}/{}] {}: skipped (no usable camera JPEG or colour)", files.len(), path.display()),
+                            Ok(Some(model)) => {
+                                eprintln!("[{n}/{}] {} ({model})", files.len(), path.display())
+                            }
+                            Ok(None) => eprintln!(
+                                "[{n}/{}] {}: skipped (no usable camera JPEG or colour)",
+                                files.len(),
+                                path.display()
+                            ),
                             Err(e) => eprintln!("[{n}/{}] {}: {e}", files.len(), path.display()),
                         }
                     }
@@ -308,9 +346,16 @@ fn mcp(args: &[String]) -> Result<(), String> {
                 // `--control 7980` example. A non-numeric, non-`--`-prefixed token (e.g. a
                 // command id like `ui.inspect`) leaves the address at its default so the
                 // command is still consumed next. (#1178)
-                match args.get(i + 1).filter(|a| a.contains(':') || a.chars().all(|c| c.is_ascii_digit())) {
+                match args
+                    .get(i + 1)
+                    .filter(|a| a.contains(':') || a.chars().all(|c| c.is_ascii_digit()))
+                {
                     Some(a) => {
-                        connect = Some(if a.contains(':') { a.clone() } else { format!("127.0.0.1:{a}") });
+                        connect = Some(if a.contains(':') {
+                            a.clone()
+                        } else {
+                            format!("127.0.0.1:{a}")
+                        });
                         i += 1;
                     }
                     None => connect = Some(DEFAULT_ADDR.to_string()),
@@ -337,7 +382,9 @@ fn mcp(args: &[String]) -> Result<(), String> {
                     Box::new(r)
                 }
                 Err(e) => {
-                    eprintln!("lightcraft-cli mcp: LightCraft is not reachable at {addr} yet ({e}); will retry on each call");
+                    eprintln!(
+                        "lightcraft-cli mcp: LightCraft is not reachable at {addr} yet ({e}); will retry on each call"
+                    );
                     Box::new(Remote::lazy(&addr))
                 }
             }
@@ -346,7 +393,10 @@ fn mcp(args: &[String]) -> Result<(), String> {
             let mut h = match &library {
                 Some(dir) => {
                     let mut h = Headless::default();
-                    let r = h.session.open_library(dir, demo).map_err(|e| library_error(dir, e))?;
+                    let r = h
+                        .session
+                        .open_library(dir, demo)
+                        .map_err(|e| library_error(dir, e))?;
                     eprintln!("lightcraft-cli mcp: opened library {dir} ({r:?})");
                     library_warnings(&mut h.session, "lightcraft-cli mcp");
                     h
@@ -356,16 +406,27 @@ fn mcp(args: &[String]) -> Result<(), String> {
             };
             if !files.is_empty() {
                 let paths = expand_paths(&files);
-                let r = h.session.execute("library.import", &json!({"paths": paths})).map_err(|e| e.to_string())?;
-                eprintln!("lightcraft-cli mcp: imported {} photo(s)", r["imported"].as_array().map_or(0, Vec::len));
+                let r = h
+                    .session
+                    .execute("library.import", &json!({"paths": paths}))
+                    .map_err(|e| e.to_string())?;
+                eprintln!(
+                    "lightcraft-cli mcp: imported {} photo(s)",
+                    r["imported"].as_array().map_or(0, Vec::len)
+                );
             }
             Box::new(h)
         }
     };
-    eprintln!("lightcraft-cli mcp: serving MCP on stdio ({})", backend.describe());
+    eprintln!(
+        "lightcraft-cli mcp: serving MCP on stdio ({})",
+        backend.describe()
+    );
     let mut server = Server::new(backend).with_command_tools(!compact);
     let stdin = std::io::stdin();
-    server.serve(BufReader::new(stdin), std::io::stdout()).map_err(|e| e.to_string())
+    server
+        .serve(BufReader::new(stdin), std::io::stdout())
+        .map_err(|e| e.to_string())
 }
 
 fn merge(args: &[String]) -> Result<(), String> {
@@ -381,19 +442,39 @@ fn merge(args: &[String]) -> Result<(), String> {
     while i < args.len() {
         match args[i].as_str() {
             "--deghost" => {
-                p.insert("deghost".into(), json!(take_value(args, &mut i, "--deghost")?));
+                p.insert(
+                    "deghost".into(),
+                    json!(take_value(args, &mut i, "--deghost")?),
+                );
             }
             "--no-align" => {
                 p.insert("align".into(), json!(false));
             }
             "--bracket" => {
-                p.insert("bracket".into(), json!(take_value(args, &mut i, "--bracket")?.parse::<u64>().map_err(|e| e.to_string())?));
+                p.insert(
+                    "bracket".into(),
+                    json!(
+                        take_value(args, &mut i, "--bracket")?
+                            .parse::<u64>()
+                            .map_err(|e| e.to_string())?
+                    ),
+                );
             }
             "--projection" => {
-                p.insert("projection".into(), json!(take_value(args, &mut i, "--projection")?));
+                p.insert(
+                    "projection".into(),
+                    json!(take_value(args, &mut i, "--projection")?),
+                );
             }
             "--boundary-warp" => {
-                p.insert("boundaryWarp".into(), json!(take_value(args, &mut i, "--boundary-warp")?.parse::<f64>().map_err(|e| e.to_string())?));
+                p.insert(
+                    "boundaryWarp".into(),
+                    json!(
+                        take_value(args, &mut i, "--boundary-warp")?
+                            .parse::<f64>()
+                            .map_err(|e| e.to_string())?
+                    ),
+                );
             }
             "--auto-crop" => {
                 p.insert("autoCrop".into(), json!(true));
@@ -406,7 +487,10 @@ fn merge(args: &[String]) -> Result<(), String> {
             }
             "--preview" => {
                 p.insert("preview".into(), json!(true));
-                p.insert("previewPath".into(), json!(take_value(args, &mut i, "--preview")?));
+                p.insert(
+                    "previewPath".into(),
+                    json!(take_value(args, &mut i, "--preview")?),
+                );
                 p.insert("showOverlay".into(), json!(true));
             }
             a if a.starts_with("--") => return Err(format!("unknown option `{a}`")),
@@ -414,10 +498,18 @@ fn merge(args: &[String]) -> Result<(), String> {
         }
         i += 1;
     }
-    let mut s = Session::new().with_fs().with_default_denoise_models().with_system_clock();
+    let mut s = Session::new()
+        .with_fs()
+        .with_default_denoise_models()
+        .with_system_clock();
     let paths = expand_paths(&files);
-    let r = s.execute("library.import", &json!({"paths": paths})).map_err(|e| e.to_string())?;
-    let mut ids: Vec<u64> = r["imported"].as_array().map(|a| a.iter().filter_map(Value::as_u64).collect()).unwrap_or_default();
+    let r = s
+        .execute("library.import", &json!({"paths": paths}))
+        .map_err(|e| e.to_string())?;
+    let mut ids: Vec<u64> = r["imported"]
+        .as_array()
+        .map(|a| a.iter().filter_map(Value::as_u64).collect())
+        .unwrap_or_default();
     // keep the command line's order
     ids.sort_by_key(|id| {
         paths.iter().position(|f| {
@@ -428,7 +520,9 @@ fn merge(args: &[String]) -> Result<(), String> {
     });
     p.insert("ids".into(), json!(ids));
     let t0 = std::time::Instant::now();
-    let mut out = s.execute(cmd, &Value::Object(p)).map_err(|e| e.to_string())?;
+    let mut out = s
+        .execute(cmd, &Value::Object(p))
+        .map_err(|e| e.to_string())?;
     out["seconds"] = json!(t0.elapsed().as_secs_f64());
     println!("{}", serde_json::to_string_pretty(&out).unwrap_or_default());
     Ok(())
@@ -450,22 +544,34 @@ fn synth_merge(args: &[String]) -> Result<(), String> {
     let mut written = Vec::new();
     match kind {
         "hdr" => {
-            for (k, b) in lightcraft_merge::synth::bracket_dngs(1800, 1200, &[-2.0, 0.0, 2.0]).map_err(|e| e.to_string())?.into_iter().enumerate() {
+            for (k, b) in lightcraft_merge::synth::bracket_dngs(1800, 1200, &[-2.0, 0.0, 2.0])
+                .map_err(|e| e.to_string())?
+                .into_iter()
+                .enumerate()
+            {
                 let p = Path::new(&dir).join(format!("bracket-{k}.dng"));
                 std::fs::write(&p, b).map_err(|e| e.to_string())?;
                 written.push(p);
             }
         }
         "panorama" | "pano" => {
-            for (k, v) in lightcraft_merge::synth::pano_views(1200, 900, 1000.0, &[-50.0, -25.0, 0.0, 25.0, 50.0])
-                .map_err(|e| e.to_string())?
-                .into_iter()
-                .enumerate()
+            for (k, v) in lightcraft_merge::synth::pano_views(
+                1200,
+                900,
+                1000.0,
+                &[-50.0, -25.0, 0.0, 25.0, 50.0],
+            )
+            .map_err(|e| e.to_string())?
+            .into_iter()
+            .enumerate()
             {
                 let p = Path::new(&dir).join(format!("view-{k}.png"));
                 let img = v.to_srgb8();
-                let png = lightcraft_codecs::encode_png(&lightcraft_codecs::EncodeImage::rgba8(&img), &lightcraft_codecs::EncodeMeta::default())
-                    .map_err(|e| e.to_string())?;
+                let png = lightcraft_codecs::encode_png(
+                    &lightcraft_codecs::EncodeImage::rgba8(&img),
+                    &lightcraft_codecs::EncodeMeta::default(),
+                )
+                .map_err(|e| e.to_string())?;
                 std::fs::write(&p, png).map_err(|e| e.to_string())?;
                 written.push(p);
             }
@@ -491,18 +597,26 @@ fn parse_steps(tokens: &[String]) -> Result<Vec<Step>, String> {
     let mut steps: Vec<Step> = Vec::new();
     for t in tokens {
         if t.starts_with('{') {
-            let v: Value = serde_json::from_str(t).map_err(|e| format!("bad JSON params `{t}`: {e}"))?;
-            let step = steps.last_mut().ok_or_else(|| format!("params `{t}` before any command"))?;
+            let v: Value =
+                serde_json::from_str(t).map_err(|e| format!("bad JSON params `{t}`: {e}"))?;
+            let step = steps
+                .last_mut()
+                .ok_or_else(|| format!("params `{t}` before any command"))?;
             match (step.params.as_object_mut(), v) {
                 (Some(o), Value::Object(m)) => o.extend(m),
                 _ => return Err(format!("params `{t}` must be a JSON object")),
             }
         } else if let Some((k, v)) = t.split_once('=') {
-            let step = steps.last_mut().ok_or_else(|| format!("param `{t}` before any command"))?;
+            let step = steps
+                .last_mut()
+                .ok_or_else(|| format!("param `{t}` before any command"))?;
             let v = serde_json::from_str(v).unwrap_or_else(|_| json!(v));
             step.params[k.trim()] = v;
         } else {
-            steps.push(Step { id: t.clone(), params: json!({}) });
+            steps.push(Step {
+                id: t.clone(),
+                params: json!({}),
+            });
         }
     }
     Ok(steps)
@@ -512,7 +626,14 @@ fn parse_steps(tokens: &[String]) -> Result<Vec<Step>, String> {
 /// command through `engine.execute`.
 fn run_step(b: &mut dyn Backend, s: &Step) -> Result<Value, String> {
     let direct = s.id.starts_with("ui.") || s.id.starts_with("engine.") || s.id == "app.quit";
-    if direct { b.call(&s.id, s.params.clone()) } else { b.call("engine.execute", json!({"command": s.id, "params": s.params})) }
+    if direct {
+        b.call(&s.id, s.params.clone())
+    } else {
+        b.call(
+            "engine.execute",
+            json!({"command": s.id, "params": s.params}),
+        )
+    }
 }
 
 fn run(args: &[String]) -> Result<(), String> {
@@ -529,9 +650,15 @@ fn run(args: &[String]) -> Result<(), String> {
                 i += 1;
                 break;
             }
-            "--connect" => match args.get(i + 1).filter(|a| !a.contains('=') && (a.contains(':') || a.chars().all(|c| c.is_ascii_digit()))) {
+            "--connect" => match args.get(i + 1).filter(|a| {
+                !a.contains('=') && (a.contains(':') || a.chars().all(|c| c.is_ascii_digit()))
+            }) {
                 Some(a) => {
-                    connect = Some(if a.contains(':') { a.clone() } else { format!("127.0.0.1:{a}") });
+                    connect = Some(if a.contains(':') {
+                        a.clone()
+                    } else {
+                        format!("127.0.0.1:{a}")
+                    });
                     i += 1;
                 }
                 None => connect = Some(DEFAULT_ADDR.to_string()),
@@ -550,66 +677,93 @@ fn run(args: &[String]) -> Result<(), String> {
     if let Some(path) = &script {
         let text = if path == "-" {
             let mut s = String::new();
-            std::io::Read::read_to_string(&mut std::io::stdin(), &mut s).map_err(|e| e.to_string())?;
+            std::io::Read::read_to_string(&mut std::io::stdin(), &mut s)
+                .map_err(|e| e.to_string())?;
             s
         } else {
             std::fs::read_to_string(path).map_err(|e| format!("{path}: {e}"))?
         };
-        for (n, line) in text.lines().enumerate().filter(|(_, l)| !l.trim().is_empty() && !l.trim_start().starts_with('#')) {
-            let v: Value = serde_json::from_str(line).map_err(|e| format!("{path}:{}: {e}", n + 1))?;
+        for (n, line) in text
+            .lines()
+            .enumerate()
+            .filter(|(_, l)| !l.trim().is_empty() && !l.trim_start().starts_with('#'))
+        {
+            let v: Value =
+                serde_json::from_str(line).map_err(|e| format!("{path}:{}: {e}", n + 1))?;
             // `{"command": id, "params": …}` or a control request `{"method": m, "params": …}`
             let id = v
                 .get("command")
                 .or(v.get("method"))
                 .and_then(Value::as_str)
                 .ok_or_else(|| format!("{path}:{}: needs `command` or `method`", n + 1))?;
-            let params = v.get("params").cloned().filter(|p| p.is_object()).unwrap_or_else(|| json!({}));
-            steps.push(Step { id: id.to_string(), params });
+            let params = v
+                .get("params")
+                .cloned()
+                .filter(|p| p.is_object())
+                .unwrap_or_else(|| json!({}));
+            steps.push(Step {
+                id: id.to_string(),
+                params,
+            });
         }
     }
     if steps.is_empty() {
         return Err("run: no command given (see `lightcraft-cli commands`)".into());
     }
-    let mut backend: Box<dyn Backend> =
-        match connect {
-            Some(addr) => {
-                if demo || library.is_some() || !imports.is_empty() {
-                    return Err("--demo, --library and --import apply to headless mode only".into());
-                }
-                Box::new(Remote::connect(&addr).map_err(|e| {
+    let mut backend: Box<dyn Backend> = match connect {
+        Some(addr) => {
+            if demo || library.is_some() || !imports.is_empty() {
+                return Err("--demo, --library and --import apply to headless mode only".into());
+            }
+            Box::new(Remote::connect(&addr).map_err(|e| {
                     format!("LightCraft is not reachable at {addr} ({e}); start it with `lightcraft --control {}`", connect_port(&addr))
                 })?)
-            }
-            None => {
-                let mut h = match &library {
-                    Some(dir) => {
-                        let mut h = Headless::default();
-                        h.session.open_library(dir, demo).map_err(|e| library_error(dir, e))?;
-                        library_warnings(&mut h.session, "lightcraft-cli");
-                        h
-                    }
-                    None if demo => Headless::demo(),
-                    None => Headless::default(),
-                };
-                if !imports.is_empty() {
-                    let paths = expand_paths(&imports);
-                    let r = h.session.execute("library.import", &json!({"paths": paths})).map_err(|e| e.to_string())?;
-                    // what follows acts on the imported photos (already-known files are reported as duplicates)
-                    let mut ids: Vec<Value> = r["imported"].as_array().cloned().unwrap_or_default();
-                    ids.extend(r["duplicates"].as_array().into_iter().flatten().filter_map(|d| d.get("existing").filter(|v| v.is_u64()).cloned()));
-                    if let Some(first) = ids.first().cloned() {
-                        h.session.execute("library.select", &json!({"ids": ids, "active": first})).map_err(|e| e.to_string())?;
-                    }
+        }
+        None => {
+            let mut h = match &library {
+                Some(dir) => {
+                    let mut h = Headless::default();
+                    h.session
+                        .open_library(dir, demo)
+                        .map_err(|e| library_error(dir, e))?;
+                    library_warnings(&mut h.session, "lightcraft-cli");
+                    h
                 }
-                Box::new(h)
+                None if demo => Headless::demo(),
+                None => Headless::default(),
+            };
+            if !imports.is_empty() {
+                let paths = expand_paths(&imports);
+                let r = h
+                    .session
+                    .execute("library.import", &json!({"paths": paths}))
+                    .map_err(|e| e.to_string())?;
+                // what follows acts on the imported photos (already-known files are reported as duplicates)
+                let mut ids: Vec<Value> = r["imported"].as_array().cloned().unwrap_or_default();
+                ids.extend(
+                    r["duplicates"]
+                        .as_array()
+                        .into_iter()
+                        .flatten()
+                        .filter_map(|d| d.get("existing").filter(|v| v.is_u64()).cloned()),
+                );
+                if let Some(first) = ids.first().cloned() {
+                    h.session
+                        .execute("library.select", &json!({"ids": ids, "active": first}))
+                        .map_err(|e| e.to_string())?;
+                }
             }
-        };
+            Box::new(h)
+        }
+    };
     let mut out = std::io::stdout().lock();
     let mut failed = 0;
     for s in &steps {
         let t = std::time::Instant::now();
         let line = match run_step(backend.as_mut(), s) {
-            Ok(r) => json!({"command": s.id, "ok": true, "result": r, "ms": (t.elapsed().as_secs_f64() * 1e4).round() / 10.0}),
+            Ok(r) => {
+                json!({"command": s.id, "ok": true, "result": r, "ms": (t.elapsed().as_secs_f64() * 1e4).round() / 10.0})
+            }
             Err(e) => {
                 failed += 1;
                 json!({"command": s.id, "ok": false, "error": e})
@@ -621,12 +775,18 @@ fn run(args: &[String]) -> Result<(), String> {
         }
     }
     drop(backend); // a library session is flushed here
-    if failed > 0 { Err(format!("{failed} command(s) failed")) } else { Ok(()) }
+    if failed > 0 {
+        Err(format!("{failed} command(s) failed"))
+    } else {
+        Ok(())
+    }
 }
 
 fn take_value<'a>(args: &'a [String], i: &mut usize, flag: &str) -> Result<&'a str, String> {
     *i += 1;
-    args.get(*i).map(String::as_str).ok_or_else(|| format!("{flag} needs a value"))
+    args.get(*i)
+        .map(String::as_str)
+        .ok_or_else(|| format!("{flag} needs a value"))
 }
 
 /// The port an `--connect` address names, for the recovery hint. The whole address when it has
@@ -650,8 +810,13 @@ fn render(args: &[String]) -> Result<(), String> {
             "-o" | "--output" => output = Some(take_value(args, &mut i, "-o")?.to_string()),
             "--set" => {
                 let kv = take_value(args, &mut i, "--set")?;
-                let (k, v) = kv.split_once('=').ok_or_else(|| format!("--set expects control=value, got `{kv}`"))?;
-                let v: f64 = v.trim().parse().map_err(|_| format!("--set {k}: `{v}` is not a number"))?;
+                let (k, v) = kv
+                    .split_once('=')
+                    .ok_or_else(|| format!("--set expects control=value, got `{kv}`"))?;
+                let v: f64 = v
+                    .trim()
+                    .parse()
+                    .map_err(|_| format!("--set {k}: `{v}` is not a number"))?;
                 values.insert(k.trim().to_string(), json!(v));
             }
             "--settings" => {
@@ -660,12 +825,27 @@ fn render(args: &[String]) -> Result<(), String> {
                 settings = Some(serde_json::from_str(&text).map_err(|e| format!("{p}: {e}"))?);
             }
             "--preset" => preset = Some(take_value(args, &mut i, "--preset")?.to_string()),
-            "--size" => size = Some(take_value(args, &mut i, "--size")?.parse().map_err(|_| "--size expects a number")?),
-            "--quality" => quality = take_value(args, &mut i, "--quality")?.parse().map_err(|_| "--quality expects 1..100")?,
+            "--size" => {
+                size = Some(
+                    take_value(args, &mut i, "--size")?
+                        .parse()
+                        .map_err(|_| "--size expects a number")?,
+                )
+            }
+            "--quality" => {
+                quality = take_value(args, &mut i, "--quality")?
+                    .parse()
+                    .map_err(|_| "--quality expects 1..100")?
+            }
             "--opt" => {
                 let kv = take_value(args, &mut i, "--opt")?;
-                let (k, v) = kv.split_once('=').ok_or_else(|| format!("--opt expects key=value, got `{kv}`"))?;
-                opts.insert(k.trim().to_string(), serde_json::from_str(v).unwrap_or_else(|_| json!(v)));
+                let (k, v) = kv
+                    .split_once('=')
+                    .ok_or_else(|| format!("--opt expects key=value, got `{kv}`"))?;
+                opts.insert(
+                    k.trim().to_string(),
+                    serde_json::from_str(v).unwrap_or_else(|_| json!(v)),
+                );
             }
             a if a.starts_with('-') => return Err(format!("unknown option `{a}`")),
             f if input.is_none() => input = Some(f.to_string()),
@@ -675,11 +855,20 @@ fn render(args: &[String]) -> Result<(), String> {
     }
     let input = input.ok_or("render: missing input file")?;
     let output = output.ok_or("render: missing -o OUTPUT")?;
-    let mut s = Session::new().with_fs().with_default_denoise_models().with_system_clock();
+    let mut s = Session::new()
+        .with_fs()
+        .with_default_denoise_models()
+        .with_system_clock();
     let abs = expand_paths(std::slice::from_ref(&input));
-    let r = s.execute("library.import", &json!({"paths": abs})).map_err(|e| e.to_string())?;
-    let id = r["imported"][0].as_u64().ok_or_else(|| format!("{input}: not a readable photo"))?;
-    let run = |s: &mut Session, cmd: &str, p: Value| s.execute(cmd, &p).map(|_| ()).map_err(|e| e.to_string());
+    let r = s
+        .execute("library.import", &json!({"paths": abs}))
+        .map_err(|e| e.to_string())?;
+    let id = r["imported"][0]
+        .as_u64()
+        .ok_or_else(|| format!("{input}: not a readable photo"))?;
+    let run = |s: &mut Session, cmd: &str, p: Value| {
+        s.execute(cmd, &p).map(|_| ()).map_err(|e| e.to_string())
+    };
     run(&mut s, "library.select", json!({"ids": [id], "active": id}))?;
     if let Some(p) = preset {
         run(&mut s, "preset.apply", json!({"id": p}))?;
@@ -700,7 +889,10 @@ fn render(args: &[String]) -> Result<(), String> {
     }
     let mut o = ExportOptions::from_params(&p).map_err(|e| e.to_string())?;
     if p.get("format").is_none() {
-        let ext = Path::new(&output).extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_default();
+        let ext = Path::new(&output)
+            .extension()
+            .map(|e| e.to_string_lossy().to_string())
+            .unwrap_or_default();
         o.format = ExportFormat::parse(&ext)
             .ok_or_else(|| format!("{output}: unknown extension (use .jpg .png .tif .webp .avif .dng or --opt format=…)"))?;
     }
@@ -708,11 +900,24 @@ fn render(args: &[String]) -> Result<(), String> {
     let after = s.after_export(&o)?;
     let e = export_photo(&mut s, lightcraft_engine::catalog::PhotoId(id), &o, 1)?;
     // never over the input (or its sidecar), however it is spelled: `render IMG.jpg -o IMG.jpg`
-    let sidecars: Vec<(String, &Vec<u8>)> =
-        e.sidecars.iter().map(|(ext, bytes)| (Path::new(&output).with_extension(ext).to_string_lossy().to_string(), bytes)).collect();
+    let sidecars: Vec<(String, &Vec<u8>)> = e
+        .sidecars
+        .iter()
+        .map(|(ext, bytes)| {
+            (
+                Path::new(&output)
+                    .with_extension(ext)
+                    .to_string_lossy()
+                    .to_string(),
+                bytes,
+            )
+        })
+        .collect();
     let guard = s.original_guard();
     for p in std::iter::once(&output).chain(sidecars.iter().map(|(p, _)| p)) {
-        guard.check(Path::new(p)).map_err(|err| format!("render: {err}"))?;
+        guard
+            .check(Path::new(p))
+            .map_err(|err| format!("render: {err}"))?;
     }
     lightcraft_engine::export::write_file(&output, &e.bytes)?;
     for (sc, bytes) in &sidecars {
@@ -747,10 +952,19 @@ fn snapshot(args: &[String]) -> Result<(), String> {
             "-o" | "--output" => output = Some(take_value(args, &mut i, "-o")?.to_string()),
             "--size" => {
                 let v = take_value(args, &mut i, "--size")?;
-                let (w, h) = v.split_once(['x', 'X']).ok_or("--size expects WxH, e.g. 1600x1000")?;
-                size = [w.trim().parse().map_err(|_| "--size: bad width")?, h.trim().parse().map_err(|_| "--size: bad height")?];
+                let (w, h) = v
+                    .split_once(['x', 'X'])
+                    .ok_or("--size expects WxH, e.g. 1600x1000")?;
+                size = [
+                    w.trim().parse().map_err(|_| "--size: bad width")?,
+                    h.trim().parse().map_err(|_| "--size: bad height")?,
+                ];
             }
-            "--scale" => scale = take_value(args, &mut i, "--scale")?.parse().map_err(|_| "--scale expects a number")?,
+            "--scale" => {
+                scale = take_value(args, &mut i, "--scale")?
+                    .parse()
+                    .map_err(|_| "--scale expects a number")?
+            }
             a if a.starts_with('-') => return Err(format!("unknown option `{a}`")),
             f => files.push(f.to_string()),
         }
@@ -759,30 +973,55 @@ fn snapshot(args: &[String]) -> Result<(), String> {
     if script.is_none() && output.is_none() {
         return Err("snapshot: give -o OUT.png and/or --script FILE".into());
     }
-    lightcraft_ui_egui::headless::viewport_pixels(size, scale).map_err(|e| format!("snapshot: bad --size/--scale: {e}"))?;
+    lightcraft_ui_egui::headless::viewport_pixels(size, scale)
+        .map_err(|e| format!("snapshot: bad --size/--scale: {e}"))?;
     let t0 = Instant::now();
     let mut session = match &library {
         Some(dir) => {
-            let mut s = Session::new().with_fs().with_default_denoise_models().with_system_clock().with_default_face_models();
-            s.open_library(dir, false).map_err(|e| library_error(dir, e))?;
+            let mut s = Session::new()
+                .with_fs()
+                .with_default_denoise_models()
+                .with_system_clock()
+                .with_default_face_models();
+            s.open_library(dir, false)
+                .map_err(|e| library_error(dir, e))?;
             s
         }
-        None if files.is_empty() => Session::with_demo().with_fs().with_default_denoise_models().with_system_clock().with_default_face_models(),
-        None => Session::new().with_fs().with_default_denoise_models().with_system_clock().with_default_face_models(),
+        None if files.is_empty() => Session::with_demo()
+            .with_fs()
+            .with_default_denoise_models()
+            .with_system_clock()
+            .with_default_face_models(),
+        None => Session::new()
+            .with_fs()
+            .with_default_denoise_models()
+            .with_system_clock()
+            .with_default_face_models(),
     };
     // Apply compute policy before imports or the first scripted query can discover an adapter.
-    session.execute("app.gpu", &json!({"enabled": false})).map_err(|e| e.to_string())?;
+    session
+        .execute("app.gpu", &json!({"enabled": false}))
+        .map_err(|e| e.to_string())?;
     if !files.is_empty() {
         let ti = Instant::now();
-        let r = session.execute("library.import", &json!({"paths": expand_paths(&files)})).map_err(|e| e.to_string())?;
+        let r = session
+            .execute("library.import", &json!({"paths": expand_paths(&files)}))
+            .map_err(|e| e.to_string())?;
         let n = r["imported"].as_array().map_or(0, Vec::len);
-        eprintln!("lightcraft-cli snapshot: imported {n} files in {:.0} ms", ti.elapsed().as_secs_f64() * 1e3);
+        eprintln!(
+            "lightcraft-cli snapshot: imported {n} files in {:.0} ms",
+            ti.elapsed().as_secs_f64() * 1e3
+        );
     }
     let services = lightcraft_ui_egui::Services {
         write_shared: Some(std::sync::Arc::new(lightcraft_engine::export::write_file)),
         write: Some(Box::new(lightcraft_engine::export::write_file)),
         png: Some(Box::new(|img: &lightcraft_raster::Rgba8| {
-            lightcraft_codecs::encode_png(&lightcraft_codecs::EncodeImage::rgba8(img), &lightcraft_codecs::EncodeMeta::default()).unwrap_or_default()
+            lightcraft_codecs::encode_png(
+                &lightcraft_codecs::EncodeImage::rgba8(img),
+                &lightcraft_codecs::EncodeMeta::default(),
+            )
+            .unwrap_or_default()
         })),
         ..Default::default()
     };
@@ -801,9 +1040,19 @@ fn snapshot(args: &[String]) -> Result<(), String> {
             return Some(out.to_string());
         }
         let p = Path::new(out);
-        let stem = p.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-        let ext = p.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_else(|| "png".into());
-        Some(p.with_file_name(format!("{stem}-{shots}.{ext}")).to_string_lossy().to_string())
+        let stem = p
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let ext = p
+            .extension()
+            .map(|e| e.to_string_lossy().to_string())
+            .unwrap_or_else(|| "png".into());
+        Some(
+            p.with_file_name(format!("{stem}-{shots}.{ext}"))
+                .to_string_lossy()
+                .to_string(),
+        )
     };
     let mut wrote_output = false;
     // Issue #166: a scripted request that fails still gets its reply printed and the run carries
@@ -817,14 +1066,22 @@ fn snapshot(args: &[String]) -> Result<(), String> {
             if line.is_empty() || line.starts_with('#') || line.starts_with("//") {
                 continue;
             }
-            let msg: Value = serde_json::from_str(line).map_err(|e| format!("{script}:{}: {e}", n + 1))?;
+            let msg: Value =
+                serde_json::from_str(line).map_err(|e| format!("{script}:{}: {e}", n + 1))?;
             let id = msg.get("id").cloned().unwrap_or(json!(n + 1));
-            let method = msg.get("method").and_then(Value::as_str).unwrap_or("").to_string();
+            let method = msg
+                .get("method")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string();
             let mut params = msg.get("params").cloned().unwrap_or(json!({}));
             let ts = Instant::now();
             let mut reply = match method.as_str() {
                 "ui.settle" => {
-                    let ms = params.get("timeoutMs").and_then(Value::as_u64).unwrap_or(20_000);
+                    let ms = params
+                        .get("timeoutMs")
+                        .and_then(Value::as_u64)
+                        .unwrap_or(20_000);
                     json!({"ok": true, "result": {"settled": h.settle(Duration::from_millis(ms))}})
                 }
                 "ui.screenshot" => {
@@ -834,7 +1091,12 @@ fn snapshot(args: &[String]) -> Result<(), String> {
                                 wrote_output = true;
                                 params["path"] = json!(p);
                             }
-                            None => return Err(format!("{script}:{}: ui.screenshot needs a `path` (or give -o)", n + 1)),
+                            None => {
+                                return Err(format!(
+                                    "{script}:{}: ui.screenshot needs a `path` (or give -o)",
+                                    n + 1
+                                ));
+                            }
                         }
                     }
                     h.request(&method, params, timeout)
@@ -847,8 +1109,14 @@ fn snapshot(args: &[String]) -> Result<(), String> {
             if let Some(o) = reply.as_object_mut() {
                 o.insert("id".into(), id);
                 // wall time of the request (incl. the frames it ran), and since the start
-                o.insert("ms".into(), json!((ts.elapsed().as_secs_f64() * 1e4).round() / 10.0));
-                o.insert("t".into(), json!((t0.elapsed().as_secs_f64() * 1e4).round() / 10.0));
+                o.insert(
+                    "ms".into(),
+                    json!((ts.elapsed().as_secs_f64() * 1e4).round() / 10.0),
+                );
+                o.insert(
+                    "t".into(),
+                    json!((t0.elapsed().as_secs_f64() * 1e4).round() / 10.0),
+                );
             }
             writeln!(out, "{reply}").map_err(|e| e.to_string())?;
             if method == "ui.screenshot" {
@@ -868,7 +1136,10 @@ fn snapshot(args: &[String]) -> Result<(), String> {
         if r["ok"] != true {
             return Err(format!("screenshot failed: {}", r["error"]));
         }
-        eprintln!("lightcraft-cli snapshot: wrote {path} ({}×{})", r["result"]["width"], r["result"]["height"]);
+        eprintln!(
+            "lightcraft-cli snapshot: wrote {path} ({}×{})",
+            r["result"]["width"], r["result"]["height"]
+        );
     }
     // a background export started by the script finishes before we exit (its files would be cut off)
     if h.app.export.is_some() {
@@ -879,8 +1150,16 @@ fn snapshot(args: &[String]) -> Result<(), String> {
             std::thread::sleep(std::time::Duration::from_millis(20));
         }
     }
-    eprintln!("lightcraft-cli snapshot: done in {:.2} s ({} frames)", t0.elapsed().as_secs_f64(), h.frames());
-    if failed > 0 { Err(format!("{failed} scripted request(s) failed")) } else { Ok(()) }
+    eprintln!(
+        "lightcraft-cli snapshot: done in {:.2} s ({} frames)",
+        t0.elapsed().as_secs_f64(),
+        h.frames()
+    );
+    if failed > 0 {
+        Err(format!("{failed} scripted request(s) failed"))
+    } else {
+        Ok(())
+    }
 }
 
 fn commands(args: &[String]) -> Result<(), String> {
@@ -888,11 +1167,19 @@ fn commands(args: &[String]) -> Result<(), String> {
     let cmds = h.call("engine.commands", json!({}))?;
     let mut out = std::io::stdout().lock();
     if args.iter().any(|a| a == "--json") {
-        writeln!(out, "{}", serde_json::to_string_pretty(&cmds).unwrap_or_default()).map_err(|e| e.to_string())?;
+        writeln!(
+            out,
+            "{}",
+            serde_json::to_string_pretty(&cmds).unwrap_or_default()
+        )
+        .map_err(|e| e.to_string())?;
         return Ok(());
     }
     for c in cmds.as_array().into_iter().flatten() {
-        let sc = c["shortcut"].as_str().map(|s| format!("  [{s}]")).unwrap_or_default();
+        let sc = c["shortcut"]
+            .as_str()
+            .map(|s| format!("  [{s}]"))
+            .unwrap_or_default();
         writeln!(
             out,
             "{:<28} {}{sc}\n{:<28} params: {}",
@@ -908,10 +1195,17 @@ fn commands(args: &[String]) -> Result<(), String> {
 
 fn controls(args: &[String]) -> Result<(), String> {
     let mut s = Session::new();
-    let v = s.execute("develop.controls", &json!({})).map_err(|e| e.to_string())?;
+    let v = s
+        .execute("develop.controls", &json!({}))
+        .map_err(|e| e.to_string())?;
     let mut out = std::io::stdout().lock();
     if args.iter().any(|a| a == "--json") {
-        writeln!(out, "{}", serde_json::to_string_pretty(&v).unwrap_or_default()).map_err(|e| e.to_string())?;
+        writeln!(
+            out,
+            "{}",
+            serde_json::to_string_pretty(&v).unwrap_or_default()
+        )
+        .map_err(|e| e.to_string())?;
         return Ok(());
     }
     for c in v.as_array().into_iter().flatten() {
@@ -949,27 +1243,56 @@ fn denoise_serve(args: &[String]) -> Result<(), String> {
             "--token-env" => token_env = take_value(args, &mut i, "--token-env")?.to_string(),
             "--run-on" => {
                 let v = take_value(args, &mut i, "--run-on")?;
-                run_on = RunOn::parse(v).ok_or_else(|| format!("--run-on expects auto, gpu or cpu, not `{v}`"))?;
+                run_on = RunOn::parse(v)
+                    .ok_or_else(|| format!("--run-on expects auto, gpu or cpu, not `{v}`"))?;
             }
             "--max-connections" => {
-                max_connections = take_value(args, &mut i, "--max-connections")?.parse().map_err(|_| "--max-connections expects a number")?
+                max_connections = take_value(args, &mut i, "--max-connections")?
+                    .parse()
+                    .map_err(|_| "--max-connections expects a number")?
             }
             other => return Err(format!("denoise-serve: unknown option `{other}`")),
         }
         i += 1;
     }
-    let token = std::env::var(&token_env).map_err(|_| format!("denoise-serve: set the shared token in ${token_env}"))?;
-    let s = lightcraft_engine::denoise::serving(dir.as_deref().map(Path::new), model.as_deref(), run_on)?;
-    let listener = std::net::TcpListener::bind(&listen).map_err(|e| format!("denoise-serve: {listen}: {e}"))?;
-    eprintln!("lightcraft-cli denoise-serve: {} {} ({}) on {listen} via {}", s.model.id, s.model.version, s.model.sha256, s.device);
+    let token = std::env::var(&token_env)
+        .map_err(|_| format!("denoise-serve: set the shared token in ${token_env}"))?;
+    let s = lightcraft_engine::denoise::serving(
+        dir.as_deref().map(Path::new),
+        model.as_deref(),
+        run_on,
+    )?;
+    let listener = std::net::TcpListener::bind(&listen)
+        .map_err(|e| format!("denoise-serve: {listen}: {e}"))?;
+    eprintln!(
+        "lightcraft-cli denoise-serve: {} {} ({}) on {listen} via {}",
+        s.model.id, s.model.version, s.model.sha256, s.device
+    );
     if listen.starts_with("0.0.0.0") || listen.starts_with("[::]") {
-        eprintln!("lightcraft-cli denoise-serve: listening on every interface; firewall the port to your VPN/LAN (the protocol is not encrypted)");
+        eprintln!(
+            "lightcraft-cli denoise-serve: listening on every interface; firewall the port to your VPN/LAN (the protocol is not encrypted)"
+        );
     }
-    let opts = ServerOptions { token, max_connections, ..Default::default() };
-    serve(listener, s.model, s.tile, s.device, s.run, opts, std::sync::Arc::new(|m: &str| eprintln!("lightcraft-cli denoise-serve: {m}")))
+    let opts = ServerOptions {
+        token,
+        max_connections,
+        ..Default::default()
+    };
+    serve(
+        listener,
+        s.model,
+        s.tile,
+        s.device,
+        s.run,
+        opts,
+        std::sync::Arc::new(|m: &str| eprintln!("lightcraft-cli denoise-serve: {m}")),
+    )
 }
 
 #[cfg(not(feature = "denoise"))]
 fn denoise_serve(_: &[String]) -> Result<(), String> {
-    Err("denoise-serve: this build has no denoise support (build with the `denoise` feature)".into())
+    Err(
+        "denoise-serve: this build has no denoise support (build with the `denoise` feature)"
+            .into(),
+    )
 }

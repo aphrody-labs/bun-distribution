@@ -37,7 +37,11 @@ pub fn dialog_extensions_for(exts: &[&str], linux: bool) -> Vec<String> {
                     .chars()
                     .map(|c| {
                         let up: String = c.to_uppercase().collect();
-                        if up.chars().count() == 1 && up != c.to_string() { format!("[{c}{up}]") } else { c.to_string() }
+                        if up.chars().count() == 1 && up != c.to_string() {
+                            format!("[{c}{up}]")
+                        } else {
+                            c.to_string()
+                        }
                     })
                     .collect(),
             );
@@ -69,21 +73,33 @@ mod tests {
 
     #[test]
     fn other_platforms_get_lower_case_once() {
-        assert_eq!(dialog_extensions_for(&["NEF", "nef", ".Jpg", "jpg", ""], false), ["nef", "jpg"]);
+        assert_eq!(
+            dialog_extensions_for(&["NEF", "nef", ".Jpg", "jpg", ""], false),
+            ["nef", "jpg"]
+        );
     }
 
     #[test]
     fn linux_gets_lower_upper_and_any_mix() {
-        assert_eq!(dialog_extensions_for(&["nef"], true), ["nef", "NEF", "[nN][eE][fF]"]);
+        assert_eq!(
+            dialog_extensions_for(&["nef"], true),
+            ["nef", "NEF", "[nN][eE][fF]"]
+        );
         // digits have no case; a duplicate adds nothing
-        assert_eq!(dialog_extensions_for(&["mp4", "MP4"], true), ["mp4", "MP4", "[mM][pP]4"]);
+        assert_eq!(
+            dialog_extensions_for(&["mp4", "MP4"], true),
+            ["mp4", "MP4", "[mM][pP]4"]
+        );
         assert_eq!(dialog_extensions_for(&["7z"], true), ["7z", "7Z", "7[zZ]"]);
         assert_eq!(dialog_extensions_for(&["123"], true), ["123"]);
     }
 
     #[test]
     fn linux_glob_syntax_is_not_wrapped_again() {
-        assert_eq!(dialog_extensions_for(&["[nN]ef"], true), ["[nn]ef", "[NN]EF"]);
+        assert_eq!(
+            dialog_extensions_for(&["[nN]ef"], true),
+            ["[nn]ef", "[NN]EF"]
+        );
     }
 
     /// The Linux patterns match like GTK's glob (`*.{entry}`): checked against a tiny matcher of
@@ -137,8 +153,14 @@ mod tests {
     /// `add_filter`.
     #[test]
     fn no_dialog_bypasses_the_helper() {
-        for (file, src) in [("main.rs", include_str!("main.rs")), ("control_server.rs", include_str!("control_server.rs"))] {
-            assert!(!src.contains(".add_filter("), "{file} calls rfd's add_filter; use add_filter_nocase");
+        for (file, src) in [
+            ("main.rs", include_str!("main.rs")),
+            ("control_server.rs", include_str!("control_server.rs")),
+        ] {
+            assert!(
+                !src.contains(".add_filter("),
+                "{file} calls rfd's add_filter; use add_filter_nocase"
+            );
         }
         assert!(include_str!("main.rs").contains(".add_filter_nocase("));
     }

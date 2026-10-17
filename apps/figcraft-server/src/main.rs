@@ -25,7 +25,9 @@ fn main() -> ExitCode {
             }
         };
     }
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).target(env_logger::Target::Stdout).init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+        .target(env_logger::Target::Stdout)
+        .init();
     let mut running = match figcraft_server::start(&cli.config) {
         Ok(r) => r,
         Err(e) => {

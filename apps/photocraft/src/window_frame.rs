@@ -33,7 +33,10 @@ mod platform {
 
     /// A guard that keeps the window borderless each frame, or `None` when the app uses the
     /// system title bar (the window is decorated) or its handle can't be found.
-    pub fn service(cc: &eframe::CreationContext<'_>, custom_titlebar: bool) -> Option<WindowFrameFn> {
+    pub fn service(
+        cc: &eframe::CreationContext<'_>,
+        custom_titlebar: bool,
+    ) -> Option<WindowFrameFn> {
         if !custom_titlebar {
             return None;
         }
@@ -81,7 +84,11 @@ mod platform {
             HwndPlace::None,
             POINT::new(),
             SIZE::new(),
-            co::SWP::FRAMECHANGED | co::SWP::NOMOVE | co::SWP::NOSIZE | co::SWP::NOZORDER | co::SWP::NOACTIVATE,
+            co::SWP::FRAMECHANGED
+                | co::SWP::NOMOVE
+                | co::SWP::NOSIZE
+                | co::SWP::NOZORDER
+                | co::SWP::NOACTIVATE,
         );
     }
 
@@ -96,17 +103,28 @@ mod platform {
         if !hwnd.IsZoomed() {
             return;
         }
-        let (Ok(r), Ok(mi)) = (hwnd.GetWindowRect(), hwnd.MonitorFromWindow(co::MONITOR::DEFAULTTONEAREST).GetMonitorInfo()) else {
+        let (Ok(r), Ok(mi)) = (
+            hwnd.GetWindowRect(),
+            hwnd.MonitorFromWindow(co::MONITOR::DEFAULTTONEAREST)
+                .GetMonitorInfo(),
+        ) else {
             return;
         };
         let (m, w) = (mi.rcMonitor, mi.rcWork);
-        let Some(height) = clamped_height((r.left, r.top, r.right, r.bottom), (m.left, m.top, m.right, m.bottom), (w.left, w.top, w.right, w.bottom)) else {
+        let Some(height) = clamped_height(
+            (r.left, r.top, r.right, r.bottom),
+            (m.left, m.top, m.right, m.bottom),
+            (w.left, w.top, w.right, w.bottom),
+        ) else {
             return;
         };
         let _ = hwnd.SetWindowPos(
             HwndPlace::None,
             POINT::new(),
-            SIZE { cx: r.right - r.left, cy: height },
+            SIZE {
+                cx: r.right - r.left,
+                cy: height,
+            },
             co::SWP::NOMOVE | co::SWP::NOZORDER | co::SWP::NOACTIVATE,
         );
     }
@@ -116,12 +134,19 @@ mod platform {
     /// its maximize place. `monitor` is the monitor's full rect and `work` its work area (the
     /// monitor less the taskbar) in the same coordinates. The parked check is against the full
     /// monitor, because that is where Windows puts a maximize; the trim is against the work area.
-    fn clamped_height(rect: (i32, i32, i32, i32), monitor: (i32, i32, i32, i32), work: (i32, i32, i32, i32)) -> Option<i32> {
+    fn clamped_height(
+        rect: (i32, i32, i32, i32),
+        monitor: (i32, i32, i32, i32),
+        work: (i32, i32, i32, i32),
+    ) -> Option<i32> {
         let (l, t, r, b) = rect;
         let (ml, mt, mr, _) = monitor;
         let (_, _, _, wb) = work;
         let side = ml - l;
-        if !(0..=FRAME).contains(&side) || !(0..=FRAME).contains(&(mt - t)) || !(0..=FRAME).contains(&(r - mr)) {
+        if !(0..=FRAME).contains(&side)
+            || !(0..=FRAME).contains(&(mt - t))
+            || !(0..=FRAME).contains(&(r - mr))
+        {
             return None;
         }
         if b <= wb + side {
@@ -145,12 +170,20 @@ mod platform {
         #[test]
         fn the_borderless_style_drops_the_caption_and_border_only() {
             // `WS_CAPTION` is 0x00c0_0000 and already contains `WS_BORDER` (0x0080_0000).
-            let decorated = co::WS::CAPTION | co::WS::BORDER | co::WS::SYSMENU | co::WS::THICKFRAME | co::WS::MAXIMIZEBOX | co::WS::MINIMIZEBOX;
+            let decorated = co::WS::CAPTION
+                | co::WS::BORDER
+                | co::WS::SYSMENU
+                | co::WS::THICKFRAME
+                | co::WS::MAXIMIZEBOX
+                | co::WS::MINIMIZEBOX;
             let bare = borderless(decorated);
             assert!(!bare.has(co::WS::CAPTION), "caption gone");
             assert!(!bare.has(co::WS::BORDER), "border gone");
             assert!(bare.has(co::WS::THICKFRAME), "edge resizing kept");
-            assert!(bare.has(co::WS::MAXIMIZEBOX) && bare.has(co::WS::SYSMENU), "window buttons kept");
+            assert!(
+                bare.has(co::WS::MAXIMIZEBOX) && bare.has(co::WS::SYSMENU),
+                "window buttons kept"
+            );
             // Already borderless: unchanged, so the per-frame call does nothing.
             assert_eq!(bare.raw(), borderless(bare).raw());
         }
@@ -162,28 +195,49 @@ mod platform {
             // plus the frame the window was parked with.
             let monitor = (0, 0, 1920, 1080);
             let work = (0, 0, 1920, 1046);
-            assert_eq!(clamped_height((-7, -7, 1927, 1087), monitor, work), Some(1046 + 7 - (-7)));
+            assert_eq!(
+                clamped_height((-7, -7, 1927, 1087), monitor, work),
+                Some(1046 + 7 - (-7))
+            );
         }
 
         #[test]
         fn a_maximize_already_clear_of_the_taskbar_is_left_alone() {
             // What Windows sizes a framed maximize to: the work area plus the frame.
-            assert_eq!(clamped_height((-8, -8, 1928, 1054), (0, 0, 1920, 1080), (0, 0, 1920, 1046)), None);
+            assert_eq!(
+                clamped_height((-8, -8, 1928, 1054), (0, 0, 1920, 1080), (0, 0, 1920, 1046)),
+                None
+            );
         }
 
         #[test]
         fn a_maximize_beside_a_side_taskbar_is_left_alone() {
             // Taskbar on the left: the work area starts further right, but the monitor's bottom
             // is still clear, so the rect reaches nothing.
-            assert_eq!(clamped_height((-8, -8, 1928, 1088), (0, 0, 1920, 1080), (48, 0, 1920, 1080)), None);
+            assert_eq!(
+                clamped_height(
+                    (-8, -8, 1928, 1088),
+                    (0, 0, 1920, 1080),
+                    (48, 0, 1920, 1080)
+                ),
+                None
+            );
         }
 
         #[test]
         fn a_maximize_being_dragged_away_is_left_alone() {
             let monitor = (0, 0, 1920, 1080);
             let work = (0, 0, 1920, 1046);
-            assert_eq!(clamped_height((100, 200, 1100, 900), monitor, work), None, "moved");
-            assert_eq!(clamped_height((-500, -7, 1427, 1087), monitor, work), None, "resized");
+            assert_eq!(
+                clamped_height((100, 200, 1100, 900), monitor, work),
+                None,
+                "moved"
+            );
+            assert_eq!(
+                clamped_height((-500, -7, 1427, 1087), monitor, work),
+                None,
+                "resized"
+            );
         }
     }
 }
@@ -192,7 +246,10 @@ mod platform {
 mod platform {
     use photocraft_ui_egui::WindowFrameFn;
 
-    pub fn service(_cc: &eframe::CreationContext<'_>, _custom_titlebar: bool) -> Option<WindowFrameFn> {
+    pub fn service(
+        _cc: &eframe::CreationContext<'_>,
+        _custom_titlebar: bool,
+    ) -> Option<WindowFrameFn> {
         None
     }
 }

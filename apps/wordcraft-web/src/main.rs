@@ -7,7 +7,14 @@
 //! Differences from the desktop app: no TCP control channel; Open and Insert › Pictures use the
 //! browser file picker (bytes arrive through `Services::inbox`); Save and Export download.
 //! URL flags: `?webgl` forces WebGL2; `?sample` opens the sample document.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 #[cfg(target_arch = "wasm32")]
 mod web;
@@ -19,5 +26,7 @@ fn main() {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
-    eprintln!("wordcraft-web only runs in the browser: build it with `trunk build --release` in apps/wordcraft-web");
+    eprintln!(
+        "wordcraft-web only runs in the browser: build it with `trunk build --release` in apps/wordcraft-web"
+    );
 }

@@ -99,10 +99,13 @@ pub fn ini_value<'a>(text: &'a str, section: &str, key: &str) -> Option<&'a str>
 /// there): KDE Plasma's `kdeglobals` and GTK's `settings.ini`s.
 pub fn files_say(kdeglobals: Option<&str>, gtk_settings: [Option<&str>; 2]) -> Option<bool> {
     let (namespace, key) = KDE_ANIMATION_SPEED;
-    let kde = kdeglobals.and_then(|text| ini_value(text, "KDE", key)).and_then(|v| says(namespace, key, &Reading::Text(v.to_string())));
-    let gtk = gtk_settings
-        .into_iter()
-        .map(|text| text.and_then(|t| ini_value(t, "Settings", "gtk-enable-animations")).and_then(|v| truth(&Reading::Text(v.to_string()))));
+    let kde = kdeglobals
+        .and_then(|text| ini_value(text, "KDE", key))
+        .and_then(|v| says(namespace, key, &Reading::Text(v.to_string())));
+    let gtk = gtk_settings.into_iter().map(|text| {
+        text.and_then(|t| ini_value(t, "Settings", "gtk-enable-animations"))
+            .and_then(|v| truth(&Reading::Text(v.to_string())))
+    });
     combine(std::iter::once(kde).chain(gtk))
 }
 
@@ -162,7 +165,12 @@ mod watching {
     /// none of the settings, the files' answer stands.
     fn follow_portal(publish: &dyn Fn(Option<bool>)) -> zbus::Result<()> {
         let connection = Connection::session()?;
-        let portal = Proxy::new(&connection, "org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop", "org.freedesktop.portal.Settings")?;
+        let portal = Proxy::new(
+            &connection,
+            "org.freedesktop.portal.Desktop",
+            "/org/freedesktop/portal/desktop",
+            "org.freedesktop.portal.Settings",
+        )?;
         // Listen before the first read, so a change between the two isn't missed.
         let changes = portal.receive_signal("SettingChanged")?;
         // The files are read once, the first time the portal has nothing to say.
@@ -177,7 +185,9 @@ mod watching {
             let ours = change
                 .body()
                 .deserialize::<(String, String, OwnedValue)>()
-                .is_ok_and(|(namespace, key, _)| KEYS.contains(&(namespace.as_str(), key.as_str())));
+                .is_ok_and(|(namespace, key, _)| {
+                    KEYS.contains(&(namespace.as_str(), key.as_str()))
+                });
             if ours {
                 publish(ask());
             }
@@ -187,13 +197,18 @@ mod watching {
 
     /// What the portal's settings come to; `None` when it has none of them.
     fn ask_portal(portal: &Proxy<'_>) -> Option<bool> {
-        combine(KEYS.map(|(namespace, key)| read_setting(portal, namespace, key).and_then(|value| says(namespace, key, &value))))
+        combine(KEYS.map(|(namespace, key)| {
+            read_setting(portal, namespace, key).and_then(|value| says(namespace, key, &value))
+        }))
     }
 
     /// One setting from the portal; `None` when it doesn't have it.
     fn read_setting(portal: &Proxy<'_>, namespace: &str, key: &str) -> Option<Reading> {
         // `ReadOne` is the current call; portals from before it only have `Read`.
-        let value: OwnedValue = portal.call("ReadOne", &(namespace, key)).or_else(|_| portal.call("Read", &(namespace, key))).ok()?;
+        let value: OwnedValue = portal
+            .call("ReadOne", &(namespace, key))
+            .or_else(|_| portal.call("Read", &(namespace, key)))
+            .ok()?;
         reading(&value, 0)
     }
 
@@ -222,7 +237,11 @@ mod watching {
             .map(PathBuf::from)
             .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".config")))?;
         let text = |file: &str| read_capped(&config.join(file));
-        let (kdeglobals, gtk4, gtk3) = (text("kdeglobals"), text("gtk-4.0/settings.ini"), text("gtk-3.0/settings.ini"));
+        let (kdeglobals, gtk4, gtk3) = (
+            text("kdeglobals"),
+            text("gtk-4.0/settings.ini"),
+            text("gtk-3.0/settings.ini"),
+        );
         files_say(kdeglobals.as_deref(), [gtk4.as_deref(), gtk3.as_deref()])
     }
 
@@ -230,7 +249,11 @@ mod watching {
     fn read_capped(path: &Path) -> Option<String> {
         use std::io::Read as _;
         let mut text = String::new();
-        std::fs::File::open(path).ok()?.take(256 * 1024).read_to_string(&mut text).ok()?;
+        std::fs::File::open(path)
+            .ok()?
+            .take(256 * 1024)
+            .read_to_string(&mut text)
+            .ok()?;
         Some(text)
     }
 }
@@ -246,12 +269,23 @@ mod tests {
     /// Each desktop's setting, as the portal hands it over, comes to animations on or off.
     #[test]
     fn each_desktop_setting_says_on_or_off() {
-        let ((appearance, reduced), (gnome, enable), (kde, factor)) = (REDUCED_MOTION, GNOME_ANIMATIONS, KDE_ANIMATION_SPEED);
-        assert_eq!(KEYS, [REDUCED_MOTION, GNOME_ANIMATIONS, KDE_ANIMATION_SPEED]);
+        let ((appearance, reduced), (gnome, enable), (kde, factor)) =
+            (REDUCED_MOTION, GNOME_ANIMATIONS, KDE_ANIMATION_SPEED);
+        assert_eq!(
+            KEYS,
+            [REDUCED_MOTION, GNOME_ANIMATIONS, KDE_ANIMATION_SPEED]
+        );
         // The cross-desktop preference: only 1 asks for reduced motion.
-        assert_eq!(says(appearance, reduced, &Reading::Number(1.0)), Some(false));
+        assert_eq!(
+            says(appearance, reduced, &Reading::Number(1.0)),
+            Some(false)
+        );
         assert_eq!(says(appearance, reduced, &Reading::Number(0.0)), Some(true));
-        assert_eq!(says(appearance, reduced, &Reading::Number(7.0)), Some(true), "a value not defined yet is no preference");
+        assert_eq!(
+            says(appearance, reduced, &Reading::Number(7.0)),
+            Some(true),
+            "a value not defined yet is no preference"
+        );
         assert_eq!(says(appearance, reduced, &Reading::Bool(true)), None);
         // GNOME's switch.
         assert_eq!(says(gnome, enable, &Reading::Bool(false)), Some(false));
@@ -261,7 +295,12 @@ mod tests {
         assert_eq!(says(kde, factor, &text("0")), Some(false));
         assert_eq!(says(kde, factor, &text(" 0.5 ")), Some(true));
         assert_eq!(says(kde, factor, &Reading::Number(1.0)), Some(true));
-        for junk in [text(""), text("fast"), Reading::Number(f64::NAN), text("inf")] {
+        for junk in [
+            text(""),
+            text("fast"),
+            Reading::Number(f64::NAN),
+            text("inf"),
+        ] {
             assert_eq!(says(kde, factor, &junk), None, "{junk:?}");
         }
         // Any other setting says nothing.
@@ -288,18 +327,58 @@ mod tests {
         let gtk_off = "[Settings]\ngtk-theme-name=Adwaita\ngtk-enable-animations=0\n";
         let gtk_on = "# written by hand\n[Settings]\ngtk-enable-animations=true\n";
         assert_eq!(files_say(None, [None, None]), None);
-        assert_eq!(files_say(Some("[KDE]\nSingleClick=false\n"), [Some("[Settings]\n"), None]), None, "files that don't mention it");
+        assert_eq!(
+            files_say(
+                Some("[KDE]\nSingleClick=false\n"),
+                [Some("[Settings]\n"), None]
+            ),
+            None,
+            "files that don't mention it"
+        );
         assert_eq!(files_say(Some(kde_instant), [None, None]), Some(false));
         assert_eq!(files_say(Some(kde_slow), [None, None]), Some(true));
         assert_eq!(files_say(None, [Some(gtk_off), None]), Some(false));
         assert_eq!(files_say(None, [None, Some(gtk_on)]), Some(true));
-        assert_eq!(files_say(Some(kde_slow), [Some(gtk_on), Some(gtk_off)]), Some(false), "one file saying off is enough");
+        assert_eq!(
+            files_say(Some(kde_slow), [Some(gtk_on), Some(gtk_off)]),
+            Some(false),
+            "one file saying off is enough"
+        );
 
         // The key counts only in its own section, comments don't, and the last value wins.
-        assert_eq!(ini_value("[Other]\nAnimationDurationFactor=0\n[KDE]\nSingleClick=true\n", "KDE", "AnimationDurationFactor"), None);
-        assert_eq!(ini_value("[KDE]\n#AnimationDurationFactor=0\n;AnimationDurationFactor=0\n", "KDE", "AnimationDurationFactor"), None);
-        assert_eq!(ini_value("[KDE]\r\nAnimationDurationFactor=0\r\nAnimationDurationFactor=1\r\n", "KDE", "AnimationDurationFactor"), Some("1"));
-        assert_eq!(ini_value("AnimationDurationFactor=0\n", "KDE", "AnimationDurationFactor"), None, "outside any section");
+        assert_eq!(
+            ini_value(
+                "[Other]\nAnimationDurationFactor=0\n[KDE]\nSingleClick=true\n",
+                "KDE",
+                "AnimationDurationFactor"
+            ),
+            None
+        );
+        assert_eq!(
+            ini_value(
+                "[KDE]\n#AnimationDurationFactor=0\n;AnimationDurationFactor=0\n",
+                "KDE",
+                "AnimationDurationFactor"
+            ),
+            None
+        );
+        assert_eq!(
+            ini_value(
+                "[KDE]\r\nAnimationDurationFactor=0\r\nAnimationDurationFactor=1\r\n",
+                "KDE",
+                "AnimationDurationFactor"
+            ),
+            Some("1")
+        );
+        assert_eq!(
+            ini_value(
+                "AnimationDurationFactor=0\n",
+                "KDE",
+                "AnimationDurationFactor"
+            ),
+            None,
+            "outside any section"
+        );
         assert_eq!(ini_value("", "KDE", "AnimationDurationFactor"), None);
     }
 }

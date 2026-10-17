@@ -20,13 +20,17 @@ pub fn start() {
             log::error!("no document");
             return;
         };
-        let Some(canvas) = document.get_element_by_id(CANVAS_ID).and_then(|e| e.dyn_into::<web_sys::HtmlCanvasElement>().ok()) else {
+        let Some(canvas) = document
+            .get_element_by_id(CANVAS_ID)
+            .and_then(|e| e.dyn_into::<web_sys::HtmlCanvasElement>().ok())
+        else {
             log::error!("missing <canvas id=\"{CANVAS_ID}\">");
             return;
         };
         let mut options = eframe::WebOptions::default();
         if query().contains("webgl")
-            && let eframe::egui_wgpu::WgpuSetup::CreateNew(create) = &mut options.wgpu_options.wgpu_setup
+            && let eframe::egui_wgpu::WgpuSetup::CreateNew(create) =
+                &mut options.wgpu_options.wgpu_setup
         {
             create.instance_descriptor.backends = eframe::wgpu::Backends::GL;
         }
@@ -36,12 +40,23 @@ pub fn start() {
                 options,
                 Box::new(move |cc| {
                     if let Some(rs) = &cc.wgpu_render_state {
-                        log::info!("soundcraft-web: wgpu backend {:?}", rs.adapter.get_info().backend);
+                        log::info!(
+                            "soundcraft-web: wgpu backend {:?}",
+                            rs.adapter.get_info().backend
+                        );
                     }
-                    let engine = if query().contains("empty") { Engine::default() } else { soundcraft_engine::demo::demo_engine() };
-                    let player = soundcraft_playback::Player::new(Arc::new(engine.session().clone()));
+                    let engine = if query().contains("empty") {
+                        Engine::default()
+                    } else {
+                        soundcraft_engine::demo::demo_engine()
+                    };
+                    let player =
+                        soundcraft_playback::Player::new(Arc::new(engine.session().clone()));
                     let app = SoundApp::new(engine, Some(player), Services::default());
-                    Ok(Box::new(WebShell { app, inbox: Rc::default() }))
+                    Ok(Box::new(WebShell {
+                        app,
+                        inbox: Rc::default(),
+                    }))
                 }),
             )
             .await;
@@ -55,7 +70,9 @@ pub fn start() {
 }
 
 fn query() -> String {
-    web_sys::window().and_then(|w| w.location().search().ok()).unwrap_or_default()
+    web_sys::window()
+        .and_then(|w| w.location().search().ok())
+        .unwrap_or_default()
 }
 
 /// What a file read from the browser is for.
@@ -67,13 +84,19 @@ enum Purpose {
 }
 
 const SESSION_EXTS: &[&str] = &[io::BUNDLE_EXTENSION, soundcraft_model::SESSION_EXTENSION];
-const AUDIO_EXTS: &[&str] = &["wav", "wave", "bwf", "aif", "aiff", "aifc", "flac", "mp3", "ogg", "oga", "m4a", "aac", "mp4", "caf", "mkv", "webm"];
+const AUDIO_EXTS: &[&str] = &[
+    "wav", "wave", "bwf", "aif", "aiff", "aifc", "flac", "mp3", "ogg", "oga", "m4a", "aac", "mp4",
+    "caf", "mkv", "webm",
+];
 const MIDI_EXTS: &[&str] = &["mid", "midi", "smf"];
 
 impl Purpose {
     /// A dropped file goes where its extension says: sessions open, MIDI and audio import.
     fn of(name: &str) -> Self {
-        let ext = name.rsplit_once('.').map(|(_, x)| x.to_ascii_lowercase()).unwrap_or_default();
+        let ext = name
+            .rsplit_once('.')
+            .map(|(_, x)| x.to_ascii_lowercase())
+            .unwrap_or_default();
         if SESSION_EXTS.contains(&ext.as_str()) {
             Self::Session
         } else if MIDI_EXTS.contains(&ext.as_str()) {
@@ -124,7 +147,13 @@ impl WebShell {
         let (inbox, ctx) = (self.inbox.clone(), ctx.clone());
         wasm_bindgen_futures::spawn_local(async move {
             let (label, exts) = purpose.filter();
-            let Some(file) = rfd::AsyncFileDialog::new().add_filter(label, exts).pick_file().await else { return };
+            let Some(file) = rfd::AsyncFileDialog::new()
+                .add_filter(label, exts)
+                .pick_file()
+                .await
+            else {
+                return;
+            };
             let bytes = file.read().await;
             inbox.borrow_mut().push((purpose, file.file_name(), bytes));
             ctx.request_repaint();
@@ -135,7 +164,11 @@ impl WebShell {
         // In the browser a dropped file's `path()` is only its name: read its bytes instead.
         let dropped = ctx.input_mut(|i| std::mem::take(&mut i.raw.dropped_files));
         for f in dropped {
-            let name = f.path().file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "Audio.wav".into());
+            let name = f
+                .path()
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "Audio.wav".into());
             let (inbox, ctx) = (self.inbox.clone(), ctx.clone());
             wasm_bindgen_futures::spawn_local(async move {
                 match f.bytes_async().await {
@@ -156,7 +189,11 @@ impl WebShell {
             Purpose::Session => {
                 let _ = self.app.run("transport.stop", json!({}));
                 io::open_session_bytes(&mut self.app.engine, name, bytes).map(|missing| {
-                    if missing.is_empty() { format!("Opened {name}") } else { format!("Opened {name} ({} missing media)", missing.len()) }
+                    if missing.is_empty() {
+                        format!("Opened {name}")
+                    } else {
+                        format!("Opened {name} ({} missing media)", missing.len())
+                    }
                 })
             }
             // Imports are edits: one undo step each, like the import commands.
@@ -209,31 +246,47 @@ fn download(name: &str, bytes: &[u8]) -> Result<(), String> {
     let document = window.document().ok_or("no document")?;
     let parts = js_sys::Array::of1(&js_sys::Uint8Array::from(bytes));
     let opts = web_sys::BlobPropertyBag::new();
-    opts.set_type(match name.rsplit_once('.').map(|(_, x)| x.to_ascii_lowercase()).as_deref() {
-        Some("scraftz") => "application/zip",
-        Some("wav") => "audio/wav",
-        Some("aif" | "aiff") => "audio/aiff",
-        Some("flac") => "audio/flac",
-        Some("mid" | "midi") => "audio/midi",
-        Some("svg") => "image/svg+xml",
-        Some("txt") => "text/plain",
-        Some("json" | "scraft") => "application/json",
-        Some("musicxml") => "application/vnd.recordare.musicxml+xml",
-        _ => "application/octet-stream",
-    });
+    opts.set_type(
+        match name
+            .rsplit_once('.')
+            .map(|(_, x)| x.to_ascii_lowercase())
+            .as_deref()
+        {
+            Some("scraftz") => "application/zip",
+            Some("wav") => "audio/wav",
+            Some("aif" | "aiff") => "audio/aiff",
+            Some("flac") => "audio/flac",
+            Some("mid" | "midi") => "audio/midi",
+            Some("svg") => "image/svg+xml",
+            Some("txt") => "text/plain",
+            Some("json" | "scraft") => "application/json",
+            Some("musicxml") => "application/vnd.recordare.musicxml+xml",
+            _ => "application/octet-stream",
+        },
+    );
     let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&parts, &opts).map_err(js)?;
     let url = web_sys::Url::create_object_url_with_blob(&blob).map_err(js)?;
-    let a: web_sys::HtmlAnchorElement = document.create_element("a").map_err(js)?.dyn_into().map_err(|_| "not an anchor")?;
+    let a: web_sys::HtmlAnchorElement = document
+        .create_element("a")
+        .map_err(js)?
+        .dyn_into()
+        .map_err(|_| "not an anchor")?;
     a.set_href(&url);
     a.set_download(name);
     a.style().set_property("display", "none").map_err(js)?;
-    document.body().ok_or("no body")?.append_child(&a).map_err(js)?;
+    document
+        .body()
+        .ok_or("no body")?
+        .append_child(&a)
+        .map_err(js)?;
     a.click();
     a.remove();
     // Revoke after the click was dispatched; the download keeps its own reference.
     let revoke = wasm_bindgen::closure::Closure::once_into_js(move || {
         let _ = web_sys::Url::revoke_object_url(&url);
     });
-    window.set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), 10_000).map_err(js)?;
+    window
+        .set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), 10_000)
+        .map_err(js)?;
     Ok(())
 }

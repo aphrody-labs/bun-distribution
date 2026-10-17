@@ -143,7 +143,11 @@ fn tree() -> Vec<(&'static str, Vec<Entry>)> {
                 ("Evaluate Formula…", "dialog:evaluateFormula", None),
                 ("-", "", None),
                 ("Record Actions", "automate.recordActions", None),
-                ("Command Palette…", "dialog:commandSearch", Some("CMD+SHIFT+P")),
+                (
+                    "Command Palette…",
+                    "dialog:commandSearch",
+                    Some("CMD+SHIFT+P"),
+                ),
             ],
         ),
         (
@@ -168,14 +172,29 @@ fn tree() -> Vec<(&'static str, Vec<Entry>)> {
                 ("Calculate Now", "formulas.calculateNow", None),
             ],
         ),
-        ("Window", vec![("New Window", "view.newWindow", None), ("Next Sheet", "sheet.next", None), ("Previous Sheet", "sheet.previous", None)]),
+        (
+            "Window",
+            vec![
+                ("New Window", "view.newWindow", None),
+                ("Next Sheet", "sheet.next", None),
+                ("Previous Sheet", "sheet.previous", None),
+            ],
+        ),
         (
             "Help",
             vec![
                 ("Agent Control (MCP)…", "dialog:agents", None),
                 ("Contributors…", "dialog:about:Contributors", None),
-                ("GridCraft on getartcraft.com", "url:https://getartcraft.com/apps/gridcraft", None),
-                ("Join the ArtCraft Discord…", "url:https://discord.gg/artcraft", None),
+                (
+                    "GridCraft on getartcraft.com",
+                    "url:https://getartcraft.com/apps/gridcraft",
+                    None,
+                ),
+                (
+                    "Join the ArtCraft Discord…",
+                    "url:https://discord.gg/artcraft",
+                    None,
+                ),
             ],
         ),
     ]
@@ -226,8 +245,16 @@ impl NativeMenu {
                 }
                 if id == "view.theme" {
                     let themes = Submenu::new(label, true);
-                    for (mode, label) in [("system", "System"), ("light", "Light"), ("dark", "Dark")] {
-                        let item = CheckMenuItem::with_id(format!("theme:{mode}"), label, true, false, None);
+                    for (mode, label) in
+                        [("system", "System"), ("light", "Light"), ("dark", "Dark")]
+                    {
+                        let item = CheckMenuItem::with_id(
+                            format!("theme:{mode}"),
+                            label,
+                            true,
+                            false,
+                            None,
+                        );
                         let _ = themes.append(&item);
                         theme_items.push((mode, item));
                     }
@@ -256,7 +283,11 @@ impl NativeMenu {
             let _ = tx.send(e);
             ctx.request_repaint();
         }));
-        NativeMenu { _menu: menu, events: rx, theme_items }
+        NativeMenu {
+            _menu: menu,
+            events: rx,
+            theme_items,
+        }
     }
 
     pub fn poll(&self, app: &mut SheetApp, ctx: &egui::Context) {
@@ -281,7 +312,12 @@ impl NativeMenu {
                             physical_key: None,
                             pressed: true,
                             repeat: false,
-                            modifiers: egui::Modifiers { command: true, mac_cmd: true, shift: id == "edit.redo", ..Default::default() },
+                            modifiers: egui::Modifiers {
+                                command: true,
+                                mac_cmd: true,
+                                shift: id == "edit.redo",
+                                ..Default::default()
+                            },
                         });
                     });
                     continue;
@@ -331,8 +367,14 @@ mod tests {
     #[test]
     fn file_menu_has_export_as_pdf_dispatching_the_command() {
         let tree = tree();
-        let (_, file) = tree.iter().find(|(title, _)| *title == "File").expect("File menu");
-        let item = file.iter().find(|e| e.0 == "Export as PDF…").expect("Export as PDF… in the File menu");
+        let (_, file) = tree
+            .iter()
+            .find(|(title, _)| *title == "File")
+            .expect("File menu");
+        let item = file
+            .iter()
+            .find(|e| e.0 == "Export as PDF…")
+            .expect("Export as PDF… in the File menu");
         assert_eq!(item.1, "file.exportPdf");
         assert!(gridcraft_engine::find_command("file.exportPdf").is_some());
     }

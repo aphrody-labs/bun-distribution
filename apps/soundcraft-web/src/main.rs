@@ -16,7 +16,14 @@
 //!
 //! URL query flags: `?webgl` forces the WebGL2 backend instead of WebGPU; `?empty` starts with an
 //! empty session instead of the demo.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 #[cfg(target_arch = "wasm32")]
 mod web;
@@ -28,5 +35,7 @@ fn main() {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
-    eprintln!("soundcraft-web only runs in the browser: build it with `trunk build --release` in apps/soundcraft-web");
+    eprintln!(
+        "soundcraft-web only runs in the browser: build it with `trunk build --release` in apps/soundcraft-web"
+    );
 }

@@ -93,7 +93,11 @@ impl StorageHost for WebStorage {
 
     fn request_persist(&self) -> Value {
         wasm_bindgen_futures::spawn_local(async {
-            let granted = JsFuture::from(store_persist()).await.ok().and_then(|v| v.as_bool()).unwrap_or(false);
+            let granted = JsFuture::from(store_persist())
+                .await
+                .ok()
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
             EST.with(|e| e.borrow_mut().persisted = granted);
             crate::repaint();
         });

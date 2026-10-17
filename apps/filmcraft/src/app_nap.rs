@@ -15,7 +15,8 @@ pub fn disable() -> bool {
     #[cfg(target_os = "macos")]
     {
         use objc2_foundation::{NSActivityOptions, NSProcessInfo, NSString};
-        let options = NSActivityOptions::UserInitiatedAllowingIdleSystemSleep | NSActivityOptions::LatencyCritical;
+        let options = NSActivityOptions::UserInitiatedAllowingIdleSystemSleep
+            | NSActivityOptions::LatencyCritical;
         let reason = NSString::from_str("FilmCraft plays and renders video in the background");
         let token = NSProcessInfo::processInfo().beginActivityWithOptions_reason(options, &reason);
         // The activity lasts while the token is alive: keep it for the life of the process.

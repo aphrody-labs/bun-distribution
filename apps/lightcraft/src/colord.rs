@@ -29,44 +29,66 @@ const PROFILE: &str = "org.freedesktop.ColorManager.Profile";
 pub fn service() -> Box<dyn FnMut() -> Option<Vec<u8>>> {
     let shared: Arc<Mutex<Option<Vec<u8>>>> = Arc::new(Mutex::new(None));
     let writer = Arc::clone(&shared);
-    let spawned = std::thread::Builder::new().name("colord".into()).spawn(move || {
-        loop {
-            let wait = match connect() {
-                Some(conn) => {
-                    let icc = read(&conn);
-                    *writer.lock().unwrap_or_else(PoisonError::into_inner) = icc;
-                    POLL
+    let spawned = std::thread::Builder::new()
+        .name("colord".into())
+        .spawn(move || {
+            loop {
+                let wait = match connect() {
+                    Some(conn) => {
+                        let icc = read(&conn);
+                        *writer.lock().unwrap_or_else(PoisonError::into_inner) = icc;
+                        POLL
+                    }
+                    None => RETRY,
+                };
+                std::thread::sleep(wait);
+                // the app is gone: nobody reads the profile any more
+                if Arc::strong_count(&writer) == 1 {
+                    return;
                 }
-                None => RETRY,
-            };
-            std::thread::sleep(wait);
-            // the app is gone: nobody reads the profile any more
-            if Arc::strong_count(&writer) == 1 {
-                return;
             }
-        }
-    });
+        });
     if let Err(e) = spawned {
         log::warn!("screen profile: no colord reader: {e}");
     }
-    Box::new(move || shared.lock().unwrap_or_else(PoisonError::into_inner).clone())
+    Box::new(move || {
+        shared
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
+    })
 }
 
 fn connect() -> Option<zbus::blocking::Connection> {
-    zbus::blocking::connection::Builder::system().ok()?.method_timeout(Duration::from_secs(2)).build().ok()
+    zbus::blocking::connection::Builder::system()
+        .ok()?
+        .method_timeout(Duration::from_secs(2))
+        .build()
+        .ok()
 }
 
 /// The profile colord assigns to the displays, as file bytes (see the module notes for several displays).
 fn read(conn: &zbus::blocking::Connection) -> Option<Vec<u8>> {
-    let manager = zbus::blocking::Proxy::new(conn, SERVICE, "/org/freedesktop/ColorManager", SERVICE).ok()?;
-    let devices: Vec<zbus::zvariant::OwnedObjectPath> = manager.call("GetDevicesByKind", &("display",)).ok()?;
+    let manager =
+        zbus::blocking::Proxy::new(conn, SERVICE, "/org/freedesktop/ColorManager", SERVICE).ok()?;
+    let devices: Vec<zbus::zvariant::OwnedObjectPath> =
+        manager.call("GetDevicesByKind", &("display",)).ok()?;
     let mut files = Vec::new();
     for device in devices.iter().take(64) {
-        let Some(proxy) = zbus::blocking::Proxy::new(conn, SERVICE, device.as_str(), DEVICE).ok() else { continue };
-        let profiles: Vec<zbus::zvariant::OwnedObjectPath> = proxy.get_property("Profiles").unwrap_or_default();
+        let Some(proxy) = zbus::blocking::Proxy::new(conn, SERVICE, device.as_str(), DEVICE).ok()
+        else {
+            continue;
+        };
+        let profiles: Vec<zbus::zvariant::OwnedObjectPath> =
+            proxy.get_property("Profiles").unwrap_or_default();
         // colord lists a device's profiles default first
-        let Some(first) = profiles.first() else { continue };
-        let Some(profile) = zbus::blocking::Proxy::new(conn, SERVICE, first.as_str(), PROFILE).ok() else { continue };
+        let Some(first) = profiles.first() else {
+            continue;
+        };
+        let Some(profile) = zbus::blocking::Proxy::new(conn, SERVICE, first.as_str(), PROFILE).ok()
+        else {
+            continue;
+        };
         if let Ok(file) = profile.get_property::<String>("Filename") {
             files.push(file);
         }
@@ -102,7 +124,11 @@ mod tests {
         assert_eq!(pick(&s(&[])), None);
         assert_eq!(pick(&s(&["/a.icc"])), Some("/a.icc"));
         assert_eq!(pick(&s(&["/a.icc", "", "/a.icc"])), Some("/a.icc"));
-        assert_eq!(pick(&s(&["/a.icc", "/b.icc"])), None, "which one the window is on isn't known");
+        assert_eq!(
+            pick(&s(&["/a.icc", "/b.icc"])),
+            None,
+            "which one the window is on isn't known"
+        );
         assert_eq!(pick(&s(&[""])), None);
     }
 
@@ -118,7 +144,10 @@ mod tests {
         assert_eq!(load(&empty), None);
         assert_eq!(load(&dir.join("missing.icc")), None);
         let big = dir.join("big.icc");
-        std::fs::File::create(&big).unwrap().set_len(MAX_PROFILE + 1).unwrap();
+        std::fs::File::create(&big)
+            .unwrap()
+            .set_len(MAX_PROFILE + 1)
+            .unwrap();
         assert_eq!(load(&big), None);
         std::fs::remove_dir_all(&dir).unwrap();
     }

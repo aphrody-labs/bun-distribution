@@ -47,7 +47,10 @@ impl Files {
         self.dir.as_ref().map(|d| d.join("window-renderer"))
     }
     fn read(p: Option<PathBuf>) -> Option<WindowRenderer> {
-        std::fs::read_to_string(p?).ok().as_deref().and_then(WindowRenderer::parse)
+        std::fs::read_to_string(p?)
+            .ok()
+            .as_deref()
+            .and_then(WindowRenderer::parse)
     }
     fn write(p: Option<PathBuf>, r: WindowRenderer) {
         let Some(p) = p else { return };
@@ -86,18 +89,31 @@ impl Files {
 
 /// The renderer for this start: see the module docs.
 pub fn choose(files: &Files) -> Chosen {
-    let forced =
-        backend::forced_window_renderer(std::env::var("LIGHTCRAFT_GPU_BACKEND").ok().as_deref(), std::env::var("WGPU_BACKEND").ok().as_deref());
+    let forced = backend::forced_window_renderer(
+        std::env::var("LIGHTCRAFT_GPU_BACKEND").ok().as_deref(),
+        std::env::var("WGPU_BACKEND").ok().as_deref(),
+    );
     let failed = files.take_failed();
-    let remembered = if cfg!(windows) { Files::read(files.remembered()) } else { None };
+    let remembered = if cfg!(windows) {
+        Files::read(files.remembered())
+    } else {
+        None
+    };
     let compiled = wgpu::Instance::enabled_backend_features();
     let os = std::env::consts::OS;
     let order = backend::window_renderer_order(forced, remembered, failed, os, compiled, true);
-    let mut notice = failed.map(|f| format!("The window could not start with its {} renderer last time.", f.name()));
+    let mut notice = failed.map(|f| {
+        format!(
+            "The window could not start with its {} renderer last time.",
+            f.name()
+        )
+    });
     let mut problems = Vec::new();
     let chosen = if cfg!(windows) {
         pick_probed(&order, &mut problems)
-    } else if forced == Some(WindowRenderer::Glow) || (forced.is_none() && failed.is_some_and(|f| f != WindowRenderer::Glow)) {
+    } else if forced == Some(WindowRenderer::Glow)
+        || (forced.is_none() && failed.is_some_and(|f| f != WindowRenderer::Glow))
+    {
         // elsewhere eframe's own wgpu set-up stays the default; glow after a failed start
         Some((WindowRenderer::Glow, None))
     } else {
@@ -105,7 +121,11 @@ pub fn choose(files: &Files) -> Chosen {
     };
     let (which, existing) = chosen.unwrap_or((WindowRenderer::Glow, None));
     if !problems.is_empty() {
-        notice = Some(format!("{} {}", notice.unwrap_or_default(), problems.join(" ")).trim().to_string());
+        notice = Some(
+            format!("{} {}", notice.unwrap_or_default(), problems.join(" "))
+                .trim()
+                .to_string(),
+        );
     }
     let notice = notice.map(|n| {
         format!(
@@ -116,7 +136,11 @@ pub fn choose(files: &Files) -> Chosen {
             var = "LIGHTCRAFT_GPU_BACKEND",
         )
     });
-    log::info!("window: renderer {} (order {:?})", which.name(), order.iter().map(|r| r.name()).collect::<Vec<_>>());
+    log::info!(
+        "window: renderer {} (order {:?})",
+        which.name(),
+        order.iter().map(|r| r.name()).collect::<Vec<_>>()
+    );
     let mut wgpu_options = base_options();
     let renderer = match (which, existing) {
         (WindowRenderer::Glow, _) => eframe::Renderer::Glow,
@@ -131,7 +155,12 @@ pub fn choose(files: &Files) -> Chosen {
             eframe::Renderer::Wgpu
         }
     };
-    Chosen { renderer, wgpu_options, which, notice }
+    Chosen {
+        renderer,
+        wgpu_options,
+        which,
+        notice,
+    }
 }
 
 /// eframe's defaults with the app's backends and DX12 shader compiler (issues #136, #471).
@@ -147,12 +176,16 @@ pub fn base_options() -> WgpuConfiguration {
 }
 
 /// The first renderer of `order` that probes cleanly (glow is taken without a probe).
-fn pick_probed(order: &[WindowRenderer], problems: &mut Vec<String>) -> Option<(WindowRenderer, Option<WgpuSetupExisting>)> {
+fn pick_probed(
+    order: &[WindowRenderer],
+    problems: &mut Vec<String>,
+) -> Option<(WindowRenderer, Option<WgpuSetupExisting>)> {
     for &r in order {
         match r {
             WindowRenderer::Glow => return Some((r, None)),
             WindowRenderer::Wgpu(b) => {
-                let probed = std::panic::catch_unwind(|| probe(b)).unwrap_or_else(|_| Err("panicked".into()));
+                let probed = std::panic::catch_unwind(|| probe(b))
+                    .unwrap_or_else(|_| Err("panicked".into()));
                 match probed {
                     Ok(e) => return Some((r, Some(e))),
                     Err(e) => {
@@ -170,44 +203,72 @@ fn pick_probed(order: &[WindowRenderer], problems: &mut Vec<String>) -> Option<(
 fn probe(backends: Backends) -> Result<WgpuSetupExisting, String> {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends,
-        flags: backend::instance_flags_from_env(wgpu::InstanceFlags::from_build_config().with_env()),
+        flags: backend::instance_flags_from_env(
+            wgpu::InstanceFlags::from_build_config().with_env(),
+        ),
         backend_options: backend::backend_options(),
         memory_budget_thresholds: wgpu::MemoryBudgetThresholds::default(),
         display: None,
     });
     let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-        power_preference: wgpu::PowerPreference::from_env().unwrap_or(wgpu::PowerPreference::HighPerformance),
+        power_preference:
+            wgpu::PowerPreference::from_env().unwrap_or(wgpu::PowerPreference::HighPerformance),
         ..Default::default()
     }))
     .map_err(|e| format!("no adapter: {e}"))?;
-    let base = if adapter.get_info().backend == wgpu::Backend::Gl { wgpu::Limits::downlevel_webgl2_defaults() } else { wgpu::Limits::default() };
+    let base = if adapter.get_info().backend == wgpu::Backend::Gl {
+        wgpu::Limits::downlevel_webgl2_defaults()
+    } else {
+        wgpu::Limits::default()
+    };
     let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
         label: Some("egui wgpu device"),
-        required_limits: wgpu::Limits { max_texture_dimension_2d: 8192, ..base },
+        required_limits: wgpu::Limits {
+            max_texture_dimension_2d: 8192,
+            ..base
+        },
         ..Default::default()
     }))
     .map_err(|e| format!("{}: no device: {e}", adapter.get_info().name))?;
     install_error_handler(&device);
     check_pipeline(&device, |d| {
-        drop(eframe::egui_wgpu::Renderer::new(d, wgpu::TextureFormat::Bgra8Unorm, eframe::egui_wgpu::RendererOptions::default()));
+        drop(eframe::egui_wgpu::Renderer::new(
+            d,
+            wgpu::TextureFormat::Bgra8Unorm,
+            eframe::egui_wgpu::RendererOptions::default(),
+        ));
     })?;
-    Ok(WgpuSetupExisting { instance, adapter, device, queue })
+    Ok(WgpuSetupExisting {
+        instance,
+        adapter,
+        device,
+        queue,
+    })
 }
 
 /// wgpu's default handler for errors outside an error scope panics ("Handling wgpu errors as
 /// fatal by default"); this one logs.
 pub fn install_error_handler(device: &wgpu::Device) {
-    device.on_uncaptured_error(std::sync::Arc::new(|e| log::error!("window: wgpu error: {e}")));
+    device.on_uncaptured_error(std::sync::Arc::new(|e| {
+        log::error!("window: wgpu error: {e}")
+    }));
 }
 
 /// Run `build` inside validation, internal and out-of-memory error scopes: the first error is
 /// returned instead of reaching the uncaptured-error handler.
-pub fn check_pipeline(device: &wgpu::Device, build: impl FnOnce(&wgpu::Device)) -> Result<(), String> {
+pub fn check_pipeline(
+    device: &wgpu::Device,
+    build: impl FnOnce(&wgpu::Device),
+) -> Result<(), String> {
     let oom = device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
     let internal = device.push_error_scope(wgpu::ErrorFilter::Internal);
     let validation = device.push_error_scope(wgpu::ErrorFilter::Validation);
     build(device);
-    let errors = [pollster::block_on(validation.pop()), pollster::block_on(internal.pop()), pollster::block_on(oom.pop())];
+    let errors = [
+        pollster::block_on(validation.pop()),
+        pollster::block_on(internal.pop()),
+        pollster::block_on(oom.pop()),
+    ];
     match errors.into_iter().flatten().next() {
         Some(e) => Err(e.to_string()),
         None => Ok(()),
@@ -221,11 +282,16 @@ pub fn relaunch_after_failure(files: &Files) -> bool {
     if !files.armed() {
         return false;
     }
-    let tries = std::env::var(RETRY_VAR).ok().and_then(|v| v.parse::<u32>().ok()).unwrap_or(0);
+    let tries = std::env::var(RETRY_VAR)
+        .ok()
+        .and_then(|v| v.parse::<u32>().ok())
+        .unwrap_or(0);
     if tries >= MAX_RETRIES {
         return false;
     }
-    let Ok(exe) = std::env::current_exe() else { return false };
+    let Ok(exe) = std::env::current_exe() else {
+        return false;
+    };
     log::warn!("window: the renderer failed to start; starting again with the next one");
     std::process::Command::new(exe)
         .args(std::env::args_os().skip(1))
@@ -261,7 +327,10 @@ mod tests {
         f.arm(WindowRenderer::Glow);
         f.started(WindowRenderer::Glow);
         assert!(!f.armed());
-        assert_eq!(Files::read(f.remembered()), cfg!(windows).then_some(WindowRenderer::Glow));
+        assert_eq!(
+            Files::read(f.remembered()),
+            cfg!(windows).then_some(WindowRenderer::Glow)
+        );
         // nothing written without a settings folder
         let none = Files::new(None);
         none.arm(dx);
@@ -277,11 +346,15 @@ mod tests {
             backends: backend::window_backends(),
             ..wgpu::InstanceDescriptor::new_without_display_handle()
         });
-        let Ok(adapter) = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default())) else {
+        let Ok(adapter) =
+            pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default()))
+        else {
             eprintln!("no GPU adapter: skipped");
             return;
         };
-        let Ok((device, _queue)) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor::default())) else {
+        let Ok((device, _queue)) =
+            pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor::default()))
+        else {
             eprintln!("no GPU device: skipped");
             return;
         };
@@ -295,7 +368,12 @@ mod tests {
             let _ = d.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some("egui_pipeline"),
                 layout: None,
-                vertex: wgpu::VertexState { module: &m, entry_point: Some("vs_main"), compilation_options: Default::default(), buffers: &[] },
+                vertex: wgpu::VertexState {
+                    module: &m,
+                    entry_point: Some("vs_main"),
+                    compilation_options: Default::default(),
+                    buffers: &[],
+                },
                 primitive: Default::default(),
                 depth_stencil: None,
                 multisample: Default::default(),
@@ -307,10 +385,17 @@ mod tests {
         assert!(r.is_err(), "{r:?}");
         // egui's own pipeline builds cleanly here
         check_pipeline(&device, |d| {
-            drop(eframe::egui_wgpu::Renderer::new(d, wgpu::TextureFormat::Bgra8Unorm, eframe::egui_wgpu::RendererOptions::default()));
+            drop(eframe::egui_wgpu::Renderer::new(
+                d,
+                wgpu::TextureFormat::Bgra8Unorm,
+                eframe::egui_wgpu::RendererOptions::default(),
+            ));
         })
         .unwrap();
         // outside a scope: logged by our handler, not a panic
-        let _ = device.create_shader_module(wgpu::ShaderModuleDescriptor { label: None, source: wgpu::ShaderSource::Wgsl("not wgsl".into()) });
+        let _ = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: None,
+            source: wgpu::ShaderSource::Wgsl("not wgsl".into()),
+        });
     }
 }

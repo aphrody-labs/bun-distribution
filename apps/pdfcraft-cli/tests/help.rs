@@ -15,12 +15,21 @@ fn text(bytes: &[u8]) -> String {
 
 #[test]
 fn help_flags_print_full_usage_to_stdout() {
-    for args in [&["--help"][..], &["-h"], &["help"], &["render", "--help"], &["check", "-h"]] {
+    for args in [
+        &["--help"][..],
+        &["-h"],
+        &["help"],
+        &["render", "--help"],
+        &["check", "-h"],
+    ] {
         let out = run(args);
         assert!(out.status.success(), "{args:?} exited {:?}", out.status);
         let stdout = text(&out.stdout);
         // Per-command options, not just the command list.
-        assert!(stdout.contains("pdfcraft-cli render <file.pdf> --page N"), "{args:?}: {stdout}");
+        assert!(
+            stdout.contains("pdfcraft-cli render <file.pdf> --page N"),
+            "{args:?}: {stdout}"
+        );
         assert!(stdout.contains("--every N"), "{args:?}: {stdout}");
         assert!(out.stderr.is_empty(), "{args:?}: {}", text(&out.stderr));
     }
@@ -39,11 +48,25 @@ fn no_command_fails_with_usage_on_stderr() {
 fn usage_lists_mcp_only_when_built_with_it() {
     let out = run(&["--help"]);
     let stdout = text(&out.stdout);
-    assert_eq!(stdout.contains("pdfcraft-cli mcp"), cfg!(feature = "mcp"), "{stdout}");
-    assert_eq!(stdout.contains("--compact"), cfg!(feature = "mcp"), "{stdout}");
+    assert_eq!(
+        stdout.contains("pdfcraft-cli mcp"),
+        cfg!(feature = "mcp"),
+        "{stdout}"
+    );
+    assert_eq!(
+        stdout.contains("--compact"),
+        cfg!(feature = "mcp"),
+        "{stdout}"
+    );
     // The lines around it are still there.
-    assert!(stdout.contains("pdfcraft-cli run    --script steps.json"), "{stdout}");
-    assert!(stdout.contains("pdfcraft-cli ui     --control FILE"), "{stdout}");
+    assert!(
+        stdout.contains("pdfcraft-cli run    --script steps.json"),
+        "{stdout}"
+    );
+    assert!(
+        stdout.contains("pdfcraft-cli ui     --control FILE"),
+        "{stdout}"
+    );
 }
 
 #[cfg(not(feature = "mcp"))]

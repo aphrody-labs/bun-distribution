@@ -46,18 +46,46 @@ mod tests {
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     #[test]
     fn camera_files_are_visible_in_every_capitalization() {
-        let filters: Vec<_> = extensions(&["mp4", "mov", "m2ts", "wav", "fcproj"]).iter().map(|ext| glob::Pattern::new(&format!("*.{ext}")).unwrap()).collect();
-        for name in ["camera.mp4", "camera.MP4", "camera.Mp4", "clip.MOV", "clip.moV", "take.M2TS", "sound.WaV", "Edit.FCPROJ", "Edit.FcProj"] {
-            assert!(filters.iter().any(|f| f.matches(name)), "the picker hides {name}");
+        let filters: Vec<_> = extensions(&["mp4", "mov", "m2ts", "wav", "fcproj"])
+            .iter()
+            .map(|ext| glob::Pattern::new(&format!("*.{ext}")).unwrap())
+            .collect();
+        for name in [
+            "camera.mp4",
+            "camera.MP4",
+            "camera.Mp4",
+            "clip.MOV",
+            "clip.moV",
+            "take.M2TS",
+            "sound.WaV",
+            "Edit.FCPROJ",
+            "Edit.FcProj",
+        ] {
+            assert!(
+                filters.iter().any(|f| f.matches(name)),
+                "the picker hides {name}"
+            );
         }
-        for name in ["camera.mp4.bak", "camera.mp44", "camera.xmp4", "notes.txt", "mp4"] {
-            assert!(!filters.iter().any(|f| f.matches(name)), "the picker admits {name}");
+        for name in [
+            "camera.mp4.bak",
+            "camera.mp44",
+            "camera.xmp4",
+            "notes.txt",
+            "mp4",
+        ] {
+            assert!(
+                !filters.iter().any(|f| f.matches(name)),
+                "the picker admits {name}"
+            );
         }
     }
 
     #[test]
     fn save_filters_keep_the_literal_default_extension() {
-        assert_eq!(extensions(&["mp4", "mov"]).first().map(String::as_str), Some("mp4"));
+        assert_eq!(
+            extensions(&["mp4", "mov"]).first().map(String::as_str),
+            Some("mp4")
+        );
         assert!(extensions(&[]).is_empty());
         assert_eq!(extensions(&["*", "", "123"]), ["*", "", "123"]);
     }
@@ -65,6 +93,9 @@ mod tests {
     #[cfg(any(target_os = "windows", target_os = "macos"))]
     #[test]
     fn native_filters_receive_only_literal_extensions() {
-        assert_eq!(extensions(&["mp4", "mov", "fcproj"]), ["mp4", "mov", "fcproj"]);
+        assert_eq!(
+            extensions(&["mp4", "mov", "fcproj"]),
+            ["mp4", "mov", "fcproj"]
+        );
     }
 }

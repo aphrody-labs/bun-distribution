@@ -14,8 +14,14 @@ fn main() {
     let mut res = winresource::WindowsResource::new();
     res.set_icon("../../assets/effectcraft/app-icon/effectcraft.ico")
         .set("ProductName", "EffectCraft")
-        .set("FileDescription", "EffectCraft motion graphics and visual effects")
-        .set("LegalCopyright", "Copyright (c) 2026 The EffectCraft contributors. MIT OR Apache-2.0.")
+        .set(
+            "FileDescription",
+            "EffectCraft motion graphics and visual effects",
+        )
+        .set(
+            "LegalCopyright",
+            "Copyright (c) 2026 The EffectCraft contributors. MIT OR Apache-2.0.",
+        )
         .set("OriginalFilename", "effectcraft.exe")
         .set("InternalName", "effectcraft");
     if let Err(e) = res.compile() {

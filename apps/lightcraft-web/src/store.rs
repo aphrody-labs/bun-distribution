@@ -23,7 +23,11 @@ const MEM_BUDGET: usize = 768 << 20;
 
 /// Catalog path for a stored original.
 pub fn original_path(hash: &str, name: &str) -> String {
-    let name = name.rsplit(['/', '\\']).next().filter(|n| !n.is_empty()).unwrap_or("photo");
+    let name = name
+        .rsplit(['/', '\\'])
+        .next()
+        .filter(|n| !n.is_empty())
+        .unwrap_or("photo");
     format!("{PATH_PREFIX}{hash}/{name}")
 }
 
@@ -77,7 +81,15 @@ impl Originals {
         }
         g.total += bytes.len();
         while g.total > MEM_BUDGET && g.bytes.len() > 1 {
-            let Some(oldest) = g.bytes.iter().filter(|(h, _)| *h != hash).min_by_key(|(_, v)| v.1).map(|(h, _)| h.clone()) else { break };
+            let Some(oldest) = g
+                .bytes
+                .iter()
+                .filter(|(h, _)| *h != hash)
+                .min_by_key(|(_, v)| v.1)
+                .map(|(h, _)| h.clone())
+            else {
+                break;
+            };
             if let Some(v) = g.bytes.remove(&oldest) {
                 g.total -= v.0.len();
             }
@@ -145,7 +157,9 @@ impl Originals {
     pub fn hooks(&self) -> (FileLoader, FileProbe) {
         let s = self.clone();
         let loader: FileLoader = Arc::new(move |path: &str, max_edge: usize| {
-            let bytes = s.get(path).ok_or_else(|| format!("{path}: the original is still loading from browser storage"))?;
+            let bytes = s.get(path).ok_or_else(|| {
+                format!("{path}: the original is still loading from browser storage")
+            })?;
             load_bytes(&bytes, max_edge)
         });
         let s = self.clone();
@@ -162,19 +176,27 @@ impl Originals {
         session.media.file_loader = Some(l);
         session.media.file_probe = Some(p);
         let s = self.clone();
-        session.media.preview_loader =
-            Some(Arc::new(move |path: &str, max_edge: usize| lightcraft_engine::files::embedded_preview_srgb(&s.get(path)?, max_edge)));
+        session.media.preview_loader = Some(Arc::new(move |path: &str, max_edge: usize| {
+            lightcraft_engine::files::embedded_preview_srgb(&s.get(path)?, max_edge)
+        }));
     }
 }
 
 /// File name part of an export path (the browser download name).
 pub fn download_name(path: &str) -> &str {
-    path.rsplit(['/', '\\']).next().filter(|n| !n.is_empty()).unwrap_or("export.png")
+    path.rsplit(['/', '\\'])
+        .next()
+        .filter(|n| !n.is_empty())
+        .unwrap_or("export.png")
 }
 
 /// MIME type for a download, by extension.
 pub fn mime_for(name: &str) -> &'static str {
-    match name.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase()).as_deref() {
+    match name
+        .rsplit_once('.')
+        .map(|(_, e)| e.to_ascii_lowercase())
+        .as_deref()
+    {
         Some("jpg" | "jpeg") => "image/jpeg",
         Some("png") => "image/png",
         Some("tif" | "tiff") => "image/tiff",
@@ -187,9 +209,15 @@ pub fn mime_for(name: &str) -> &'static str {
 
 #[cfg(test)]
 pub(crate) fn png_bytes(w: usize, h: usize) -> Vec<u8> {
-    let bytes: Vec<u8> = (0..w * h).flat_map(|i| [(i * 7) as u8, 128, 200, 255]).collect();
+    let bytes: Vec<u8> = (0..w * h)
+        .flat_map(|i| [(i * 7) as u8, 128, 200, 255])
+        .collect();
     let img = lightcraft_raster::Rgba8::from_bytes(w, h, &bytes).unwrap();
-    lightcraft_codecs::encode_png(&lightcraft_codecs::EncodeImage::rgba8(&img), &lightcraft_codecs::EncodeMeta::default()).unwrap()
+    lightcraft_codecs::encode_png(
+        &lightcraft_codecs::EncodeImage::rgba8(&img),
+        &lightcraft_codecs::EncodeMeta::default(),
+    )
+    .unwrap()
 }
 
 #[cfg(test)]
@@ -227,12 +255,18 @@ mod tests {
         let hash = content_hash(&bytes);
         let path = store.added("tiny.png", &hash, bytes.into());
         assert_eq!(store.take_pending(), vec![path.clone()]);
-        let r = session.execute("library.import", &json!({"paths": [path]})).unwrap();
+        let r = session
+            .execute("library.import", &json!({"paths": [path]}))
+            .unwrap();
         let id = lightcraft_engine::catalog::PhotoId(r["imported"][0].as_u64().unwrap());
         let p = session.catalog.photo(id).unwrap();
         assert_eq!((p.width, p.height), (40, 30));
         assert_eq!(p.file_name, "tiny.png");
-        assert_eq!(p.content_hash.as_deref(), Some(hash.as_str()), "storage key = catalog content hash");
+        assert_eq!(
+            p.content_hash.as_deref(),
+            Some(hash.as_str()),
+            "storage key = catalog content hash"
+        );
         let out = session.render_now(id, 20, 20).unwrap();
         assert_eq!(out.image.width, 20);
     }

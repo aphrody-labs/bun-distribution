@@ -36,7 +36,11 @@ impl KeyFile {
 /// Bind `127.0.0.1:port`, write the key file into `settings` and serve. `None` when the port
 /// cannot be bound or there is no random key (the control channel is off); the key file is
 /// `None` when it could not be written (requests are then refused).
-pub fn start(port: u16, ctx: egui::Context, settings: Option<&Path>) -> Option<(Receiver<ControlRequest>, Option<KeyFile>)> {
+pub fn start(
+    port: u16,
+    ctx: egui::Context,
+    settings: Option<&Path>,
+) -> Option<(Receiver<ControlRequest>, Option<KeyFile>)> {
     let listener = match TcpListener::bind(("127.0.0.1", port)) {
         Ok(l) => l,
         Err(e) => {
@@ -68,7 +72,10 @@ pub fn start(port: u16, ctx: egui::Context, settings: Option<&Path>) -> Option<(
         }
     };
     match &key_file {
-        Some(f) => log::info!("control server listening on 127.0.0.1:{port}, key in {}", f.path().display()),
+        Some(f) => log::info!(
+            "control server listening on 127.0.0.1:{port}, key in {}",
+            f.path().display()
+        ),
         None => log::info!("control server listening on 127.0.0.1:{port}"),
     }
     Some((serve_on(listener, ctx, key, FIRST_REQUEST), key_file))
@@ -92,18 +99,28 @@ fn write_key_file(p: &Path, key: &str) -> Result<(), String> {
     open.write(true).create_new(true);
     #[cfg(unix)]
     std::os::unix::fs::OpenOptionsExt::mode(&mut open, 0o600);
-    let mut f = open.open(p).map_err(|e| format!("cannot create {}: {e}", p.display()))?;
-    f.write_all(key.as_bytes()).map_err(|e| format!("cannot write {}: {e}", p.display()))
+    let mut f = open
+        .open(p)
+        .map_err(|e| format!("cannot create {}: {e}", p.display()))?;
+    f.write_all(key.as_bytes())
+        .map_err(|e| format!("cannot write {}: {e}", p.display()))
 }
 
 /// Compare a key with the window's in time that does not depend on where they differ. An
 /// empty key never matches.
 fn keys_match(given: &str, key: &str) -> bool {
     let (a, b) = (given.as_bytes(), key.as_bytes());
-    !b.is_empty() && a.len() == b.len() && a.iter().zip(b).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
+    !b.is_empty()
+        && a.len() == b.len()
+        && a.iter().zip(b).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
 }
 
-fn serve_on(listener: TcpListener, ctx: egui::Context, key: String, first: Duration) -> Receiver<ControlRequest> {
+fn serve_on(
+    listener: TcpListener,
+    ctx: egui::Context,
+    key: String,
+    first: Duration,
+) -> Receiver<ControlRequest> {
     let (tx, rx) = channel::<ControlRequest>();
     let key: Arc<str> = key.into();
     std::thread::spawn(move || {
@@ -125,7 +142,10 @@ struct Timed {
 impl Read for Timed {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         if let Some(d) = self.deadline {
-            let left = d.checked_duration_since(Instant::now()).filter(|l| !l.is_zero()).ok_or(std::io::ErrorKind::TimedOut)?;
+            let left = d
+                .checked_duration_since(Instant::now())
+                .filter(|l| !l.is_zero())
+                .ok_or(std::io::ErrorKind::TimedOut)?;
             self.s.set_read_timeout(Some(left))?;
         }
         self.s.read(buf)
@@ -144,20 +164,29 @@ impl Timed {
 /// The next line (trimmed), `None` at the end of the stream or after a read error.
 fn read_line(r: &mut BufReader<Timed>) -> Option<Result<String, &'static str>> {
     let mut buf = Vec::new();
-    let n = r.by_ref().take(MAX_LINE as u64 + 1).read_until(b'\n', &mut buf).ok()?;
+    let n = r
+        .by_ref()
+        .take(MAX_LINE as u64 + 1)
+        .read_until(b'\n', &mut buf)
+        .ok()?;
     if n == 0 {
         return None;
     }
     if buf.len() > MAX_LINE {
         return Some(Err("line too long"));
     }
-    Some(String::from_utf8(buf).map(|s| s.trim().to_string()).map_err(|_| "not UTF-8"))
+    Some(
+        String::from_utf8(buf)
+            .map(|s| s.trim().to_string())
+            .map_err(|_| "not UTF-8"),
+    )
 }
 
 /// Read and drop the rest of an oversize line, so closing the socket does not reset the
 /// connection before the client has read the error. At most 64 MiB, within 2 s.
 fn discard_rest_of_line(r: &mut BufReader<Timed>) {
-    r.get_mut().set_deadline(Some(Instant::now() + Duration::from_secs(2)));
+    r.get_mut()
+        .set_deadline(Some(Instant::now() + Duration::from_secs(2)));
     let mut left: usize = 64 << 20;
     while left > 0 {
         let (used, done) = match r.fill_buf() {
@@ -175,11 +204,20 @@ fn discard_rest_of_line(r: &mut BufReader<Timed>) {
     }
 }
 
-fn serve(stream: TcpStream, tx: Sender<ControlRequest>, ctx: egui::Context, key: &str, first: Duration) {
+fn serve(
+    stream: TcpStream,
+    tx: Sender<ControlRequest>,
+    ctx: egui::Context,
+    key: &str,
+    first: Duration,
+) {
     let Ok(read) = stream.try_clone() else { return };
     let mut out = stream;
     // One overall deadline from accept to the first authorised request; after it, none.
-    let mut reader = BufReader::new(Timed { s: read, deadline: Some(Instant::now() + first) });
+    let mut reader = BufReader::new(Timed {
+        s: read,
+        deadline: Some(Instant::now() + first),
+    });
     let mut authorised = false;
     // The key an `auth` request gave this connection.
     let mut conn_key: Option<String> = None;
@@ -203,17 +241,30 @@ fn serve(stream: TcpStream, tx: Sender<ControlRequest>, ctx: egui::Context, key:
             // port) starts with a request line that never parses, so it can't carry a command in
             // its body, even before the key is checked.
             Err(e) => {
-                let _ = writeln!(out, "{}", json!({"ok": false, "error": format!("bad JSON: {e}; closing the connection")}));
+                let _ = writeln!(
+                    out,
+                    "{}",
+                    json!({"ok": false, "error": format!("bad JSON: {e}; closing the connection")})
+                );
                 break;
             }
         };
         let id = msg.get("id").cloned().unwrap_or(Value::Null);
-        let method = msg.get("method").and_then(Value::as_str).unwrap_or("").to_string();
+        let method = msg
+            .get("method")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
         let params = msg.get("params").cloned().unwrap_or(json!({}));
         // The top-level `key`; `auth` may carry it in its params. For other methods `params.key`
         // is an ordinary parameter (`ui.key {"key": "Enter"}`).
-        let given =
-            msg.get("key").and_then(Value::as_str).or_else(|| if method == "auth" { params.get("key").and_then(Value::as_str) } else { None });
+        let given = msg.get("key").and_then(Value::as_str).or_else(|| {
+            if method == "auth" {
+                params.get("key").and_then(Value::as_str)
+            } else {
+                None
+            }
+        });
         let mut reply = |mut v: Value| -> bool {
             if let Some(o) = v.as_object_mut() {
                 o.insert("id".into(), id.clone());
@@ -242,7 +293,9 @@ fn serve(stream: TcpStream, tx: Sender<ControlRequest>, ctx: egui::Context, key:
             break;
         }
         ctx.request_repaint();
-        let r = rrx.recv_timeout(Duration::from_secs(60)).unwrap_or_else(|_| json!({"ok": false, "error": "timeout"}));
+        let r = rrx
+            .recv_timeout(Duration::from_secs(60))
+            .unwrap_or_else(|_| json!({"ok": false, "error": "timeout"}));
         if !reply(r) {
             break;
         }
@@ -260,7 +313,10 @@ mod tests {
     fn boot_with(first: Duration) -> (u16, Receiver<ControlRequest>) {
         let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
         let port = listener.local_addr().unwrap().port();
-        (port, serve_on(listener, egui::Context::default(), KEY.to_string(), first))
+        (
+            port,
+            serve_on(listener, egui::Context::default(), KEY.to_string(), first),
+        )
     }
 
     fn boot() -> (u16, Receiver<ControlRequest>) {
@@ -307,7 +363,10 @@ mod tests {
         let (port, rx) = boot();
         let mut c = Conn::open(port);
         let r = c.call(r#"{"id":1,"method":"document.inspect"}"#);
-        assert_eq!((r["ok"].clone(), r["error"].clone(), r["id"].clone()), (json!(false), json!("unauthorized"), json!(1)));
+        assert_eq!(
+            (r["ok"].clone(), r["error"].clone(), r["id"].clone()),
+            (json!(false), json!("unauthorized"), json!(1))
+        );
         assert!(c.closed());
         assert!(rx.try_recv().is_err(), "nothing reached the UI");
     }
@@ -317,7 +376,13 @@ mod tests {
         let (port, rx) = boot();
         for key in ["nope", &KEY[..63], &format!("{KEY}0"), &KEY.to_uppercase()] {
             let mut c = Conn::open(port);
-            assert_eq!(c.call(&format!(r#"{{"id":1,"key":"{key}","method":"document.inspect"}}"#))["error"], "unauthorized", "{key}");
+            assert_eq!(
+                c.call(&format!(
+                    r#"{{"id":1,"key":"{key}","method":"document.inspect"}}"#
+                ))["error"],
+                "unauthorized",
+                "{key}"
+            );
             assert!(c.closed());
         }
         assert!(rx.try_recv().is_err());
@@ -327,13 +392,21 @@ mod tests {
     fn the_key_on_each_request() {
         let (port, rx) = boot();
         let mut c = Conn::open(port);
-        c.send(&format!(r#"{{"id":7,"key":"{KEY}","method":"document.inspect","params":{{"text":true}}}}"#));
+        c.send(&format!(
+            r#"{{"id":7,"key":"{KEY}","method":"document.inspect","params":{{"text":true}}}}"#
+        ));
         let req = answer(&rx);
-        assert_eq!((req.method.as_str(), &req.params), ("document.inspect", &json!({"text": true})));
+        assert_eq!(
+            (req.method.as_str(), &req.params),
+            ("document.inspect", &json!({"text": true}))
+        );
         let r = c.recv();
         assert_eq!((r["ok"].clone(), r["id"].clone()), (json!(true), json!(7)));
         // Every request needs it: one without the key is refused, also after good ones.
-        assert_eq!(c.call(r#"{"id":8,"method":"document.inspect"}"#)["error"], "unauthorized");
+        assert_eq!(
+            c.call(r#"{"id":8,"method":"document.inspect"}"#)["error"],
+            "unauthorized"
+        );
         assert!(c.closed());
     }
 
@@ -341,7 +414,10 @@ mod tests {
     fn auth_once_per_connection() {
         let (port, rx) = boot();
         let mut c = Conn::open(port);
-        assert_eq!(c.call(&format!(r#"{{"id":1,"method":"auth","key":"{KEY}"}}"#))["ok"], true);
+        assert_eq!(
+            c.call(&format!(r#"{{"id":1,"method":"auth","key":"{KEY}"}}"#))["ok"],
+            true
+        );
         for id in 2..4 {
             c.send(&format!(r#"{{"id":{id},"method":"document.inspect"}}"#));
             answer(&rx);
@@ -349,13 +425,24 @@ mod tests {
         }
         // `params.key` works for `auth` too.
         let mut c = Conn::open(port);
-        assert_eq!(c.call(&format!(r#"{{"id":1,"method":"auth","params":{{"key":"{KEY}"}}}}"#))["ok"], true);
+        assert_eq!(
+            c.call(&format!(
+                r#"{{"id":1,"method":"auth","params":{{"key":"{KEY}"}}}}"#
+            ))["ok"],
+            true
+        );
         // A wrong key on an authenticated connection is still refused, and closes it.
-        assert_eq!(c.call(r#"{"id":2,"key":"nope","method":"document.inspect"}"#)["error"], "unauthorized");
+        assert_eq!(
+            c.call(r#"{"id":2,"key":"nope","method":"document.inspect"}"#)["error"],
+            "unauthorized"
+        );
         assert!(c.closed());
         // A failed auth closes the connection.
         let mut c = Conn::open(port);
-        assert_eq!(c.call(r#"{"id":1,"method":"auth","key":"nope"}"#)["error"], "unauthorized");
+        assert_eq!(
+            c.call(r#"{"id":1,"method":"auth","key":"nope"}"#)["error"],
+            "unauthorized"
+        );
         assert!(c.closed());
     }
 
@@ -364,12 +451,22 @@ mod tests {
         let (port, rx) = boot();
         // `params.key` does not authenticate other methods.
         let mut c = Conn::open(port);
-        assert_eq!(c.call(&format!(r#"{{"id":1,"method":"document.inspect","params":{{"key":"{KEY}"}}}}"#))["error"], "unauthorized");
+        assert_eq!(
+            c.call(&format!(
+                r#"{{"id":1,"method":"document.inspect","params":{{"key":"{KEY}"}}}}"#
+            ))["error"],
+            "unauthorized"
+        );
         // It is an ordinary parameter for them (`ui.key` presses a key).
         let mut c = Conn::open(port);
-        c.send(&format!(r#"{{"id":1,"key":"{KEY}","method":"ui.key","params":{{"key":"Enter"}}}}"#));
+        c.send(&format!(
+            r#"{{"id":1,"key":"{KEY}","method":"ui.key","params":{{"key":"Enter"}}}}"#
+        ));
         let req = answer(&rx);
-        assert_eq!((req.method.as_str(), &req.params), ("ui.key", &json!({"key": "Enter"})));
+        assert_eq!(
+            (req.method.as_str(), &req.params),
+            ("ui.key", &json!({"key": "Enter"}))
+        );
         assert_eq!(c.recv()["ok"], true);
     }
 
@@ -377,7 +474,10 @@ mod tests {
     fn a_line_over_1_mib_is_refused_and_closed() {
         let (port, rx) = boot();
         let mut c = Conn::open(port);
-        let big = format!(r#"{{"id":1,"key":"{KEY}","method":"document.inspect","pad":"{}"}}"#, "x".repeat(MAX_LINE));
+        let big = format!(
+            r#"{{"id":1,"key":"{KEY}","method":"document.inspect","pad":"{}"}}"#,
+            "x".repeat(MAX_LINE)
+        );
         assert_eq!(c.call(&big)["error"], "line too long");
         assert!(c.closed());
         assert!(rx.try_recv().is_err());
@@ -392,7 +492,10 @@ mod tests {
         assert!(t0.elapsed() < Duration::from_secs(3));
         // After an authorised request the connection may stay idle.
         let mut busy = Conn::open(port);
-        assert_eq!(busy.call(&format!(r#"{{"id":1,"method":"auth","key":"{KEY}"}}"#))["ok"], true);
+        assert_eq!(
+            busy.call(&format!(r#"{{"id":1,"method":"auth","key":"{KEY}"}}"#))["ok"],
+            true
+        );
         std::thread::sleep(Duration::from_millis(600));
         busy.send(r#"{"id":2,"method":"document.inspect"}"#);
         answer(&rx);
@@ -407,7 +510,9 @@ mod tests {
         let mut w = s.try_clone().unwrap();
         let feeder = std::thread::spawn(move || {
             for i in 0..40 {
-                if w.write_all(if i % 2 == 0 { b"\n" } else { b"not json\n" }).is_err() {
+                if w.write_all(if i % 2 == 0 { b"\n" } else { b"not json\n" })
+                    .is_err()
+                {
                     return;
                 }
                 std::thread::sleep(Duration::from_millis(50));
@@ -415,7 +520,9 @@ mod tests {
         });
         let t0 = Instant::now();
         let mut r = BufReader::new(s);
-        r.get_ref().set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        r.get_ref()
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .unwrap();
         let mut line = String::new();
         loop {
             line.clear();
@@ -425,7 +532,11 @@ mod tests {
             assert!(line.contains("bad JSON"), "{line}");
         }
         let _ = feeder.join();
-        assert!(t0.elapsed() < Duration::from_millis(1500), "{:?}", t0.elapsed());
+        assert!(
+            t0.elapsed() < Duration::from_millis(1500),
+            "{:?}",
+            t0.elapsed()
+        );
     }
 
     #[test]
@@ -442,8 +553,13 @@ mod tests {
         // What a web page's `fetch("http://127.0.0.1:<port>/", {method: "POST", body})` sends,
         // even with the key in the body.
         let (port, rx) = boot();
-        let body = format!("\n{{\"key\":\"{KEY}\",\"method\":\"file.saveAs\",\"params\":{{\"path\":\"/tmp/x.docx\"}}}}\n");
-        let req = format!("POST / HTTP/1.1\r\nHost: 127.0.0.1:7981\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{body}", body.len());
+        let body = format!(
+            "\n{{\"key\":\"{KEY}\",\"method\":\"file.saveAs\",\"params\":{{\"path\":\"/tmp/x.docx\"}}}}\n"
+        );
+        let req = format!(
+            "POST / HTTP/1.1\r\nHost: 127.0.0.1:7981\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{body}",
+            body.len()
+        );
         let mut c = Conn::open(port);
         c.1.write_all(req.as_bytes()).unwrap();
         let _ = c.recv();
@@ -469,7 +585,8 @@ mod tests {
     }
 
     fn temp_dir(name: &str) -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("wordcraft-control-{name}-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("wordcraft-control-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         dir
     }
@@ -481,7 +598,10 @@ mod tests {
         let taken = TcpListener::bind(("127.0.0.1", 0)).unwrap();
         let port = taken.local_addr().unwrap().port();
         assert!(start(port, egui::Context::default(), Some(&dir)).is_none());
-        assert!(!dir.exists() || std::fs::read_dir(&dir).unwrap().next().is_none(), "no key file after a failed bind");
+        assert!(
+            !dir.exists() || std::fs::read_dir(&dir).unwrap().next().is_none(),
+            "no key file after a failed bind"
+        );
         drop(taken);
         // Bound: the key file holds the key that opens the port.
         let (rx, key_file) = start(port, egui::Context::default(), Some(&dir)).unwrap();
@@ -492,10 +612,19 @@ mod tests {
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            assert_eq!(std::fs::metadata(key_file.path()).unwrap().permissions().mode() & 0o777, 0o600);
+            assert_eq!(
+                std::fs::metadata(key_file.path())
+                    .unwrap()
+                    .permissions()
+                    .mode()
+                    & 0o777,
+                0o600
+            );
         }
         let mut c = Conn::open(port);
-        c.send(&format!(r#"{{"id":1,"key":"{key}","method":"document.inspect"}}"#));
+        c.send(&format!(
+            r#"{{"id":1,"key":"{key}","method":"document.inspect"}}"#
+        ));
         answer(&rx);
         assert_eq!(c.recv()["ok"], true);
         key_file.remove();
@@ -519,7 +648,10 @@ mod tests {
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            assert_eq!(std::fs::metadata(&p).unwrap().permissions().mode() & 0o777, 0o600);
+            assert_eq!(
+                std::fs::metadata(&p).unwrap().permissions().mode() & 0o777,
+                0o600
+            );
         }
         let _ = std::fs::remove_dir_all(&dir);
     }

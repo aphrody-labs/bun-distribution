@@ -33,12 +33,20 @@ fn defaults(args: &[&str]) -> Option<String> {
     use std::io::Read;
     use std::process::{Command, Stdio};
     // The absolute path keeps a `defaults` earlier on PATH from running.
-    let mut child = Command::new("/usr/bin/defaults").args(args).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().ok()?;
+    let mut child = Command::new("/usr/bin/defaults")
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .ok()?;
     let start = std::time::Instant::now();
     loop {
         match child.try_wait() {
             Ok(Some(status)) if status.success() => break,
-            Ok(None) if start.elapsed() < TIMEOUT => std::thread::sleep(std::time::Duration::from_millis(5)),
+            Ok(None) if start.elapsed() < TIMEOUT => {
+                std::thread::sleep(std::time::Duration::from_millis(5))
+            }
             _ => {
                 let _ = child.kill();
                 let _ = child.wait();
@@ -48,7 +56,12 @@ fn defaults(args: &[&str]) -> Option<String> {
     }
     let mut out = String::new();
     // A boolean fits in far less; a misbehaving `defaults` can't make launch read without end.
-    child.stdout.take()?.take(256).read_to_string(&mut out).ok()?;
+    child
+        .stdout
+        .take()?
+        .take(256)
+        .read_to_string(&mut out)
+        .ok()?;
     Some(out)
 }
 

@@ -69,7 +69,13 @@ thread_local! {
 }
 
 fn js_err(e: JsValue) -> String {
-    e.as_string().or_else(|| js_sys::Reflect::get(&e, &"message".into()).ok().and_then(|m| m.as_string())).unwrap_or_else(|| format!("{e:?}"))
+    e.as_string()
+        .or_else(|| {
+            js_sys::Reflect::get(&e, &"message".into())
+                .ok()
+                .and_then(|m| m.as_string())
+        })
+        .unwrap_or_else(|| format!("{e:?}"))
 }
 
 /// List the cache folder and build the index (in the background).
@@ -82,7 +88,12 @@ pub fn init() {
                     .filter_map(|e| {
                         let get = |k: &str| js_sys::Reflect::get(&e, &k.into()).ok();
                         let (kind, key) = parse_name(&get("name")?.as_string()?)?;
-                        Some((get("modified")?.as_f64().unwrap_or(0.0), kind, key, get("size")?.as_f64().unwrap_or(0.0) as u64))
+                        Some((
+                            get("modified")?.as_f64().unwrap_or(0.0),
+                            kind,
+                            key,
+                            get("size")?.as_f64().unwrap_or(0.0) as u64,
+                        ))
                     })
                     .collect();
                 entries.sort_by(|a, b| a.0.total_cmp(&b.0));
@@ -128,13 +139,21 @@ pub fn layer_prefetch(max: usize) -> Vec<String> {
     }
     ST.with(|s| {
         let s = s.borrow();
-        s.prefetch.plan(&s.index, max).into_iter().map(|k| format!("{k:032x}")).collect()
+        s.prefetch
+            .plan(&s.index, max)
+            .into_iter()
+            .map(|k| format!("{k:032x}"))
+            .collect()
     })
 }
 
 /// A frame worker's layer-cache misses and the buffers it served from what it fetched.
 pub fn note_layers(misses: &[String], hits: &[String]) {
-    let parse = |v: &[String]| v.iter().filter_map(|k| u128::from_str_radix(k, 16).ok()).collect::<Vec<u128>>();
+    let parse = |v: &[String]| {
+        v.iter()
+            .filter_map(|k| u128::from_str_radix(k, 16).ok())
+            .collect::<Vec<u128>>()
+    };
     ST.with(|s| {
         let mut s = s.borrow_mut();
         s.prefetch.note_misses(parse(misses));
@@ -186,7 +205,11 @@ pub fn note_miss() {
 /// damaged.
 pub async fn read(key: u128) -> Option<disk_cache::Frame8> {
     let name = disk_cache::entry_name(key);
-    let bytes = JsFuture::from(cache_read(&name)).await.ok().and_then(|b| b.dyn_into::<js_sys::Uint8Array>().ok()).map(|b| b.to_vec());
+    let bytes = JsFuture::from(cache_read(&name))
+        .await
+        .ok()
+        .and_then(|b| b.dyn_into::<js_sys::Uint8Array>().ok())
+        .map(|b| b.to_vec());
     let frame = bytes.as_deref().and_then(disk_cache::read_frame_entry);
     ST.with(|s| {
         let mut s = s.borrow_mut();
@@ -208,7 +231,8 @@ pub async fn read(key: u128) -> Option<disk_cache::Frame8> {
 pub fn stored(key: u128, bytes: u64, layer: bool) {
     ST.with(|s| {
         let mut s = s.borrow_mut();
-        s.index.insert(if layer { Kind::Layer } else { Kind::Frame }, key, bytes);
+        s.index
+            .insert(if layer { Kind::Layer } else { Kind::Frame }, key, bytes);
         s.writes += 1;
         if layer {
             s.layer_writes += 1;
@@ -226,7 +250,12 @@ fn evict() {
         v
     });
     if !victims.is_empty() {
-        delete(victims.into_iter().map(|(kind, k)| name_of(kind, k)).collect());
+        delete(
+            victims
+                .into_iter()
+                .map(|(kind, k)| name_of(kind, k))
+                .collect(),
+        );
     }
 }
 

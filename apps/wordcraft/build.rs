@@ -17,7 +17,10 @@ fn main() {
         .set("ProductName", "WordCraft")
         .set("FileDescription", "WordCraft word processor")
         .set("CompanyName", "Learning Machines LLC")
-        .set("LegalCopyright", "Copyright (c) the WordCraft authors. MIT OR Apache-2.0.")
+        .set(
+            "LegalCopyright",
+            "Copyright (c) the WordCraft authors. MIT OR Apache-2.0.",
+        )
         .set("OriginalFilename", "wordcraft.exe")
         .set("InternalName", "wordcraft");
     if let Err(e) = res.compile() {

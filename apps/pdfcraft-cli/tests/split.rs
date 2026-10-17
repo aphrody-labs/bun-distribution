@@ -9,7 +9,13 @@ const BIN: &str = env!("CARGO_BIN_EXE_pdfcraft-cli");
 fn fixture(n: usize) -> Vec<u8> {
     let mut objs: Vec<Vec<u8>> = vec![b"<< /Type /Catalog /Pages 2 0 R >>".to_vec()];
     let kids: Vec<String> = (0..n).map(|i| format!("{} 0 R", 3 + i)).collect();
-    objs.push(format!("<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 200 300] >>", kids.join(" ")).into_bytes());
+    objs.push(
+        format!(
+            "<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 200 300] >>",
+            kids.join(" ")
+        )
+        .into_bytes(),
+    );
     for _ in 0..n {
         objs.push(b"<< /Type /Page /Parent 2 0 R >>".to_vec());
     }
@@ -26,7 +32,13 @@ fn fixture(n: usize) -> Vec<u8> {
     for o in offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
@@ -41,7 +53,14 @@ fn workdir(test: &str) -> PathBuf {
 
 fn split(dir: &std::path::Path, out_dir: &std::path::Path) -> Output {
     Command::new(BIN)
-        .args(["split", dir.join("report.pdf").to_str().unwrap(), "--every", "1", "--out-dir", out_dir.to_str().unwrap()])
+        .args([
+            "split",
+            dir.join("report.pdf").to_str().unwrap(),
+            "--every",
+            "1",
+            "--out-dir",
+            out_dir.to_str().unwrap(),
+        ])
         .output()
         .unwrap()
 }
@@ -51,11 +70,19 @@ fn a_missing_out_dir_is_created() {
     let dir = workdir("create");
     let parts = dir.join("parts").join("nested");
     let out = split(&dir, &parts);
-    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     let stdout = String::from_utf8_lossy(&out.stdout);
     for n in 1..=3 {
         let part = parts.join(format!("report-p{n}.pdf"));
-        assert!(part.is_file(), "{} missing; stdout: {stdout}", part.display());
+        assert!(
+            part.is_file(),
+            "{} missing; stdout: {stdout}",
+            part.display()
+        );
         assert!(stdout.contains(&format!("report-p{n}.pdf")), "{stdout}");
     }
     let _ = std::fs::remove_dir_all(&dir);
@@ -69,8 +96,14 @@ fn an_out_dir_that_cannot_be_created_is_reported_as_such() {
     let out = split(&dir, &not_a_dir);
     assert!(!out.status.success());
     let stderr = String::from_utf8_lossy(&out.stderr);
-    assert!(stderr.contains("--out-dir") && stderr.contains("parts"), "{stderr}");
-    assert!(!stderr.contains("report-p1.pdf"), "the folder is the problem, not the first part: {stderr}");
+    assert!(
+        stderr.contains("--out-dir") && stderr.contains("parts"),
+        "{stderr}"
+    );
+    assert!(
+        !stderr.contains("report-p1.pdf"),
+        "the folder is the problem, not the first part: {stderr}"
+    );
     assert_eq!(std::fs::read(&not_a_dir).unwrap(), b"in the way");
     let _ = std::fs::remove_dir_all(&dir);
 }

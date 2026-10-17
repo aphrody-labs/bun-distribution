@@ -62,7 +62,13 @@ pub fn last_error() -> Option<String> {
 
 /// A JavaScript error (a rejected promise's reason) as text.
 pub(crate) fn js_err(e: JsValue) -> String {
-    e.as_string().or_else(|| js_sys::Reflect::get(&e, &"message".into()).ok().and_then(|m| m.as_string())).unwrap_or_else(|| format!("{e:?}"))
+    e.as_string()
+        .or_else(|| {
+            js_sys::Reflect::get(&e, &"message".into())
+                .ok()
+                .and_then(|m| m.as_string())
+        })
+        .unwrap_or_else(|| format!("{e:?}"))
 }
 
 /// Open the browser storage and read everything into the store. `prefer` forces a backend
@@ -77,12 +83,18 @@ pub async fn load(prefer: &str) -> Result<usize, String> {
         let mut m = STORE.lock();
         for e in all.iter() {
             let get = |k: &str| js_sys::Reflect::get(&e, &k.into()).unwrap_or(JsValue::UNDEFINED);
-            let Some(key) = get("key").as_string() else { continue };
+            let Some(key) = get("key").as_string() else {
+                continue;
+            };
             let data: js_sys::Uint8Array = match get("data").dyn_into() {
                 Ok(d) => d,
                 Err(_) => continue,
             };
-            m.load(&key, data.to_vec().into(), get("modified").as_f64().unwrap_or(0.0));
+            m.load(
+                &key,
+                data.to_vec().into(),
+                get("modified").as_f64().unwrap_or(0.0),
+            );
         }
     }
     let _ = STORE.on_change.set(schedule_flush);
@@ -99,13 +111,25 @@ pub fn schedule_flush() {
         let mut failed: Vec<String> = vec![];
         let mut error = None;
         loop {
-            let pending: Vec<_> = STORE.lock().take_pending().into_iter().filter(|p| !failed.contains(&p.key)).collect();
+            let pending: Vec<_> = STORE
+                .lock()
+                .take_pending()
+                .into_iter()
+                .filter(|p| !failed.contains(&p.key))
+                .collect();
             if pending.is_empty() {
                 break;
             }
             for p in pending {
                 let r = match &p.data {
-                    Some(d) => JsFuture::from(store_put(&p.key, js_sys::Uint8Array::from(&d[..]), p.modified)).await,
+                    Some(d) => {
+                        JsFuture::from(store_put(
+                            &p.key,
+                            js_sys::Uint8Array::from(&d[..]),
+                            p.modified,
+                        ))
+                        .await
+                    }
                     None => JsFuture::from(store_delete(&p.key)).await,
                 };
                 if let Err(e) = r {
@@ -191,7 +215,12 @@ pub fn snapshot(s: &Session, now: f64, min_secs: f64) {
         return;
     }
     SNAP.with(|c| c.set((rev, now)));
-    let meta = SnapshotMeta { path: s.path.clone(), dirty: s.is_dirty(), state: serde_json::to_value(&s.state).ok(), saved: 0.0 };
+    let meta = SnapshotMeta {
+        path: s.path.clone(),
+        dirty: s.is_dirty(),
+        state: serde_json::to_value(&s.state).ok(),
+        saved: 0.0,
+    };
     let key = serde_json::to_string(&meta).unwrap_or_default();
     if rev == s.revision && LAST_META.with(|m| *m.borrow() == key) {
         return;
@@ -200,7 +229,14 @@ pub fn snapshot(s: &Session, now: f64, min_secs: f64) {
     if rev != s.revision {
         let _ = c.write(SNAPSHOT, &s.project.to_json());
     }
-    let _ = c.write(SNAPSHOT_META, &serde_json::to_string(&SnapshotMeta { saved: js_sys::Date::now(), ..meta }).unwrap_or_default());
+    let _ = c.write(
+        SNAPSHOT_META,
+        &serde_json::to_string(&SnapshotMeta {
+            saved: js_sys::Date::now(),
+            ..meta
+        })
+        .unwrap_or_default(),
+    );
     SNAP.with(|c| c.set((s.revision, now)));
     LAST_META.with(|m| *m.borrow_mut() = key);
 }
@@ -208,7 +244,9 @@ pub fn snapshot(s: &Session, now: f64, min_secs: f64) {
 /// Reopen the last visit's project and editor state. Returns whether there was one.
 pub fn restore(s: &mut Session) -> bool {
     let c = config();
-    let (Some(json), Some(meta)) = (c.read(SNAPSHOT), c.read(SNAPSHOT_META)) else { return false };
+    let (Some(json), Some(meta)) = (c.read(SNAPSHOT), c.read(SNAPSHOT_META)) else {
+        return false;
+    };
     let meta: SnapshotMeta = serde_json::from_str(&meta).unwrap_or_default();
     let p = match Project::from_json(&json) {
         Ok(p) => p,
@@ -226,7 +264,10 @@ pub fn restore(s: &mut Session) -> bool {
         s.mark_unsaved();
     }
     SNAP.with(|c| c.set((s.revision, 0.0)));
-    log::info!("restored the last session ({})", meta.path.as_deref().unwrap_or("untitled"));
+    log::info!(
+        "restored the last session ({})",
+        meta.path.as_deref().unwrap_or("untitled")
+    );
     true
 }
 

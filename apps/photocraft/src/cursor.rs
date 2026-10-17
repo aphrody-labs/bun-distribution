@@ -22,7 +22,9 @@ mod platform {
     use photocraft_ui_egui::CursorPosFn;
 
     pub fn service(_cc: &eframe::CreationContext<'_>) -> Option<CursorPosFn> {
-        Some(Box::new(|ctx: &egui::Context| in_window_points().map(|(x, y)| egui::pos2(x as f32, y as f32) / ctx.zoom_factor())))
+        Some(Box::new(|ctx: &egui::Context| {
+            in_window_points().map(|(x, y)| egui::pos2(x as f32, y as f32) / ctx.zoom_factor())
+        }))
     }
 
     /// The pointer in points from the top-left of the content view of our frontmost window under
@@ -33,12 +35,20 @@ mod platform {
         let at = NSEvent::mouseLocation();
         let contains = |w: &NSWindow| {
             let f = w.frame();
-            (f.origin.x..f.origin.x + f.size.width).contains(&at.x) && (f.origin.y..f.origin.y + f.size.height).contains(&at.y)
+            (f.origin.x..f.origin.x + f.size.width).contains(&at.x)
+                && (f.origin.y..f.origin.y + f.size.height).contains(&at.y)
         };
-        let window = NSApplication::sharedApplication(mtm).orderedWindows().iter().find(|w| w.isVisible() && contains(w))?;
+        let window = NSApplication::sharedApplication(mtm)
+            .orderedWindows()
+            .iter()
+            .find(|w| w.isVisible() && contains(w))?;
         let view = window.contentView()?;
         let p = view.convertPoint_fromView(window.convertPointFromScreen(at), None);
-        let y = if view.isFlipped() { p.y } else { view.bounds().size.height - p.y };
+        let y = if view.isFlipped() {
+            p.y
+        } else {
+            view.bounds().size.height - p.y
+        };
         Some((p.x, y))
     }
 }
@@ -58,23 +68,34 @@ mod platform {
         };
         // Opened on first use and kept: the pointer is read every frame while files hover.
         let mut conn: Option<RustConnection> = None;
-        Some(Box::new(move |ctx: &egui::Context| match pointer_in(&mut conn, window) {
-            Ok(p) => p.map(|(x, y)| egui::pos2(f32::from(x), f32::from(y)) / ctx.pixels_per_point()),
-            Err(e) => {
-                log::warn!("couldn't read the pointer position: {e}");
-                conn = None;
-                None
+        Some(Box::new(move |ctx: &egui::Context| {
+            match pointer_in(&mut conn, window) {
+                Ok(p) => {
+                    p.map(|(x, y)| egui::pos2(f32::from(x), f32::from(y)) / ctx.pixels_per_point())
+                }
+                Err(e) => {
+                    log::warn!("couldn't read the pointer position: {e}");
+                    conn = None;
+                    None
+                }
             }
         }))
     }
 
     /// The pointer in pixels relative to `window` (`None` when it's on another screen).
-    fn pointer_in(conn: &mut Option<RustConnection>, window: u32) -> Result<Option<(i16, i16)>, String> {
+    fn pointer_in(
+        conn: &mut Option<RustConnection>,
+        window: u32,
+    ) -> Result<Option<(i16, i16)>, String> {
         let conn = match conn {
             Some(c) => c,
             None => conn.insert(RustConnection::connect(None).map_err(|e| e.to_string())?.0),
         };
-        let reply = conn.query_pointer(window).map_err(|e| e.to_string())?.reply().map_err(|e| e.to_string())?;
+        let reply = conn
+            .query_pointer(window)
+            .map_err(|e| e.to_string())?
+            .reply()
+            .map_err(|e| e.to_string())?;
         Ok(reply.same_screen.then_some((reply.win_x, reply.win_y)))
     }
 }
@@ -85,9 +106,15 @@ mod platform {
 
     pub fn service(_cc: &eframe::CreationContext<'_>) -> Option<CursorPosFn> {
         Some(Box::new(|ctx: &egui::Context| {
-            let pt = winsafe::GetCursorPos().map_err(|e| log::warn!("couldn't read the pointer position: {e}")).ok()?;
+            let pt = winsafe::GetCursorPos()
+                .map_err(|e| log::warn!("couldn't read the pointer position: {e}"))
+                .ok()?;
             let inner = ctx.input(|i| i.viewport().inner_rect)?;
-            Some(super::client_points(egui::pos2(pt.x as f32, pt.y as f32), inner.min, ctx.pixels_per_point()))
+            Some(super::client_points(
+                egui::pos2(pt.x as f32, pt.y as f32),
+                inner.min,
+                ctx.pixels_per_point(),
+            ))
         }))
     }
 }
@@ -119,8 +146,14 @@ mod tests {
     fn client_points_on_a_second_monitor_at_another_scale() {
         // A 150% monitor left of a 100% primary: the window's client area starts at (-2400, 300) px.
         let inner_min = pos2(-2400.0, 300.0) / 1.5;
-        assert_eq!(super::client_points(pos2(-2100.0, 450.0), inner_min, 1.5), pos2(200.0, 100.0));
+        assert_eq!(
+            super::client_points(pos2(-2100.0, 450.0), inner_min, 1.5),
+            pos2(200.0, 100.0)
+        );
         // The same window on the 100% primary.
-        assert_eq!(super::client_points(pos2(500.0, 400.0), pos2(300.0, 300.0), 1.0), pos2(200.0, 100.0));
+        assert_eq!(
+            super::client_points(pos2(500.0, 400.0), pos2(300.0, 300.0), 1.0),
+            pos2(200.0, 100.0)
+        );
     }
 }

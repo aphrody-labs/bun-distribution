@@ -73,7 +73,10 @@ fn ensure() -> Result<(), DevIconError> {
         break; // a dev entry from another checkout: fall through and rewrite it
     }
     for size in ICON_SIZES {
-        let rel = std::path::Path::new("hicolor").join(format!("{size}x{size}")).join("apps").join(format!("{}.png", crate::APP_ID));
+        let rel = std::path::Path::new("hicolor")
+            .join(format!("{size}x{size}"))
+            .join("apps")
+            .join(format!("{}.png", crate::APP_ID));
         let dest = user_dir.join("icons").join(&rel);
         if !dest.is_file()
             && let Some(parent) = dest.parent()
@@ -81,7 +84,10 @@ fn ensure() -> Result<(), DevIconError> {
             // The checkout this binary was built from; a missing icon only costs the icon.
             let src = std::path::Path::new(ICON_DIR).join(&rel);
             if !src.is_file() {
-                log::warn!("dev desktop entry: icon {} not found; skipping it", src.display());
+                log::warn!(
+                    "dev desktop entry: icon {} not found; skipping it",
+                    src.display()
+                );
                 continue;
             }
             std::fs::create_dir_all(parent).map_err(DevIconError::Io)?;
@@ -114,7 +120,9 @@ fn user_data_dir() -> Result<std::path::PathBuf, DevIconError> {
     {
         return Ok(std::path::PathBuf::from(v));
     }
-    match std::env::var_os("HOME").filter(|h| !h.is_empty() && std::path::Path::new(h).is_absolute()) {
+    match std::env::var_os("HOME")
+        .filter(|h| !h.is_empty() && std::path::Path::new(h).is_absolute())
+    {
         Some(home) => Ok(std::path::PathBuf::from(home).join(".local").join("share")),
         None => Err(DevIconError::NoHome),
     }
@@ -150,7 +158,10 @@ fn desktop_file_exec_is_ours(body: &str, exe: &str) -> bool {
 /// argument (double quotes, and `\` before `` ` `"` `\` `$` inside them). `None` when there is no
 /// `Exec=` line or its first argument cannot be parsed.
 fn exec_line(body: &str) -> Option<String> {
-    let value = body.lines().find(|l| l.starts_with("Exec=")).and_then(|l| l.strip_prefix("Exec="))?;
+    let value = body
+        .lines()
+        .find(|l| l.starts_with("Exec="))
+        .and_then(|l| l.strip_prefix("Exec="))?;
     let value = unescape_string_value(value);
     if let Some(rest) = value.strip_prefix('"') {
         let mut out = String::new();
@@ -247,7 +258,10 @@ impl std::fmt::Display for DevIconError {
             DevIconError::Io(e) => write!(f, "{e}"),
             DevIconError::NoHome => write!(f, "no home directory for the user data dir"),
             DevIconError::BadExecPath => {
-                write!(f, "the binary path has a character a desktop entry cannot carry (=, % or a control character), or is not valid UTF-8")
+                write!(
+                    f,
+                    "the binary path has a character a desktop entry cannot carry (=, % or a control character), or is not valid UTF-8"
+                )
             }
         }
     }
@@ -263,7 +277,9 @@ mod tests {
     #[test]
     fn icon_sources_exist_in_the_checkout() {
         for size in ICON_SIZES {
-            let p = std::path::Path::new(ICON_DIR).join(format!("hicolor/{size}x{size}/apps/ai.storyteller.filmcraft.png"));
+            let p = std::path::Path::new(ICON_DIR).join(format!(
+                "hicolor/{size}x{size}/apps/ai.storyteller.filmcraft.png"
+            ));
             assert!(p.is_file(), "{}", p.display());
         }
     }
@@ -274,11 +290,21 @@ mod tests {
         let expected = packaged
             .lines()
             .filter(|l| !l.starts_with("TryExec="))
-            .map(|l| if l.starts_with("Exec=") { "Exec=\"/target/debug/filmcraft\" %F" } else { l })
+            .map(|l| {
+                if l.starts_with("Exec=") {
+                    "Exec=\"/target/debug/filmcraft\" %F"
+                } else {
+                    l
+                }
+            })
             .collect::<Vec<_>>()
             .join("\n")
             + "\n";
-        let body = desktop_file_content("ai.storyteller.filmcraft", "FilmCraft", "/target/debug/filmcraft");
+        let body = desktop_file_content(
+            "ai.storyteller.filmcraft",
+            "FilmCraft",
+            "/target/debug/filmcraft",
+        );
         assert_eq!(body, expected);
     }
 
@@ -287,7 +313,10 @@ mod tests {
     /// backslashes just added.
     #[test]
     fn exec_escapes_both_desktop_entry_layers() {
-        assert_eq!(escape_exec_argument("/opt/film craft/filmcraft"), "/opt/film craft/filmcraft");
+        assert_eq!(
+            escape_exec_argument("/opt/film craft/filmcraft"),
+            "/opt/film craft/filmcraft"
+        );
         // a\b → shell a\\b → string a\\\\b
         assert_eq!(escape_exec_argument("a\\b"), "a\\\\\\\\b");
         // a$b → shell a\$b → string a\\$b
@@ -297,7 +326,11 @@ mod tests {
     /// A written entry reads back as the exact binary it was written for, through both layers.
     #[test]
     fn exec_round_trips_through_both_layers() {
-        for exe in ["/home/dev/Projects/filmcraft/target/debug/filmcraft", "/opt/film craft/filmcraft", "/a$b\"c`d\\e"] {
+        for exe in [
+            "/home/dev/Projects/filmcraft/target/debug/filmcraft",
+            "/opt/film craft/filmcraft",
+            "/a$b\"c`d\\e",
+        ] {
             let body = desktop_file_content("ai.storyteller.filmcraft", "FilmCraft", exe);
             assert_eq!(exec_line(&body).as_deref(), Some(exe));
             assert!(desktop_file_exec_is_ours(&body, exe));
@@ -311,9 +344,18 @@ mod tests {
         let body = desktop_file_content("ai.storyteller.filmcraft", "FilmCraft", "/a/filmcraft");
         assert!(!desktop_file_exec_is_ours(&body, "/a/filmcraft-old"));
         assert!(!desktop_file_exec_is_ours(&body, "/b/filmcraft"));
-        assert!(!desktop_file_exec_is_ours("Exec=filmcraft %F\n", "/a/filmcraft"));
-        assert!(!desktop_file_exec_is_ours("Name=filmcraft\n", "/a/filmcraft"));
-        assert!(!desktop_file_exec_is_ours("Exec=\"dangling\n", "/a/filmcraft"));
+        assert!(!desktop_file_exec_is_ours(
+            "Exec=filmcraft %F\n",
+            "/a/filmcraft"
+        ));
+        assert!(!desktop_file_exec_is_ours(
+            "Name=filmcraft\n",
+            "/a/filmcraft"
+        ));
+        assert!(!desktop_file_exec_is_ours(
+            "Exec=\"dangling\n",
+            "/a/filmcraft"
+        ));
     }
 
     /// The string layer is undone before the argument is split: `\s` becomes a space, which

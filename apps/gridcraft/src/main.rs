@@ -5,8 +5,18 @@
 //! `--control <port>` (or `GRIDCRAFT_CONTROL_PORT`) starts a localhost JSON-lines control
 //! server: `{"id":1,"method":"ui.inspect","params":{}}` → `{"id":1,"ok":true,"result":…}`.
 //! See `gridcraft_ui_egui::control` and `docs/control-protocol.md` for the methods.
-#![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![cfg_attr(
+    all(target_os = "windows", not(debug_assertions)),
+    windows_subsystem = "windows"
+)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 #[cfg(target_os = "macos")]
 mod apple_events;
@@ -25,7 +35,11 @@ use gridcraft_engine::Session;
 use gridcraft_ui_egui::{Services, SheetApp};
 use serde_json::json;
 
-struct App(SheetApp, #[cfg(target_os = "macos")] Option<native_menu::NativeMenu>, #[cfg(target_os = "macos")] fmv_macos_events::Inbox);
+struct App(
+    SheetApp,
+    #[cfg(target_os = "macos")] Option<native_menu::NativeMenu>,
+    #[cfg(target_os = "macos")] fmv_macos_events::Inbox,
+);
 
 impl eframe::App for App {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
@@ -49,7 +63,12 @@ impl eframe::App for App {
         self.0.raw_input_hook(raw);
         // Files dropped on the window open as workbooks.
         for f in std::mem::take(&mut raw.dropped_files) {
-            if let Some(p) = f.path().to_str().map(str::to_string).filter(|p| !p.is_empty()) {
+            if let Some(p) = f
+                .path()
+                .to_str()
+                .map(str::to_string)
+                .filter(|p| !p.is_empty())
+            {
                 self.0.open_path(&p);
             }
         }
@@ -75,13 +94,16 @@ impl eframe::App for App {
 
 fn config_dir() -> Option<std::path::PathBuf> {
     if cfg!(target_os = "macos") {
-        std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join("Library/Application Support/GridCraft"))
+        std::env::var_os("HOME")
+            .map(|h| std::path::PathBuf::from(h).join("Library/Application Support/GridCraft"))
     } else if cfg!(windows) {
         std::env::var_os("APPDATA").map(|a| std::path::PathBuf::from(a).join("GridCraft"))
     } else {
         std::env::var_os("XDG_CONFIG_HOME")
             .map(std::path::PathBuf::from)
-            .or_else(|| std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".config")))
+            .or_else(|| {
+                std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".config"))
+            })
             .map(|c| c.join("gridcraft"))
     }
 }
@@ -109,7 +131,9 @@ fn load_prefs(app: &mut SheetApp) {
     if let Ok(b) = std::fs::read(dir.join("ui.json"))
         && let Ok(ui) = serde_json::from_slice::<gridcraft_ui_egui::UiState>(&b)
     {
-        let saved = serde_json::from_slice(&b).ok().and_then(|v| gridcraft_ui_egui::i18n::saved_language(&v));
+        let saved = serde_json::from_slice(&b)
+            .ok()
+            .and_then(|v| gridcraft_ui_egui::i18n::saved_language(&v));
         let language = saved.unwrap_or(app.ui.language);
         app.ui = ui;
         app.ui.language = language;
@@ -157,13 +181,26 @@ fn services() -> Services {
             if clipboard.is_none() {
                 *clipboard = Some(arboard::Clipboard::new().map_err(|e| e.to_string())?);
             }
-            clipboard.as_mut().ok_or("clipboard unavailable")?.set_html(html, Some(text)).map_err(|e| e.to_string())
+            clipboard
+                .as_mut()
+                .ok_or("clipboard unavailable")?
+                .set_html(html, Some(text))
+                .map_err(|e| e.to_string())
         })),
-        paste_html: Some(Box::new(move || read_clipboard(&html_clipboard, |clipboard| clipboard.get().html()))),
-        paste_text: Some(Box::new(move || read_clipboard(&text_clipboard, |clipboard| clipboard.get_text()))),
+        paste_html: Some(Box::new(move || {
+            read_clipboard(&html_clipboard, |clipboard| clipboard.get().html())
+        })),
+        paste_text: Some(Box::new(move || {
+            read_clipboard(&text_clipboard, |clipboard| clipboard.get_text())
+        })),
         pick_open: Some(Box::new(|| {
             rfd::FileDialog::new()
-                .add_filter("Spreadsheets", &["xlsx", "xlsm", "xls", "xlsb", "ods", "csv", "tsv", "txt", "json"])
+                .add_filter(
+                    "Spreadsheets",
+                    &[
+                        "xlsx", "xlsm", "xls", "xlsb", "ods", "csv", "tsv", "txt", "json",
+                    ],
+                )
                 .add_filter("Excel Workbook", &["xlsx", "xlsm"])
                 .add_filter("Excel 97-2003 Workbook (import)", &["xls"])
                 .add_filter("Excel Binary Workbook (data import)", &["xlsb"])
@@ -180,17 +217,35 @@ fn services() -> Services {
         })),
         pick_save: Some(Box::new(|suggested: &str| {
             let path = std::path::Path::new(suggested);
-            let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("Book1").to_string();
+            let stem = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("Book1")
+                .to_string();
             // The suggested name's type (an export asks for .pdf, .csv or .html) comes first.
-            const TYPES: [(&str, &str); 4] =
-                [("Excel Workbook (.xlsx)", "xlsx"), ("CSV UTF-8 (.csv)", "csv"), ("Web Page (.html)", "html"), ("PDF (.pdf)", "pdf")];
-            let ext = path.extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase).filter(|e| TYPES.iter().any(|(_, x)| x == e));
+            const TYPES: [(&str, &str); 4] = [
+                ("Excel Workbook (.xlsx)", "xlsx"),
+                ("CSV UTF-8 (.csv)", "csv"),
+                ("Web Page (.html)", "html"),
+                ("PDF (.pdf)", "pdf"),
+            ];
+            let ext = path
+                .extension()
+                .and_then(|e| e.to_str())
+                .map(str::to_ascii_lowercase)
+                .filter(|e| TYPES.iter().any(|(_, x)| x == e));
             let ext = ext.unwrap_or_else(|| "xlsx".to_string());
             let mut dialog = rfd::FileDialog::new().set_file_name(format!("{stem}.{ext}"));
-            for (label, x) in TYPES.iter().filter(|(_, x)| *x == ext).chain(TYPES.iter().filter(|(_, x)| *x != ext)) {
+            for (label, x) in TYPES
+                .iter()
+                .filter(|(_, x)| *x == ext)
+                .chain(TYPES.iter().filter(|(_, x)| *x != ext))
+            {
                 dialog = dialog.add_filter(*label, &[*x]);
             }
-            dialog.save_file().and_then(|p| p.to_str().map(str::to_string))
+            dialog
+                .save_file()
+                .and_then(|p| p.to_str().map(str::to_string))
         })),
         open_url: Some(Box::new(|url: &str| open_with_system(url))),
         printers: Some(print::discover()),
@@ -203,7 +258,9 @@ fn services() -> Services {
 fn open_with_system(target: &str) {
     // Last line of defence behind `link.open` and the click prompt: the system only ever gets
     // http, https and mailto addresses.
-    let gridcraft_engine::links::LinkKind::External(target) = gridcraft_engine::links::classify(target) else {
+    let gridcraft_engine::links::LinkKind::External(target) =
+        gridcraft_engine::links::classify(target)
+    else {
         log::warn!("refused to open {target:?}: only http, https and mailto links are opened");
         return;
     };
@@ -224,9 +281,15 @@ fn icon() -> Option<egui::IconData> {
     #[cfg(target_os = "macos")]
     let bytes = include_bytes!("../../../assets/gridcraft/app-icon/gridcraft-macos-512.png");
     #[cfg(not(target_os = "macos"))]
-    let bytes = include_bytes!("../../../assets/gridcraft/app-icon/hicolor/256x256/apps/ai.storyteller.gridcraft.png");
+    let bytes = include_bytes!(
+        "../../../assets/gridcraft/app-icon/hicolor/256x256/apps/ai.storyteller.gridcraft.png"
+    );
     let img = image::load_from_memory(bytes).ok()?.to_rgba8();
-    Some(egui::IconData { width: img.width(), height: img.height(), rgba: img.into_raw() })
+    Some(egui::IconData {
+        width: img.width(),
+        height: img.height(),
+        rgba: img.into_raw(),
+    })
 }
 
 fn main() -> eframe::Result<()> {
@@ -247,7 +310,10 @@ fn main() -> eframe::Result<()> {
             log::error!("{report}");
         } else {
             // `eprintln!` panics on a broken stderr pipe, and a panic inside the panic hook aborts.
-            let _ = std::io::Write::write_fmt(&mut std::io::stderr(), format_args!("gridcraft: {report}\n"));
+            let _ = std::io::Write::write_fmt(
+                &mut std::io::stderr(),
+                format_args!("gridcraft: {report}\n"),
+            );
         }
     }));
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -255,7 +321,9 @@ fn main() -> eframe::Result<()> {
         println!("GridCraft {}", env!("CARGO_PKG_VERSION"));
         return Ok(());
     }
-    let mut control_port: Option<u16> = std::env::var("GRIDCRAFT_CONTROL_PORT").ok().and_then(|p| p.parse().ok());
+    let mut control_port: Option<u16> = std::env::var("GRIDCRAFT_CONTROL_PORT")
+        .ok()
+        .and_then(|p| p.parse().ok());
     let mut sample: Option<String> = None;
     let mut files: Vec<String> = Vec::new();
     let mut i = 0;
@@ -281,7 +349,11 @@ fn main() -> eframe::Result<()> {
     if let Some(logger) = logger {
         match log_dir().filter(|_| prefs_enabled()) {
             Some(dir) => match logger.attach_dir(&dir) {
-                Ok(path) => log::info!("GridCraft {}, log file {}", env!("CARGO_PKG_VERSION"), path.display()),
+                Ok(path) => log::info!(
+                    "GridCraft {}, log file {}",
+                    env!("CARGO_PKG_VERSION"),
+                    path.display()
+                ),
                 // Standard error only by now (`attach_dir` gave up on the file); unlike `eprintln!`, never panics.
                 Err(e) => log::warn!("no log file: {e}"),
             },
@@ -315,12 +387,18 @@ fn main() -> eframe::Result<()> {
         .with_app_id("ai.storyteller.gridcraft")
         .with_drag_and_drop(true);
     if cfg!(target_os = "macos") {
-        viewport = viewport.with_fullsize_content_view(true).with_titlebar_shown(false).with_title_shown(false);
+        viewport = viewport
+            .with_fullsize_content_view(true)
+            .with_titlebar_shown(false)
+            .with_title_shown(false);
     }
     if let Some(i) = icon() {
         viewport = viewport.with_icon(i);
     }
-    let options = eframe::NativeOptions { viewport, ..Default::default() };
+    let options = eframe::NativeOptions {
+        viewport,
+        ..Default::default()
+    };
     // Before eframe creates the wgpu instance: Windows starts on DirectX 12, or OpenGL when
     // DirectX 12 has no GPU driver, and never touches Vulkan unless asked (see graphics.rs).
     #[cfg(target_os = "windows")]
@@ -375,7 +453,9 @@ fn main() -> eframe::Result<()> {
         && let Some(app) = pending.take()
         && let Some(backends) = graphics::fallback_backends(backend_override, first_backends)
     {
-        log::error!("graphics: the renderer didn't start on {first_backends:?} ({e}); trying {backends:?}");
+        log::error!(
+            "graphics: the renderer didn't start on {first_backends:?} ({e}); trying {backends:?}"
+        );
         pending.set(Some(app));
         let mut options = retry_options;
         graphics::configure_backends(&mut options, backends);
@@ -391,7 +471,12 @@ mod packaging_tests {
     /// The text between `start` and `end` that follows each `marker` in `text`, sorted (e.g. the
     /// `xlsb` in `Classes\.xlsb\OpenWithProgids`).
     fn extensions(text: &str, marker: &str, start: &str, end: char) -> Vec<String> {
-        let mut v: Vec<String> = text.split(marker).skip(1).filter_map(|s| s.split_once(start)?.1.split(end).next()).map(str::to_string).collect();
+        let mut v: Vec<String> = text
+            .split(marker)
+            .skip(1)
+            .filter_map(|s| s.split_once(start)?.1.split(end).next())
+            .map(str::to_string)
+            .collect();
         v.sort();
         v
     }
@@ -405,10 +490,16 @@ mod packaging_tests {
         let wxs = include_str!("../packaging/windows/gridcraft.wxs");
         let mac = extensions(plist, "<key>CFBundleTypeExtensions</key>", "<string>", '<');
         let win = extensions(wxs, "Key=\"Software\\Classes\\.", "", '\\');
-        assert!(mac.iter().any(|e| e == "xlsx"), "Info.plist.in extensions not found: {mac:?}");
+        assert!(
+            mac.iter().any(|e| e == "xlsx"),
+            "Info.plist.in extensions not found: {mac:?}"
+        );
         assert_eq!(mac, win);
         for ext in &mac {
-            assert!(FileKind::from_path(&format!("book.{ext}")).is_some(), "GridCraft doesn't open .{ext}");
+            assert!(
+                FileKind::from_path(&format!("book.{ext}")).is_some(),
+                "GridCraft doesn't open .{ext}"
+            );
         }
     }
 }

@@ -48,9 +48,14 @@ impl Drop for CpalOut {
 }
 
 impl AudioOut for CpalOut {
-    fn start(&mut self, mut fill: Box<dyn FnMut(&mut [f32], usize, u32) + Send>) -> Result<(), String> {
+    fn start(
+        &mut self,
+        mut fill: Box<dyn FnMut(&mut [f32], usize, u32) + Send>,
+    ) -> Result<(), String> {
         self.stop();
-        let dev = cpal::default_host().default_output_device().ok_or("no audio output device")?;
+        let dev = cpal::default_host()
+            .default_output_device()
+            .ok_or("no audio output device")?;
         let cfg = dev.default_output_config().map_err(|e| e.to_string())?;
         let channels = cfg.channels() as usize;
         let rate = cfg.sample_rate().0;
@@ -58,7 +63,12 @@ impl AudioOut for CpalOut {
         let slot = self.error.clone();
         let err = move |e: cpal::StreamError| keep_stream_error(&slot, &e);
         let stream = match cfg.sample_format() {
-            cpal::SampleFormat::F32 => dev.build_output_stream(&config, move |buf: &mut [f32], _| fill(buf, channels, rate), err, None),
+            cpal::SampleFormat::F32 => dev.build_output_stream(
+                &config,
+                move |buf: &mut [f32], _| fill(buf, channels, rate),
+                err,
+                None,
+            ),
             cpal::SampleFormat::I16 => {
                 let mut tmp = Vec::new();
                 dev.build_output_stream(
@@ -98,7 +108,10 @@ mod tests {
         assert_eq!(take_stream_error(&slot), None);
         keep_stream_error(&slot, &"device unplugged");
         keep_stream_error(&slot, &"device unplugged again");
-        assert_eq!(take_stream_error(&slot).as_deref(), Some("device unplugged"));
+        assert_eq!(
+            take_stream_error(&slot).as_deref(),
+            Some("device unplugged")
+        );
         assert_eq!(take_stream_error(&slot), None);
         keep_stream_error(&slot, &"a later error");
         assert_eq!(take_stream_error(&slot).as_deref(), Some("a later error"));

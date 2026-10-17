@@ -22,7 +22,11 @@ impl Presentation {
     pub async fn new(
         canvas: web_sys::OffscreenCanvas,
     ) -> Result<
-        (Self, render_2d::threaded::lockstep_scanlines::Renderer, render_3d::local::Tx),
+        (
+            Self,
+            render_2d::threaded::lockstep_scanlines::Renderer,
+            render_3d::local::Tx,
+        ),
         JsValue,
     > {
         let width = canvas.width().max(1);
@@ -81,7 +85,19 @@ impl Presentation {
             0,
             receiver,
         );
-        Ok((Self { device, queue, surface, config, blitter, output, channels }, renderer, tx))
+        Ok((
+            Self {
+                device,
+                queue,
+                surface,
+                config,
+                blitter,
+                output,
+                channels,
+            },
+            renderer,
+            tx,
+        ))
     }
 
     pub fn acquire(&mut self) -> Result<Option<wgpu::SurfaceTexture>, JsValue> {
@@ -90,12 +106,16 @@ impl Presentation {
             | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
             wgpu::CurrentSurfaceTexture::Timeout | wgpu::CurrentSurfaceTexture::Occluded => {
                 return Ok(None);
-            },
+            }
             wgpu::CurrentSurfaceTexture::Outdated => {
                 self.surface.configure(&self.device, &self.config);
                 return Ok(None);
-            },
-            other => return Err(js_error(format!("WebGPU surface acquisition failed: {other:?}"))),
+            }
+            other => {
+                return Err(js_error(format!(
+                    "WebGPU surface acquisition failed: {other:?}"
+                )))
+            }
         };
         Ok(Some(frame))
     }
@@ -105,10 +125,13 @@ impl Presentation {
             self.output = output;
         }
         let view = frame.texture.create_view(&Default::default());
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Dust browser direct GPU presentation"),
-        });
-        self.blitter.copy(&self.device, &mut encoder, &self.output, &view);
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Dust browser direct GPU presentation"),
+            });
+        self.blitter
+            .copy(&self.device, &mut encoder, &self.output, &view);
         self.queue.submit([encoder.finish()]);
         self.queue.present(frame);
     }

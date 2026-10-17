@@ -61,7 +61,9 @@ pub struct Server {
 impl Server {
     #[cfg_attr(not(windows), allow(dead_code))]
     fn new() -> Self {
-        Self { inbox: Arc::default() }
+        Self {
+            inbox: Arc::default(),
+        }
     }
 
     /// Queue files from another launch and wake the UI.
@@ -79,11 +81,15 @@ impl Server {
     /// new window it replaces would have been.
     pub fn connect(&self, ctx: &egui::Context) -> OsEventsFn {
         let wake = ctx.clone();
-        self.inbox.lock().unwrap_or_else(PoisonError::into_inner).wake = Some(Box::new(move || wake.request_repaint()));
+        self.inbox
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .wake = Some(Box::new(move || wake.request_repaint()));
         let inbox = Arc::clone(&self.inbox);
         let ctx = ctx.clone();
         Box::new(move || {
-            let paths = std::mem::take(&mut inbox.lock().unwrap_or_else(PoisonError::into_inner).paths);
+            let paths =
+                std::mem::take(&mut inbox.lock().unwrap_or_else(PoisonError::into_inner).paths);
             if paths.is_empty() {
                 return Vec::new();
             }
@@ -108,14 +114,22 @@ pub fn request(paths: &[String]) -> String {
 pub fn parse_request(line: &str) -> Option<Vec<String>> {
     let value: serde_json::Value = serde_json::from_str(line.trim_end()).ok()?;
     let open = value.get("open")?.as_array()?;
-    let paths = open.iter().map(|p| p.as_str().filter(|s| !s.is_empty()).map(str::to_string)).collect::<Option<Vec<String>>>()?;
+    let paths = open
+        .iter()
+        .map(|p| p.as_str().filter(|s| !s.is_empty()).map(str::to_string))
+        .collect::<Option<Vec<String>>>()?;
     (!paths.is_empty()).then_some(paths)
 }
 
 /// File arguments made absolute against this launch's working folder, which the running app
 /// doesn't share. A path that can't be made absolute is sent as it is.
 pub fn absolute(paths: &[String]) -> Vec<String> {
-    paths.iter().map(|p| std::path::absolute(p).map_or_else(|_| p.clone(), |a| a.to_string_lossy().into_owned())).collect()
+    paths
+        .iter()
+        .map(|p| {
+            std::path::absolute(p).map_or_else(|_| p.clone(), |a| a.to_string_lossy().into_owned())
+        })
+        .collect()
 }
 
 /// Decide what this launch does. `files` are absolute ([`absolute`]); `may_hand_off` is false
@@ -144,8 +158,14 @@ fn socket_path() -> Option<std::path::PathBuf> {
     // user's file paths or send it files to open. A portable copy uses it too (#889), under its
     // own name so it never hands files to an installed copy (which keeps its settings elsewhere).
     // Never the portable folder itself: it may sit where other accounts can write (`C:\Tools`).
-    let name = if pdfcraft_ui_egui::portable::data_dir().is_some() { format!("portable-{name}") } else { name };
-    std::env::var_os("LOCALAPPDATA").filter(|v| !v.is_empty()).map(|d| std::path::PathBuf::from(d).join("PdfCraft").join(name))
+    let name = if pdfcraft_ui_egui::portable::data_dir().is_some() {
+        format!("portable-{name}")
+    } else {
+        name
+    };
+    std::env::var_os("LOCALAPPDATA")
+        .filter(|v| !v.is_empty())
+        .map(|d| std::path::PathBuf::from(d).join("PdfCraft").join(name))
 }
 
 /// The socket's file name for a Windows session (`SESSIONNAME`: `Console`, `RDP-Tcp#3`…). The
@@ -153,8 +173,17 @@ fn socket_path() -> Option<std::path::PathBuf> {
 /// so a file never opens in a window on the other screen. Only letters, digits and `-` are kept.
 #[cfg_attr(not(windows), allow(dead_code))]
 fn socket_name(session: Option<&str>) -> String {
-    let session: String = session.unwrap_or_default().chars().filter(|c| c.is_ascii_alphanumeric() || *c == '-').take(32).collect();
-    if session.is_empty() { "instance.sock".to_string() } else { format!("instance-{session}.sock") }
+    let session: String = session
+        .unwrap_or_default()
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '-')
+        .take(32)
+        .collect();
+    if session.is_empty() {
+        "instance.sock".to_string()
+    } else {
+        format!("instance-{session}.sock")
+    }
 }
 
 /// Held while a launch finds out whether it is the first, so launches that start together (several
@@ -168,12 +197,20 @@ fn election(socket: &std::path::Path) -> Option<std::fs::File> {
     if let Some(dir) = socket.parent() {
         let _ = std::fs::create_dir_all(dir);
     }
-    let file = std::fs::OpenOptions::new().read(true).write(true).create(true).truncate(false).open(socket.with_extension("lock")).ok()?;
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(socket.with_extension("lock"))
+        .ok()?;
     let deadline = std::time::Instant::now() + TIMEOUT;
     loop {
         match file.try_lock() {
             Ok(()) => return Some(file),
-            Err(std::fs::TryLockError::WouldBlock) if std::time::Instant::now() < deadline => std::thread::sleep(Duration::from_millis(10)),
+            Err(std::fs::TryLockError::WouldBlock) if std::time::Instant::now() < deadline => {
+                std::thread::sleep(Duration::from_millis(10))
+            }
             Err(e) => {
                 log::info!("single instance: no election lock ({e})");
                 return None;
@@ -199,7 +236,9 @@ fn claim_at(path: &std::path::Path, files: &[String], may_hand_off: bool) -> Cla
                 return match hand_off(&stream, files) {
                     Ok(()) => Claim::HandedOff,
                     Err(e) => {
-                        log::warn!("couldn't hand the files to the running PdfCraft ({e}); opening a new window");
+                        log::warn!(
+                            "couldn't hand the files to the running PdfCraft ({e}); opening a new window"
+                        );
                         Claim::Alone
                     }
                 };
@@ -232,7 +271,10 @@ fn claim_at(path: &std::path::Path, files: &[String], may_hand_off: bool) -> Cla
             // Older Windows, a path too long for a socket address, a file system without socket
             // support (some network or removable drives): this launch works as before.
             Err(e) => {
-                log::info!("single instance off: can't listen at {} ({e})", path.display());
+                log::info!(
+                    "single instance off: can't listen at {} ({e})",
+                    path.display()
+                );
                 return Claim::Alone;
             }
         }
@@ -250,24 +292,32 @@ fn hand_off(stream: &uds_windows::UnixStream, files: &[String]) -> std::io::Resu
     writer.write_all(request(files).as_bytes())?;
     let mut reply = String::new();
     std::io::BufReader::new(stream.take(16)).read_line(&mut reply)?;
-    if reply == "ok\n" { Ok(()) } else { Err(std::io::Error::other("the running PdfCraft didn't confirm")) }
+    if reply == "ok\n" {
+        Ok(())
+    } else {
+        Err(std::io::Error::other("the running PdfCraft didn't confirm"))
+    }
 }
 
 /// Accept launches on a background thread for as long as the process runs.
 #[cfg(windows)]
 fn serve(listener: uds_windows::UnixListener) -> Claim {
     let server = Server::new();
-    let inbox = Server { inbox: Arc::clone(&server.inbox) };
-    let started = std::thread::Builder::new().name("single-instance".into()).spawn(move || {
-        for stream in listener.incoming() {
-            let result = stream.and_then(|s| receive(&s, &inbox));
-            if let Err(e) = result {
-                log::warn!("single instance: a launch's request failed ({e})");
-                // Don't spin if accepting keeps failing.
-                std::thread::sleep(Duration::from_millis(100));
+    let inbox = Server {
+        inbox: Arc::clone(&server.inbox),
+    };
+    let started = std::thread::Builder::new()
+        .name("single-instance".into())
+        .spawn(move || {
+            for stream in listener.incoming() {
+                let result = stream.and_then(|s| receive(&s, &inbox));
+                if let Err(e) = result {
+                    log::warn!("single instance: a launch's request failed ({e})");
+                    // Don't spin if accepting keeps failing.
+                    std::thread::sleep(Duration::from_millis(100));
+                }
             }
-        }
-    });
+        });
     match started {
         Ok(_) => Claim::Primary(server),
         Err(e) => {
@@ -289,7 +339,9 @@ fn receive(stream: &uds_windows::UnixStream, server: &Server) -> std::io::Result
     if line.is_empty() {
         return Ok(());
     }
-    let paths = parse_request(&line).ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidData, "not an open request"))?;
+    let paths = parse_request(&line).ok_or_else(|| {
+        std::io::Error::new(std::io::ErrorKind::InvalidData, "not an open request")
+    })?;
     server.deliver(paths);
     let mut writer = stream;
     writer.write_all(b"ok\n")
@@ -301,15 +353,30 @@ mod tests {
 
     #[test]
     fn a_request_names_the_paths_and_round_trips() {
-        let paths = vec![r"C:\Users\me\Documents\Quote.pdf".to_string(), r"D:\Scans\Plan „A“ 1.pdf".to_string()];
+        let paths = vec![
+            r"C:\Users\me\Documents\Quote.pdf".to_string(),
+            r"D:\Scans\Plan „A“ 1.pdf".to_string(),
+        ];
         let line = request(&paths);
-        assert!(line.ends_with('\n') && !line.trim_end().contains('\n'), "one line");
+        assert!(
+            line.ends_with('\n') && !line.trim_end().contains('\n'),
+            "one line"
+        );
         assert_eq!(parse_request(&line), Some(paths));
     }
 
     #[test]
     fn anything_but_a_list_of_paths_is_refused() {
-        for line in ["", "ok\n", "{}", r#"{"open":[]}"#, r#"{"open":[""]}"#, r#"{"open":["a.pdf",3]}"#, r#"{"open":"a.pdf"}"#, "[\"a.pdf\"]"] {
+        for line in [
+            "",
+            "ok\n",
+            "{}",
+            r#"{"open":[]}"#,
+            r#"{"open":[""]}"#,
+            r#"{"open":["a.pdf",3]}"#,
+            r#"{"open":"a.pdf"}"#,
+            "[\"a.pdf\"]",
+        ] {
             assert_eq!(parse_request(line), None, "{line:?}");
         }
     }
@@ -317,8 +384,21 @@ mod tests {
     #[test]
     fn relative_paths_are_made_absolute_against_this_launch() {
         let out = absolute(&["Quote.pdf".to_string()]);
-        assert_eq!(out, vec![std::env::current_dir().unwrap().join("Quote.pdf").to_string_lossy().into_owned()]);
-        let already = std::env::current_dir().unwrap().join("x.pdf").to_string_lossy().into_owned();
+        assert_eq!(
+            out,
+            vec![
+                std::env::current_dir()
+                    .unwrap()
+                    .join("Quote.pdf")
+                    .to_string_lossy()
+                    .into_owned()
+            ]
+        );
+        let already = std::env::current_dir()
+            .unwrap()
+            .join("x.pdf")
+            .to_string_lossy()
+            .into_owned();
         assert_eq!(absolute(std::slice::from_ref(&already)), vec![already]);
     }
 
@@ -326,8 +406,15 @@ mod tests {
     fn each_windows_session_gets_its_own_socket_name() {
         assert_eq!(socket_name(Some("Console")), "instance-Console.sock");
         assert_eq!(socket_name(Some("RDP-Tcp#3")), "instance-RDP-Tcp3.sock");
-        assert_ne!(socket_name(Some("RDP-Tcp#3")), socket_name(Some("RDP-Tcp#4")));
-        assert_eq!(socket_name(Some(r"..\x/y:z")), "instance-xyz.sock", "never a path");
+        assert_ne!(
+            socket_name(Some("RDP-Tcp#3")),
+            socket_name(Some("RDP-Tcp#4"))
+        );
+        assert_eq!(
+            socket_name(Some(r"..\x/y:z")),
+            "instance-xyz.sock",
+            "never a path"
+        );
         assert_eq!(socket_name(None), "instance.sock");
         assert_eq!(socket_name(Some("")), "instance.sock");
     }
@@ -347,7 +434,8 @@ mod tests {
 
     #[cfg(windows)]
     fn socket(test: &str) -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("pdfcraft-instance-{}-{test}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("pdfcraft-instance-{}-{test}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         dir.join(socket_name(None))
     }
@@ -356,12 +444,20 @@ mod tests {
     #[test]
     fn a_second_launch_hands_its_files_to_the_first() {
         let path = socket("hand-off");
-        let Claim::Primary(first) = claim_at(&path, &[], true) else { panic!("the first launch listens") };
+        let Claim::Primary(first) = claim_at(&path, &[], true) else {
+            panic!("the first launch listens")
+        };
         let mut poll = first.connect(&egui::Context::default());
-        assert!(matches!(claim_at(&path, &["C:\\a.pdf".into()], true), Claim::HandedOff));
+        assert!(matches!(
+            claim_at(&path, &["C:\\a.pdf".into()], true),
+            Claim::HandedOff
+        ));
         assert!(matches!(poll().as_slice(), [OsEvent::Open(p)] if p == &["C:\\a.pdf"]));
         // A launch with options keeps its own window and doesn't take over the socket.
-        assert!(matches!(claim_at(&path, &["C:\\b.pdf".into()], false), Claim::Alone));
+        assert!(matches!(
+            claim_at(&path, &["C:\\b.pdf".into()], false),
+            Claim::Alone
+        ));
         assert!(poll().is_empty());
     }
 
@@ -382,8 +478,22 @@ mod tests {
             .collect();
         // The first launch's listener lives until every other launch has handed over.
         let claims: Vec<Claim> = launches.into_iter().map(|t| t.join().unwrap()).collect();
-        assert_eq!(claims.iter().filter(|c| matches!(c, Claim::Primary(_))).count(), 1, "one window");
-        assert_eq!(claims.iter().filter(|c| matches!(c, Claim::HandedOff)).count(), 7, "the rest hand over");
+        assert_eq!(
+            claims
+                .iter()
+                .filter(|c| matches!(c, Claim::Primary(_)))
+                .count(),
+            1,
+            "one window"
+        );
+        assert_eq!(
+            claims
+                .iter()
+                .filter(|c| matches!(c, Claim::HandedOff))
+                .count(),
+            7,
+            "the rest hand over"
+        );
     }
 
     #[cfg(windows)]
@@ -396,7 +506,13 @@ mod tests {
             &path
         }));
         // `symlink_metadata`, not `exists`, which follows the socket's reparse point and can fail.
-        assert!(std::fs::symlink_metadata(&path).is_ok(), "the socket file stays behind");
-        assert!(matches!(claim_at(&path, &["C:\\a.pdf".into()], true), Claim::Primary(_)));
+        assert!(
+            std::fs::symlink_metadata(&path).is_ok(),
+            "the socket file stays behind"
+        );
+        assert!(matches!(
+            claim_at(&path, &["C:\\a.pdf".into()], true),
+            Claim::Primary(_)
+        ));
     }
 }

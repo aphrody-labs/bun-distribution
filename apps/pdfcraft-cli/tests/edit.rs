@@ -25,7 +25,13 @@ fn fixture() -> Vec<u8> {
     for o in offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
@@ -46,12 +52,31 @@ fn a_misspelled_option_fails_and_writes_nothing() {
     let input = tmp("typo", "in.pdf");
     std::fs::write(&input, fixture()).unwrap();
     let output = tmp("typo", "typo.pdf");
-    let out = Command::new(BIN).args(["edit", input.to_str().unwrap(), "--out", output.to_str().unwrap(), "--rotat", "1:90"]).output().unwrap();
+    let out = Command::new(BIN)
+        .args([
+            "edit",
+            input.to_str().unwrap(),
+            "--out",
+            output.to_str().unwrap(),
+            "--rotat",
+            "1:90",
+        ])
+        .output()
+        .unwrap();
     assert!(!out.status.success(), "an unknown option must not exit 0");
     let stderr = String::from_utf8_lossy(&out.stderr);
-    assert!(stderr.contains("unknown option") && stderr.contains("--rotat"), "the option must be named: {stderr}");
-    assert!(stderr.contains("--rotate"), "the accepted options must be listed: {stderr}");
-    assert!(!output.exists(), "no output may be written for a rejected command line");
+    assert!(
+        stderr.contains("unknown option") && stderr.contains("--rotat"),
+        "the option must be named: {stderr}"
+    );
+    assert!(
+        stderr.contains("--rotate"),
+        "the accepted options must be listed: {stderr}"
+    );
+    assert!(
+        !output.exists(),
+        "no output may be written for a rejected command line"
+    );
 }
 
 #[test]
@@ -59,7 +84,16 @@ fn an_option_without_its_value_fails() {
     let input = tmp("novalue", "in.pdf");
     std::fs::write(&input, fixture()).unwrap();
     let output = tmp("novalue", "out.pdf");
-    let out = Command::new(BIN).args(["edit", input.to_str().unwrap(), "--out", output.to_str().unwrap(), "--title"]).output().unwrap();
+    let out = Command::new(BIN)
+        .args([
+            "edit",
+            input.to_str().unwrap(),
+            "--out",
+            output.to_str().unwrap(),
+            "--title",
+        ])
+        .output()
+        .unwrap();
     assert!(!out.status.success());
     assert!(String::from_utf8_lossy(&out.stderr).contains("--title needs a value"));
     assert!(!output.exists());
@@ -70,7 +104,16 @@ fn a_second_input_file_fails() {
     let input = tmp("stray", "in.pdf");
     std::fs::write(&input, fixture()).unwrap();
     let output = tmp("stray", "out.pdf");
-    let out = Command::new(BIN).args(["edit", input.to_str().unwrap(), "other.pdf", "--out", output.to_str().unwrap()]).output().unwrap();
+    let out = Command::new(BIN)
+        .args([
+            "edit",
+            input.to_str().unwrap(),
+            "other.pdf",
+            "--out",
+            output.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
     assert!(!out.status.success());
     assert!(String::from_utf8_lossy(&out.stderr).contains("unexpected argument \"other.pdf\""));
     assert!(!output.exists());
@@ -80,14 +123,32 @@ fn a_second_input_file_fails() {
 fn the_documented_options_still_edit_and_save() {
     let input = tmp("ok", "in.pdf");
     std::fs::write(&input, fixture()).unwrap();
-    for (name, extra) in [("incremental.pdf", Vec::new()), ("full.pdf", vec!["--full"])] {
+    for (name, extra) in [
+        ("incremental.pdf", Vec::new()),
+        ("full.pdf", vec!["--full"]),
+    ] {
         let output = tmp("ok", name);
-        let mut args = vec!["edit", input.to_str().unwrap(), "--out", output.to_str().unwrap(), "--rotate", "1:90", "--title", "Rotated"];
+        let mut args = vec![
+            "edit",
+            input.to_str().unwrap(),
+            "--out",
+            output.to_str().unwrap(),
+            "--rotate",
+            "1:90",
+            "--title",
+            "Rotated",
+        ];
         args.extend(extra);
         let out = Command::new(BIN).args(&args).output().unwrap();
-        assert!(out.status.success(), "{name}: {}", String::from_utf8_lossy(&out.stderr));
+        assert!(
+            out.status.success(),
+            "{name}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
         assert_eq!(first_page_rotation(&output), 90, "{name}");
-        let info = pdfcraft_render::inspect(std::sync::Arc::new(std::fs::read(&output).unwrap()), None).unwrap();
+        let info =
+            pdfcraft_render::inspect(std::sync::Arc::new(std::fs::read(&output).unwrap()), None)
+                .unwrap();
         assert_eq!(info.title.as_deref(), Some("Rotated"), "{name}");
     }
 }
@@ -101,8 +162,11 @@ mod one_based_arguments {
         fn new() -> Self {
             static NEXT: AtomicU64 = AtomicU64::new(0);
             for _ in 0..128 {
-                let path =
-                    std::env::temp_dir().join(format!("pdfcraft-cli-one-based-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+                let path = std::env::temp_dir().join(format!(
+                    "pdfcraft-cli-one-based-{}-{}",
+                    std::process::id(),
+                    NEXT.fetch_add(1, Ordering::Relaxed)
+                ));
                 match std::fs::create_dir(&path) {
                     Ok(()) => return Self(path),
                     Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
@@ -129,14 +193,33 @@ mod one_based_arguments {
                 for (command, option, value, diagnostic) in [
                     ("render", "--page", "0", "--page must be at least 1"),
                     ("edit", "--move", "1:0", "--move target must be at least 1"),
-                    ("edit", "--insert-blank", "0", "--insert-blank must be at least 1"),
+                    (
+                        "edit",
+                        "--insert-blank",
+                        "0",
+                        "--insert-blank must be at least 1",
+                    ),
                 ] {
-                    let out = Command::new(BIN).current_dir(&dir.0).args([command, input, "--out", destination, option, value]).output().unwrap();
-                    assert_eq!(out.status.code(), Some(1), "{command} {input} {option} {value}");
-                    assert_eq!(out.stderr, format!("pdfcraft-cli: {diagnostic}\n").as_bytes());
+                    let out = Command::new(BIN)
+                        .current_dir(&dir.0)
+                        .args([command, input, "--out", destination, option, value])
+                        .output()
+                        .unwrap();
+                    assert_eq!(
+                        out.status.code(),
+                        Some(1),
+                        "{command} {input} {option} {value}"
+                    );
+                    assert_eq!(
+                        out.stderr,
+                        format!("pdfcraft-cli: {diagnostic}\n").as_bytes()
+                    );
                     assert!(out.stdout.is_empty());
                     assert_eq!(std::fs::read(dir.0.join("input.pdf")).unwrap(), source);
-                    assert_eq!(std::fs::read(dir.0.join("output.pam")).unwrap(), b"keep destination");
+                    assert_eq!(
+                        std::fs::read(dir.0.join("output.pam")).unwrap(),
+                        b"keep destination"
+                    );
                     assert!(!dir.0.join("new.pam").exists());
                     assert!(!dir.0.join("missing.pdf").exists());
                 }
@@ -151,12 +234,29 @@ mod one_based_arguments {
         let source = fixture();
         std::fs::write(dir.0.join("input.pdf"), &source).unwrap();
         for output in ["page.pam", "page.png"] {
-            let out =
-                Command::new(BIN).current_dir(&dir.0).args(["render", "input.pdf", "--page", "1", "--dpi", "18", "--out", output]).output().unwrap();
-            assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+            let out = Command::new(BIN)
+                .current_dir(&dir.0)
+                .args([
+                    "render",
+                    "input.pdf",
+                    "--page",
+                    "1",
+                    "--dpi",
+                    "18",
+                    "--out",
+                    output,
+                ])
+                .output()
+                .unwrap();
+            assert!(
+                out.status.success(),
+                "{}",
+                String::from_utf8_lossy(&out.stderr)
+            );
             let bytes = std::fs::read(dir.0.join(output)).unwrap();
             if output.ends_with(".pam") {
-                let header = b"P7\nWIDTH 50\nHEIGHT 75\nDEPTH 4\nMAXVAL 255\nTUPLTYPE RGB_ALPHA\nENDHDR\n";
+                let header =
+                    b"P7\nWIDTH 50\nHEIGHT 75\nDEPTH 4\nMAXVAL 255\nTUPLTYPE RGB_ALPHA\nENDHDR\n";
                 assert!(bytes.starts_with(header));
                 assert_eq!(bytes.len(), header.len() + 50 * 75 * 4);
             } else {
@@ -167,15 +267,48 @@ mod one_based_arguments {
         }
         let out = Command::new(BIN)
             .current_dir(&dir.0)
-            .args(["edit", "input.pdf", "--out", "edited.pdf", "--move", "1:1", "--rotate", "1:90", "--insert-blank", "1"])
+            .args([
+                "edit",
+                "input.pdf",
+                "--out",
+                "edited.pdf",
+                "--move",
+                "1:1",
+                "--rotate",
+                "1:90",
+                "--insert-blank",
+                "1",
+            ])
             .output()
             .unwrap();
-        assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+        assert!(
+            out.status.success(),
+            "{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
         assert!(out.stdout.is_empty() && out.stderr.is_empty());
-        let info = pdfcraft_render::inspect(std::sync::Arc::new(std::fs::read(dir.0.join("edited.pdf")).unwrap()), None).unwrap();
+        let info = pdfcraft_render::inspect(
+            std::sync::Arc::new(std::fs::read(dir.0.join("edited.pdf")).unwrap()),
+            None,
+        )
+        .unwrap();
         assert_eq!(info.pages.len(), 2);
-        assert_eq!((info.pages[0].width, info.pages[0].height, info.pages[0].rotation), (612.0, 792.0, 0));
-        assert_eq!((info.pages[1].width, info.pages[1].height, info.pages[1].rotation), (300.0, 200.0, 90));
+        assert_eq!(
+            (
+                info.pages[0].width,
+                info.pages[0].height,
+                info.pages[0].rotation
+            ),
+            (612.0, 792.0, 0)
+        );
+        assert_eq!(
+            (
+                info.pages[1].width,
+                info.pages[1].height,
+                info.pages[1].rotation
+            ),
+            (300.0, 200.0, 90)
+        );
         assert_eq!(std::fs::read(dir.0.join("input.pdf")).unwrap(), source);
     }
 }
@@ -187,15 +320,48 @@ fn a_destination_past_the_end_fails_and_writes_nothing() {
     std::fs::write(&input, fixture()).unwrap();
     let output = tmp("past-end", "out.pdf");
     for (option, value, diagnostic) in [
-        ("--insert-blank", "3", "--insert-blank 3 is past the end: it must be between 1 and 2 (the document has 1 pages)"),
-        ("--insert-blank", "99", "--insert-blank 99 is past the end: it must be between 1 and 2 (the document has 1 pages)"),
-        ("--move", "1:3", "--move target 3 is past the end: it must be between 1 and 2 (the document has 1 pages)"),
-        ("--move", "1:99", "--move target 99 is past the end: it must be between 1 and 2 (the document has 1 pages)"),
+        (
+            "--insert-blank",
+            "3",
+            "--insert-blank 3 is past the end: it must be between 1 and 2 (the document has 1 pages)",
+        ),
+        (
+            "--insert-blank",
+            "99",
+            "--insert-blank 99 is past the end: it must be between 1 and 2 (the document has 1 pages)",
+        ),
+        (
+            "--move",
+            "1:3",
+            "--move target 3 is past the end: it must be between 1 and 2 (the document has 1 pages)",
+        ),
+        (
+            "--move",
+            "1:99",
+            "--move target 99 is past the end: it must be between 1 and 2 (the document has 1 pages)",
+        ),
     ] {
-        let out = Command::new(BIN).args(["edit", input.to_str().unwrap(), "--out", output.to_str().unwrap(), option, value]).output().unwrap();
+        let out = Command::new(BIN)
+            .args([
+                "edit",
+                input.to_str().unwrap(),
+                "--out",
+                output.to_str().unwrap(),
+                option,
+                value,
+            ])
+            .output()
+            .unwrap();
         assert_eq!(out.status.code(), Some(1), "{option} {value}");
-        assert_eq!(String::from_utf8_lossy(&out.stderr), format!("pdfcraft-cli: {diagnostic}\n"), "{option} {value}");
-        assert!(!output.exists(), "{option} {value}: no output may be written");
+        assert_eq!(
+            String::from_utf8_lossy(&out.stderr),
+            format!("pdfcraft-cli: {diagnostic}\n"),
+            "{option} {value}"
+        );
+        assert!(
+            !output.exists(),
+            "{option} {value}: no output may be written"
+        );
     }
 }
 
@@ -207,14 +373,28 @@ fn the_append_destination_and_counts_grown_by_earlier_edits_are_accepted() {
     for (name, args) in [
         ("insert.pdf", vec!["--insert-blank", "2"]),
         ("move.pdf", vec!["--insert-blank", "1", "--move", "1:3"]),
-        ("grown.pdf", vec!["--insert-blank", "2", "--insert-blank", "3"]),
+        (
+            "grown.pdf",
+            vec!["--insert-blank", "2", "--insert-blank", "3"],
+        ),
     ] {
         let output = tmp("append", name);
-        let mut all = vec!["edit", input.to_str().unwrap(), "--out", output.to_str().unwrap()];
+        let mut all = vec![
+            "edit",
+            input.to_str().unwrap(),
+            "--out",
+            output.to_str().unwrap(),
+        ];
         all.extend(args);
         let out = Command::new(BIN).args(&all).output().unwrap();
-        assert!(out.status.success(), "{name}: {}", String::from_utf8_lossy(&out.stderr));
-        let info = pdfcraft_render::inspect(std::sync::Arc::new(std::fs::read(&output).unwrap()), None).unwrap();
+        assert!(
+            out.status.success(),
+            "{name}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        let info =
+            pdfcraft_render::inspect(std::sync::Arc::new(std::fs::read(&output).unwrap()), None)
+                .unwrap();
         let sizes: Vec<_> = info.pages.iter().map(|p| (p.width, p.height)).collect();
         let expected: &[(f32, f32)] = match name {
             "insert.pdf" => &[(200.0, 300.0), (612.0, 792.0)],
@@ -232,10 +412,31 @@ fn a_page_past_the_end_after_earlier_edits_names_that_option() {
     std::fs::write(&input, fixture()).unwrap();
     let output = tmp("chained", "out.pdf");
     // 1 page, grown to 3, then --delete leaves 2: the 3 in --move 3:1 is the page that is gone.
-    let args = ["--insert-blank", "2", "--insert-blank", "3", "--delete", "3", "--move", "3:1"];
-    let out = Command::new(BIN).args(["edit", input.to_str().unwrap(), "--out", output.to_str().unwrap()]).args(args).output().unwrap();
+    let args = [
+        "--insert-blank",
+        "2",
+        "--insert-blank",
+        "3",
+        "--delete",
+        "3",
+        "--move",
+        "3:1",
+    ];
+    let out = Command::new(BIN)
+        .args([
+            "edit",
+            input.to_str().unwrap(),
+            "--out",
+            output.to_str().unwrap(),
+        ])
+        .args(args)
+        .output()
+        .unwrap();
     assert!(!out.status.success());
     let err = String::from_utf8_lossy(&out.stderr);
-    assert!(err.contains("--move: page 3 does not exist") && err.contains("has 2 pages"), "{err}");
+    assert!(
+        err.contains("--move: page 3 does not exist") && err.contains("has 2 pages"),
+        "{err}"
+    );
     assert!(!output.exists());
 }

@@ -109,8 +109,9 @@ where
         if arg.is_empty() || arg.starts_with('-') {
             continue;
         }
-        let is_link =
-            arg.split_once(':').is_some_and(|(scheme, _)| scheme.eq_ignore_ascii_case(SCHEME));
+        let is_link = arg
+            .split_once(':')
+            .is_some_and(|(scheme, _)| scheme.eq_ignore_ascii_case(SCHEME));
         if is_link {
             // A bare `aphrody:` names nothing to open.
             let target = url::Url::parse(arg).is_ok_and(|url| {
@@ -123,7 +124,11 @@ where
             continue;
         }
         let path = PathBuf::from(arg);
-        let path = if path.is_absolute() { path } else { cwd.join(path) };
+        let path = if path.is_absolute() {
+            path
+        } else {
+            cwd.join(path)
+        };
         if is_file(&path) {
             request.files.push(path.display().to_string());
         }
@@ -164,7 +169,9 @@ pub struct Integration {
 }
 
 fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
-    mutex.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    mutex
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 /// Read the persisted preferences (defaults when the store is missing or unreadable).
@@ -172,8 +179,16 @@ pub fn load_prefs(app: &AppHandle) -> DesktopPrefs {
     let Ok(store) = app.store(STORE) else {
         return DesktopPrefs::default();
     };
-    let flag = |key: &str| store.get(key).and_then(|value| value.as_bool()).unwrap_or(false);
-    DesktopPrefs { pet: flag("pet"), widget: flag("widget") }
+    let flag = |key: &str| {
+        store
+            .get(key)
+            .and_then(|value| value.as_bool())
+            .unwrap_or(false)
+    };
+    DesktopPrefs {
+        pet: flag("pet"),
+        widget: flag("widget"),
+    }
 }
 
 fn save_pref(app: &AppHandle, key: &str, on: bool) {
@@ -183,7 +198,7 @@ fn save_pref(app: &AppHandle, key: &str, on: bool) {
             if let Err(error) = store.save() {
                 log::error!("desktop preferences save: {error}");
             }
-        },
+        }
         Err(error) => log::error!("desktop preferences store: {error}"),
     }
 }
@@ -191,8 +206,10 @@ fn save_pref(app: &AppHandle, key: &str, on: bool) {
 /// Show, unminimize and focus the main window.
 pub fn show_main(app: &AppHandle) {
     if let Some(window) = app.get_webview_window(MAIN)
-        && let Err(error) =
-            window.show().and_then(|()| window.unminimize()).and_then(|()| window.set_focus())
+        && let Err(error) = window
+            .show()
+            .and_then(|()| window.unminimize())
+            .and_then(|()| window.set_focus())
     {
         log::error!("main window focus: {error}");
     }
@@ -280,7 +297,12 @@ pub fn set_widget(app: &AppHandle, on: bool) {
 /// Enable or disable launching Aphrody (in the background) at session start.
 pub fn set_autostart(app: &AppHandle, on: bool) -> Result<(), String> {
     let manager = app.autostart();
-    if on { manager.enable() } else { manager.disable() }.map_err(|error| error.to_string())?;
+    if on {
+        manager.enable()
+    } else {
+        manager.disable()
+    }
+    .map_err(|error| error.to_string())?;
     if let Some(items) = lock(&app.state::<Integration>().tray).as_ref() {
         let _ = items.autostart.set_checked(on);
     }
@@ -294,7 +316,11 @@ fn autostart_enabled(app: &AppHandle) -> bool {
 /// Current integration state for the settings page.
 pub fn state(app: &AppHandle) -> IntegrationState {
     let prefs = load_prefs(app);
-    IntegrationState { pet: prefs.pet, widget: prefs.widget, autostart: autostart_enabled(app) }
+    IntegrationState {
+        pet: prefs.pet,
+        widget: prefs.widget,
+        autostart: autostart_enabled(app),
+    }
 }
 
 /// Result of an explicit update check.
@@ -315,14 +341,23 @@ pub async fn check_updates(app: AppHandle) {
     let body = match app.updater() {
         Ok(updater) => match updater.check().await {
             Ok(Some(update)) => {
-                format!("Aphrody {} is available. Open Settings to install it.", update.version)
-            },
+                format!(
+                    "Aphrody {} is available. Open Settings to install it.",
+                    update.version
+                )
+            }
             Ok(None) => "Aphrody is up to date.".to_owned(),
             Err(error) => format!("Update check failed: {error}"),
         },
         Err(error) => format!("Updater unavailable: {error}"),
     };
-    if let Err(error) = app.notification().builder().title("Aphrody").body(body).show() {
+    if let Err(error) = app
+        .notification()
+        .builder()
+        .title("Aphrody")
+        .body(body)
+        .show()
+    {
         log::error!("update notification: {error}");
     }
 }
@@ -339,9 +374,12 @@ pub async fn aphrody_check_update(app: AppHandle) -> Result<UpdateCheckResult, S
             version: Some(update.version.clone()),
             body: update.body.clone(),
         }),
-        Ok(None) => {
-            Ok(UpdateCheckResult { available: false, current_version, version: None, body: None })
-        },
+        Ok(None) => Ok(UpdateCheckResult {
+            available: false,
+            current_version,
+            version: None,
+            body: None,
+        }),
         Err(error) => Err(error.to_string()),
     }
 }
@@ -365,8 +403,14 @@ fn build_tray(app: &AppHandle, prefs: DesktopPrefs) -> tauri::Result<()> {
     let open = MenuItem::with_id(app, "open", "Open Aphrody", true, None::<&str>)?;
     let quick = MenuItem::with_id(app, "quick_ask", "Quick ask", true, Some("Alt+Space"))?;
     let pet = CheckMenuItem::with_id(app, "pet", "Desktop pet", true, prefs.pet, None::<&str>)?;
-    let widget =
-        CheckMenuItem::with_id(app, "widget", "Desktop widget", true, prefs.widget, None::<&str>)?;
+    let widget = CheckMenuItem::with_id(
+        app,
+        "widget",
+        "Desktop widget",
+        true,
+        prefs.widget,
+        None::<&str>,
+    )?;
     let autostart = CheckMenuItem::with_id(
         app,
         "autostart",
@@ -404,12 +448,12 @@ fn build_tray(app: &AppHandle, prefs: DesktopPrefs) -> tauri::Result<()> {
                 if let Err(error) = set_autostart(app, !autostart_enabled(app)) {
                     log::error!("autostart: {error}");
                 }
-            },
+            }
             "updates" => {
                 tauri::async_runtime::spawn(check_updates(app.clone()));
-            },
+            }
             "quit" => app.exit(0),
-            _ => {},
+            _ => {}
         })
         .on_tray_icon_event(|tray, event| {
             if let TrayIconEvent::Click {
@@ -425,7 +469,11 @@ fn build_tray(app: &AppHandle, prefs: DesktopPrefs) -> tauri::Result<()> {
         builder = builder.icon(icon.clone());
     }
     builder.build(app)?;
-    *lock(&app.state::<Integration>().tray) = Some(TrayItems { pet, widget, autostart });
+    *lock(&app.state::<Integration>().tray) = Some(TrayItems {
+        pet,
+        widget,
+        autostart,
+    });
     Ok(())
 }
 
@@ -437,8 +485,20 @@ pub fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
         "File",
         true,
         &[
-            &MenuItem::with_id(app, "menu_new_session", "New Session", true, Some("CmdOrCtrl+N"))?,
-            &MenuItem::with_id(app, "menu_open_file", "Open File...", true, Some("CmdOrCtrl+O"))?,
+            &MenuItem::with_id(
+                app,
+                "menu_new_session",
+                "New Session",
+                true,
+                Some("CmdOrCtrl+N"),
+            )?,
+            &MenuItem::with_id(
+                app,
+                "menu_open_file",
+                "Open File...",
+                true,
+                Some("CmdOrCtrl+O"),
+            )?,
             &MenuItem::with_id(
                 app,
                 "menu_open_folder",
@@ -483,7 +543,13 @@ pub fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
         true,
         &[
             &PredefinedMenuItem::minimize(app, None)?,
-            &MenuItem::with_id(app, "menu_toggle_pet", "Toggle Desktop Pet", true, None::<&str>)?,
+            &MenuItem::with_id(
+                app,
+                "menu_toggle_pet",
+                "Toggle Desktop Pet",
+                true,
+                None::<&str>,
+            )?,
             &MenuItem::with_id(
                 app,
                 "menu_toggle_widget",
@@ -499,16 +565,30 @@ pub fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
         "Help",
         true,
         &[
-            &MenuItem::with_id(app, "menu_docs", "Aphrody Documentation", true, None::<&str>)?,
+            &MenuItem::with_id(
+                app,
+                "menu_docs",
+                "Aphrody Documentation",
+                true,
+                None::<&str>,
+            )?,
             &MenuItem::with_id(app, "menu_showcase", "M3 Showcase", true, None::<&str>)?,
-            &MenuItem::with_id(app, "menu_updates", "Check for Updates...", true, None::<&str>)?,
+            &MenuItem::with_id(
+                app,
+                "menu_updates",
+                "Check for Updates...",
+                true,
+                None::<&str>,
+            )?,
             &PredefinedMenuItem::separator(app)?,
             &PredefinedMenuItem::about(app, None, None)?,
         ],
     )?;
 
-    let menu =
-        Menu::with_items(app, &[&file_menu, &edit_menu, &view_menu, &window_menu, &help_menu])?;
+    let menu = Menu::with_items(
+        app,
+        &[&file_menu, &edit_menu, &view_menu, &window_menu, &help_menu],
+    )?;
     // macOS shows the app menu in the system menu bar. Windows and Linux would attach it inside
     // every frameless window (main, splash, pet) above the custom title bar; there the shell's
     // own controls and the global Alt+Space shortcut cover these actions instead.
@@ -531,7 +611,9 @@ fn spawn_cursor_poller(app: AppHandle) {
                 let Some(pet) = app.get_webview_window(PET) else {
                     return;
                 };
-                let parked = pet.outer_position().is_ok_and(|at| parking::is_parked(at.x, at.y));
+                let parked = pet
+                    .outer_position()
+                    .is_ok_and(|at| parking::is_parked(at.x, at.y));
                 if parked || !pet.is_visible().unwrap_or(false) {
                     ignoring = None;
                     last = None;
@@ -539,9 +621,11 @@ fn spawn_cursor_poller(app: AppHandle) {
                     std::thread::sleep(CURSOR_IDLE_POLL);
                     continue;
                 }
-                let (Ok(cursor), Ok(origin), Ok(scale)) =
-                    (pet.cursor_position(), pet.outer_position(), pet.scale_factor())
-                else {
+                let (Ok(cursor), Ok(origin), Ok(scale)) = (
+                    pet.cursor_position(),
+                    pet.outer_position(),
+                    pet.scale_factor(),
+                ) else {
                     continue;
                 };
                 let x = (cursor.x - f64::from(origin.x)) / scale;
@@ -601,7 +685,11 @@ fn saved_position(app: &AppHandle, label: &str) -> Option<(i32, i32)> {
     let store = app.store(STORE).ok()?;
     let value = store.get(position_key(label))?;
     let pair = value.as_array()?;
-    let coordinate = |index: usize| pair.get(index)?.as_i64().and_then(|n| i32::try_from(n).ok());
+    let coordinate = |index: usize| {
+        pair.get(index)?
+            .as_i64()
+            .and_then(|n| i32::try_from(n).ok())
+    };
     Some((coordinate(0)?, coordinate(1)?))
 }
 
@@ -632,7 +720,7 @@ pub fn flush_positions(app: &AppHandle) {
             if let Err(error) = store.save() {
                 log::error!("surface positions save: {error}");
             }
-        },
+        }
         Err(error) => log::error!("desktop preferences store: {error}"),
     }
 }
@@ -652,15 +740,28 @@ fn place_surface(app: &AppHandle, window: &WebviewWindow) {
     };
     let rect = |monitor: &tauri::Monitor| {
         let area = monitor.work_area();
-        (area.position.x, area.position.y, area.size.width, area.size.height)
+        (
+            area.position.x,
+            area.position.y,
+            area.size.width,
+            area.size.height,
+        )
     };
-    let areas: Vec<Rect> =
-        window.available_monitors().unwrap_or_default().iter().map(rect).collect();
+    let areas: Vec<Rect> = window
+        .available_monitors()
+        .unwrap_or_default()
+        .iter()
+        .map(rect)
+        .collect();
     let target = saved_position(app, window.label())
         .filter(|&saved| on_screen(&areas, saved))
         .or_else(|| {
             let primary = window.primary_monitor().ok().flatten()?;
-            Some(default_position(window.label(), rect(&primary), (size.width, size.height)))
+            Some(default_position(
+                window.label(),
+                rect(&primary),
+                (size.width, size.height),
+            ))
         });
     if let Some((x, y)) = target
         && let Err(error) = window.set_position(PhysicalPosition::new(x, y))
@@ -698,8 +799,18 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
         use tauri_plugin_aphrody::deep_link::DeepLinkExt as _;
         let handle = app.clone();
         app.deep_link().on_open_url(move |event| {
-            let urls = event.urls().into_iter().map(|url| url.to_string()).collect();
-            dispatch_open(&handle, OpenRequest { urls, files: Vec::new() });
+            let urls = event
+                .urls()
+                .into_iter()
+                .map(|url| url.to_string())
+                .collect();
+            dispatch_open(
+                &handle,
+                OpenRequest {
+                    urls,
+                    files: Vec::new(),
+                },
+            );
         });
     }
 
@@ -746,7 +857,9 @@ fn require(window: &WebviewWindow, label: &str) -> Result<(), String> {
     if window.label() == label {
         Ok(())
     } else {
-        Err(format!("this command is restricted to the `{label}` window"))
+        Err(format!(
+            "this command is restricted to the `{label}` window"
+        ))
     }
 }
 
@@ -773,7 +886,9 @@ pub fn aphrody_app_ready(window: WebviewWindow) -> Result<(), String> {
 #[tauri::command]
 pub fn aphrody_take_open_requests(window: WebviewWindow) -> Result<Vec<OpenRequest>, String> {
     require(&window, MAIN)?;
-    Ok(std::mem::take(&mut *lock(&window.app_handle().state::<Integration>().pending)))
+    Ok(std::mem::take(&mut *lock(
+        &window.app_handle().state::<Integration>().pending,
+    )))
 }
 
 /// Settings-page actions for the desktop integration.
@@ -808,7 +923,7 @@ pub fn aphrody_desktop_integration(
     require(&window, MAIN)?;
     let app = window.app_handle();
     match action {
-        IntegrationAction::State => {},
+        IntegrationAction::State => {}
         IntegrationAction::SetPet { on } => set_pet(app, on),
         IntegrationAction::SetWidget { on } => set_widget(app, on),
         IntegrationAction::SetAutostart { on } => set_autostart(app, on)?,
@@ -858,7 +973,10 @@ pub fn aphrody_pet(window: WebviewWindow, action: PetAction) -> Result<PetStep, 
         PetAction::Hide => set_pet(app, false),
         PetAction::Step { dx } => {
             let scale = window.scale_factor().map_err(err)?;
-            let position = window.outer_position().map_err(err)?.to_logical::<f64>(scale);
+            let position = window
+                .outer_position()
+                .map_err(err)?
+                .to_logical::<f64>(scale);
             let size = window.outer_size().map_err(err)?.to_logical::<f64>(scale);
             let monitor = window
                 .current_monitor()
@@ -869,10 +987,12 @@ pub fn aphrody_pet(window: WebviewWindow, action: PetAction) -> Result<PetStep, 
             let left = f64::from(area.position.x) / scale;
             let right = left + f64::from(area.size.width) / scale - size.width;
             let x = (position.x + dx).clamp(left, right.max(left));
-            window.set_position(LogicalPosition::new(x, position.y)).map_err(err)?;
+            window
+                .set_position(LogicalPosition::new(x, position.y))
+                .map_err(err)?;
             let blocked = (x - (position.x + dx)).abs() > f64::EPSILON;
             return Ok(PetStep { blocked });
-        },
+        }
     }
     Ok(PetStep { blocked: false })
 }
@@ -907,7 +1027,7 @@ pub fn aphrody_widget(
         WidgetAction::TogglePet => set_pet(app, !load_prefs(app).pet),
         WidgetAction::StartDragging => {
             window.start_dragging().map_err(|error| error.to_string())?
-        },
+        }
         WidgetAction::Hide => set_widget(app, false),
     }
     Ok(state(app))
@@ -943,16 +1063,27 @@ mod tests {
             &cwd,
             is_file,
         );
-        assert_eq!(request.urls, vec!["aphrody://thread/abc".to_owned(), "APHRODY://x".to_owned()]);
+        assert_eq!(
+            request.urls,
+            vec!["aphrody://thread/abc".to_owned(), "APHRODY://x".to_owned()]
+        );
         assert_eq!(request.files.len(), 2);
         assert!(request.files[0].ends_with("notes.md"));
         assert_eq!(request.files[1], absolute);
-        assert_eq!(classify_args(Vec::<String>::new(), &cwd, is_file), OpenRequest::default());
+        assert_eq!(
+            classify_args(Vec::<String>::new(), &cwd, is_file),
+            OpenRequest::default()
+        );
     }
 
     #[test]
     fn hit_rect_is_half_open() {
-        let rect = HitRect { x: 10.0, y: 20.0, width: 100.0, height: 50.0 };
+        let rect = HitRect {
+            x: 10.0,
+            y: 20.0,
+            width: 100.0,
+            height: 50.0,
+        };
         assert!(rect.contains(10.0, 20.0));
         assert!(rect.contains(109.9, 69.9));
         assert!(!rect.contains(110.0, 30.0));
@@ -987,8 +1118,14 @@ mod tests {
     fn surfaces_open_in_their_default_corner() {
         let area = (0, 0, 1920, 1040);
         // The pet sits bottom-right with a 48 px margin, the widget bottom-left with 24 px.
-        assert_eq!(default_position(PET, area, (180, 196)), (1920 - 180 - 48, 1040 - 196));
-        assert_eq!(default_position(WIDGET, area, (300, 172)), (24, 1040 - 172 - 24));
+        assert_eq!(
+            default_position(PET, area, (180, 196)),
+            (1920 - 180 - 48, 1040 - 196)
+        );
+        assert_eq!(
+            default_position(WIDGET, area, (300, 172)),
+            (24, 1040 - 172 - 24)
+        );
         // A second monitor to the right keeps its own origin.
         assert_eq!(
             default_position(PET, (1920, 0, 1920, 1080), (180, 196)),

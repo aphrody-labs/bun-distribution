@@ -56,7 +56,10 @@ mod platform {
         // XKB keyboard state lives on the X server. The window is our window: whether it is X11
         // (or XWayland) is whether there is an X server to ask. Native Wayland has no such
         // connection and degrades to the cursor preference (no service).
-        let is_x11 = matches!(cc.window_handle().ok()?.as_raw(), RawWindowHandle::Xlib(_) | RawWindowHandle::Xcb(_));
+        let is_x11 = matches!(
+            cc.window_handle().ok()?.as_raw(),
+            RawWindowHandle::Xlib(_) | RawWindowHandle::Xcb(_)
+        );
         if !is_x11 {
             return None;
         }
@@ -91,13 +94,21 @@ mod platform {
         if conn.is_none() {
             let (c, _) = RustConnection::connect(None).map_err(|e| e.to_string())?;
             // XKB requests need the extension active first (it is, on every modern server).
-            let enabled = c.xkb_use_extension(1, 0).map_err(|e| e.to_string())?.reply().map_err(|e| e.to_string())?;
+            let enabled = c
+                .xkb_use_extension(1, 0)
+                .map_err(|e| e.to_string())?
+                .reply()
+                .map_err(|e| e.to_string())?;
             if !enabled.supported {
                 return Err("the X server has no XKB extension".into());
             }
             let device = u16::from(xkb::ID::USE_CORE_KBD);
             // Indicator 0 is the Caps Lock indicator; its `.mods` is the Lock-modifier mask.
-            let map = c.xkb_get_indicator_map(device, 1).map_err(|e| e.to_string())?.reply().map_err(|e| e.to_string())?;
+            let map = c
+                .xkb_get_indicator_map(device, 1)
+                .map_err(|e| e.to_string())?
+                .reply()
+                .map_err(|e| e.to_string())?;
             let lock = map.maps.first().map_or(ModMask::LOCK, |m| m.mods);
             *conn = Some((c, lock));
         }
@@ -106,7 +117,11 @@ mod platform {
             None => return Err("no X connection".into()),
         };
         let device = u16::from(xkb::ID::USE_CORE_KBD);
-        let state = conn.xkb_get_state(device).map_err(|e| e.to_string())?.reply().map_err(|e| e.to_string())?;
+        let state = conn
+            .xkb_get_state(device)
+            .map_err(|e| e.to_string())?
+            .reply()
+            .map_err(|e| e.to_string())?;
         Ok(u16::from(state.locked_mods) & u16::from(lock) != 0)
     }
 }

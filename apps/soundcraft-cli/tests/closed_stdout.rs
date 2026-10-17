@@ -43,7 +43,11 @@ fn run_with_closed_stdout_still_bounces_and_saves() {
         .stderr(Stdio::piped())
         .output()
         .unwrap();
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     assert!(wav.is_file(), "bounce was skipped");
     assert!(session.is_file(), "save was skipped");
     let _ = std::fs::remove_dir_all(&dir);
@@ -53,7 +57,11 @@ fn run_with_closed_stdout_still_bounces_and_saves() {
 fn script_with_closed_stdout_still_bounces_and_saves() {
     let dir = temp_dir("script");
     let script = dir.join("edit.scraft.txt");
-    std::fs::write(&script, "track.new {\"name\":\"Synthetic\",\"count\":1,\"format\":\"stereo\"}\n").unwrap();
+    std::fs::write(
+        &script,
+        "track.new {\"name\":\"Synthetic\",\"count\":1,\"format\":\"stereo\"}\n",
+    )
+    .unwrap();
     let wav = dir.join("mix.wav");
     let session = dir.join("Synthetic.scraft");
     let output = bin()
@@ -71,7 +79,11 @@ fn script_with_closed_stdout_still_bounces_and_saves() {
         .stderr(Stdio::piped())
         .output()
         .unwrap();
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     assert!(wav.is_file());
     assert!(session.is_file());
     let _ = std::fs::remove_dir_all(&dir);
@@ -96,7 +108,11 @@ fn bounce_then_save_with_closed_stdout_writes_the_wav() {
         .stderr(Stdio::piped())
         .output()
         .unwrap();
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     assert!(wav.is_file());
     assert!(session.is_file());
     let _ = std::fs::remove_dir_all(&dir);
@@ -118,7 +134,10 @@ fn invalid_bounce_destination_still_fails() {
         .stderr(Stdio::piped())
         .output()
         .unwrap();
-    assert!(!output.status.success(), "a bounce that cannot be written must fail");
+    assert!(
+        !output.status.success(),
+        "a bounce that cannot be written must fail"
+    );
     assert!(!missing.exists());
     let _ = std::fs::remove_dir_all(&dir);
 }

@@ -39,7 +39,13 @@ pub fn session(backend: Bridge) -> (Session, Vec<String>) {
 /// Check metadata before copying a browser record into Rust memory.
 pub fn record_limit(name: &str) -> Result<u64, String> {
     let leaf = name.strip_prefix("tips/").unwrap_or(name);
-    if leaf.is_empty() || leaf.len() > 128 || leaf.starts_with('.') || !leaf.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, ' ' | '_' | '-' | '.')) {
+    if leaf.is_empty()
+        || leaf.len() > 128
+        || leaf.starts_with('.')
+        || !leaf
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, ' ' | '_' | '-' | '.'))
+    {
         return Err("invalid preset record name".into());
     }
     match name {
@@ -61,7 +67,10 @@ impl Bridge {
             return Err(format!("{name}: preset record too large"));
         }
         let old = s.files.get(name).map_or(0, |b| b.len() as u64);
-        let size = s.bytes.saturating_sub(old).saturating_add(bytes.len() as u64);
+        let size = s
+            .bytes
+            .saturating_sub(old)
+            .saturating_add(bytes.len() as u64);
         if size > MAX_STORE_BYTES || (!s.files.contains_key(name) && s.files.len() >= MAX_RECORDS) {
             return Err("browser preset store is full".into());
         }
@@ -111,7 +120,11 @@ impl Bridge {
 
     pub fn error(&self) -> Option<String> {
         let s = self.state();
-        s.rejected.values().next().cloned().or_else(|| s.error.clone())
+        s.rejected
+            .values()
+            .next()
+            .cloned()
+            .or_else(|| s.error.clone())
     }
 
     pub fn unsaved(&self) -> bool {
@@ -122,12 +135,20 @@ impl Bridge {
 
 impl PresetBackend for Bridge {
     fn list(&self) -> Result<Vec<(String, u64)>, String> {
-        Ok(self.state().files.iter().map(|(k, b)| (k.clone(), b.len() as u64)).collect())
+        Ok(self
+            .state()
+            .files
+            .iter()
+            .map(|(k, b)| (k.clone(), b.len() as u64))
+            .collect())
     }
 
     fn read(&self, name: &str, max: u64) -> Result<Vec<u8>, String> {
         let s = self.state();
-        let bytes = s.files.get(name).ok_or_else(|| format!("{name}: not found"))?;
+        let bytes = s
+            .files
+            .get(name)
+            .ok_or_else(|| format!("{name}: not found"))?;
         if bytes.len() as u64 > max {
             return Err(format!("{name}: preset record too large"));
         }
@@ -190,12 +211,22 @@ mod tests {
                 name: "Browser seam brush".into(),
                 spacing: 25,
                 anti_alias: true,
-                tip: LegacyTip::Sampled(AbrSample { id: String::new(), width: 6, height: 4, depth: 8, data: vec![255; 24] }),
+                tip: LegacyTip::Sampled(AbrSample {
+                    id: String::new(),
+                    width: 6,
+                    height: 4,
+                    depth: 8,
+                    data: vec![255; 24],
+                }),
             }],
             false,
         )
         .unwrap();
-        s.execute("brush.presets.importAbr", json!({"data": photocraft_paint::tile::b64_encode(&abr), "group": "Browser samples"})).unwrap();
+        s.execute(
+            "brush.presets.importAbr",
+            json!({"data": photocraft_paint::tile::b64_encode(&abr), "group": "Browser samples"}),
+        )
+        .unwrap();
     }
 
     #[test]
@@ -213,7 +244,10 @@ mod tests {
         b.write("index.json", b"one").unwrap();
         b.write("index.json", b"two").unwrap();
         let batch = b.begin().unwrap();
-        assert_eq!(batch.get("index.json").unwrap().as_deref(), Some(&b"two"[..]));
+        assert_eq!(
+            batch.get("index.json").unwrap().as_deref(),
+            Some(&b"two"[..])
+        );
         b.remove("index.json").unwrap();
         assert!(b.begin().is_none());
         assert!(b.unsaved());
@@ -236,7 +270,10 @@ mod tests {
         assert!(b.begin().is_none());
         b.retry();
         let batch = b.begin().unwrap();
-        assert_eq!(batch.get("index.json").unwrap().as_deref(), Some(&b"new"[..]));
+        assert_eq!(
+            batch.get("index.json").unwrap().as_deref(),
+            Some(&b"new"[..])
+        );
         b.finish(batch, Ok(()));
         assert!(!b.unsaved());
         assert!(b.error().is_none());
@@ -248,8 +285,13 @@ mod tests {
         let (mut s, _) = session(b.clone());
         import(&mut s);
         let deleted = s.tools.presets[0].name.clone();
-        s.execute("brush.presets.delete", json!({"name": deleted})).unwrap();
-        s.execute("brush.presets.moveGroup", json!({"group":"Browser samples", "index":0})).unwrap();
+        s.execute("brush.presets.delete", json!({"name": deleted}))
+            .unwrap();
+        s.execute(
+            "brush.presets.moveGroup",
+            json!({"group":"Browser samples", "index":0}),
+        )
+        .unwrap();
         let persisted = b.begin().unwrap();
         let restored = Bridge::default();
         for (key, value) in &persisted {
@@ -261,7 +303,8 @@ mod tests {
         let (loaded, warnings) = session(restored);
         assert!(warnings.is_empty(), "{warnings:?}");
         assert_eq!(s.tools.presets, loaded.tools.presets);
-        s.execute("brush.presets.delete", json!({"name":"Browser seam brush"})).unwrap();
+        s.execute("brush.presets.delete", json!({"name":"Browser seam brush"}))
+            .unwrap();
         let (loaded, _) = session(b);
         assert_eq!(s.tools.presets, loaded.tools.presets);
     }
@@ -286,10 +329,16 @@ mod tests {
         b.load("index.json", b"initial".to_vec()).unwrap();
         assert!(!b.unsaved(), "hydration is not a user edit");
         assert!(b.read("index.json", 2).is_err());
-        assert!(b.write("index.json", &vec![0; MAX_INDEX_BYTES as usize + 1]).is_err());
+        assert!(
+            b.write("index.json", &vec![0; MAX_INDEX_BYTES as usize + 1])
+                .is_err()
+        );
         assert!(b.error().is_some());
         b.retry();
-        assert!(b.error().is_some(), "staging errors cannot be cleared by retrying older writes");
+        assert!(
+            b.error().is_some(),
+            "staging errors cannot be cleared by retrying older writes"
+        );
         assert_eq!(b.read("index.json", 100).unwrap(), b"initial");
     }
 
@@ -300,22 +349,37 @@ mod tests {
         let oversized = vec![0; MAX_INDEX_BYTES as usize + 1];
         assert!(b.write("index.json", &oversized).is_err());
         b.retry();
-        assert!(b.error().is_some(), "retrying older bytes cannot save the rejected edit");
+        assert!(
+            b.error().is_some(),
+            "retrying older bytes cannot save the rejected edit"
+        );
         b.write("index.json", b"repaired").unwrap();
-        assert!(b.unsaved(), "accepted replacement still needs its transaction");
+        assert!(
+            b.unsaved(),
+            "accepted replacement still needs its transaction"
+        );
         b.finish(b.begin().unwrap(), Ok(()));
         assert!(b.error().is_none());
         assert!(!b.unsaved());
         assert_eq!(b.read("index.json", 100).unwrap(), b"repaired");
 
         assert!(b.write("index.json", &oversized).is_err());
-        assert!(b.write("other.pcbrushes", &vec![0; MAX_GROUP_BYTES as usize + 1]).is_err());
+        assert!(
+            b.write("other.pcbrushes", &vec![0; MAX_GROUP_BYTES as usize + 1])
+                .is_err()
+        );
         b.write("index.json", b"repaired").unwrap();
-        assert!(b.error().is_some(), "an unchanged accepted record cannot clear another record's rejection");
+        assert!(
+            b.error().is_some(),
+            "an unchanged accepted record cannot clear another record's rejection"
+        );
         assert!(b.unsaved());
         b.remove("other.pcbrushes").unwrap();
         assert!(b.error().is_none());
-        assert!(!b.unsaved(), "discarding the rejected absent record resolves its pending edit");
+        assert!(
+            !b.unsaved(),
+            "discarding the rejected absent record resolves its pending edit"
+        );
     }
 
     #[test]
@@ -323,12 +387,18 @@ mod tests {
         let b = Bridge::default();
         b.write("index.json", b"older").unwrap();
         let older = b.begin().unwrap();
-        assert!(b.write("index.json", &vec![0; MAX_INDEX_BYTES as usize + 1]).is_err());
+        assert!(
+            b.write("index.json", &vec![0; MAX_INDEX_BYTES as usize + 1])
+                .is_err()
+        );
         b.finish(older, Ok(()));
         assert!(b.error().is_some());
         assert!(b.unsaved());
         b.write("index.json", b"older").unwrap();
-        assert!(b.error().is_none(), "explicitly restoring the already saved bytes resolves the omitted edit");
+        assert!(
+            b.error().is_none(),
+            "explicitly restoring the already saved bytes resolves the omitted edit"
+        );
         assert!(!b.unsaved());
     }
 
@@ -338,7 +408,12 @@ mod tests {
         b.unavailable("SecurityError".into());
         let (mut s, _) = session(b.clone());
         import(&mut s);
-        assert!(s.tools.presets.iter().any(|p| p.name == "Browser seam brush"));
+        assert!(
+            s.tools
+                .presets
+                .iter()
+                .any(|p| p.name == "Browser seam brush")
+        );
         assert!(b.unsaved());
         assert!(b.error().unwrap().contains("SecurityError"));
         assert!(b.begin().is_none());
@@ -348,19 +423,46 @@ mod tests {
         let b = Bridge::default();
         let (mut s, _) = session(b.clone());
         import(&mut s);
-        let tip = b.list().unwrap().into_iter().find(|(n, _)| n.starts_with("tips/")).unwrap().0;
-        b.load("damaged.pcbrushes", b"recoverable broken group".to_vec()).unwrap();
+        let tip = b
+            .list()
+            .unwrap()
+            .into_iter()
+            .find(|(n, _)| n.starts_with("tips/"))
+            .unwrap()
+            .0;
+        b.load("damaged.pcbrushes", b"recoverable broken group".to_vec())
+            .unwrap();
         let (mut s, warnings) = session(b.clone());
         assert!(!warnings.is_empty());
-        s.execute("brush.presets.save", json!({"name":"Unrelated brush"})).unwrap();
-        s.execute("brush.presets.delete", json!({"name":"Browser seam brush"})).unwrap();
-        assert_eq!(b.read("damaged.pcbrushes", 100).unwrap(), b"recoverable broken group");
+        s.execute("brush.presets.save", json!({"name":"Unrelated brush"}))
+            .unwrap();
+        s.execute("brush.presets.delete", json!({"name":"Browser seam brush"}))
+            .unwrap();
+        assert_eq!(
+            b.read("damaged.pcbrushes", 100).unwrap(),
+            b"recoverable broken group"
+        );
         assert!(b.read(&tip, MAX_TIP_BYTES).is_ok());
         let (reloaded, warnings) = session(b.clone());
         assert!(!warnings.is_empty());
-        assert!(reloaded.tools.presets.iter().any(|p| p.name == "Unrelated brush"));
-        assert!(!reloaded.tools.presets.iter().any(|p| p.name == "Browser seam brush"));
-        assert_eq!(b.read("damaged.pcbrushes", 100).unwrap(), b"recoverable broken group");
+        assert!(
+            reloaded
+                .tools
+                .presets
+                .iter()
+                .any(|p| p.name == "Unrelated brush")
+        );
+        assert!(
+            !reloaded
+                .tools
+                .presets
+                .iter()
+                .any(|p| p.name == "Browser seam brush")
+        );
+        assert_eq!(
+            b.read("damaged.pcbrushes", 100).unwrap(),
+            b"recoverable broken group"
+        );
         assert!(b.read(&tip, MAX_TIP_BYTES).is_ok());
     }
     #[test]
@@ -373,17 +475,35 @@ mod tests {
             name: "Browser gradient".into(),
             noise: false,
             stops: vec![
-                GrdStop { location: 0.0, midpoint: 0.5, color: GrdColor::Foreground },
-                GrdStop { location: 1.0, midpoint: 0.5, color: GrdColor::Rgb([1.0, 0.0, 0.0]) },
+                GrdStop {
+                    location: 0.0,
+                    midpoint: 0.5,
+                    color: GrdColor::Foreground,
+                },
+                GrdStop {
+                    location: 1.0,
+                    midpoint: 0.5,
+                    color: GrdColor::Rgb([1.0, 0.0, 0.0]),
+                },
             ],
             opacity: vec![(0.0, 1.0, 0.5), (1.0, 0.5, 0.5)],
         }]);
-        s.execute("gradient.presets.importGrd", json!({"data":photocraft_paint::tile::b64_encode(&data),"group":"Browser gradients"})).unwrap();
+        s.execute(
+            "gradient.presets.importGrd",
+            json!({"data":photocraft_paint::tile::b64_encode(&data),"group":"Browser gradients"}),
+        )
+        .unwrap();
         let prefs = s.prefs_to_json();
         let (mut loaded, _) = session(b);
         loaded.load_prefs_json(&prefs).unwrap();
         assert_eq!(loaded.tools.presets, s.tools.presets);
         assert_eq!(loaded.presets.gradients, s.presets.gradients);
-        assert!(loaded.presets.gradients.iter().any(|g| g.name == "Browser gradients"));
+        assert!(
+            loaded
+                .presets
+                .gradients
+                .iter()
+                .any(|g| g.name == "Browser gradients")
+        );
     }
 }

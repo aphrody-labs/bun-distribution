@@ -79,7 +79,11 @@ impl Kit {
 }
 
 fn executable_name(name: &str) -> String {
-    if cfg!(windows) { format!("{name}.exe") } else { name.to_owned() }
+    if cfg!(windows) {
+        format!("{name}.exe")
+    } else {
+        name.to_owned()
+    }
 }
 
 fn on_path(name: &str) -> Option<PathBuf> {
@@ -95,8 +99,9 @@ fn on_path(name: &str) -> Option<PathBuf> {
 fn locate(kit: Kit) -> Option<(PathBuf, Vec<String>)> {
     // One product contains both roles. Arguments remain fixed by this native bridge.
     let mut product_candidates = Vec::new();
-    if let Some(dir) =
-        std::env::current_exe().ok().and_then(|exe| exe.parent().map(Path::to_path_buf))
+    if let Some(dir) = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(Path::to_path_buf))
     {
         product_candidates.push(dir.join(executable_name("Aphrody-Setup")));
         product_candidates.push(dir.join(executable_name("aphrody-product")));
@@ -104,8 +109,12 @@ fn locate(kit: Kit) -> Option<(PathBuf, Vec<String>)> {
     if cfg!(windows)
         && let Some(local) = std::env::var_os("LOCALAPPDATA")
     {
-        product_candidates
-            .push(PathBuf::from(local).join("Aphrody").join("Setup").join("Aphrody-Setup.exe"));
+        product_candidates.push(
+            PathBuf::from(local)
+                .join("Aphrody")
+                .join("Setup")
+                .join("Aphrody-Setup.exe"),
+        );
     }
     if let Some(product) = product_candidates
         .into_iter()
@@ -116,25 +125,39 @@ fn locate(kit: Kit) -> Option<(PathBuf, Vec<String>)> {
         return Some((product, vec![kit.product_role().into()]));
     }
     let mut candidates = Vec::new();
-    if let Some(dir) =
-        std::env::current_exe().ok().and_then(|exe| exe.parent().map(Path::to_path_buf))
+    if let Some(dir) = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(Path::to_path_buf))
     {
-        candidates.extend(kit.binaries().iter().map(|name| dir.join(executable_name(name))));
+        candidates.extend(
+            kit.binaries()
+                .iter()
+                .map(|name| dir.join(executable_name(name))),
+        );
     }
     if kit == Kit::Omar
         && cfg!(windows)
         && let Some(local) = std::env::var_os("LOCALAPPDATA")
     {
         // Where the kit copies itself (`stepKit` of omar-kit) and where Aphrody-Setup installs it.
-        candidates.push(PathBuf::from(local).join("Aphrody").join("Omar").join("Aphrody-Omar.exe"));
+        candidates.push(
+            PathBuf::from(local)
+                .join("Aphrody")
+                .join("Omar")
+                .join("Aphrody-Omar.exe"),
+        );
     }
     if kit == Kit::Creator
         && cfg!(windows)
         && let Some(local) = std::env::var_os("LOCALAPPDATA")
     {
         // Where Aphrody-Setup installs creator-kit (role « créateur »).
-        candidates
-            .push(PathBuf::from(local).join("Aphrody").join("Creator").join("creator-kit.exe"));
+        candidates.push(
+            PathBuf::from(local)
+                .join("Aphrody")
+                .join("Creator")
+                .join("creator-kit.exe"),
+        );
     }
     if let Some(found) = candidates.into_iter().find(|path| path.is_file()) {
         return Some((found, Vec::new()));
@@ -143,23 +166,31 @@ fn locate(kit: Kit) -> Option<(PathBuf, Vec<String>)> {
         return Some((found, Vec::new()));
     }
     // A development checkout runs the kit from its sources.
-    let source =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packages/product/src/cli.ts");
+    let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packages/product/src/cli.ts");
     if source.is_file() {
-        return on_path("bun")
-            .map(|bun| (bun, vec![source.display().to_string(), kit.product_role().into()]));
+        return on_path("bun").map(|bun| {
+            (
+                bun,
+                vec![source.display().to_string(), kit.product_role().into()],
+            )
+        });
     }
     None
 }
 
 fn validate(args: &[String]) -> Result<(), String> {
     match args.first().map(String::as_str) {
-        Some("catalog") if args.len() == 1 => {},
-        Some("run") if (2..=3).contains(&args.len()) => {},
+        Some("catalog") if args.len() == 1 => {}
+        Some("run") if (2..=3).contains(&args.len()) => {}
         _ => return Err("kit arguments must be `catalog` or `run <action> [input-json]`".into()),
     }
-    if args.iter().any(|arg| arg.len() > MAX_ARG || arg.contains('\0')) {
-        return Err(format!("kit arguments are limited to {MAX_ARG} bytes without NUL"));
+    if args
+        .iter()
+        .any(|arg| arg.len() > MAX_ARG || arg.contains('\0'))
+    {
+        return Err(format!(
+            "kit arguments are limited to {MAX_ARG} bytes without NUL"
+        ));
     }
     Ok(())
 }
@@ -180,7 +211,11 @@ fn forward(reader: impl Read, stream: &'static str, channel: &Channel<Value>) {
     let mut buffer = Vec::new();
     loop {
         buffer.clear();
-        match reader.by_ref().take(MAX_LINE).read_until(b'\n', &mut buffer) {
+        match reader
+            .by_ref()
+            .take(MAX_LINE)
+            .read_until(b'\n', &mut buffer)
+        {
             Ok(0) | Err(_) => break,
             Ok(_) => {
                 let text = String::from_utf8_lossy(&buffer);
@@ -188,7 +223,7 @@ fn forward(reader: impl Read, stream: &'static str, channel: &Channel<Value>) {
                 if channel.send(event_of(line, stream)).is_err() {
                     break;
                 }
-            },
+            }
         }
     }
 }
@@ -210,7 +245,10 @@ pub fn aphrody_kit_start(
         return Err("too many kit actions are running; stop one first".into());
     }
     let (program, prefix) = locate(kit).ok_or_else(|| {
-        format!("the {} kit is not installed next to Aphrody nor on PATH", kit.source_dir())
+        format!(
+            "the {} kit is not installed next to Aphrody nor on PATH",
+            kit.source_dir()
+        )
     })?;
     let mut command = Command::new(&program).no_window();
     command
@@ -221,7 +259,9 @@ pub fn aphrody_kit_start(
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
-    let mut child = command.spawn().map_err(|error| format!("{}: {error}", program.display()))?;
+    let mut child = command
+        .spawn()
+        .map_err(|error| format!("{}: {error}", program.display()))?;
     let stdout = child.stdout.take().ok_or("kit stdout is not piped")?;
     let stderr = child.stderr.take().ok_or("kit stderr is not piped")?;
     let stdin = child.stdin.take();
@@ -267,7 +307,10 @@ pub fn aphrody_kit_answer(
         .and_then(|entry| entry.stdin.as_mut())
         .ok_or("this kit action has ended")?;
     let line = format!("{}\n", json!({ "answer": answer }));
-    stdin.write_all(line.as_bytes()).and_then(|()| stdin.flush()).map_err(|error| error.to_string())
+    stdin
+        .write_all(line.as_bytes())
+        .and_then(|()| stdin.flush())
+        .map_err(|error| error.to_string())
 }
 
 /// Stop a running kit action.
@@ -315,9 +358,18 @@ mod tests {
 
     #[test]
     fn plain_lines_and_stderr_become_say_events() {
-        assert_eq!(event_of(r#"{"type":"done","code":0}"#, "out"), json!({"type":"done","code":0}));
-        assert_eq!(event_of("hello", "out"), json!({"type":"say","text":"hello","stream":"out"}));
+        assert_eq!(
+            event_of(r#"{"type":"done","code":0}"#, "out"),
+            json!({"type":"done","code":0})
+        );
+        assert_eq!(
+            event_of("hello", "out"),
+            json!({"type":"say","text":"hello","stream":"out"})
+        );
         assert_eq!(event_of("[1,2]", "out")["type"], "say");
-        assert_eq!(event_of(r#"{"type":"done","code":0}"#, "err")["type"], "say");
+        assert_eq!(
+            event_of(r#"{"type":"done","code":0}"#, "err")["type"],
+            "say"
+        );
     }
 }

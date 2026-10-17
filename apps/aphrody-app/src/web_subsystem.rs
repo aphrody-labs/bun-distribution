@@ -37,7 +37,9 @@ impl SystemSubsystem for WebSubsystem {
     }
 
     fn tools(&self) -> Vec<ToolDefinition> {
-        self.provider.as_ref().map_or_else(Vec::new, |provider| provider.tools())
+        self.provider
+            .as_ref()
+            .map_or_else(Vec::new, |provider| provider.tools())
     }
 
     async fn call(&self, tool: &str, arguments: Value) -> Result<Value, SubsystemError> {
@@ -48,7 +50,9 @@ impl SystemSubsystem for WebSubsystem {
     }
 
     fn skills(&self) -> Vec<SkillManifest> {
-        self.provider.as_ref().map_or_else(Vec::new, |provider| provider.skills())
+        self.provider
+            .as_ref()
+            .map_or_else(Vec::new, |provider| provider.skills())
     }
 
     async fn run(&self, bus: AgentBus) -> Result<(), SubsystemError> {

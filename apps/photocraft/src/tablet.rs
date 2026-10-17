@@ -20,7 +20,14 @@ use photocraft_ui_egui::stylus::{PenSample, StylusFeed};
 
 /// A tablet sample as the UI's pen sample.
 pub fn pen_sample(s: Sample) -> PenSample {
-    PenSample { pressure: s.pressure, tilt_x: s.tilt_x, tilt_y: s.tilt_y, rotation: s.rotation, eraser: s.eraser }.sanitized()
+    PenSample {
+        pressure: s.pressure,
+        tilt_x: s.tilt_x,
+        tilt_y: s.tilt_y,
+        rotation: s.rotation,
+        eraser: s.eraser,
+    }
+    .sanitized()
 }
 
 /// Writes tablet samples into `feed` (`None` = a mouse).
@@ -33,7 +40,9 @@ pub fn sink(feed: StylusFeed) -> impl Fn(Option<Sample>) + Send + 'static {
 /// returns. On failure this logs why: pens then paint like a mouse.
 #[cfg(target_os = "macos")]
 pub fn install_macos(feed: &StylusFeed) -> Option<photocraft_tablet::macos::Monitor> {
-    photocraft_tablet::macos::Monitor::install(sink(feed.clone())).map_err(|e| log::warn!("{e}")).ok()
+    photocraft_tablet::macos::Monitor::install(sink(feed.clone()))
+        .map_err(|e| log::warn!("{e}"))
+        .ok()
 }
 
 /// The display server to open the window on: the session's own, except Xwayland on Wayland when
@@ -46,7 +55,9 @@ pub fn display_session() -> DisplaySession {
     let pen = || std::fs::read_to_string("/proc/bus/input/devices").is_ok_and(|d| has_pen(&d));
     let x11_libs = || crate::linux_libs::available(DisplaySession::X11);
     if pen_needs_xwayland(session, var, pen, x11_libs) {
-        eprintln!("photocraft: pen found; opening the window through Xwayland, where the pen works (PHOTOCRAFT_NATIVE_WAYLAND=1 keeps Wayland)");
+        eprintln!(
+            "photocraft: pen found; opening the window through Xwayland, where the pen works (PHOTOCRAFT_NATIVE_WAYLAND=1 keeps Wayland)"
+        );
         return DisplaySession::X11;
     }
     session
@@ -54,9 +65,18 @@ pub fn display_session() -> DisplaySession {
 
 /// [`display_session`]'s decision; the system probes run only when the session asks for them.
 #[cfg(any(target_os = "linux", test))]
-pub fn pen_needs_xwayland(session: DisplaySession, var: impl Fn(&str) -> Option<String>, pen: impl FnOnce() -> bool, x11_libs: impl FnOnce() -> bool) -> bool {
+pub fn pen_needs_xwayland(
+    session: DisplaySession,
+    var: impl Fn(&str) -> Option<String>,
+    pen: impl FnOnce() -> bool,
+    x11_libs: impl FnOnce() -> bool,
+) -> bool {
     let set = |k: &str| var(k).is_some_and(|v| !v.is_empty() && v != "0");
-    session == DisplaySession::Wayland && !set("PHOTOCRAFT_NATIVE_WAYLAND") && set("DISPLAY") && pen() && x11_libs()
+    session == DisplaySession::Wayland
+        && !set("PHOTOCRAFT_NATIVE_WAYLAND")
+        && set("DISPLAY")
+        && pen()
+        && x11_libs()
 }
 
 /// `BTN_TOOL_PEN` (linux/input-event-codes.h): the key a pen tablet's stylus, a pen display's or
@@ -70,9 +90,16 @@ const BTN_TOOL_PEN: u32 = 0x140;
 pub fn has_pen(devices: &str) -> bool {
     let bits = usize::BITS;
     let word = usize::try_from(BTN_TOOL_PEN / bits).unwrap_or(usize::MAX);
-    devices.lines().filter_map(|l| l.strip_prefix("B: KEY=")).any(|keys| {
-        keys.split_whitespace().rev().nth(word).and_then(|w| u64::from_str_radix(w, 16).ok()).is_some_and(|w| (w >> (BTN_TOOL_PEN % bits)) & 1 == 1)
-    })
+    devices
+        .lines()
+        .filter_map(|l| l.strip_prefix("B: KEY="))
+        .any(|keys| {
+            keys.split_whitespace()
+                .rev()
+                .nth(word)
+                .and_then(|w| u64::from_str_radix(w, 16).ok())
+                .is_some_and(|w| (w >> (BTN_TOOL_PEN % bits)) & 1 == 1)
+        })
 }
 
 /// Start the XInput2 reader when eframe runs on X11 (Xwayland included). On native Wayland,
@@ -122,13 +149,46 @@ mod tests {
 
     #[test]
     fn samples_map_and_sanitize() {
-        let p = pen_sample(Sample { pressure: 0.25, tilt_x: 30.0, tilt_y: -10.0, rotation: 90.0, eraser: true });
-        assert_eq!(p, PenSample { pressure: 0.25, tilt_x: 30.0, tilt_y: -10.0, rotation: 90.0, eraser: true });
-        let p = pen_sample(Sample { pressure: f32::NAN, tilt_x: 500.0, tilt_y: f32::NEG_INFINITY, rotation: -45.0, eraser: false });
-        assert_eq!(p, PenSample { pressure: 1.0, tilt_x: 90.0, tilt_y: 0.0, rotation: 315.0, eraser: false });
+        let p = pen_sample(Sample {
+            pressure: 0.25,
+            tilt_x: 30.0,
+            tilt_y: -10.0,
+            rotation: 90.0,
+            eraser: true,
+        });
+        assert_eq!(
+            p,
+            PenSample {
+                pressure: 0.25,
+                tilt_x: 30.0,
+                tilt_y: -10.0,
+                rotation: 90.0,
+                eraser: true
+            }
+        );
+        let p = pen_sample(Sample {
+            pressure: f32::NAN,
+            tilt_x: 500.0,
+            tilt_y: f32::NEG_INFINITY,
+            rotation: -45.0,
+            eraser: false,
+        });
+        assert_eq!(
+            p,
+            PenSample {
+                pressure: 1.0,
+                tilt_x: 90.0,
+                tilt_y: 0.0,
+                rotation: 315.0,
+                eraser: false
+            }
+        );
         let feed = StylusFeed::default();
         let f = sink(feed.clone());
-        f(Some(Sample { pressure: 0.5, ..Default::default() }));
+        f(Some(Sample {
+            pressure: 0.5,
+            ..Default::default()
+        }));
         assert_eq!(feed.get().map(|p| p.pressure), Some(0.5));
         f(None);
         assert_eq!(feed.get(), None);
@@ -142,10 +202,22 @@ mod tests {
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
         let feed = app.stylus.feed.clone();
         let sink = sink(feed);
-        app.session.execute("file.new", json!({"width": 240, "height": 80, "background": "white"})).unwrap();
-        app.session.execute("tools.setColors", json!({"foreground": [0.0, 0.0, 0.0, 1.0]})).unwrap();
+        app.session
+            .execute(
+                "file.new",
+                json!({"width": 240, "height": 80, "background": "white"}),
+            )
+            .unwrap();
+        app.session
+            .execute(
+                "tools.setColors",
+                json!({"foreground": [0.0, 0.0, 0.0, 1.0]}),
+            )
+            .unwrap();
         let brush = json!({"size": 30, "hardness": 1.0, "spacing": 0.05, "pressureSize": true, "pressureOpacity": true, "smoothing": {"amount": 0}});
-        app.session.execute("tools.setBrush", json!({ "brush": brush })).unwrap();
+        app.session
+            .execute("tools.setBrush", json!({ "brush": brush }))
+            .unwrap();
         app.ui.tool = Tool::Brush;
         let m = egui::Modifiers::NONE;
         let n = 20;
@@ -154,7 +226,11 @@ mod tests {
             sink(next(0.1 + 0.9 * t));
             let (x, y) = (20.0 + 200.0 * f64::from(t), 40.0);
             let pressure = app.stylus.pressure();
-            let ev = if i == 0 { ToolEvent::Down { x, y, pressure } } else { ToolEvent::Move { x, y, pressure } };
+            let ev = if i == 0 {
+                ToolEvent::Down { x, y, pressure }
+            } else {
+                ToolEvent::Move { x, y, pressure }
+            };
             tool_event(&mut app, ev, m);
         }
         tool_event(&mut app, ToolEvent::Up { x: 220.0, y: 40.0 }, m);
@@ -162,7 +238,10 @@ mod tests {
         // Darkness (1 - luma) along x = 50 (light end) and x = 200 (heavy end), and the painted
         // half-width there.
         let mut dark = |x: i32, y: i32| -> f64 {
-            let px: Value = app.session.execute("document.pixel", json!({"x": x, "y": y})).unwrap();
+            let px: Value = app
+                .session
+                .execute("document.pixel", json!({"x": x, "y": y}))
+                .unwrap();
             1.0 - px[0].as_f64().unwrap()
         };
         let (light, heavy) = (dark(50, 40), dark(200, 40));
@@ -175,39 +254,71 @@ mod tests {
     fn appkit_tablet_pressure_drives_stroke_width_and_opacity() {
         let mut st = appkit::State::default();
         let (light_dark, light_w, heavy_dark, heavy_w) = pressure_stroke(|p| {
-            let e =
-                appkit::RawEvent { kind: appkit::event_type::LEFT_MOUSE_DRAGGED, subtype: appkit::subtype::TABLET_POINT, pressure: p, ..Default::default() };
+            let e = appkit::RawEvent {
+                kind: appkit::event_type::LEFT_MOUSE_DRAGGED,
+                subtype: appkit::subtype::TABLET_POINT,
+                pressure: p,
+                ..Default::default()
+            };
             match st.handle(&e) {
                 Update::Set(s) => s,
                 Update::Keep => None,
             }
         });
-        assert!(heavy_w > light_w * 2.0, "width responds: {light_w} → {heavy_w}");
-        assert!(heavy_dark > light_dark + 0.3, "opacity responds: {light_dark} → {heavy_dark}");
-        assert!(heavy_dark > 0.9, "full pressure paints (nearly) opaque: {heavy_dark}");
+        assert!(
+            heavy_w > light_w * 2.0,
+            "width responds: {light_w} → {heavy_w}"
+        );
+        assert!(
+            heavy_dark > light_dark + 0.3,
+            "opacity responds: {light_dark} → {heavy_dark}"
+        );
+        assert!(
+            heavy_dark > 0.9,
+            "full pressure paints (nearly) opaque: {heavy_dark}"
+        );
 
         // A mouse (non-tablet subtype) through the same path: full size and opacity throughout.
         let mut st = appkit::State::default();
         let (m_dark, m_w, _, _) = pressure_stroke(|p| {
-            let e = appkit::RawEvent { kind: appkit::event_type::LEFT_MOUSE_DRAGGED, subtype: appkit::subtype::MOUSE, pressure: p, ..Default::default() };
+            let e = appkit::RawEvent {
+                kind: appkit::event_type::LEFT_MOUSE_DRAGGED,
+                subtype: appkit::subtype::MOUSE,
+                pressure: p,
+                ..Default::default()
+            };
             match st.handle(&e) {
                 Update::Set(s) => s,
                 Update::Keep => None,
             }
         });
-        assert!(m_dark > 0.9 && m_w >= heavy_w - 1.0, "mouse = pressure 1: {m_dark}, {m_w}");
+        assert!(
+            m_dark > 0.9 && m_w >= heavy_w - 1.0,
+            "mouse = pressure 1: {m_dark}, {m_w}"
+        );
     }
 
     #[test]
     fn xinput_tablet_pressure_drives_stroke_width_and_opacity() {
         let mut st = xi::State::default();
-        st.set_devices([xi::Device::new(9, "Wacom Intuos Pen stylus", [(2, "Abs Pressure".to_string(), 0.0, 65535.0)])]);
-        let (light_dark, light_w, heavy_dark, heavy_w) = pressure_stroke(|p| match st.handle(9, [(2, f64::from(p) * 65535.0)]) {
-            Update::Set(s) => s,
-            Update::Keep => None,
-        });
-        assert!(heavy_w > light_w * 2.0, "width responds: {light_w} → {heavy_w}");
-        assert!(heavy_dark > light_dark + 0.3, "opacity responds: {light_dark} → {heavy_dark}");
+        st.set_devices([xi::Device::new(
+            9,
+            "Wacom Intuos Pen stylus",
+            [(2, "Abs Pressure".to_string(), 0.0, 65535.0)],
+        )]);
+        let (light_dark, light_w, heavy_dark, heavy_w) =
+            pressure_stroke(|p| match st.handle(9, [(2, f64::from(p) * 65535.0)]) {
+                Update::Set(s) => s,
+                Update::Keep => None,
+            });
+        assert!(
+            heavy_w > light_w * 2.0,
+            "width responds: {light_w} → {heavy_w}"
+        );
+        assert!(
+            heavy_dark > light_dark + 0.3,
+            "opacity responds: {light_dark} → {heavy_dark}"
+        );
     }
 
     /// `/proc/bus/input/devices` of a laptop with a Wacom Intuos Pro attached (64-bit longs: the
@@ -232,10 +343,24 @@ mod tests {
     #[test]
     fn a_pen_is_found_by_its_btn_tool_pen_key() {
         assert!(has_pen(WITH_PEN));
-        let without = WITH_PEN.split("\n\n").take(2).collect::<Vec<_>>().join("\n\n");
-        assert!(!has_pen(&without), "a touchpad's BTN_TOOL_FINGER (0x145) is not a pen");
+        let without = WITH_PEN
+            .split("\n\n")
+            .take(2)
+            .collect::<Vec<_>>()
+            .join("\n\n");
+        assert!(
+            !has_pen(&without),
+            "a touchpad's BTN_TOOL_FINGER (0x145) is not a pen"
+        );
         // Short or malformed bitmaps are no pen, never a panic.
-        for keys in ["", "B: KEY=", "B: KEY=1", "B: KEY=zz 0 0 0 0 0", "B: KEY=ffffffffffffffffff 0 0 0 0 0", "B: KEY=0 0 0 0 0 0 0 0"] {
+        for keys in [
+            "",
+            "B: KEY=",
+            "B: KEY=1",
+            "B: KEY=zz 0 0 0 0 0",
+            "B: KEY=ffffffffffffffffff 0 0 0 0 0",
+            "B: KEY=0 0 0 0 0 0 0 0",
+        ] {
             assert!(!has_pen(keys), "{keys:?}");
         }
     }
@@ -244,30 +369,85 @@ mod tests {
     fn a_pen_on_wayland_opens_the_window_through_xwayland() {
         use std::collections::HashMap;
         let env = |pairs: &[(&str, &str)]| {
-            let m: HashMap<String, String> = pairs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect();
+            let m: HashMap<String, String> = pairs
+                .iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect();
             move |k: &str| m.get(k).cloned()
         };
         let wayland = [("WAYLAND_DISPLAY", "wayland-0"), ("DISPLAY", ":0")];
-        assert!(pen_needs_xwayland(DisplaySession::Wayland, env(&wayland), || true, || true));
+        assert!(pen_needs_xwayland(
+            DisplaySession::Wayland,
+            env(&wayland),
+            || true,
+            || true
+        ));
         // No pen, no Xwayland, no X11 libraries, or the user keeps Wayland: native Wayland.
-        assert!(!pen_needs_xwayland(DisplaySession::Wayland, env(&wayland), || false, || true));
-        assert!(!pen_needs_xwayland(DisplaySession::Wayland, env(&[("WAYLAND_DISPLAY", "wayland-0")]), || true, || true));
-        assert!(!pen_needs_xwayland(DisplaySession::Wayland, env(&wayland), || true, || false));
-        let native = [("WAYLAND_DISPLAY", "wayland-0"), ("DISPLAY", ":0"), ("PHOTOCRAFT_NATIVE_WAYLAND", "1")];
-        assert!(!pen_needs_xwayland(DisplaySession::Wayland, env(&native), || true, || true));
-        let zero = [("WAYLAND_DISPLAY", "wayland-0"), ("DISPLAY", ":0"), ("PHOTOCRAFT_NATIVE_WAYLAND", "0")];
-        assert!(pen_needs_xwayland(DisplaySession::Wayland, env(&zero), || true, || true));
+        assert!(!pen_needs_xwayland(
+            DisplaySession::Wayland,
+            env(&wayland),
+            || false,
+            || true
+        ));
+        assert!(!pen_needs_xwayland(
+            DisplaySession::Wayland,
+            env(&[("WAYLAND_DISPLAY", "wayland-0")]),
+            || true,
+            || true
+        ));
+        assert!(!pen_needs_xwayland(
+            DisplaySession::Wayland,
+            env(&wayland),
+            || true,
+            || false
+        ));
+        let native = [
+            ("WAYLAND_DISPLAY", "wayland-0"),
+            ("DISPLAY", ":0"),
+            ("PHOTOCRAFT_NATIVE_WAYLAND", "1"),
+        ];
+        assert!(!pen_needs_xwayland(
+            DisplaySession::Wayland,
+            env(&native),
+            || true,
+            || true
+        ));
+        let zero = [
+            ("WAYLAND_DISPLAY", "wayland-0"),
+            ("DISPLAY", ":0"),
+            ("PHOTOCRAFT_NATIVE_WAYLAND", "0"),
+        ];
+        assert!(pen_needs_xwayland(
+            DisplaySession::Wayland,
+            env(&zero),
+            || true,
+            || true
+        ));
         // X11 already gets the pen; the probes don't even run off Wayland.
-        assert!(!pen_needs_xwayland(DisplaySession::X11, env(&[("DISPLAY", ":0")]), || panic!("probed"), || panic!("probed")));
+        assert!(!pen_needs_xwayland(
+            DisplaySession::X11,
+            env(&[("DISPLAY", ":0")]),
+            || panic!("probed"),
+            || panic!("probed")
+        ));
     }
 
     #[test]
     fn use_tablet_pressure_off_paints_like_a_mouse() {
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-        app.session.execute("prefs.set", json!({"path": "tools.useTabletPressure", "value": false})).unwrap();
+        app.session
+            .execute(
+                "prefs.set",
+                json!({"path": "tools.useTabletPressure", "value": false}),
+            )
+            .unwrap();
         // The canvas copies the preference each frame; do what it does.
         app.stylus.use_pressure = app.session.prefs().tools.use_tablet_pressure;
-        sink(app.stylus.feed.clone())(Some(Sample { pressure: 0.2, tilt_x: 40.0, ..Default::default() }));
+        sink(app.stylus.feed.clone())(Some(Sample {
+            pressure: 0.2,
+            tilt_x: 40.0,
+            ..Default::default()
+        }));
         assert_eq!(app.stylus.pressure(), 1.0);
         assert_eq!(app.stylus.sample(), None);
     }
@@ -282,20 +462,36 @@ mod tests {
                 sink(s);
             }
         };
-        let prox = |device, entering| appkit::RawEvent { kind: appkit::event_type::TABLET_PROXIMITY, device, entering, ..Default::default() };
+        let prox = |device, entering| appkit::RawEvent {
+            kind: appkit::event_type::TABLET_PROXIMITY,
+            device,
+            entering,
+            ..Default::default()
+        };
         app.ui.tool = Tool::Brush;
         send(prox(appkit::device::PEN, true));
-        assert!(!photocraft_ui_egui::stylus::Stylus::sync_eraser_tool(&mut app));
+        assert!(!photocraft_ui_egui::stylus::Stylus::sync_eraser_tool(
+            &mut app
+        ));
         assert_eq!(app.ui.tool, Tool::Brush, "the tip changes nothing");
         send(prox(appkit::device::PEN, false));
         send(prox(appkit::device::ERASER, true));
-        assert!(photocraft_ui_egui::stylus::Stylus::sync_eraser_tool(&mut app));
+        assert!(photocraft_ui_egui::stylus::Stylus::sync_eraser_tool(
+            &mut app
+        ));
         assert_eq!(app.ui.tool, Tool::Eraser);
         // Mouse moves in between change nothing; the tip coming back restores the Brush.
-        send(appkit::RawEvent { kind: appkit::event_type::MOUSE_MOVED, ..Default::default() });
-        assert!(!photocraft_ui_egui::stylus::Stylus::sync_eraser_tool(&mut app));
+        send(appkit::RawEvent {
+            kind: appkit::event_type::MOUSE_MOVED,
+            ..Default::default()
+        });
+        assert!(!photocraft_ui_egui::stylus::Stylus::sync_eraser_tool(
+            &mut app
+        ));
         send(prox(appkit::device::PEN, true));
-        assert!(photocraft_ui_egui::stylus::Stylus::sync_eraser_tool(&mut app));
+        assert!(photocraft_ui_egui::stylus::Stylus::sync_eraser_tool(
+            &mut app
+        ));
         assert_eq!(app.ui.tool, Tool::Brush);
     }
 }

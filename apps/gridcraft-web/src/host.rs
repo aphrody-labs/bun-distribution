@@ -48,7 +48,13 @@ impl Bridge {
             return None;
         }
         let origin = window.location().origin().ok()?;
-        Some(Self { window, parent, origin, saved: Rc::default(), reported: Rc::default() })
+        Some(Self {
+            window,
+            parent,
+            origin,
+            saved: Rc::default(),
+            reported: Rc::default(),
+        })
     }
 
     /// Send saved and exported files to the parent instead of downloading them, and hear files
@@ -72,7 +78,10 @@ impl Bridge {
     }
 
     pub fn post_ready(&self) {
-        self.send(&[("type", "gridcraft:ready".into()), ("version", env!("CARGO_PKG_VERSION").into())]);
+        self.send(&[
+            ("type", "gridcraft:ready".into()),
+            ("version", env!("CARGO_PKG_VERSION").into()),
+        ]);
     }
 
     pub fn post_failed(&self, error: &str) {
@@ -92,16 +101,25 @@ impl Bridge {
             }
         }
         let dirty = app.session.documents().iter().any(|d| d.is_dirty());
-        if self.reported.get() != Some(dirty) && self.send(&[("type", "gridcraft:dirty".into()), ("dirty", dirty.into())]) {
+        if self.reported.get() != Some(dirty)
+            && self.send(&[("type", "gridcraft:dirty".into()), ("dirty", dirty.into())])
+        {
             self.reported.set(Some(dirty));
         }
     }
 
     fn post_save(&self, path: &str, bytes: &[u8]) -> Result<(), String> {
-        let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| path.to_string());
+        let name = std::path::Path::new(path)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| path.to_string());
         let buffer = js_sys::Uint8Array::from(bytes).buffer();
-        let message = message(&[("type", "gridcraft:save".into()), ("name", name.as_str().into()), ("bytes", buffer.clone().into())])
-            .ok_or_else(|| "couldn't build the message".to_string())?;
+        let message = message(&[
+            ("type", "gridcraft:save".into()),
+            ("name", name.as_str().into()),
+            ("bytes", buffer.clone().into()),
+        ])
+        .ok_or_else(|| "couldn't build the message".to_string())?;
         self.parent
             .post_message_with_transfer(&message, &self.origin, &js_sys::Array::of1(&buffer))
             .map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))?;
@@ -112,20 +130,35 @@ impl Bridge {
     fn listen(&self, inbox: Inbox, ctx: egui::Context) {
         let parent = self.parent.clone();
         let origin = self.origin.clone();
-        let on_message = Closure::<dyn FnMut(web_sys::MessageEvent)>::new(move |event: web_sys::MessageEvent| {
-            if event.origin() != origin || !event.source().is_some_and(|s| js_sys::Object::is(&s, &parent)) {
-                return;
-            }
-            let data = event.data();
-            if string(&data, "type").as_deref() != Some("gridcraft:open") {
-                return;
-            }
-            let name = string(&data, "name").filter(|n| !n.trim().is_empty()).unwrap_or_else(|| "Book.xlsx".to_string());
-            let Some(bytes) = bytes(&data) else { return };
-            inbox.lock().unwrap_or_else(|e| e.into_inner()).push((name, bytes));
-            ctx.request_repaint();
-        });
-        if self.window.add_event_listener_with_callback("message", on_message.as_ref().unchecked_ref()).is_ok() {
+        let on_message = Closure::<dyn FnMut(web_sys::MessageEvent)>::new(
+            move |event: web_sys::MessageEvent| {
+                if event.origin() != origin
+                    || !event
+                        .source()
+                        .is_some_and(|s| js_sys::Object::is(&s, &parent))
+                {
+                    return;
+                }
+                let data = event.data();
+                if string(&data, "type").as_deref() != Some("gridcraft:open") {
+                    return;
+                }
+                let name = string(&data, "name")
+                    .filter(|n| !n.trim().is_empty())
+                    .unwrap_or_else(|| "Book.xlsx".to_string());
+                let Some(bytes) = bytes(&data) else { return };
+                inbox
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .push((name, bytes));
+                ctx.request_repaint();
+            },
+        );
+        if self
+            .window
+            .add_event_listener_with_callback("message", on_message.as_ref().unchecked_ref())
+            .is_ok()
+        {
             // The listener lives as long as the page.
             on_message.forget();
         }
@@ -138,7 +171,8 @@ impl Bridge {
 }
 
 fn is_workbook(name: &str) -> bool {
-    name.rsplit_once('.').is_some_and(|(_, ext)| WORKBOOK_EXTS.iter().any(|e| ext.eq_ignore_ascii_case(e)))
+    name.rsplit_once('.')
+        .is_some_and(|(_, ext)| WORKBOOK_EXTS.iter().any(|e| ext.eq_ignore_ascii_case(e)))
 }
 
 fn message(fields: &[(&str, JsValue)]) -> Option<js_sys::Object> {
@@ -150,7 +184,9 @@ fn message(fields: &[(&str, JsValue)]) -> Option<js_sys::Object> {
 }
 
 fn string(data: &JsValue, key: &str) -> Option<String> {
-    js_sys::Reflect::get(data, &JsValue::from_str(key)).ok()?.as_string()
+    js_sys::Reflect::get(data, &JsValue::from_str(key))
+        .ok()?
+        .as_string()
 }
 
 /// `bytes` as an `ArrayBuffer` or `Uint8Array`.

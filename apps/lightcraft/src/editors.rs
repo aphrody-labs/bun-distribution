@@ -88,7 +88,9 @@ fn all_command(launcher: Launcher, paths: &[String]) -> Option<Command> {
         }
         Launcher::Flatpak => {
             let mut c = Command::new("flatpak");
-            c.args(["run", "--file-forwarding", PHOTOCRAFT_ID, "@@"]).args(paths).arg("@@");
+            c.args(["run", "--file-forwarding", PHOTOCRAFT_ID, "@@"])
+                .args(paths)
+                .arg("@@");
             Some(c)
         }
     }
@@ -109,7 +111,11 @@ fn launcher(app: &str) -> Result<Launcher, String> {
         return Ok(Launcher::Default);
     }
     if !app.eq_ignore_ascii_case(PHOTOCRAFT) {
-        return Ok(if cfg!(target_os = "macos") { Launcher::MacApp(app.to_string()) } else { Launcher::Program(PathBuf::from(app)) });
+        return Ok(if cfg!(target_os = "macos") {
+            Launcher::MacApp(app.to_string())
+        } else {
+            Launcher::Program(PathBuf::from(app))
+        });
     }
     find_photocraft().ok_or_else(|| {
         "PhotoCraft isn't installed. Get it from getartcraft.com/apps/photocraft, or give where it is in Settings ▸ External Editing.".to_string()
@@ -121,18 +127,33 @@ fn find_photocraft() -> Option<Launcher> {
     if cfg!(target_os = "macos") {
         // LaunchServices finds the app wherever it is; these are only the usual places
         let home = env("HOME").map(|h| Path::new(&h).join("Applications/PhotoCraft.app"));
-        let found = [Some(PathBuf::from("/Applications/PhotoCraft.app")), home].into_iter().flatten().find(|p| p.is_dir());
-        return Some(Launcher::MacApp(found.map_or_else(|| PHOTOCRAFT.to_string(), |p| p.to_string_lossy().to_string())));
+        let found = [Some(PathBuf::from("/Applications/PhotoCraft.app")), home]
+            .into_iter()
+            .flatten()
+            .find(|p| p.is_dir());
+        return Some(Launcher::MacApp(found.map_or_else(
+            || PHOTOCRAFT.to_string(),
+            |p| p.to_string_lossy().to_string(),
+        )));
     }
     if cfg!(target_os = "windows") {
         let install_dir = reg_query(r"HKLM\Software\PhotoCraft", Some("InstallDir"));
-        let app_path = reg_query(r"HKLM\Software\Microsoft\Windows\CurrentVersion\App Paths\photocraft.exe", None);
-        return windows_candidates(install_dir, app_path, env).into_iter().find(|p| p.is_file()).map(Launcher::Program);
+        let app_path = reg_query(
+            r"HKLM\Software\Microsoft\Windows\CurrentVersion\App Paths\photocraft.exe",
+            None,
+        );
+        return windows_candidates(install_dir, app_path, env)
+            .into_iter()
+            .find(|p| p.is_file())
+            .map(Launcher::Program);
     }
     // Linux, FreeBSD: on the PATH (.deb, .rpm, tarball), a desktop entry (AppImage, which
     // registers one on first run), else the Flatpak
-    let on_path =
-        env("PATH").into_iter().flat_map(|p| std::env::split_paths(&p).collect::<Vec<_>>()).map(|d| d.join("photocraft")).find(|p| p.is_file());
+    let on_path = env("PATH")
+        .into_iter()
+        .flat_map(|p| std::env::split_paths(&p).collect::<Vec<_>>())
+        .map(|d| d.join("photocraft"))
+        .find(|p| p.is_file());
     let from_entry = || {
         desktop_entry_dirs(env).into_iter().find_map(|d| {
             let text = std::fs::read_to_string(d.join(format!("{PHOTOCRAFT_ID}.desktop"))).ok()?;
@@ -142,21 +163,33 @@ fn find_photocraft() -> Option<Launcher> {
     if let Some(p) = on_path.or_else(from_entry) {
         return Some(Launcher::Program(p));
     }
-    let flatpak = Command::new("flatpak").args(["info", PHOTOCRAFT_ID]).output().is_ok_and(|o| o.status.success());
+    let flatpak = Command::new("flatpak")
+        .args(["info", PHOTOCRAFT_ID])
+        .output()
+        .is_ok_and(|o| o.status.success());
     flatpak.then_some(Launcher::Flatpak)
 }
 
 /// Where the Windows installers put `photocraft.exe`, most specific first: the folder the MSI
 /// recorded (`HKLM\Software\PhotoCraft\InstallDir`), its App Paths entry, then the default
 /// folders (per machine, then per user).
-fn windows_candidates(install_dir: Option<String>, app_path: Option<String>, env: impl Fn(&str) -> Option<String>) -> Vec<PathBuf> {
+fn windows_candidates(
+    install_dir: Option<String>,
+    app_path: Option<String>,
+    env: impl Fn(&str) -> Option<String>,
+) -> Vec<PathBuf> {
     let mut out: Vec<PathBuf> = Vec::new();
     out.extend(install_dir.map(|d| Path::new(&d).join("photocraft.exe")));
     out.extend(app_path.map(|p| PathBuf::from(p.trim_matches('"'))));
     for var in ["ProgramW6432", "ProgramFiles"] {
         out.extend(env(var).map(|d| Path::new(&d).join("PhotoCraft").join("photocraft.exe")));
     }
-    out.extend(env("LOCALAPPDATA").map(|d| Path::new(&d).join("Programs").join("PhotoCraft").join("photocraft.exe")));
+    out.extend(env("LOCALAPPDATA").map(|d| {
+        Path::new(&d)
+            .join("Programs")
+            .join("PhotoCraft")
+            .join("photocraft.exe")
+    }));
     out
 }
 
@@ -181,7 +214,9 @@ fn reg_query(key: &str, name: Option<&str>) -> Option<String> {
 /// The value in `reg query` output: the text after `REG_SZ` (or `REG_EXPAND_SZ`) on its line.
 fn reg_value(output: &str) -> Option<String> {
     output.lines().find_map(|l| {
-        let (_, v) = l.split_once("REG_EXPAND_SZ").or_else(|| l.split_once("REG_SZ"))?;
+        let (_, v) = l
+            .split_once("REG_EXPAND_SZ")
+            .or_else(|| l.split_once("REG_SZ"))?;
         Some(v.trim().to_string()).filter(|v| !v.is_empty())
     })
 }
@@ -193,8 +228,15 @@ fn desktop_entry_dirs(env: impl Fn(&str) -> Option<String>) -> Vec<PathBuf> {
         Some(d) if !d.is_empty() => dirs.push(PathBuf::from(d)),
         _ => dirs.extend(env("HOME").map(|h| Path::new(&h).join(".local/share"))),
     }
-    let system = env("XDG_DATA_DIRS").filter(|d| !d.is_empty()).unwrap_or_else(|| "/usr/local/share:/usr/share".into());
-    dirs.extend(system.split(':').filter(|d| !d.is_empty()).map(PathBuf::from));
+    let system = env("XDG_DATA_DIRS")
+        .filter(|d| !d.is_empty())
+        .unwrap_or_else(|| "/usr/local/share:/usr/share".into());
+    dirs.extend(
+        system
+            .split(':')
+            .filter(|d| !d.is_empty())
+            .map(PathBuf::from),
+    );
     dirs.into_iter().map(|d| d.join("applications")).collect()
 }
 
@@ -222,7 +264,10 @@ mod tests {
         let path = r"C:/Edits/a & b ^c %PATH% | d.psd";
         let c = windows_default_command(path);
         assert_eq!(c.get_program(), "explorer.exe");
-        let args: Vec<_> = c.get_args().map(|a| a.to_string_lossy().into_owned()).collect();
+        let args: Vec<_> = c
+            .get_args()
+            .map(|a| a.to_string_lossy().into_owned())
+            .collect();
         assert_eq!(args, [r"C:\Edits\a & b ^c %PATH% | d.psd"]);
     }
 
@@ -230,19 +275,52 @@ mod tests {
     /// single-window editor (DxO PhotoLab) needs to get them all.
     #[test]
     fn several_files_go_to_one_start_of_the_editor() {
-        let paths = [r"D:\Pictures\a.dng".to_string(), r"D:\Pictures\b c.dng".to_string()];
-        let args = |c: &Command| c.get_args().map(|a| a.to_string_lossy().into_owned()).collect::<Vec<_>>();
-        let c = all_command(Launcher::Program(PathBuf::from(r"C:\DxO\DxO.PhotoLab.exe")), &paths).unwrap();
+        let paths = [
+            r"D:\Pictures\a.dng".to_string(),
+            r"D:\Pictures\b c.dng".to_string(),
+        ];
+        let args = |c: &Command| {
+            c.get_args()
+                .map(|a| a.to_string_lossy().into_owned())
+                .collect::<Vec<_>>()
+        };
+        let c = all_command(
+            Launcher::Program(PathBuf::from(r"C:\DxO\DxO.PhotoLab.exe")),
+            &paths,
+        )
+        .unwrap();
         assert_eq!(c.get_program(), r"C:\DxO\DxO.PhotoLab.exe");
         assert_eq!(args(&c), paths);
         let c = all_command(Launcher::MacApp("DxO PhotoLab 8".into()), &paths).unwrap();
         assert_eq!(
             (c.get_program().to_string_lossy().into_owned(), args(&c)),
-            ("open".into(), vec!["-a".into(), "DxO PhotoLab 8".into(), paths[0].clone(), paths[1].clone()])
+            (
+                "open".into(),
+                vec![
+                    "-a".into(),
+                    "DxO PhotoLab 8".into(),
+                    paths[0].clone(),
+                    paths[1].clone()
+                ]
+            )
         );
         let c = all_command(Launcher::Flatpak, &paths).unwrap();
-        assert_eq!(args(&c), ["run", "--file-forwarding", PHOTOCRAFT_ID, "@@", &paths[0], &paths[1], "@@"]);
-        assert!(all_command(Launcher::Default, &paths).is_none(), "the system default opens them one by one");
+        assert_eq!(
+            args(&c),
+            [
+                "run",
+                "--file-forwarding",
+                PHOTOCRAFT_ID,
+                "@@",
+                &paths[0],
+                &paths[1],
+                "@@"
+            ]
+        );
+        assert!(
+            all_command(Launcher::Default, &paths).is_none(),
+            "the system default opens them one by one"
+        );
     }
 
     #[test]
@@ -252,33 +330,76 @@ mod tests {
             "LOCALAPPDATA" => Some(r"C:\Users\Simon\AppData\Local".to_string()),
             _ => None,
         };
-        let c = windows_candidates(Some(r"D:\Apps\PhotoCraft\".into()), Some(r#""C:\Program Files\PhotoCraft\photocraft.exe""#.into()), env);
-        let c: Vec<String> = c.iter().map(|p| p.to_string_lossy().replace('/', "\\")).collect();
-        assert!(c[0].starts_with(r"D:\Apps\PhotoCraft") && c[0].ends_with("photocraft.exe"), "{c:?}");
-        assert_eq!(c[1], r"C:\Program Files\PhotoCraft\photocraft.exe", "App Paths, quotes dropped");
-        assert!(c[2].starts_with(r"C:\Program Files") && c[2].ends_with("photocraft.exe"), "{c:?}");
-        assert!(c[3].contains("Programs") && c[3].ends_with("photocraft.exe"), "{c:?}");
+        let c = windows_candidates(
+            Some(r"D:\Apps\PhotoCraft\".into()),
+            Some(r#""C:\Program Files\PhotoCraft\photocraft.exe""#.into()),
+            env,
+        );
+        let c: Vec<String> = c
+            .iter()
+            .map(|p| p.to_string_lossy().replace('/', "\\"))
+            .collect();
+        assert!(
+            c[0].starts_with(r"D:\Apps\PhotoCraft") && c[0].ends_with("photocraft.exe"),
+            "{c:?}"
+        );
+        assert_eq!(
+            c[1], r"C:\Program Files\PhotoCraft\photocraft.exe",
+            "App Paths, quotes dropped"
+        );
+        assert!(
+            c[2].starts_with(r"C:\Program Files") && c[2].ends_with("photocraft.exe"),
+            "{c:?}"
+        );
+        assert!(
+            c[3].contains("Programs") && c[3].ends_with("photocraft.exe"),
+            "{c:?}"
+        );
         assert_eq!(c.len(), 4);
     }
 
     #[test]
     fn reg_query_output_is_read() {
         let out = "\r\nHKEY_LOCAL_MACHINE\\Software\\PhotoCraft\r\n    InstallDir    REG_SZ    C:\\Program Files\\PhotoCraft\\\r\n\r\n";
-        assert_eq!(reg_value(out).as_deref(), Some(r"C:\Program Files\PhotoCraft\"));
+        assert_eq!(
+            reg_value(out).as_deref(),
+            Some(r"C:\Program Files\PhotoCraft\")
+        );
         let default = "\r\nHKEY_LOCAL_MACHINE\\...\\photocraft.exe\r\n    (Default)    REG_SZ    C:\\Program Files\\PhotoCraft\\photocraft.exe\r\n";
-        assert_eq!(reg_value(default).as_deref(), Some(r"C:\Program Files\PhotoCraft\photocraft.exe"));
-        assert_eq!(reg_value("ERROR: The system was unable to find the specified registry key or value."), None);
+        assert_eq!(
+            reg_value(default).as_deref(),
+            Some(r"C:\Program Files\PhotoCraft\photocraft.exe")
+        );
+        assert_eq!(
+            reg_value("ERROR: The system was unable to find the specified registry key or value."),
+            None
+        );
     }
 
     #[test]
     fn desktop_entries_give_their_program() {
         let appimage = "[Desktop Entry]\nName=PhotoCraft\nExec=\"/home/simon/Apps/photocraft-1.2-linux-x86_64.AppImage\" %F\n";
-        assert_eq!(desktop_exec(appimage), Some(PathBuf::from("/home/simon/Apps/photocraft-1.2-linux-x86_64.AppImage")));
-        assert_eq!(desktop_exec("Exec=/opt/photocraft/photocraft %F\n"), Some(PathBuf::from("/opt/photocraft/photocraft")));
-        assert_eq!(desktop_exec("Exec=photocraft %F\nTryExec=photocraft\n"), None, "a bare name is a PATH lookup");
+        assert_eq!(
+            desktop_exec(appimage),
+            Some(PathBuf::from(
+                "/home/simon/Apps/photocraft-1.2-linux-x86_64.AppImage"
+            ))
+        );
+        assert_eq!(
+            desktop_exec("Exec=/opt/photocraft/photocraft %F\n"),
+            Some(PathBuf::from("/opt/photocraft/photocraft"))
+        );
+        assert_eq!(
+            desktop_exec("Exec=photocraft %F\nTryExec=photocraft\n"),
+            None,
+            "a bare name is a PATH lookup"
+        );
         assert_eq!(desktop_exec("[Desktop Entry]\n"), None);
         let dirs = desktop_entry_dirs(|k| (k == "HOME").then(|| "/home/simon".to_string()));
-        assert_eq!(dirs[0], PathBuf::from("/home/simon/.local/share/applications"));
+        assert_eq!(
+            dirs[0],
+            PathBuf::from("/home/simon/.local/share/applications")
+        );
         assert!(dirs.contains(&PathBuf::from("/usr/share/applications")));
     }
 

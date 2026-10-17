@@ -13,7 +13,14 @@
 //! gridcraft-cli send <port> <method> [json]
 //! gridcraft-cli version | --version
 //! ```
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 use std::process::ExitCode;
@@ -106,7 +113,11 @@ impl Args {
     /// `with_value` lists the options that take a value; `switches` the boolean ones. Anything
     /// else starting with `--` is an error.
     fn parse(args: &[String], with_value: &[&str], switches: &[&str]) -> Result<Args, String> {
-        let mut out = Args { positional: vec![], opts: vec![], switches: vec![] };
+        let mut out = Args {
+            positional: vec![],
+            opts: vec![],
+            switches: vec![],
+        };
         let mut it = args.iter();
         while let Some(a) = it.next() {
             if let Some(name) = a.strip_prefix("--").filter(|n| !n.is_empty()) {
@@ -117,7 +128,10 @@ impl Args {
                 if with_value.contains(&name) {
                     let v = match inline {
                         Some(v) => v,
-                        None => it.next().cloned().ok_or_else(|| format!("--{name} needs a value"))?,
+                        None => it
+                            .next()
+                            .cloned()
+                            .ok_or_else(|| format!("--{name} needs a value"))?,
                     };
                     out.opts.push((name.to_string(), v));
                 } else if switches.contains(&name) && inline.is_none() {
@@ -132,13 +146,20 @@ impl Args {
         Ok(out)
     }
     fn opt(&self, name: &str) -> Option<&str> {
-        self.opts.iter().rev().find(|(n, _)| n == name).map(|(_, v)| v.as_str())
+        self.opts
+            .iter()
+            .rev()
+            .find(|(n, _)| n == name)
+            .map(|(_, v)| v.as_str())
     }
     fn has(&self, name: &str) -> bool {
         self.switches.iter().any(|s| s == name)
     }
     fn pos(&self, i: usize, what: &str) -> Result<&str, String> {
-        self.positional.get(i).map(String::as_str).ok_or_else(|| format!("missing {what}\n{USAGE}"))
+        self.positional
+            .get(i)
+            .map(String::as_str)
+            .ok_or_else(|| format!("missing {what}\n{USAGE}"))
     }
     fn no_extra(&self, n: usize) -> Result<(), String> {
         match self.positional.get(n) {
@@ -193,7 +214,11 @@ fn pretty(v: &Value) -> String {
 
 /// A number as a person would type it: `6`, `0.5`, `1e+300`.
 fn number_text(n: f64) -> String {
-    if n.fract() == 0.0 && n.abs() < 1e15 { format!("{}", n as i64) } else { format!("{n}") }
+    if n.fract() == 0.0 && n.abs() < 1e15 {
+        format!("{}", n as i64)
+    } else {
+        format!("{n}")
+    }
 }
 
 /// A computed value (as returned by `formulas.evaluate` / `sheet.read`) as plain text.
@@ -203,7 +228,11 @@ fn value_text(v: &Value) -> String {
         Value::Bool(b) => if *b { "TRUE" } else { "FALSE" }.to_string(),
         Value::Number(n) => n.as_f64().map(number_text).unwrap_or_else(|| n.to_string()),
         Value::String(s) => s.clone(),
-        Value::Object(o) => o.get("error").and_then(Value::as_str).map(str::to_string).unwrap_or_else(|| v.to_string()),
+        Value::Object(o) => o
+            .get("error")
+            .and_then(Value::as_str)
+            .map(str::to_string)
+            .unwrap_or_else(|| v.to_string()),
         Value::Array(rows) => rows
             .iter()
             .map(|r| match r {
@@ -237,8 +266,16 @@ fn info(args: &[String]) -> Result<(), String> {
     }
     outln!("{}", v["title"].as_str().unwrap_or(path));
     for (i, sh) in v["sheets"].as_array().into_iter().flatten().enumerate() {
-        let active = if v["activeSheet"].as_u64() == Some(i as u64) { "*" } else { " " };
-        let vis = sh["visibility"].as_str().filter(|x| *x != "Visible").map(|x| format!(" ({x})")).unwrap_or_default();
+        let active = if v["activeSheet"].as_u64() == Some(i as u64) {
+            "*"
+        } else {
+            " "
+        };
+        let vis = sh["visibility"]
+            .as_str()
+            .filter(|x| *x != "Visible")
+            .map(|x| format!(" ({x})"))
+            .unwrap_or_default();
         outln!(
             "{active} {}{vis}: used {}, {} cells",
             sh["name"].as_str().unwrap_or("?"),
@@ -246,11 +283,24 @@ fn info(args: &[String]) -> Result<(), String> {
             sh["cells"].as_u64().unwrap_or(0)
         );
         for t in sh["tables"].as_array().into_iter().flatten() {
-            outln!("    table {} {} ({})", t["name"].as_str().unwrap_or("?"), t["range"].as_str().unwrap_or("?"), t["style"].as_str().unwrap_or(""));
+            outln!(
+                "    table {} {} ({})",
+                t["name"].as_str().unwrap_or("?"),
+                t["range"].as_str().unwrap_or("?"),
+                t["style"].as_str().unwrap_or("")
+            );
         }
         for c in sh["charts"].as_array().into_iter().flatten() {
-            let title = c["title"].as_str().map(|t| format!(" \"{t}\"")).unwrap_or_default();
-            outln!("    chart {}{title} at {}, {} series", c["kind"].as_str().unwrap_or("?"), c["at"].as_str().unwrap_or("?"), c["series"]);
+            let title = c["title"]
+                .as_str()
+                .map(|t| format!(" \"{t}\""))
+                .unwrap_or_default();
+            outln!(
+                "    chart {}{title} at {}, {} series",
+                c["kind"].as_str().unwrap_or("?"),
+                c["at"].as_str().unwrap_or("?"),
+                c["series"]
+            );
         }
         if let Some(f) = sh["autofilter"].as_str() {
             outln!("    filter {f}");
@@ -260,7 +310,11 @@ fn info(args: &[String]) -> Result<(), String> {
     if !names.is_empty() {
         outln!("names:");
         for n in names {
-            outln!("  {} {}", n["name"].as_str().unwrap_or("?"), n["refersTo"].as_str().unwrap_or(""));
+            outln!(
+                "  {} {}",
+                n["name"].as_str().unwrap_or("?"),
+                n["refersTo"].as_str().unwrap_or("")
+            );
         }
     }
     Ok(())
@@ -272,7 +326,9 @@ fn convert(args: &[String]) -> Result<(), String> {
     let out = a.pos(1, "<out>")?;
     a.no_extra(2)?;
     if gridcraft_engine::io::FileKind::from_path(out).is_none() {
-        return Err(format!("{out}: unknown output format (use .xlsx, .csv, .tsv, .json or .html)"));
+        return Err(format!(
+            "{out}: unknown output format (use .xlsx, .csv, .tsv, .json or .html)"
+        ));
     }
     let mut s = open(input)?;
     activate_sheet(&mut s, a.opt("sheet"))?;
@@ -292,7 +348,11 @@ fn eval(args: &[String]) -> Result<(), String> {
         None => blank(),
     };
     activate_sheet(&mut s, a.opt("sheet"))?;
-    let formula = if formula.starts_with('=') { formula.to_string() } else { format!("={formula}") };
+    let formula = if formula.starts_with('=') {
+        formula.to_string()
+    } else {
+        format!("={formula}")
+    };
     let mut p = json!({"formula": formula});
     if let Some(c) = a.opt("cell") {
         p["cell"] = json!(c);
@@ -307,7 +367,13 @@ fn eval(args: &[String]) -> Result<(), String> {
 }
 
 /// Prints `range` of the active (or `sheet`) sheet as an aligned table or CSV.
-fn print_range(s: &mut Session, range: Option<&str>, sheet: Option<&str>, formulas: bool, csv: bool) -> Result<(), String> {
+fn print_range(
+    s: &mut Session,
+    range: Option<&str>,
+    sheet: Option<&str>,
+    formulas: bool,
+    csv: bool,
+) -> Result<(), String> {
     let mut p = json!({});
     if let Some(r) = range {
         p["range"] = json!(r);
@@ -323,22 +389,50 @@ fn print_range(s: &mut Session, range: Option<&str>, sheet: Option<&str>, formul
         .as_array()
         .into_iter()
         .flatten()
-        .map(|r| r.as_array().into_iter().flatten().map(|c| c.as_str().map(str::to_string).unwrap_or_else(|| value_text(c))).collect())
+        .map(|r| {
+            r.as_array()
+                .into_iter()
+                .flatten()
+                .map(|c| {
+                    c.as_str()
+                        .map(str::to_string)
+                        .unwrap_or_else(|| value_text(c))
+                })
+                .collect()
+        })
         .collect();
     if csv {
         for r in &rows {
-            outln!("{}", r.iter().map(|c| csv_field(c, ',')).collect::<Vec<_>>().join(","));
+            outln!(
+                "{}",
+                r.iter()
+                    .map(|c| csv_field(c, ','))
+                    .collect::<Vec<_>>()
+                    .join(",")
+            );
         }
         return Ok(());
     }
     let numeric = |ri: usize, ci: usize| raw["values"][ri][ci].is_number() && !formulas;
     let ncols = rows.iter().map(Vec::len).max().unwrap_or(0);
-    let widths: Vec<usize> = (0..ncols).map(|c| rows.iter().filter_map(|r| r.get(c)).map(|t| t.chars().count()).max().unwrap_or(0).min(60)).collect();
+    let widths: Vec<usize> = (0..ncols)
+        .map(|c| {
+            rows.iter()
+                .filter_map(|r| r.get(c))
+                .map(|t| t.chars().count())
+                .max()
+                .unwrap_or(0)
+                .min(60)
+        })
+        .collect();
     for (ri, r) in rows.iter().enumerate() {
         let mut line = String::new();
         for (ci, cell) in r.iter().enumerate() {
             let w = widths.get(ci).copied().unwrap_or(0);
-            let cell: String = cell.chars().map(|c| if c == '\n' || c == '\t' { ' ' } else { c }).collect();
+            let cell: String = cell
+                .chars()
+                .map(|c| if c == '\n' || c == '\t' { ' ' } else { c })
+                .collect();
             if ci > 0 {
                 line.push_str("  ");
             }
@@ -358,7 +452,13 @@ fn cat(args: &[String]) -> Result<(), String> {
     let path = a.pos(0, "<file>")?;
     a.no_extra(1)?;
     let mut s = open(path)?;
-    print_range(&mut s, a.opt("range"), a.opt("sheet"), a.has("formulas"), a.has("csv"))
+    print_range(
+        &mut s,
+        a.opt("range"),
+        a.opt("sheet"),
+        a.has("formulas"),
+        a.has("csv"),
+    )
 }
 
 /// One command from `id={json}`, `id {json}`, `id` or `{"command": id, "params": {..}}`.
@@ -369,20 +469,35 @@ fn parse_command(text: &str) -> Result<Option<(String, Value)>, String> {
     }
     if t.starts_with('{') {
         let v: Value = serde_json::from_str(t).map_err(|e| format!("bad JSON: {e}"))?;
-        let id = v.get("command").or_else(|| v.get("id")).and_then(Value::as_str).ok_or("JSON command needs a `command` field")?;
-        return Ok(Some((id.to_string(), v.get("params").cloned().unwrap_or_else(|| json!({})))));
+        let id = v
+            .get("command")
+            .or_else(|| v.get("id"))
+            .and_then(Value::as_str)
+            .ok_or("JSON command needs a `command` field")?;
+        return Ok(Some((
+            id.to_string(),
+            v.get("params").cloned().unwrap_or_else(|| json!({})),
+        )));
     }
     let split = t.find(['=', ' ', '\t']);
     let (id, rest) = match split {
         Some(i) => (t.get(..i).unwrap_or(t), t.get(i + 1..).unwrap_or("").trim()),
         None => (t, ""),
     };
-    let params = if rest.is_empty() { json!({}) } else { serde_json::from_str(rest).map_err(|e| format!("{id}: bad JSON params: {e}"))? };
+    let params = if rest.is_empty() {
+        json!({})
+    } else {
+        serde_json::from_str(rest).map_err(|e| format!("{id}: bad JSON params: {e}"))?
+    };
     Ok(Some((id.to_string(), params)))
 }
 
 fn run(args: &[String]) -> Result<(), String> {
-    let a = Args::parse(args, &["in", "sample", "cmd", "script", "out", "print", "sheet"], &["quiet", "csv", "formulas"])?;
+    let a = Args::parse(
+        args,
+        &["in", "sample", "cmd", "script", "out", "print", "sheet"],
+        &["quiet", "csv", "formulas"],
+    )?;
     a.no_extra(0)?;
     let mut s = match (a.opt("in"), a.opt("sample")) {
         (Some(_), Some(_)) => return Err("give --in or --sample, not both".into()),
@@ -398,12 +513,16 @@ fn run(args: &[String]) -> Result<(), String> {
     let mut step = 0usize;
     for (name, value) in &a.opts {
         let cmds: Vec<(String, Value, String)> = match name.as_str() {
-            "cmd" => parse_command(value)?.map(|(id, p)| vec![(id, p, "--cmd".to_string())]).unwrap_or_default(),
+            "cmd" => parse_command(value)?
+                .map(|(id, p)| vec![(id, p, "--cmd".to_string())])
+                .unwrap_or_default(),
             "script" => {
                 let text = std::fs::read_to_string(value).map_err(|e| format!("{value}: {e}"))?;
                 let mut v = Vec::new();
                 for (i, line) in text.lines().enumerate() {
-                    if let Some((id, p)) = parse_command(line).map_err(|e| format!("{value}:{}: {e}", i + 1))? {
+                    if let Some((id, p)) =
+                        parse_command(line).map_err(|e| format!("{value}:{}: {e}", i + 1))?
+                    {
                         v.push((id, p, format!("{value}:{}", i + 1)));
                     }
                 }
@@ -413,9 +532,13 @@ fn run(args: &[String]) -> Result<(), String> {
         };
         for (id, p, origin) in cmds {
             step += 1;
-            let r = exec(&mut s, &id, p).map_err(|e| format!("step {step} ({origin}, {id}): {e}"))?;
+            let r =
+                exec(&mut s, &id, p).map_err(|e| format!("step {step} ({origin}, {id}): {e}"))?;
             if !quiet && !r.is_null() {
-                outln!("{}", serde_json::to_string(&json!({"command": id, "result": r})).unwrap_or_default());
+                outln!(
+                    "{}",
+                    serde_json::to_string(&json!({"command": id, "result": r})).unwrap_or_default()
+                );
             }
         }
     }
@@ -425,8 +548,18 @@ fn run(args: &[String]) -> Result<(), String> {
     }
     for (name, range) in &a.opts {
         if name == "print" {
-            let range = if range.is_empty() || range == "used" { None } else { Some(range.as_str()) };
-            print_range(&mut s, range, a.opt("sheet"), a.has("formulas"), a.has("csv"))?;
+            let range = if range.is_empty() || range == "used" {
+                None
+            } else {
+                Some(range.as_str())
+            };
+            print_range(
+                &mut s,
+                range,
+                a.opt("sheet"),
+                a.has("formulas"),
+                a.has("csv"),
+            )?;
         }
     }
     Ok(())
@@ -434,7 +567,10 @@ fn run(args: &[String]) -> Result<(), String> {
 
 fn commands(args: &[String]) -> Result<(), String> {
     let a = Args::parse(args, &["search"], &["json"])?;
-    let q = a.opt("search").or(a.positional.first().map(String::as_str)).map(str::to_ascii_lowercase);
+    let q = a
+        .opt("search")
+        .or(a.positional.first().map(String::as_str))
+        .map(str::to_ascii_lowercase);
     let s = Session::new();
     let list: Vec<_> = s
         .commands()
@@ -443,7 +579,9 @@ fn commands(args: &[String]) -> Result<(), String> {
             q.as_ref().is_none_or(|q| {
                 c.id.to_ascii_lowercase().contains(q.as_str())
                     || c.label.to_ascii_lowercase().contains(q.as_str())
-                    || c.menu.iter().any(|m| m.to_ascii_lowercase().contains(q.as_str()))
+                    || c.menu
+                        .iter()
+                        .any(|m| m.to_ascii_lowercase().contains(q.as_str()))
             })
         })
         .collect();
@@ -457,7 +595,11 @@ fn commands(args: &[String]) -> Result<(), String> {
     let w = list.iter().map(|c| c.id.len()).max().unwrap_or(0);
     for c in &list {
         let sc = c.shortcut.map(|s| format!(" [{s}]")).unwrap_or_default();
-        let menu = if c.menu.is_empty() { String::new() } else { format!(" ({})", c.menu.join(" > ")) };
+        let menu = if c.menu.is_empty() {
+            String::new()
+        } else {
+            format!(" ({})", c.menu.join(" > "))
+        };
         outln!("{:<w$}  {}{menu}{sc}", c.id, c.label.trim_end_matches('…'));
         outln!("{:<w$}    {}", "", c.params);
     }
@@ -482,7 +624,10 @@ fn functions(args: &[String]) -> Result<(), String> {
     }
     let list = v.as_array().cloned().unwrap_or_default();
     for f in &list {
-        let sig = f["signature"].as_str().or(f["name"].as_str()).unwrap_or("?");
+        let sig = f["signature"]
+            .as_str()
+            .or(f["name"].as_str())
+            .unwrap_or("?");
         outln!("{sig}");
         let cat = f["category"].as_str().unwrap_or("");
         let desc = f["description"].as_str().unwrap_or("");
@@ -519,17 +664,26 @@ fn mcp(args: &[String]) -> Result<(), String> {
             Box::new(Headless::with_session(session))
         }
     };
-    eprintln!("gridcraft-cli: MCP server on stdio ({})", backend.describe());
+    eprintln!(
+        "gridcraft-cli: MCP server on stdio ({})",
+        backend.describe()
+    );
     let stdin = std::io::stdin();
     let stdout = std::io::stdout();
-    Server::new(backend).serve(stdin.lock(), stdout.lock()).map_err(|e| e.to_string())
+    Server::new(backend)
+        .serve(stdin.lock(), stdout.lock())
+        .map_err(|e| e.to_string())
 }
 
 /// `send PORT METHOD [JSON]`: one control-channel request to a running app.
 fn send(args: &[String]) -> Result<(), String> {
     use gridcraft_mcp::{Backend, Remote, control_addr};
-    let port = args.first().ok_or_else(|| format!("missing <port>\n{USAGE}"))?;
-    let method = args.get(1).ok_or_else(|| format!("missing <method>\n{USAGE}"))?;
+    let port = args
+        .first()
+        .ok_or_else(|| format!("missing <port>\n{USAGE}"))?;
+    let method = args
+        .get(1)
+        .ok_or_else(|| format!("missing <method>\n{USAGE}"))?;
     let params: Value = match args.get(2) {
         Some(t) => serde_json::from_str(t).map_err(|e| format!("bad JSON params: {e}"))?,
         None => json!({}),
@@ -552,13 +706,22 @@ mod tests {
 
     #[test]
     fn parses_commands() {
-        assert_eq!(parse_command("home.bold={\"range\":\"A1\"}").unwrap(), Some(("home.bold".into(), json!({"range": "A1"}))));
-        assert_eq!(parse_command("edit.undo").unwrap(), Some(("edit.undo".into(), json!({}))));
+        assert_eq!(
+            parse_command("home.bold={\"range\":\"A1\"}").unwrap(),
+            Some(("home.bold".into(), json!({"range": "A1"})))
+        );
+        assert_eq!(
+            parse_command("edit.undo").unwrap(),
+            Some(("edit.undo".into(), json!({})))
+        );
         assert_eq!(
             parse_command("cell.set {\"cell\":\"A1\",\"input\":\"=1\"}").unwrap(),
             Some(("cell.set".into(), json!({"cell": "A1", "input": "=1"})))
         );
-        assert_eq!(parse_command("{\"command\":\"edit.redo\"}").unwrap(), Some(("edit.redo".into(), json!({}))));
+        assert_eq!(
+            parse_command("{\"command\":\"edit.redo\"}").unwrap(),
+            Some(("edit.redo".into(), json!({})))
+        );
         assert_eq!(parse_command("  # comment").unwrap(), None);
         assert!(parse_command("x={bad").is_err());
     }
@@ -574,7 +737,10 @@ mod tests {
 
     #[test]
     fn args_parsing() {
-        let v: Vec<String> = ["a", "--range", "A1", "--csv", "--sheet=S"].iter().map(|s| s.to_string()).collect();
+        let v: Vec<String> = ["a", "--range", "A1", "--csv", "--sheet=S"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
         let a = Args::parse(&v, &["range", "sheet"], &["csv"]).unwrap();
         assert_eq!(a.positional, ["a"]);
         assert_eq!(a.opt("range"), Some("A1"));

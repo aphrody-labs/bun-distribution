@@ -22,7 +22,10 @@ use egui::{Key, KeyboardShortcut};
 use muda::accelerator::{Accelerator, Code, Modifiers};
 use muda::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 use objc2::MainThreadMarker;
-use objc2_app_kit::{NSApplication, NSEventModifierFlags, NSEventType, NSMenuDidBeginTrackingNotification, NSMenuDidEndTrackingNotification};
+use objc2_app_kit::{
+    NSApplication, NSEventModifierFlags, NSEventType, NSMenuDidBeginTrackingNotification,
+    NSMenuDidEndTrackingNotification,
+};
 use objc2_foundation::{NSNotification, NSNotificationCenter};
 use vectorcraft_ui_egui::VectorcraftApp;
 use vectorcraft_ui_egui::native_menu::{self, Backend, Event, MenuBar, MenuRole, Node, Standard};
@@ -36,7 +39,12 @@ fn observe_tracking(ctx: &egui::Context) {
     INSTALL.call_once(|| {
         // SAFETY: AppKit initializes these immutable notification-name constants.
         #[allow(unsafe_code)]
-        let notifications = unsafe { [(NSMenuDidBeginTrackingNotification, true), (NSMenuDidEndTrackingNotification, false)] };
+        let notifications = unsafe {
+            [
+                (NSMenuDidBeginTrackingNotification, true),
+                (NSMenuDidEndTrackingNotification, false),
+            ]
+        };
         for (name, tracking) in notifications {
             let repaint = ctx.clone();
             let block = RcBlock::new(move |_: std::ptr::NonNull<NSNotification>| {
@@ -50,7 +58,12 @@ fn observe_tracking(ctx: &egui::Context) {
             // the observer and block for the application's lifetime; callbacks update an atomic and request repaint.
             #[allow(unsafe_code)]
             unsafe {
-                NSNotificationCenter::defaultCenter().addObserverForName_object_queue_usingBlock(Some(name), None, None, &block);
+                NSNotificationCenter::defaultCenter().addObserverForName_object_queue_usingBlock(
+                    Some(name),
+                    None,
+                    None,
+                    &block,
+                );
             }
         }
     });
@@ -67,15 +80,30 @@ fn cancel_tracking() {
 
 /// A dismissing click belongs to the menu, so the canvas and panel controls must not see it.
 fn dismiss_input(raw: &mut egui::RawInput, tracking: bool) -> bool {
-    if !raw
-        .events
-        .iter()
-        .any(|e| matches!(e, egui::Event::PointerButton { pressed: true, .. } | egui::Event::Key { key: egui::Key::Escape, pressed: true, .. }))
-    {
+    if !raw.events.iter().any(|e| {
+        matches!(
+            e,
+            egui::Event::PointerButton { pressed: true, .. }
+                | egui::Event::Key {
+                    key: egui::Key::Escape,
+                    pressed: true,
+                    ..
+                }
+        )
+    }) {
         return false;
     }
     if tracking {
-        raw.events.retain(|e| !matches!(e, egui::Event::PointerButton { .. } | egui::Event::Key { key: egui::Key::Escape, .. }));
+        raw.events.retain(|e| {
+            !matches!(
+                e,
+                egui::Event::PointerButton { .. }
+                    | egui::Event::Key {
+                        key: egui::Key::Escape,
+                        ..
+                    }
+            )
+        });
     }
     true
 }
@@ -127,17 +155,37 @@ impl MacMenu {
         MenuEvent::set_event_handler(Some(move |e: MenuEvent| {
             // AppKit calls this on the main thread, from the event that chose the item: a key
             // equivalent is a key-down, a click a mouse-up (or ↩ inside the open menu).
-            let event = MainThreadMarker::new().and_then(|mtm| NSApplication::sharedApplication(mtm).currentEvent());
-            let key = event.as_ref().is_some_and(|ev| ev.r#type() == NSEventType::KeyDown);
-            let flags = event.as_ref().map_or(NSEventModifierFlags::empty(), |ev| ev.modifierFlags());
-            let mods = [NSEventModifierFlags::Command, NSEventModifierFlags::Control, NSEventModifierFlags::Option, NSEventModifierFlags::Shift]
-                .map(|m| flags.contains(m));
+            let event = MainThreadMarker::new()
+                .and_then(|mtm| NSApplication::sharedApplication(mtm).currentEvent());
+            let key = event
+                .as_ref()
+                .is_some_and(|ev| ev.r#type() == NSEventType::KeyDown);
+            let flags = event
+                .as_ref()
+                .map_or(NSEventModifierFlags::empty(), |ev| ev.modifierFlags());
+            let mods = [
+                NSEventModifierFlags::Command,
+                NSEventModifierFlags::Control,
+                NSEventModifierFlags::Option,
+                NSEventModifierFlags::Shift,
+            ]
+            .map(|m| flags.contains(m));
             // The receiver only goes away with the app.
-            let _ = tx.send(Chosen { id: e.id.0, key, mods });
+            let _ = tx.send(Chosen {
+                id: e.id.0,
+                key,
+                mods,
+            });
             // Wake egui, so the item runs now rather than on the next mouse move.
             repaint.request_repaint();
         }));
-        MacMenu { menu: None, entries: Vec::new(), rx, structure: 0, pending: None }
+        MacMenu {
+            menu: None,
+            entries: Vec::new(),
+            rx,
+            structure: 0,
+            pending: None,
+        }
     }
 
     /// Build the menus of `bar` and make them the app's, in place of the ones before.
@@ -193,7 +241,10 @@ fn append(sub: &Submenu, nodes: &[Node], entries: &mut Vec<Entry>) -> muda::Resu
             }
             Node::Item(it) => {
                 let id = format!("vc{}", entries.len());
-                let chord = it.shortcut.and_then(vectorcraft_ui_egui::shortcuts::parse).filter(native_menu::native_ok);
+                let chord = it
+                    .shortcut
+                    .and_then(vectorcraft_ui_egui::shortcuts::parse)
+                    .filter(native_menu::native_ok);
                 let accel = chord.as_ref().and_then(accelerator);
                 let handle = match it.checked {
                     Some(c) => {
@@ -207,7 +258,11 @@ fn append(sub: &Submenu, nodes: &[Node], entries: &mut Vec<Entry>) -> muda::Resu
                         Handle::Plain(h)
                     }
                 };
-                entries.push(Entry { handle, item: it.clone(), chord });
+                entries.push(Entry {
+                    handle,
+                    item: it.clone(),
+                    chord,
+                });
             }
         }
     }
@@ -224,7 +279,10 @@ impl Backend for MacMenu {
         }
         self.pending = None;
         let items = bar.items();
-        if self.menu.is_none() || native_menu::structure_key(bar) != self.structure || items.len() != self.entries.len() {
+        if self.menu.is_none()
+            || native_menu::structure_key(bar) != self.structure
+            || items.len() != self.entries.len()
+        {
             if let Err(e) = self.build(bar) {
                 // The menus as they were stay up (a failed build changed nothing).
                 log::warn!("couldn't rebuild the macOS menu bar: {e}");
@@ -262,11 +320,22 @@ impl Backend for MacMenu {
         while let Ok(chosen) = self.rx.try_recv() {
             cancel_tracking();
             // Ids that aren't ours are AppKit's own items (Services, Zoom…), already handled.
-            let Some(e) = chosen.id.strip_prefix("vc").and_then(|n| n.parse::<usize>().ok()).and_then(|i| self.entries.get(i)) else { continue };
+            let Some(e) = chosen
+                .id
+                .strip_prefix("vc")
+                .and_then(|n| n.parse::<usize>().ok())
+                .and_then(|i| self.entries.get(i))
+            else {
+                continue;
+            };
             if let Some(command @ (native_menu::HIDE | native_menu::HIDE_OTHERS)) = e.item.command {
                 if let Some(mtm) = MainThreadMarker::new() {
                     let app = NSApplication::sharedApplication(mtm);
-                    if command == native_menu::HIDE { app.hide(None) } else { app.hideOtherApplications(None) }
+                    if command == native_menu::HIDE {
+                        app.hide(None)
+                    } else {
+                        app.hideOtherApplications(None)
+                    }
                 }
                 continue;
             }
@@ -277,9 +346,22 @@ impl Backend for MacMenu {
             let key = e
                 .chord
                 .filter(|c| {
-                    chosen.key && e.item.command != Some(native_menu::MINIMIZE) && (cmd || ctrl || !(c.modifiers.command || c.modifiers.ctrl))
+                    chosen.key
+                        && e.item.command != Some(native_menu::MINIMIZE)
+                        && (cmd || ctrl || !(c.modifiers.command || c.modifiers.ctrl))
                 })
-                .map(|c| KeyboardShortcut::new(egui::Modifiers { alt, ctrl, shift, mac_cmd: cmd, command: cmd }, c.logical_key));
+                .map(|c| {
+                    KeyboardShortcut::new(
+                        egui::Modifiers {
+                            alt,
+                            ctrl,
+                            shift,
+                            mac_cmd: cmd,
+                            command: cmd,
+                        },
+                        c.logical_key,
+                    )
+                });
             out.push(match key {
                 Some(k) => Event::Key(k),
                 None => Event::Click(e.item.clone()),
@@ -326,8 +408,12 @@ fn escape(s: &str) -> String {
 fn accelerator(c: &KeyboardShortcut) -> Option<Accelerator> {
     let m = c.modifiers;
     let mut mods = Modifiers::empty();
-    for (on, flag) in [(m.command || m.mac_cmd, Modifiers::META), (m.ctrl, Modifiers::CONTROL), (m.alt, Modifiers::ALT), (m.shift, Modifiers::SHIFT)]
-    {
+    for (on, flag) in [
+        (m.command || m.mac_cmd, Modifiers::META),
+        (m.ctrl, Modifiers::CONTROL),
+        (m.alt, Modifiers::ALT),
+        (m.shift, Modifiers::SHIFT),
+    ] {
         if on {
             mods |= flag;
         }
@@ -435,8 +521,19 @@ mod tests {
         let bar = native_menu::layout(&app).bar;
         let mut native = 0;
         for it in bar.items() {
-            let Some(c) = it.shortcut.and_then(vectorcraft_ui_egui::shortcuts::parse).filter(native_menu::native_ok) else { continue };
-            assert!(accelerator(&c).is_some(), "{:?} ({:?}) has no key equivalent", it.shortcut, it.command);
+            let Some(c) = it
+                .shortcut
+                .and_then(vectorcraft_ui_egui::shortcuts::parse)
+                .filter(native_menu::native_ok)
+            else {
+                continue;
+            };
+            assert!(
+                accelerator(&c).is_some(),
+                "{:?} ({:?}) has no key equivalent",
+                it.shortcut,
+                it.command
+            );
             native += 1;
         }
         assert!(native > 70, "{native} key equivalents");
@@ -461,26 +558,45 @@ mod tests {
     #[test]
     fn outside_press_dismisses_without_starting_a_canvas_gesture() {
         let moved = egui::Event::PointerMoved(egui::pos2(300.0, 200.0));
-        let mut raw = egui::RawInput { events: vec![moved.clone(), press()], ..Default::default() };
+        let mut raw = egui::RawInput {
+            events: vec![moved.clone(), press()],
+            ..Default::default()
+        };
         assert!(dismiss_input(&mut raw, true));
         assert_eq!(raw.events, [moved]);
         assert!(!dismiss_input(&mut raw, true));
         raw.events.push(press());
         assert!(dismiss_input(&mut raw, false));
-        assert_eq!(raw.events.len(), 2, "ordinary canvas presses still reach egui");
+        assert_eq!(
+            raw.events.len(),
+            2,
+            "ordinary canvas presses still reach egui"
+        );
     }
 
     #[test]
     fn escape_dismisses_without_reaching_the_active_tool() {
-        let escape = |pressed| egui::Event::Key { key: egui::Key::Escape, physical_key: None, pressed, repeat: false, modifiers: Default::default() };
-        let mut raw = egui::RawInput { events: vec![escape(true), escape(false)], ..Default::default() };
+        let escape = |pressed| egui::Event::Key {
+            key: egui::Key::Escape,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: Default::default(),
+        };
+        let mut raw = egui::RawInput {
+            events: vec![escape(true), escape(false)],
+            ..Default::default()
+        };
         assert!(dismiss_input(&mut raw, true));
         assert!(raw.events.is_empty());
     }
 
     #[test]
     fn moving_the_pointer_does_not_dismiss_a_tracking_menu() {
-        let mut raw = egui::RawInput { events: vec![egui::Event::PointerMoved(egui::pos2(300.0, 200.0))], ..Default::default() };
+        let mut raw = egui::RawInput {
+            events: vec![egui::Event::PointerMoved(egui::pos2(300.0, 200.0))],
+            ..Default::default()
+        };
         assert!(!dismiss_input(&mut raw, true));
         assert_eq!(raw.events.len(), 1);
     }

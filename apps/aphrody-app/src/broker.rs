@@ -90,7 +90,9 @@ fn route_to_subscriber<S: NotificationSink>(
     channels: &mut HashMap<String, Vec<S>>,
     message: &Value,
 ) -> bool {
-    let Some(thread_id) = notification_thread_id(message) else { return false };
+    let Some(thread_id) = notification_thread_id(message) else {
+        return false;
+    };
     let (any_delivered, is_empty) = match channels.get_mut(thread_id) {
         Some(sinks) => {
             let mut any_delivered = false;
@@ -102,7 +104,7 @@ fn route_to_subscriber<S: NotificationSink>(
                 delivered
             });
             (any_delivered, sinks.is_empty())
-        },
+        }
         None => return false,
     };
     if is_empty {
@@ -132,8 +134,11 @@ struct Link {
 fn open_link(server: AppServer) -> Link {
     let (input, server_input) = duplex(PIPE_CAPACITY);
     let (server_output, output) = duplex(PIPE_CAPACITY);
-    let serving =
-        tokio::spawn(serve_stdio_with(BufReader::new(server_input), server_output, server));
+    let serving = tokio::spawn(serve_stdio_with(
+        BufReader::new(server_input),
+        server_output,
+        server,
+    ));
     let alive = Arc::new(AtomicBool::new(true));
     let (publish, exit) = oneshot::channel();
     let flag = Arc::clone(&alive);
@@ -146,7 +151,12 @@ fn open_link(server: AppServer) -> Link {
         flag.store(false, Ordering::Release);
         let _ = publish.send(reason);
     });
-    Link { input, output, alive, exit }
+    Link {
+        input,
+        output,
+        alive,
+        exit,
+    }
 }
 
 /// Deliver everything the server writes until its output ends.
@@ -174,27 +184,34 @@ async fn pump<R, S>(
         let is_response = message.get("result").is_some() || message.get("error").is_some();
         match message.get("id").and_then(Value::as_u64) {
             Some(id) if is_response => {
-                let sender =
-                    pending.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&id);
+                let sender = pending
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .remove(&id);
                 if let Some(sender) = sender {
                     let _ = sender.send(message);
                 }
-            },
+            }
             _ => {
                 let mut notification = message;
                 if let Some(object) = notification.as_object_mut() {
                     object.insert("backendGeneration".into(), json!(generation));
                 }
                 route_to_subscriber(
-                    &mut channels.lock().unwrap_or_else(std::sync::PoisonError::into_inner),
+                    &mut channels
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner),
                     &notification,
                 );
                 emit(notification);
-            },
+            }
         }
     }
     // Dropping the senders fails every call still waiting on this server.
-    pending.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clear();
+    pending
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clear();
 }
 
 /// Owns the in-process app-server and its JSON-RPC stream.
@@ -243,7 +260,10 @@ impl AppServerBroker {
 
     /// Stop streaming notifications for `thread_id`. A no-op when it has no subscription.
     pub fn unsubscribe(&self, thread_id: &str) {
-        self.channels.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(thread_id);
+        self.channels
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .remove(thread_id);
     }
 
     /// Forward one JSON-RPC message from a webview and return the server's reply.
@@ -255,9 +275,16 @@ impl AppServerBroker {
     /// Returns a message when the write fails, the backend ends before answering, or the
     /// request exceeds its timeout.
     pub async fn call(&self, mut message: Value) -> Result<Value, String> {
-        let method = message.get("method").and_then(Value::as_str).unwrap_or_default().to_owned();
+        let method = message
+            .get("method")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_owned();
         if method == "initialize" {
-            *self.handshake.lock().unwrap_or_else(std::sync::PoisonError::into_inner) =
+            *self
+                .handshake
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner) =
                 Some(message.get("params").cloned().unwrap_or(Value::Null));
         }
         let original_id = message.get("id").cloned();
@@ -271,7 +298,9 @@ impl AppServerBroker {
             write_line(&mut connection.input, &message).await?;
             return Ok(json!({}));
         };
-        let id = self.next_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let id = self
+            .next_id
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         message["id"] = json!(id);
         let (sender, receiver) = oneshot::channel();
         connection
@@ -294,9 +323,15 @@ impl AppServerBroker {
             Ok(Ok(response)) => response,
             Ok(Err(_)) => return Err(format!("app-server exited before answering {method}")),
             Err(_) => {
-                pending.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&id);
-                return Err(format!("{method} timed out after {}s", REQUEST_TIMEOUT.as_secs()));
-            },
+                pending
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .remove(&id);
+                return Err(format!(
+                    "{method} timed out after {}s",
+                    REQUEST_TIMEOUT.as_secs()
+                ));
+            }
         };
         response["id"] = original_id;
         if method == "thread/close"
@@ -344,7 +379,9 @@ impl AppServerBroker {
     /// rollout is flushed before the process exits. Called when the application exits. A turn
     /// that is still running when the grace period ends is abandoned with the process.
     pub async fn shutdown(&self, grace: Duration) {
-        let Some(connection) = self.connection.lock().await.take() else { return };
+        let Some(connection) = self.connection.lock().await.take() else {
+            return;
+        };
         let alive = Arc::clone(&connection.alive);
         drop(connection);
         let deadline = tokio::time::Instant::now() + grace;
@@ -372,12 +409,20 @@ impl AppServerBroker {
 
     /// Start an in-process server: no process, no binary, no environment variable.
     fn spawn(&self) -> Connection {
-        let generation = self.generation.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+        let generation = self
+            .generation
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            + 1;
         let mut server = AppServer::new();
         if let Some(dir) = crate::models::stored_models_dir(&self.app) {
             server = server.with_models_dir(dir);
         }
-        let Link { input, output, alive, exit } = open_link(server);
+        let Link {
+            input,
+            output,
+            alive,
+            exit,
+        } = open_link(server);
         let pending: Pending = Arc::default();
 
         let app = self.app.clone();
@@ -403,14 +448,23 @@ impl AppServerBroker {
                 json!({"state": "exited", "backendGeneration": generation, "reason": reason}),
             );
         });
-        Connection { input, alive, pending }
+        Connection {
+            input,
+            alive,
+            pending,
+        }
     }
 
     async fn replay_handshake(&self, connection: &mut Connection) -> Result<(), String> {
-        let params =
-            self.handshake.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+        let params = self
+            .handshake
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone();
         let Some(params) = params else { return Ok(()) };
-        let id = self.next_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let id = self
+            .next_id
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let (sender, receiver) = oneshot::channel();
         connection
             .pending
@@ -427,9 +481,15 @@ impl AppServerBroker {
             .map_err(|_| "initialize timed out after a backend restart".to_owned())?
             .map_err(|_| "app-server exited during the handshake".to_owned())?;
         if let Some(error) = response.get("error") {
-            return Err(format!("initialize failed after a backend restart: {error}"));
+            return Err(format!(
+                "initialize failed after a backend restart: {error}"
+            ));
         }
-        write_line(&mut connection.input, &json!({"method": "initialized", "params": {}})).await
+        write_line(
+            &mut connection.input,
+            &json!({"method": "initialized", "params": {}}),
+        )
+        .await
     }
 }
 
@@ -437,8 +497,14 @@ impl AppServerBroker {
 async fn write_line(input: &mut DuplexStream, message: &Value) -> Result<(), String> {
     let mut line = serde_json::to_vec(message).map_err(|error| error.to_string())?;
     line.push(b'\n');
-    input.write_all(&line).await.map_err(|error| format!("app-server write failed: {error}"))?;
-    input.flush().await.map_err(|error| format!("app-server write failed: {error}"))
+    input
+        .write_all(&line)
+        .await
+        .map_err(|error| format!("app-server write failed: {error}"))?;
+    input
+        .flush()
+        .await
+        .map_err(|error| format!("app-server write failed: {error}"))
 }
 
 #[cfg(test)]
@@ -466,11 +532,17 @@ mod tests {
 
     impl RecordingSink {
         fn open() -> Self {
-            Self { received: RefCell::new(Vec::new()), closed: false }
+            Self {
+                received: RefCell::new(Vec::new()),
+                closed: false,
+            }
         }
 
         fn closed() -> Self {
-            Self { received: RefCell::new(Vec::new()), closed: true }
+            Self {
+                received: RefCell::new(Vec::new()),
+                closed: true,
+            }
         }
     }
 
@@ -492,8 +564,14 @@ mod tests {
 
     #[test]
     fn notification_thread_id_is_none_when_absent_or_wrong_type() {
-        assert_eq!(notification_thread_id(&json!({"method": "backend/started"})), None);
-        assert_eq!(notification_thread_id(&json!({"method": "x", "params": {}})), None);
+        assert_eq!(
+            notification_thread_id(&json!({"method": "backend/started"})),
+            None
+        );
+        assert_eq!(
+            notification_thread_id(&json!({"method": "x", "params": {}})),
+            None
+        );
         assert_eq!(
             notification_thread_id(&json!({"method": "x", "params": {"threadId": 1}})),
             None,
@@ -518,7 +596,10 @@ mod tests {
         let mut channels: HashMap<String, Vec<RecordingSink>> = HashMap::new();
         channels.insert("t-1".to_owned(), vec![RecordingSink::open()]);
 
-        assert!(!route_to_subscriber(&mut channels, &json!({"method": "backend/started"})));
+        assert!(!route_to_subscriber(
+            &mut channels,
+            &json!({"method": "backend/started"})
+        ));
         assert!(!route_to_subscriber(
             &mut channels,
             &json!({"method": "x", "params": {"threadId": "t-unknown"}})
@@ -537,7 +618,10 @@ mod tests {
         );
 
         assert!(!delivered);
-        assert!(!channels.contains_key("t-1"), "a failed delivery must drop the subscription");
+        assert!(
+            !channels.contains_key("t-1"),
+            "a failed delivery must drop the subscription"
+        );
     }
 
     #[test]
@@ -551,7 +635,10 @@ mod tests {
         assert!(route_to_subscriber(&mut channels, &message));
 
         assert_eq!(channels["t-1"].len(), 2);
-        assert_eq!(channels["t-1"][0].received.borrow().as_slice(), std::slice::from_ref(&message));
+        assert_eq!(
+            channels["t-1"][0].received.borrow().as_slice(),
+            std::slice::from_ref(&message)
+        );
         assert_eq!(channels["t-1"][1].received.borrow().as_slice(), [message]);
     }
 
@@ -572,7 +659,10 @@ mod tests {
     #[test]
     fn route_cleans_up_when_all_subscribers_are_closed() {
         let mut channels = HashMap::new();
-        channels.insert("t-1".to_owned(), vec![RecordingSink::closed(), RecordingSink::closed()]);
+        channels.insert(
+            "t-1".to_owned(),
+            vec![RecordingSink::closed(), RecordingSink::closed()],
+        );
 
         let message = json!({"method": "turn/completed", "params": {"threadId": "t-1"}});
         assert!(!route_to_subscriber(&mut channels, &message));
@@ -608,7 +698,10 @@ mod tests {
         let (orphan, orphaned) = oneshot::channel::<Value>();
         pending.lock().unwrap().insert(5, answer);
         pending.lock().unwrap().insert(6, orphan);
-        let channels = Mutex::new(HashMap::from([("t-1".to_owned(), vec![RecordingSink::open()])]));
+        let channels = Mutex::new(HashMap::from([(
+            "t-1".to_owned(),
+            vec![RecordingSink::open()],
+        )]));
         let output = concat!(
             r#"{"method":"item/agentMessage/delta","params":{"threadId":"t-1"}}"#,
             "\n",
@@ -620,7 +713,10 @@ mod tests {
         );
         let mut broadcast = Vec::new();
 
-        pump(output.as_bytes(), &pending, &channels, 3, |message| broadcast.push(message)).await;
+        pump(output.as_bytes(), &pending, &channels, 3, |message| {
+            broadcast.push(message)
+        })
+        .await;
 
         // A response goes to its caller only; the non-JSON line is skipped; every other message,
         // including a server-initiated request with a string id, is a stamped notification.
@@ -650,7 +746,12 @@ mod tests {
 
     fn harness() -> Harness {
         let home = tempfile::tempdir().unwrap();
-        let Link { input, output, alive, exit } = open_link(AppServer::with_home(home.path()));
+        let Link {
+            input,
+            output,
+            alive,
+            exit,
+        } = open_link(AppServer::with_home(home.path()));
         let pending: Pending = Arc::default();
         let channels = Mutex::new(HashMap::<String, Vec<RecordingSink>>::new());
         let pumped = tokio::spawn({
@@ -659,7 +760,14 @@ mod tests {
                 pump(BufReader::new(output), &pending, &channels, 1, drop).await;
             }
         });
-        Harness { input, alive, exit, pending, pumped, _home: home }
+        Harness {
+            input,
+            alive,
+            exit,
+            pending,
+            pumped,
+            _home: home,
+        }
     }
 
     #[tokio::test]
@@ -668,9 +776,12 @@ mod tests {
         let (sender, receiver) = oneshot::channel::<Value>();
         harness.pending.lock().unwrap().insert(7, sender);
 
-        write_line(&mut harness.input, &json!({"id": 7, "method": "initialize", "params": {}}))
-            .await
-            .unwrap();
+        write_line(
+            &mut harness.input,
+            &json!({"id": 7, "method": "initialize", "params": {}}),
+        )
+        .await
+        .unwrap();
 
         let response = tokio::time::timeout(Duration::from_secs(5), receiver)
             .await
@@ -686,14 +797,29 @@ mod tests {
         let harness = harness();
         let (sender, waiting) = oneshot::channel::<Value>();
         harness.pending.lock().unwrap().insert(9, sender);
-        let Harness { input, alive, exit, pumped, .. } = harness;
+        let Harness {
+            input,
+            alive,
+            exit,
+            pumped,
+            ..
+        } = harness;
 
         drop(input);
 
-        let reason = tokio::time::timeout(Duration::from_secs(5), exit).await.unwrap().unwrap();
+        let reason = tokio::time::timeout(Duration::from_secs(5), exit)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(reason, "closed");
-        assert!(!alive.load(Ordering::Acquire), "the flag is cleared before the reason is sent");
+        assert!(
+            !alive.load(Ordering::Acquire),
+            "the flag is cleared before the reason is sent"
+        );
         pumped.await.unwrap();
-        assert!(waiting.await.is_err(), "a call still waiting is failed, never left hanging");
+        assert!(
+            waiting.await.is_err(),
+            "a call still waiting is failed, never left hanging"
+        );
     }
 }

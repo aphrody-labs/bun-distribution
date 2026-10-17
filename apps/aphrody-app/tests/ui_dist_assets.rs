@@ -51,7 +51,11 @@ fn staged_assets_are_the_canonical_bytes() {
         let canonical = fs::read(&source)
             .unwrap_or_else(|error| panic!("canonical {source:?} is unreadable: {error}"));
         assert!(!staged.is_empty(), "{destination} is empty");
-        assert!(staged == canonical, "ui-dist/{destination} differs from {}", source.display());
+        assert!(
+            staged == canonical,
+            "ui-dist/{destination} differs from {}",
+            source.display()
+        );
     }
 }
 
@@ -66,11 +70,19 @@ fn every_font_the_stylesheet_loads_is_in_the_embed_set() {
             .unwrap_or_default()
             .trim_matches(|c: char| c == '"' || c == '\'');
         let path = app_dir().join("ui-dist/fonts").join(name);
-        let length = fs::metadata(&path).map(|metadata| metadata.len()).unwrap_or(0);
-        assert!(length > 0, "app.css loads fonts/{name} but ui-dist/fonts/{name} is missing");
+        let length = fs::metadata(&path)
+            .map(|metadata| metadata.len())
+            .unwrap_or(0);
+        assert!(
+            length > 0,
+            "app.css loads fonts/{name} but ui-dist/fonts/{name} is missing"
+        );
         loaded += 1;
     }
-    assert!(loaded > 0, "app.css no longer references ui-dist/fonts: update this test");
+    assert!(
+        loaded > 0,
+        "app.css no longer references ui-dist/fonts: update this test"
+    );
 }
 
 #[test]
@@ -82,5 +94,8 @@ fn no_partial_copy_is_left_in_the_embed_set() {
         .map(|entry| entry.file_name().to_string_lossy().into_owned())
         .filter(|name| name.contains(".partial-"))
         .collect();
-    assert!(leftovers.is_empty(), "interrupted staging left {leftovers:?} in ui-dist/fonts");
+    assert!(
+        leftovers.is_empty(),
+        "interrupted staging left {leftovers:?} in ui-dist/fonts"
+    );
 }

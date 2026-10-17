@@ -38,7 +38,15 @@ impl NativeBar {
             let _ = tx.send(e);
             ctx.request_repaint();
         }));
-        NativeBar { menu: None, items: HashMap::new(), spec: NativeMenu::default(), structure: 0, state: None, events: rx, in_window: None }
+        NativeBar {
+            menu: None,
+            items: HashMap::new(),
+            spec: NativeMenu::default(),
+            structure: 0,
+            state: None,
+            events: rx,
+            in_window: None,
+        }
     }
 
     /// Run activations and keep the native menu in step with the app (call once per frame).
@@ -127,7 +135,13 @@ impl NativeBar {
                 }
                 NativeNode::Item(i) => {
                     let accel = i.accelerator.as_deref().and_then(parse_accelerator);
-                    let item = CheckMenuItem::with_id(i.id.clone(), &i.label, i.enabled, i.checked == Some(true), accel);
+                    let item = CheckMenuItem::with_id(
+                        i.id.clone(),
+                        &i.label,
+                        i.enabled,
+                        i.checked == Some(true),
+                        accel,
+                    );
                     let r = parent.append(&item);
                     self.items.insert(i.id.clone(), item);
                     r
@@ -141,9 +155,16 @@ impl NativeBar {
 
     /// Push label / enabled / check changes into the existing items.
     fn refresh(&self, spec: &NativeMenu) {
-        let old: HashMap<&str, &native_menu::NativeItem> = self.spec.items().into_iter().map(|i| (i.id.as_str(), i)).collect();
+        let old: HashMap<&str, &native_menu::NativeItem> = self
+            .spec
+            .items()
+            .into_iter()
+            .map(|i| (i.id.as_str(), i))
+            .collect();
         for i in spec.items() {
-            let Some(native) = self.items.get(&i.id) else { continue };
+            let Some(native) = self.items.get(&i.id) else {
+                continue;
+            };
             let prev = old.get(i.id.as_str());
             if prev.is_none_or(|p| p.label != i.label) {
                 native.set_text(&i.label);
@@ -163,7 +184,9 @@ impl NativeBar {
 pub fn app_action(id: &str) -> bool {
     use objc2::MainThreadMarker;
     use objc2_app_kit::NSApplication;
-    let Some(mtm) = MainThreadMarker::new() else { return false };
+    let Some(mtm) = MainThreadMarker::new() else {
+        return false;
+    };
     let app = NSApplication::sharedApplication(mtm);
     match id {
         "app.hide" => app.hide(None),
@@ -179,7 +202,9 @@ pub fn clipboard_text() -> Option<String> {
     use objc2_app_kit::NSPasteboard;
     // NSPasteboardTypeString's value (the UTI), without touching the extern static.
     let ty = objc2_foundation::NSString::from_str("public.utf8-plain-text");
-    NSPasteboard::generalPasteboard().stringForType(&ty).map(|s| s.to_string())
+    NSPasteboard::generalPasteboard()
+        .stringForType(&ty)
+        .map(|s| s.to_string())
 }
 
 #[cfg(test)]
@@ -196,15 +221,27 @@ mod tests {
         let mut n = 0;
         for i in spec.items() {
             if let Some(a) = &i.accelerator {
-                assert!(parse_accelerator(a).is_some(), "{} `{a}` does not parse", i.label);
+                assert!(
+                    parse_accelerator(a).is_some(),
+                    "{} `{a}` does not parse",
+                    i.label
+                );
                 n += 1;
             }
         }
         assert!(n > 50, "only {n} accelerators");
         // Spot checks against the AE shortcuts.
-        let accel = |cmd: &str| spec.items().into_iter().find(|i| i.command == cmd).and_then(|i| i.accelerator.clone());
+        let accel = |cmd: &str| {
+            spec.items()
+                .into_iter()
+                .find(|i| i.command == cmd)
+                .and_then(|i| i.accelerator.clone())
+        };
         assert_eq!(accel("file.saveAs").as_deref(), Some("Cmd+Shift+S"));
         assert_eq!(accel("comp.new").as_deref(), Some("Cmd+N"));
-        assert_eq!(parse_accelerator("Cmd+Shift+S"), "CmdOrCtrl+Shift+S".parse().ok());
+        assert_eq!(
+            parse_accelerator("Cmd+Shift+S"),
+            "CmdOrCtrl+Shift+S".parse().ok()
+        );
     }
 }

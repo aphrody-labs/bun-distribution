@@ -152,7 +152,10 @@ struct State {
 }
 
 fn now_ms() -> f64 {
-    web_sys::window().and_then(|w| w.performance()).map(|p| p.now()).unwrap_or(0.0)
+    web_sys::window()
+        .and_then(|w| w.performance())
+        .map(|p| p.now())
+        .unwrap_or(0.0)
 }
 
 impl State {
@@ -281,9 +284,10 @@ impl State {
         {
             let mut fonts = egui::FontDefinitions::default();
             egui_phosphor::add_to_fonts(&mut fonts, egui_phosphor::Variant::Regular);
-            fonts
-                .font_data
-                .insert("phosphor-fill".into(), egui_phosphor::Variant::Fill.font_data().into());
+            fonts.font_data.insert(
+                "phosphor-fill".into(),
+                egui_phosphor::Variant::Fill.font_data().into(),
+            );
             fonts.families.insert(
                 egui::FontFamily::Name("phosphor-fill".into()),
                 vec!["phosphor-fill".into()],
@@ -345,7 +349,11 @@ impl State {
         let fps = if delta > 0.0 { 1.0 / delta } else { 0.0 };
         let elapsed = (now - self.start_ms) / 1000.0;
         self.fps_history.push_back([elapsed, fps]);
-        while self.fps_history.front().is_some_and(|e| elapsed - e[0] > 5.0) {
+        while self
+            .fps_history
+            .front()
+            .is_some_and(|e| elapsed - e[0] > 5.0)
+        {
             self.fps_history.pop_front();
         }
         let native_hz = match emulator.vi.dcr.video_format().refresh_rate() {
@@ -414,22 +422,27 @@ impl State {
             debug_state.show(&ctx, emulator);
         });
 
-        self.egui_winit.handle_platform_output(window, full_output.platform_output);
+        self.egui_winit
+            .handle_platform_output(window, full_output.platform_output);
 
         let screen_desc = egui_wgpu::ScreenDescriptor {
             size_in_pixels: [self.surface_config.width, self.surface_config.height],
             pixels_per_point: window.scale_factor() as f32,
         };
-        let tris = self.egui_ctx.tessellate(full_output.shapes, screen_desc.pixels_per_point);
+        let tris = self
+            .egui_ctx
+            .tessellate(full_output.shapes, screen_desc.pixels_per_point);
 
         for (id, deltas) in full_output.textures_delta.set.drain() {
             for delta in deltas {
-                self.egui_renderer.update_texture(&self.device, &self.queue, id, &delta);
+                self.egui_renderer
+                    .update_texture(&self.device, &self.queue, id, &delta);
             }
         }
 
-        let mut encoder =
-            self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         self.egui_renderer.update_buffers(
             &self.device,
             &self.queue,
@@ -443,7 +456,10 @@ impl State {
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
                     resolve_target: None,
-                    ops: wgpu::Operations { load: wgpu::LoadOp::Load, store: wgpu::StoreOp::Store },
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: wgpu::StoreOp::Store,
+                    },
                     depth_slice: None,
                 })],
                 depth_stencil_attachment: None,
@@ -451,7 +467,8 @@ impl State {
                 occlusion_query_set: None,
                 multiview_mask: None,
             });
-            self.egui_renderer.render(&mut rpass.forget_lifetime(), &tris, &screen_desc);
+            self.egui_renderer
+                .render(&mut rpass.forget_lifetime(), &tris, &screen_desc);
         }
         self.queue.submit([encoder.finish()]);
 
@@ -533,7 +550,11 @@ impl<const SYSTEM: SystemId> ApplicationHandler for App<SYSTEM> {
 
         let window = Arc::new(
             event_loop
-                .create_window(Window::default_attributes().with_title("Gecko").with_append(true))
+                .create_window(
+                    Window::default_attributes()
+                        .with_title("Gecko")
+                        .with_append(true),
+                )
                 .unwrap(),
         );
 
@@ -563,11 +584,11 @@ impl<const SYSTEM: SystemId> ApplicationHandler for App<SYSTEM> {
                 if let Some(state) = self.state.borrow_mut().as_mut() {
                     state.resize(size.width, size.height);
                 }
-            },
+            }
             WindowEvent::Focused(false) => {
                 self.input = HostInput::neutral_for(SYSTEM);
                 self.emulator.apply_host_input(&self.input);
-            },
+            }
             WindowEvent::CursorMoved { position, .. } => {
                 if let (HostInput::Wii { ir_pointer, .. }, Some(window)) =
                     (&mut self.input, &self.window)
@@ -581,19 +602,23 @@ impl<const SYSTEM: SystemId> ApplicationHandler for App<SYSTEM> {
                         self.emulator.apply_host_input(&self.input);
                     }
                 }
-            },
+            }
             WindowEvent::CursorLeft { .. } => {
                 if let HostInput::Wii { ir_pointer, .. } = &mut self.input {
                     *ir_pointer = None;
                     self.emulator.apply_host_input(&self.input);
                 }
-            },
+            }
             WindowEvent::KeyboardInput { event, .. } => {
                 let pressed = event.state.is_pressed();
                 if let PhysicalKey::Code(key) = event.physical_key {
                     match &mut self.input {
                         HostInput::Gc(pad) => update_pad(pad, key, pressed),
-                        HostInput::Wii { wiimote_buttons, wiimote_shake, .. } => {
+                        HostInput::Wii {
+                            wiimote_buttons,
+                            wiimote_shake,
+                            ..
+                        } => {
                             use gecko::hollywood::ipc::usb as remote;
                             let mask = match key {
                                 KeyCode::KeyZ => remote::BTN_A,
@@ -617,7 +642,7 @@ impl<const SYSTEM: SystemId> ApplicationHandler for App<SYSTEM> {
                             if key == KeyCode::Space {
                                 *wiimote_shake = pressed;
                             }
-                        },
+                        }
                     }
 
                     #[cfg(feature = "debug")]
@@ -627,7 +652,7 @@ impl<const SYSTEM: SystemId> ApplicationHandler for App<SYSTEM> {
 
                     self.emulator.apply_host_input(&self.input);
                 }
-            },
+            }
             WindowEvent::RedrawRequested => {
                 if let Some(window) = self.window.clone() {
                     if let Some(state) = self.state.borrow_mut().as_mut() {
@@ -645,7 +670,8 @@ impl<const SYSTEM: SystemId> ApplicationHandler for App<SYSTEM> {
                         self.freecam_input_blocked = self.debug_state.freecam.enabled;
 
                         if self.freecam_input_blocked {
-                            self.emulator.apply_host_input(&HostInput::neutral_for(SYSTEM));
+                            self.emulator
+                                .apply_host_input(&HostInput::neutral_for(SYSTEM));
                         } else {
                             self.emulator.apply_host_input(&self.input);
                         }
@@ -653,8 +679,8 @@ impl<const SYSTEM: SystemId> ApplicationHandler for App<SYSTEM> {
 
                     window.request_redraw();
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 }
@@ -693,8 +719,10 @@ fn launch<const SYSTEM: SystemId>(mut emulator: System<SYSTEM>, dsp_irom: Option
     emulator.apply_host_input(&input);
 
     // Install the WebSink as the emulator's render sink.
-    let action_queue: WebSinkQueue =
-        Arc::new(Mutex::new(WebSinkShared { messages: Vec::new(), epoch: 0 }));
+    let action_queue: WebSinkQueue = Arc::new(Mutex::new(WebSinkShared {
+        messages: Vec::new(),
+        epoch: 0,
+    }));
     emulator.render_sink = Box::new(WebSink {
         shared: action_queue.clone(),
         scratch: Vec::new(),
@@ -740,16 +768,16 @@ fn update_pad(pad: &mut PadStatus, key: KeyCode, pressed: bool) {
         KeyCode::KeyA => {
             set_button(&mut pad.buttons, pad::L, pressed);
             pad.trigger_left = if pressed { TRIGGER_MAX } else { TRIGGER_MIN };
-        },
+        }
         KeyCode::KeyS => {
             set_button(&mut pad.buttons, pad::R, pressed);
             pad.trigger_right = if pressed { TRIGGER_MAX } else { TRIGGER_MIN };
-        },
+        }
         KeyCode::KeyD => set_button(&mut pad.buttons, pad::Z, pressed),
         KeyCode::KeyI => set_button(&mut pad.buttons, pad::DPAD_UP, pressed),
         KeyCode::KeyK => set_button(&mut pad.buttons, pad::DPAD_DOWN, pressed),
         KeyCode::KeyJ => set_button(&mut pad.buttons, pad::DPAD_LEFT, pressed),
         KeyCode::KeyL => set_button(&mut pad.buttons, pad::DPAD_RIGHT, pressed),
-        _ => {},
+        _ => {}
     }
 }

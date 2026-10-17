@@ -14,8 +14,13 @@ fn accel(s: &str) -> Option<Accelerator> {
     if !(s.contains("Cmd+") || s.contains("Ctrl+") || s.contains("Alt+")) {
         return None;
     }
-    let mapped =
-        s.replace("Cmd+", "CmdOrCtrl+").replace(";", "Semicolon").replace("'", "Quote").replace("/", "Slash").replace("=", "Equal").replace("\\", "Backslash");
+    let mapped = s
+        .replace("Cmd+", "CmdOrCtrl+")
+        .replace(";", "Semicolon")
+        .replace("'", "Quote")
+        .replace("/", "Slash")
+        .replace("=", "Equal")
+        .replace("\\", "Backslash");
     mapped.parse().ok()
 }
 
@@ -35,25 +40,61 @@ pub fn install(app: &FilmcraftApp, ctx: egui::Context) -> (Receiver<String>, Men
     titles.push((settings_label.into(), settings.clone()));
     for it in items.iter().filter(|i| i.id.starts_with("app.settings.")) {
         let label = it.label.trim_end_matches('…').to_string();
-        let mi = MenuItem::with_id(it.id.clone(), label, it.enabled, it.shortcut.as_deref().and_then(accel));
+        let mi = MenuItem::with_id(
+            it.id.clone(),
+            label,
+            it.enabled,
+            it.shortcut.as_deref().and_then(accel),
+        );
         native.push((it.clone(), mi.clone()));
         let _ = settings.append(&mi);
     }
     // About and Discord repeat Help menu commands: same translated labels, updated with them
-    let label = |id: &str, english: &str| items.iter().find(|i| i.id == id).map_or_else(|| english.to_string(), |i| i.label.clone());
-    let about = MenuItem::with_id("app.about", label("app.about", "About FilmCraft"), true, None);
-    let discord = MenuItem::with_id("help.discord", label("help.discord", "Join the ArtCraft Discord…"), true, None);
+    let label = |id: &str, english: &str| {
+        items
+            .iter()
+            .find(|i| i.id == id)
+            .map_or_else(|| english.to_string(), |i| i.label.clone())
+    };
+    let about = MenuItem::with_id(
+        "app.about",
+        label("app.about", "About FilmCraft"),
+        true,
+        None,
+    );
+    let discord = MenuItem::with_id(
+        "help.discord",
+        label("help.discord", "Join the ArtCraft Discord…"),
+        true,
+        None,
+    );
     for (id, mi) in [("app.about", &about), ("help.discord", &discord)] {
         if let Some(it) = items.iter().find(|i| i.id == id) {
             // recorded as built (enabled, no shortcut), so the first update applies the real state
-            native.push((Item { enabled: true, shortcut: None, ..it.clone() }, mi.clone()));
+            native.push((
+                Item {
+                    enabled: true,
+                    shortcut: None,
+                    ..it.clone()
+                },
+                mi.clone(),
+            ));
         }
     }
     // the predefined items keep their native actions; our text lets them follow the language
     let predefined = [
-        (hide_label, PredefinedMenuItem::hide(Some(app.ui.language.tr(hide_label)))),
-        (hide_others_label, PredefinedMenuItem::hide_others(Some(app.ui.language.tr(hide_others_label)))),
-        (quit_label, PredefinedMenuItem::quit(Some(app.ui.language.tr(quit_label)))),
+        (
+            hide_label,
+            PredefinedMenuItem::hide(Some(app.ui.language.tr(hide_label))),
+        ),
+        (
+            hide_others_label,
+            PredefinedMenuItem::hide_others(Some(app.ui.language.tr(hide_others_label))),
+        ),
+        (
+            quit_label,
+            PredefinedMenuItem::quit(Some(app.ui.language.tr(quit_label))),
+        ),
     ];
     let [(_, hide), (_, hide_others), (_, quit)] = &predefined;
     let _ = app_menu.append_items(&[
@@ -71,12 +112,23 @@ pub fn install(app: &FilmcraftApp, ctx: egui::Context) -> (Receiver<String>, Men
     for top in MENUS {
         let sub = Submenu::new(app.ui.language.tr(top), true);
         titles.push((top.into(), sub.clone()));
-        let mine: Vec<&Item> = items.iter().filter(|i| i.path.first().map(String::as_str) == Some(top) && !i.id.starts_with("app.settings.")).collect();
+        let mine: Vec<&Item> = items
+            .iter()
+            .filter(|i| {
+                i.path.first().map(String::as_str) == Some(top)
+                    && !i.id.starts_with("app.settings.")
+            })
+            .collect();
         // submenus by path prefix (e.g. Clip ▸ Video Options ▸ Time Interpolation), created where
         // their first item appears
         let mut subs: Vec<(Vec<String>, Submenu)> = Vec::new();
         for it in mine {
-            let mi = MenuItem::with_id(it.id.clone(), &it.label, it.enabled, it.shortcut.as_deref().and_then(accel));
+            let mi = MenuItem::with_id(
+                it.id.clone(),
+                &it.label,
+                it.enabled,
+                it.shortcut.as_deref().and_then(accel),
+            );
             native.push(((*it).clone(), mi.clone()));
             let mut parent = sub.clone();
             for depth in 1..it.path.len() {
@@ -112,7 +164,11 @@ pub fn install(app: &FilmcraftApp, ctx: egui::Context) -> (Receiver<String>, Men
     });
     let mut shown_language = app.ui.language;
     let update: MenuUpdater = Box::new(move |items: &[Item]| {
-        let checked = |id: &str| items.iter().any(|it| it.id == id && it.checked == Some(true));
+        let checked = |id: &str| {
+            items
+                .iter()
+                .any(|it| it.id == id && it.checked == Some(true))
+        };
         let language = if checked("app.language.japanese") {
             filmcraft_ui_egui::i18n::Language::Ja
         } else if checked("app.language.spanish") {
@@ -148,10 +204,16 @@ pub fn install(app: &FilmcraftApp, ctx: egui::Context) -> (Receiver<String>, Men
             item.set_text(language.tr(label));
         }
         for (shown, mi) in &mut native {
-            let Some(it) = items.iter().find(|i| i.id == shown.id) else { continue };
+            let Some(it) = items.iter().find(|i| i.id == shown.id) else {
+                continue;
+            };
             if it.label != shown.label {
                 // Settings entries drop the trailing ellipsis, as when the menu was built
-                mi.set_text(if it.id.starts_with("app.settings.") { it.label.trim_end_matches('…') } else { &it.label });
+                mi.set_text(if it.id.starts_with("app.settings.") {
+                    it.label.trim_end_matches('…')
+                } else {
+                    &it.label
+                });
             }
             if it.shortcut != shown.shortcut {
                 let _ = mi.set_accelerator(it.shortcut.as_deref().and_then(accel));

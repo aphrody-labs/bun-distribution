@@ -12,9 +12,9 @@
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock, PoisonError};
 
-use tauri_plugin_aphrody::wrap::{Sidecar, sidecar};
 use tauri::webview::NewWindowResponse;
 use tauri::{AppHandle, Manager, Url, WebviewUrl, WebviewWindowBuilder};
+use tauri_plugin_aphrody::wrap::{Sidecar, sidecar};
 
 /// Launch flag opening the showcase window together with the desktop.
 pub const FLAG: &str = "--showcase";
@@ -84,16 +84,19 @@ fn build_window(app: &AppHandle, origin: Url) -> tauri::Result<()> {
 /// sidecar can take seconds to answer. A failure is logged; the desktop keeps running.
 pub fn open(app: &AppHandle) {
     if let Some(window) = app.get_webview_window(LABEL) {
-        if let Err(error) =
-            window.show().and_then(|()| window.unminimize()).and_then(|()| window.set_focus())
+        if let Err(error) = window
+            .show()
+            .and_then(|()| window.unminimize())
+            .and_then(|()| window.set_focus())
         {
             log::error!("showcase focus: {error}");
         }
         return;
     }
     let app = app.clone();
-    let spawned =
-        std::thread::Builder::new().name("aphrody-showcase-start".into()).spawn(move || {
+    let spawned = std::thread::Builder::new()
+        .name("aphrody-showcase-start".into())
+        .spawn(move || {
             let _opening = OPENING.lock().unwrap_or_else(PoisonError::into_inner);
             if app.get_webview_window(LABEL).is_some() {
                 return;
@@ -103,7 +106,7 @@ pub fn open(app: &AppHandle) {
                     if let Err(error) = build_window(&app, origin) {
                         log::error!("showcase window: {error}");
                     }
-                },
+                }
                 Err(error) => log::error!("showcase sidecar: {error}"),
             }
         });

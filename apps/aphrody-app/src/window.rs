@@ -30,7 +30,13 @@ fn adaptive_title(url: &tauri::Url, label: &str) -> String {
     let product = product
         .chars()
         .enumerate()
-        .map(|(index, ch)| if index == 0 { ch.to_ascii_uppercase() } else { ch })
+        .map(|(index, ch)| {
+            if index == 0 {
+                ch.to_ascii_uppercase()
+            } else {
+                ch
+            }
+        })
         .collect::<String>();
     format!("{product} — Aphrody")
 }
@@ -56,7 +62,13 @@ impl WindowSubsystem {
     }
 
     fn notify(&self, title: &str, body: &str) -> Result<(), SubsystemError> {
-        self.app.notification().builder().title(title).body(body).show().map_err(failed)
+        self.app
+            .notification()
+            .builder()
+            .title(title)
+            .body(body)
+            .show()
+            .map_err(failed)
     }
 }
 
@@ -123,7 +135,11 @@ impl SystemSubsystem for WindowSubsystem {
             ),
             // Not `window_close`: the admin subsystem already serves that name (Win32 `hwnd`), and a
             // duplicate tool name makes the kernel reject the whole admin registration.
-            ToolDefinition::new("window_close_label", "Close a window by label.", label_schema()),
+            ToolDefinition::new(
+                "window_close_label",
+                "Close a window by label.",
+                label_schema(),
+            ),
             ToolDefinition::new(
                 "window_set_bounds",
                 "Move and/or resize a window (physical pixels).",
@@ -170,11 +186,16 @@ impl SystemSubsystem for WindowSubsystem {
                     self.app.webview_windows().values().map(describe).collect();
                 windows.sort_by(|a, b| a["label"].as_str().cmp(&b["label"].as_str()));
                 Ok(json!(windows))
-            },
+            }
             "window_open" => {
-                let label = arguments.get("label").and_then(Value::as_str).unwrap_or_default();
+                let label = arguments
+                    .get("label")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
                 if label.is_empty()
-                    || !label.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+                    || !label
+                        .chars()
+                        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
                 {
                     return Err(SubsystemError::InvalidArguments(
                         "`label`: letters, digits, `-`, `_`".into(),
@@ -190,7 +211,10 @@ impl SystemSubsystem for WindowSubsystem {
                     window.set_focus().map_err(failed)?;
                     return Ok(describe(&window));
                 }
-                let url = arguments.get("url").and_then(Value::as_str).unwrap_or_default();
+                let url = arguments
+                    .get("url")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
                 let url: tauri::Url = url
                     .parse()
                     .map_err(|error| SubsystemError::InvalidArguments(format!("url: {error}")))?;
@@ -220,19 +244,19 @@ impl SystemSubsystem for WindowSubsystem {
                 }
                 let window = builder.build().map_err(failed)?;
                 Ok(describe(&window))
-            },
+            }
             "window_focus" => {
                 let window = self.window(&arguments)?;
                 window.show().map_err(failed)?;
                 window.unminimize().map_err(failed)?;
                 window.set_focus().map_err(failed)?;
                 Ok(describe(&window))
-            },
+            }
             "window_close_label" => {
                 let window = self.window(&arguments)?;
                 window.close().map_err(failed)?;
                 Ok(json!({"closed": window.label()}))
-            },
+            }
             "window_set_bounds" => {
                 let window = self.window(&arguments)?;
                 if let (Some(x), Some(y)) = (integer(&arguments, "x"), integer(&arguments, "y")) {
@@ -252,10 +276,14 @@ impl SystemSubsystem for WindowSubsystem {
                         .map_err(failed)?;
                 }
                 Ok(describe(&window))
-            },
+            }
             "window_set_state" => {
                 let window = self.window(&arguments)?;
-                match arguments.get("state").and_then(Value::as_str).unwrap_or_default() {
+                match arguments
+                    .get("state")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                {
                     "minimized" => window.minimize(),
                     "maximized" => window.maximize(),
                     "normal" => window.unmaximize().and_then(|()| window.unminimize()),
@@ -265,32 +293,44 @@ impl SystemSubsystem for WindowSubsystem {
                         return Err(SubsystemError::InvalidArguments(format!(
                             "unknown state `{other}`"
                         )));
-                    },
+                    }
                 }
                 .map_err(failed)?;
                 Ok(describe(&window))
-            },
+            }
             "window_set_title" => {
                 let window = self.window(&arguments)?;
-                let title = arguments.get("title").and_then(Value::as_str).unwrap_or_default();
+                let title = arguments
+                    .get("title")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
                 window.set_title(title).map_err(failed)?;
                 Ok(describe(&window))
-            },
+            }
             "desktop_notify" => {
-                let title = arguments.get("title").and_then(Value::as_str).unwrap_or("Aphrody");
-                let body = arguments.get("body").and_then(Value::as_str).unwrap_or_default();
+                let title = arguments
+                    .get("title")
+                    .and_then(Value::as_str)
+                    .unwrap_or("Aphrody");
+                let body = arguments
+                    .get("body")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
                 self.notify(title, body)?;
                 Ok(json!({"shown": true}))
-            },
+            }
             "clipboard_read" => {
                 Ok(json!({"text": self.app.clipboard().read_text().map_err(failed)?}))
-            },
+            }
             "clipboard_write" => {
-                let text =
-                    arguments.get("text").and_then(Value::as_str).unwrap_or_default().to_owned();
+                let text = arguments
+                    .get("text")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned();
                 self.app.clipboard().write_text(text).map_err(failed)?;
                 Ok(json!({"written": true}))
-            },
+            }
             other => Err(SubsystemError::UnknownTool(other.to_owned())),
         }
     }
@@ -311,7 +351,10 @@ impl SystemSubsystem for WindowSubsystem {
                     tool: "window_set_bounds".into(),
                     arguments: json!({"label": "{{label}}", "x": 960, "y": 0, "width": 960, "height": 1040}),
                 },
-                SkillStep { tool: "window_focus".into(), arguments: json!({"label": "{{label}}"}) },
+                SkillStep {
+                    tool: "window_focus".into(),
+                    arguments: json!({"label": "{{label}}"}),
+                },
             ],
         }]
     }
@@ -321,13 +364,19 @@ impl SystemSubsystem for WindowSubsystem {
         loop {
             match events.recv().await {
                 Ok(Event { kind, payload, .. }) if kind == "desktop/notify" => {
-                    let title = payload.get("title").and_then(Value::as_str).unwrap_or("Aphrody");
-                    let body = payload.get("body").and_then(Value::as_str).unwrap_or_default();
+                    let title = payload
+                        .get("title")
+                        .and_then(Value::as_str)
+                        .unwrap_or("Aphrody");
+                    let body = payload
+                        .get("body")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default();
                     if let Err(error) = self.notify(title, body) {
                         log::warn!("desktop/notify: {error}");
                     }
-                },
-                Ok(_) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {},
+                }
+                Ok(_) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {}
                 Err(tokio::sync::broadcast::error::RecvError::Closed) => return Ok(()),
             }
         }

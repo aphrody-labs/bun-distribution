@@ -14,7 +14,11 @@ fn run(args: &[&str]) -> Output {
 
 fn ok(args: &[&str]) -> String {
     let o = run(args);
-    assert!(o.status.success(), "gridcraft-cli {args:?} failed: {}", String::from_utf8_lossy(&o.stderr));
+    assert!(
+        o.status.success(),
+        "gridcraft-cli {args:?} failed: {}",
+        String::from_utf8_lossy(&o.stderr)
+    );
     String::from_utf8(o.stdout).unwrap()
 }
 
@@ -26,8 +30,14 @@ fn tmpdir(name: &str) -> PathBuf {
 
 #[test]
 fn version_and_usage() {
-    assert_eq!(ok(&["--version"]).trim(), format!("gridcraft-cli {}", env!("CARGO_PKG_VERSION")));
-    assert_eq!(ok(&["version"]).trim(), format!("gridcraft-cli {}", env!("CARGO_PKG_VERSION")));
+    assert_eq!(
+        ok(&["--version"]).trim(),
+        format!("gridcraft-cli {}", env!("CARGO_PKG_VERSION"))
+    );
+    assert_eq!(
+        ok(&["version"]).trim(),
+        format!("gridcraft-cli {}", env!("CARGO_PKG_VERSION"))
+    );
     let o = run(&["frobnicate"]);
     assert!(!o.status.success());
     assert!(String::from_utf8_lossy(&o.stderr).contains("unknown subcommand"));
@@ -72,7 +82,11 @@ fn run_then_cat_and_info_on_sample() {
         "K1:K2",
         "--quiet",
     ]);
-    assert_eq!(out.split_whitespace().collect::<Vec<_>>(), ["21", "42"], "{out}");
+    assert_eq!(
+        out.split_whitespace().collect::<Vec<_>>(),
+        ["21", "42"],
+        "{out}"
+    );
     assert!(book.exists());
 
     let table = ok(&["cat", book_s, "--range", "K1:K2"]);
@@ -111,11 +125,19 @@ fn convert_xlsx_csv_roundtrip() {
     ok(&["convert", xlsx.to_str().unwrap(), csv.to_str().unwrap()]);
     let text = std::fs::read_to_string(&csv).unwrap();
     let lines: Vec<&str> = text.lines().collect();
-    assert_eq!(lines, ["Name,Qty", "apple,3", "\"pear, green\",4", "total,7"], "{text}");
+    assert_eq!(
+        lines,
+        ["Name,Qty", "apple,3", "\"pear, green\",4", "total,7"],
+        "{text}"
+    );
     ok(&["convert", csv.to_str().unwrap(), back.to_str().unwrap()]);
     let again = ok(&["cat", back.to_str().unwrap(), "--csv"]);
     assert_eq!(again.lines().collect::<Vec<_>>(), lines);
-    let o = run(&["convert", xlsx.to_str().unwrap(), dir.join("x.unknown").to_str().unwrap()]);
+    let o = run(&[
+        "convert",
+        xlsx.to_str().unwrap(),
+        dir.join("x.unknown").to_str().unwrap(),
+    ]);
     assert!(!o.status.success());
     let _ = std::fs::remove_dir_all(dir);
 }
@@ -131,11 +153,21 @@ fn commands_and_functions() {
 
 #[test]
 fn mcp_over_stdio() {
-    let mut child = bin().arg("mcp").stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().unwrap();
+    let mut child = bin()
+        .arg("mcp")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
     {
         let stdin = child.stdin.as_mut().unwrap();
         writeln!(stdin, r#"{{"jsonrpc":"2.0","id":1,"method":"initialize","params":{{"protocolVersion":"2025-06-18"}}}}"#).unwrap();
-        writeln!(stdin, r#"{{"jsonrpc":"2.0","method":"notifications/initialized"}}"#).unwrap();
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","method":"notifications/initialized"}}"#
+        )
+        .unwrap();
         writeln!(
             stdin,
             r#"{{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{{"name":"evaluate_formula","arguments":{{"formula":"=6*7"}}}}}}"#
@@ -145,10 +177,18 @@ fn mcp_over_stdio() {
     let out = child.wait_with_output().unwrap();
     assert!(out.status.success());
     let text = String::from_utf8(out.stdout).unwrap();
-    let lines: Vec<serde_json::Value> = text.lines().map(|l| serde_json::from_str(l).unwrap()).collect();
+    let lines: Vec<serde_json::Value> = text
+        .lines()
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
     assert_eq!(lines.len(), 2, "{text}");
     assert_eq!(lines[0]["result"]["serverInfo"]["name"], "gridcraft");
-    assert!(lines[1]["result"]["content"][0]["text"].as_str().unwrap().contains("42"));
+    assert!(
+        lines[1]["result"]["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("42")
+    );
 }
 
 #[test]
@@ -156,7 +196,16 @@ fn check_exit_codes_and_json() {
     let dir = tmpdir("check");
     let book = dir.join("calc.xlsx");
     let book_s = book.to_str().unwrap();
-    ok(&["run", "--cmd", r#"cell.set={"cell":"A1","input":"2"}"#, "--cmd", r#"cell.set={"cell":"B1","input":"=A1*3"}"#, "--out", book_s, "--quiet"]);
+    ok(&[
+        "run",
+        "--cmd",
+        r#"cell.set={"cell":"A1","input":"2"}"#,
+        "--cmd",
+        r#"cell.set={"cell":"B1","input":"=A1*3"}"#,
+        "--out",
+        book_s,
+        "--quiet",
+    ]);
     // GridCraft's own file: its cached values are its own results, and it round-trips.
     let o = run(&["check", dir.to_str().unwrap()]);
     let out = String::from_utf8_lossy(&o.stdout);
@@ -171,6 +220,9 @@ fn check_exit_codes_and_json() {
     assert!(String::from_utf8_lossy(&o.stdout).contains("1 failed to open"));
     // Usage errors exit 2.
     assert_eq!(run(&["check"]).status.code(), Some(2));
-    assert_eq!(run(&["check", book_s, "--tolerance", "x"]).status.code(), Some(2));
+    assert_eq!(
+        run(&["check", book_s, "--tolerance", "x"]).status.code(),
+        Some(2)
+    );
     assert_eq!(run(&["check", book_s, "--bogus"]).status.code(), Some(2));
 }

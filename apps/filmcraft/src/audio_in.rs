@@ -20,13 +20,21 @@ pub struct CpalIn {
 
 impl CpalIn {
     pub fn new(host: &str) -> Self {
-        Self { host: host.to_string(), buf: Arc::default(), stop: None, worker: None, error: Arc::default() }
+        Self {
+            host: host.to_string(),
+            buf: Arc::default(),
+            stop: None,
+            worker: None,
+            error: Arc::default(),
+        }
     }
 }
 
 fn host(name: &str) -> cpal::Host {
     if !name.is_empty()
-        && let Some(id) = cpal::available_hosts().into_iter().find(|h| h.name() == name)
+        && let Some(id) = cpal::available_hosts()
+            .into_iter()
+            .find(|h| h.name() == name)
         && let Ok(h) = cpal::host_from_id(id)
     {
         return h;
@@ -56,8 +64,12 @@ fn report_error(error: &Mutex<Option<String>>, message: String) {
     }
 }
 
-fn append<T: cpal::Sample>(data: &[T], channels: usize, buf: &Mutex<Vec<Vec<f32>>>, error: &Mutex<Option<String>>)
-where
+fn append<T: cpal::Sample>(
+    data: &[T],
+    channels: usize,
+    buf: &Mutex<Vec<Vec<f32>>>,
+    error: &Mutex<Option<String>>,
+) where
     f32: cpal::FromSample<T>,
 {
     if lock(error).is_some() {
@@ -73,16 +85,27 @@ where
     }
     // The recorder drains at stop. Bound accumulated samples and report exhaustion instead of
     // allowing a long take or a broken/unpaced driver to exhaust the application heap.
-    let samples = b.first().map_or(0, Vec::len).saturating_mul(channels).saturating_add(data.len());
+    let samples = b
+        .first()
+        .map_or(0, Vec::len)
+        .saturating_mul(channels)
+        .saturating_add(data.len());
     let frames = data.len() / channels;
     if samples > 268_435_456 || b.iter_mut().any(|c| c.try_reserve(frames).is_err()) {
-        report_error(error, "voice-over input buffer is full; recording failed".into());
+        report_error(
+            error,
+            "voice-over input buffer is full; recording failed".into(),
+        );
         return;
     }
     for frame in data.chunks_exact(channels) {
         for (channel, sample) in b.iter_mut().zip(frame) {
             let sample = sample.to_sample::<f32>();
-            channel.push(if sample.is_finite() { sample.clamp(-1.0, 1.0) } else { 0.0 });
+            channel.push(if sample.is_finite() {
+                sample.clamp(-1.0, 1.0)
+            } else {
+                0.0
+            });
         }
     }
 }
@@ -98,7 +121,12 @@ where
 {
     let channels = usize::from(config.channels);
     let stream_error = error.clone();
-    dev.build_input_stream(config, move |data: &[T], _| append(data, channels, &buf, &error), move |e| report_error(&stream_error, e.to_string()), None)
+    dev.build_input_stream(
+        config,
+        move |data: &[T], _| append(data, channels, &buf, &error),
+        move |e| report_error(&stream_error, e.to_string()),
+        None,
+    )
 }
 
 impl AudioInput for CpalIn {
@@ -106,10 +134,16 @@ impl AudioInput for CpalIn {
         self.host = name.to_string();
     }
     fn devices(&self) -> Vec<String> {
-        host(&self.host).input_devices().map(|d| d.filter_map(|x| x.name().ok()).collect()).unwrap_or_default()
+        host(&self.host)
+            .input_devices()
+            .map(|d| d.filter_map(|x| x.name().ok()).collect())
+            .unwrap_or_default()
     }
     fn channels(&self, name: &str) -> u16 {
-        device(&host(&self.host), name).and_then(|d| d.default_input_config().ok()).map(|c| c.channels()).unwrap_or(0)
+        device(&host(&self.host), name)
+            .and_then(|d| d.default_input_config().ok())
+            .map(|c| c.channels())
+            .unwrap_or(0)
     }
     fn start(&mut self, name: &str, sample_rate: u32) -> Result<InputFormat, String> {
         self.stop();
@@ -133,36 +167,73 @@ impl AudioInput for CpalIn {
                             .supported_input_configs()
                             .ok()
                             .and_then(|it| {
-                                it.filter(|c| c.channels() > 0 && (c.min_sample_rate().0..=c.max_sample_rate().0).contains(&sample_rate))
-                                    .max_by_key(|c| (c.channels() == default.channels(), c.sample_format() == cpal::SampleFormat::F32))
-                                    .and_then(|c| c.try_with_sample_rate(cpal::SampleRate(sample_rate)))
+                                it.filter(|c| {
+                                    c.channels() > 0
+                                        && (c.min_sample_rate().0..=c.max_sample_rate().0)
+                                            .contains(&sample_rate)
+                                })
+                                .max_by_key(|c| {
+                                    (
+                                        c.channels() == default.channels(),
+                                        c.sample_format() == cpal::SampleFormat::F32,
+                                    )
+                                })
+                                .and_then(|c| c.try_with_sample_rate(cpal::SampleRate(sample_rate)))
                             })
                             .unwrap_or(default);
                         if cfg.channels() == 0 || cfg.channels() > 256 || cfg.sample_rate().0 == 0 {
                             return Err("the input device returned an invalid format".into());
                         }
-                        let fmt = InputFormat { sample_rate: cfg.sample_rate().0, channels: cfg.channels() };
+                        let fmt = InputFormat {
+                            sample_rate: cfg.sample_rate().0,
+                            channels: cfg.channels(),
+                        };
                         let format = cfg.sample_format();
                         let config = cfg.into();
                         let stream = match format {
-                            cpal::SampleFormat::I8 => input_stream::<i8>(&dev, &config, buf.clone(), error.clone()),
-                            cpal::SampleFormat::I16 => input_stream::<i16>(&dev, &config, buf.clone(), error.clone()),
-                            cpal::SampleFormat::I24 => input_stream::<cpal::I24>(&dev, &config, buf.clone(), error.clone()),
-                            cpal::SampleFormat::I32 => input_stream::<i32>(&dev, &config, buf.clone(), error.clone()),
-                            cpal::SampleFormat::I64 => input_stream::<i64>(&dev, &config, buf.clone(), error.clone()),
-                            cpal::SampleFormat::U8 => input_stream::<u8>(&dev, &config, buf.clone(), error.clone()),
-                            cpal::SampleFormat::U16 => input_stream::<u16>(&dev, &config, buf.clone(), error.clone()),
-                            cpal::SampleFormat::U32 => input_stream::<u32>(&dev, &config, buf.clone(), error.clone()),
-                            cpal::SampleFormat::U64 => input_stream::<u64>(&dev, &config, buf.clone(), error.clone()),
-                            cpal::SampleFormat::F32 => input_stream::<f32>(&dev, &config, buf.clone(), error.clone()),
-                            cpal::SampleFormat::F64 => input_stream::<f64>(&dev, &config, buf.clone(), error.clone()),
-                            other => return Err(format!("unsupported input sample format {other:?}")),
+                            cpal::SampleFormat::I8 => {
+                                input_stream::<i8>(&dev, &config, buf.clone(), error.clone())
+                            }
+                            cpal::SampleFormat::I16 => {
+                                input_stream::<i16>(&dev, &config, buf.clone(), error.clone())
+                            }
+                            cpal::SampleFormat::I24 => {
+                                input_stream::<cpal::I24>(&dev, &config, buf.clone(), error.clone())
+                            }
+                            cpal::SampleFormat::I32 => {
+                                input_stream::<i32>(&dev, &config, buf.clone(), error.clone())
+                            }
+                            cpal::SampleFormat::I64 => {
+                                input_stream::<i64>(&dev, &config, buf.clone(), error.clone())
+                            }
+                            cpal::SampleFormat::U8 => {
+                                input_stream::<u8>(&dev, &config, buf.clone(), error.clone())
+                            }
+                            cpal::SampleFormat::U16 => {
+                                input_stream::<u16>(&dev, &config, buf.clone(), error.clone())
+                            }
+                            cpal::SampleFormat::U32 => {
+                                input_stream::<u32>(&dev, &config, buf.clone(), error.clone())
+                            }
+                            cpal::SampleFormat::U64 => {
+                                input_stream::<u64>(&dev, &config, buf.clone(), error.clone())
+                            }
+                            cpal::SampleFormat::F32 => {
+                                input_stream::<f32>(&dev, &config, buf.clone(), error.clone())
+                            }
+                            cpal::SampleFormat::F64 => {
+                                input_stream::<f64>(&dev, &config, buf.clone(), error.clone())
+                            }
+                            other => {
+                                return Err(format!("unsupported input sample format {other:?}"));
+                            }
                         }
                         .map_err(|e| e.to_string())?;
                         stream.play().map_err(|e| e.to_string())?;
                         Ok((stream, fmt))
                     };
-                    let opened = std::panic::catch_unwind(std::panic::AssertUnwindSafe(open)).unwrap_or_else(|_| Err("audio input worker panicked".into()));
+                    let opened = std::panic::catch_unwind(std::panic::AssertUnwindSafe(open))
+                        .unwrap_or_else(|_| Err("audio input worker panicked".into()));
                     match opened {
                         Ok((stream, fmt)) => {
                             let _ = fmt_tx.send(Ok(fmt));

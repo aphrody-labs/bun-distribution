@@ -18,7 +18,11 @@ async fn tool(name: &str, arguments: Value) -> Result<Value, String> {
         .await
         .map_err(|error| format!("kernel initialization: {error}"))?;
     client
-        .request("tools/call", json!({ "name": name, "arguments": arguments }), KERNEL_TIMEOUT)
+        .request(
+            "tools/call",
+            json!({ "name": name, "arguments": arguments }),
+            KERNEL_TIMEOUT,
+        )
         .await
         .map_err(|error| format!("{name}: {error}"))
 }
@@ -113,7 +117,10 @@ pub async fn vps_exec(host: String, command: String) -> Result<Value, String> {
 pub async fn vps_fs_list(host: String, remote_path: String) -> Result<Value, String> {
     let infra = aphrody_kernel::InfraSubsystem::new();
     infra
-        .call("infra_sftp_list", json!({ "host": host, "path": remote_path }))
+        .call(
+            "infra_sftp_list",
+            json!({ "host": host, "path": remote_path }),
+        )
         .await
         .map_err(|e| format!("kernel infra_sftp_list error: {e}"))
 }
@@ -146,7 +153,10 @@ pub async fn vps_sync(
 pub async fn vps_git_status(host: String, repo_path: String) -> Result<Value, String> {
     let infra = aphrody_kernel::InfraSubsystem::new();
     infra
-        .call("infra_git_status", json!({ "host": host, "repo_path": repo_path }))
+        .call(
+            "infra_git_status",
+            json!({ "host": host, "repo_path": repo_path }),
+        )
         .await
         .map_err(|e| format!("kernel infra_git_status error: {e}"))
 }
@@ -242,7 +252,10 @@ pub async fn github_branches(repo_path: Option<String>) -> Result<Value, String>
 #[tauri::command]
 pub async fn gcp_status() -> Result<Value, String> {
     let cloud = aphrody_kernel::CloudSubsystem::new();
-    cloud.call("gcp_status", json!({})).await.map_err(|e| format!("kernel gcp_status error: {e}"))
+    cloud
+        .call("gcp_status", json!({}))
+        .await
+        .map_err(|e| format!("kernel gcp_status error: {e}"))
 }
 
 /// Inspect Google Cloud Storage bucket objects via the kernel's `cloud` subsystem.
@@ -250,7 +263,10 @@ pub async fn gcp_status() -> Result<Value, String> {
 pub async fn gcp_storage_list(bucket: String, prefix: Option<String>) -> Result<Value, String> {
     let cloud = aphrody_kernel::CloudSubsystem::new();
     cloud
-        .call("gcp_storage_list", json!({ "bucket": bucket, "prefix": prefix }))
+        .call(
+            "gcp_storage_list",
+            json!({ "bucket": bucket, "prefix": prefix }),
+        )
         .await
         .map_err(|e| format!("kernel gcp_storage_list error: {e}"))
 }
@@ -292,7 +308,9 @@ pub async fn config_get() -> Result<Value, String> {
     .unwrap_or_else(|_| json!({}));
 
     let config_path = aphrody_home_dir().join("config.toml");
-    let raw = tokio::fs::read_to_string(&config_path).await.unwrap_or_default();
+    let raw = tokio::fs::read_to_string(&config_path)
+        .await
+        .unwrap_or_default();
 
     Ok(json!({
         "resolved": resolved,
@@ -305,9 +323,13 @@ pub async fn config_get() -> Result<Value, String> {
 pub async fn config_save(content: String) -> Result<Value, String> {
     let config_path = aphrody_home_dir().join("config.toml");
     if let Some(parent) = config_path.parent() {
-        tokio::fs::create_dir_all(parent).await.map_err(|e| e.to_string())?;
+        tokio::fs::create_dir_all(parent)
+            .await
+            .map_err(|e| e.to_string())?;
     }
-    tokio::fs::write(&config_path, content.as_bytes()).await.map_err(|e| e.to_string())?;
+    tokio::fs::write(&config_path, content.as_bytes())
+        .await
+        .map_err(|e| e.to_string())?;
     Ok(json!({ "saved": true, "path": config_path.to_string_lossy() }))
 }
 
@@ -323,19 +345,71 @@ pub async fn env_get() -> Result<Value, String> {
     };
 
     let tracked = [
-        ("APHRODY_BIN", "Chemin vers l'exécutable binaire aphrody", "Système"),
-        ("APHRODY_MODELS_DIR", "Répertoire de stockage des modèles IA", "Modèles"),
-        ("APHRODY_AI_CHAT_MODEL", "Modèle local par défaut pour le chat", "IA & Rôles"),
-        ("APHRODY_AI_CODE_MODEL", "Modèle local spécialisé dans le code", "IA & Rôles"),
-        ("APHRODY_AI_REASONING_MODEL", "Modèle de raisonnement avancé", "IA & Rôles"),
-        ("APHRODY_AI_EMBED_MODEL", "Modèle d'embedding vectoriel (RAG)", "IA & Rôles"),
-        ("APHRODY_AI_OCR_MODEL", "Modèle de reconnaissance optique (OCR)", "IA & Rôles"),
-        ("APHRODY_AI_STT_MODEL", "Modèle de transcription audio (Whisper)", "IA & Rôles"),
-        ("APHRODY_AI_VISION_MODEL", "Modèle multimodal pour la vision", "IA & Rôles"),
-        ("RUST_LOG", "Niveau de journalisation de l'application", "Débogage"),
-        ("RUST_BACKTRACE", "Capture des traces de pile en cas d'erreur", "Débogage"),
-        ("APHRODY_YOLO", "Mode d'exécution autonome sans confirmation", "Exécution"),
-        ("APHRODY_NHITL", "Mode non-human-in-the-loop (sans approbation)", "Exécution"),
+        (
+            "APHRODY_BIN",
+            "Chemin vers l'exécutable binaire aphrody",
+            "Système",
+        ),
+        (
+            "APHRODY_MODELS_DIR",
+            "Répertoire de stockage des modèles IA",
+            "Modèles",
+        ),
+        (
+            "APHRODY_AI_CHAT_MODEL",
+            "Modèle local par défaut pour le chat",
+            "IA & Rôles",
+        ),
+        (
+            "APHRODY_AI_CODE_MODEL",
+            "Modèle local spécialisé dans le code",
+            "IA & Rôles",
+        ),
+        (
+            "APHRODY_AI_REASONING_MODEL",
+            "Modèle de raisonnement avancé",
+            "IA & Rôles",
+        ),
+        (
+            "APHRODY_AI_EMBED_MODEL",
+            "Modèle d'embedding vectoriel (RAG)",
+            "IA & Rôles",
+        ),
+        (
+            "APHRODY_AI_OCR_MODEL",
+            "Modèle de reconnaissance optique (OCR)",
+            "IA & Rôles",
+        ),
+        (
+            "APHRODY_AI_STT_MODEL",
+            "Modèle de transcription audio (Whisper)",
+            "IA & Rôles",
+        ),
+        (
+            "APHRODY_AI_VISION_MODEL",
+            "Modèle multimodal pour la vision",
+            "IA & Rôles",
+        ),
+        (
+            "RUST_LOG",
+            "Niveau de journalisation de l'application",
+            "Débogage",
+        ),
+        (
+            "RUST_BACKTRACE",
+            "Capture des traces de pile en cas d'erreur",
+            "Débogage",
+        ),
+        (
+            "APHRODY_YOLO",
+            "Mode d'exécution autonome sans confirmation",
+            "Exécution",
+        ),
+        (
+            "APHRODY_NHITL",
+            "Mode non-human-in-the-loop (sans approbation)",
+            "Exécution",
+        ),
         ("NO_PROXY", "Hôtes exemptés de proxy réseau", "Réseau"),
     ];
 
@@ -344,7 +418,10 @@ pub async fn env_get() -> Result<Value, String> {
 
     for (name, description, category) in tracked {
         let live_val = std::env::var(name).ok();
-        let file_val = ai_env.and_then(|e| e.get(name)).and_then(Value::as_str).map(String::from);
+        let file_val = ai_env
+            .and_then(|e| e.get(name))
+            .and_then(Value::as_str)
+            .map(String::from);
         let effective = live_val.or(file_val);
         variables.push(json!({
             "name": name,

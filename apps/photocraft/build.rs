@@ -16,7 +16,10 @@ fn main() {
         .set("ProductName", "PhotoCraft")
         .set("FileDescription", "PhotoCraft image editor")
         .set("CompanyName", "Learning Machines LLC")
-        .set("LegalCopyright", "Copyright (c) the PhotoCraft authors. MIT OR Apache-2.0.")
+        .set(
+            "LegalCopyright",
+            "Copyright (c) the PhotoCraft authors. MIT OR Apache-2.0.",
+        )
         .set("OriginalFilename", "photocraft.exe")
         .set("InternalName", "photocraft");
     if let Err(e) = res.compile() {

@@ -49,25 +49,43 @@ impl Autosave {
         }
         match self.policy.tick(now, s.revision, s.saved_revision) {
             Action::Nothing => {}
-            Action::WakeAfter(secs) => ctx.request_repaint_after(std::time::Duration::from_secs_f64(secs)),
+            Action::WakeAfter(secs) => {
+                ctx.request_repaint_after(std::time::Duration::from_secs_f64(secs))
+            }
             Action::WriteSnapshot(revision) => {
                 // Snapshot and meta both have to land; either failing retries the pair.
                 let failed = Rc::new(Cell::new(false));
                 let left = Rc::new(Cell::new(2u8));
-                let done = |out: Rc<RefCell<Vec<Outcome>>>, failed: Rc<Cell<bool>>, left: Rc<Cell<u8>>, ctx: egui::Context| -> opfs::Done {
+                let done = |out: Rc<RefCell<Vec<Outcome>>>,
+                            failed: Rc<Cell<bool>>,
+                            left: Rc<Cell<u8>>,
+                            ctx: egui::Context|
+                 -> opfs::Done {
                     Box::new(move |ok| {
                         failed.set(failed.get() || !ok);
                         left.set(left.get().saturating_sub(1));
                         if left.get() == 0 {
-                            out.borrow_mut().push(Outcome::Snapshot { revision, ok: !failed.get() });
+                            out.borrow_mut().push(Outcome::Snapshot {
+                                revision,
+                                ok: !failed.get(),
+                            });
                             ctx.request_repaint();
                         }
                     })
                 };
                 let meta = json!({"dirty": true, "name": s.project.name, "revision": s.revision, "time": js_sys::Date::now()});
-                let d1 = done(self.outcomes.clone(), failed.clone(), left.clone(), ctx.clone());
+                let d1 = done(
+                    self.outcomes.clone(),
+                    failed.clone(),
+                    left.clone(),
+                    ctx.clone(),
+                );
                 let d2 = done(self.outcomes.clone(), failed, left, ctx.clone());
-                opfs::write_then(SNAPSHOT.into(), filmcraft_format::encode(&s.project, false), Some(d1));
+                opfs::write_then(
+                    SNAPSHOT.into(),
+                    filmcraft_format::encode(&s.project, false),
+                    Some(d1),
+                );
                 opfs::write_then(META.into(), meta.to_string().into_bytes(), Some(d2));
             }
             Action::WriteClean => {
@@ -76,7 +94,11 @@ impl Autosave {
                     out.borrow_mut().push(Outcome::Clean { ok });
                     ctx.request_repaint();
                 });
-                opfs::write_then(META.into(), json!({"dirty": false}).to_string().into_bytes(), Some(done));
+                opfs::write_then(
+                    META.into(),
+                    json!({"dirty": false}).to_string().into_bytes(),
+                    Some(done),
+                );
             }
         }
     }
@@ -92,7 +114,11 @@ pub async fn load_snapshot() -> Option<(String, Vec<u8>)> {
         return None;
     }
     let bytes = opfs::read(SNAPSHOT).await?;
-    let name = meta.get("name").and_then(Value::as_str).unwrap_or("Recovered").to_string();
+    let name = meta
+        .get("name")
+        .and_then(Value::as_str)
+        .unwrap_or("Recovered")
+        .to_string();
     Some((format!("{name}.fcproj"), bytes))
 }
 
@@ -101,7 +127,9 @@ pub fn keep_media(path: &str, file: &web_sys::File) {
     if !opfs::available() || file.size() > KEEP_MAX {
         return;
     }
-    let Some(name) = path.strip_prefix("/files/").map(str::to_string) else { return };
+    let Some(name) = path.strip_prefix("/files/").map(str::to_string) else {
+        return;
+    };
     let blob: web_sys::Blob = file.clone().into();
     wasm_bindgen_futures::spawn_local(async move {
         if let Err(e) = opfs::store_blob(&format!("media/{name}"), &blob).await {

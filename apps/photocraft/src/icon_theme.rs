@@ -24,7 +24,11 @@ pub fn valid_name(name: &str) -> bool {
 pub fn read_small(path: &Path) -> Option<Vec<u8>> {
     use std::io::Read;
     let mut bytes = vec![];
-    std::fs::File::open(path).ok()?.take(MAX_FILE).read_to_end(&mut bytes).ok()?;
+    std::fs::File::open(path)
+        .ok()?
+        .take(MAX_FILE)
+        .read_to_end(&mut bytes)
+        .ok()?;
     Some(bytes)
 }
 
@@ -37,11 +41,22 @@ pub fn base_dirs(var: &dyn Fn(&str) -> Option<String>) -> Vec<PathBuf> {
     if let Some(home) = &home {
         dirs.push(home.join(".icons"));
     }
-    if let Some(data) = var("XDG_DATA_HOME").filter(absolute).map(PathBuf::from).or_else(|| home.map(|h| h.join(".local").join("share"))) {
+    if let Some(data) = var("XDG_DATA_HOME")
+        .filter(absolute)
+        .map(PathBuf::from)
+        .or_else(|| home.map(|h| h.join(".local").join("share")))
+    {
         dirs.push(data.join("icons"));
     }
-    let data_dirs = var("XDG_DATA_DIRS").filter(|d| !d.trim().is_empty()).unwrap_or_else(|| "/usr/local/share:/usr/share".into());
-    dirs.extend(data_dirs.split(':').filter(|d| Path::new(d).is_absolute()).map(|d| Path::new(d).join("icons")));
+    let data_dirs = var("XDG_DATA_DIRS")
+        .filter(|d| !d.trim().is_empty())
+        .unwrap_or_else(|| "/usr/local/share:/usr/share".into());
+    dirs.extend(
+        data_dirs
+            .split(':')
+            .filter(|d| Path::new(d).is_absolute())
+            .map(|d| Path::new(d).join("icons")),
+    );
     dirs
 }
 
@@ -63,14 +78,23 @@ fn section<'a>(index: &'a str, name: &str) -> Vec<(&'a str, &'a str)> {
 }
 
 fn list(value: Option<&str>) -> impl Iterator<Item = &str> {
-    value.unwrap_or_default().split(',').map(str::trim).filter(|s| !s.is_empty())
+    value
+        .unwrap_or_default()
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
 }
 
 /// How far a theme directory is from a 16 px icon at scale 1 (the spec's
 /// `DirectorySizeDistance`), then its scale: 0 is an exact fit.
 fn distance(keys: &[(&str, &str)]) -> (i64, i64) {
     let get = |k: &str| keys.iter().find(|(key, _)| *key == k).map(|(_, v)| *v);
-    let num = |k: &str, default: i64| get(k).and_then(|v| v.parse::<i64>().ok()).unwrap_or(default).clamp(0, 1 << 16);
+    let num = |k: &str, default: i64| {
+        get(k)
+            .and_then(|v| v.parse::<i64>().ok())
+            .unwrap_or(default)
+            .clamp(0, 1 << 16)
+    };
     let size = num("Size", 0);
     let scale = num("Scale", 1).max(1);
     let d = match get("Type").unwrap_or("Threshold") {
@@ -92,7 +116,9 @@ fn subdirectories(root: &Path) -> Vec<PathBuf> {
     for _ in 0..SCAN_DEPTH {
         let mut next = vec![];
         for dir in &level {
-            let Ok(entries) = std::fs::read_dir(dir) else { continue };
+            let Ok(entries) = std::fs::read_dir(dir) else {
+                continue;
+            };
             for entry in entries.flatten().take(MAX_DIRS) {
                 let path = entry.path();
                 if found.len() + next.len() < MAX_DIRS && path.is_dir() {
@@ -103,7 +129,10 @@ fn subdirectories(root: &Path) -> Vec<PathBuf> {
         found.extend(next.iter().cloned());
         level = next;
     }
-    let vector = |p: &PathBuf| !p.components().any(|c| matches!(c.as_os_str().to_str(), Some("scalable" | "symbolic")));
+    let vector = |p: &PathBuf| {
+        !p.components()
+            .any(|c| matches!(c.as_os_str().to_str(), Some("scalable" | "symbolic")))
+    };
     found.sort_by_key(|p| (vector(p), p.clone()));
     found
 }
@@ -122,7 +151,11 @@ impl Theme {
     fn unlisted(&self) -> &[PathBuf] {
         self.unlisted.get_or_init(|| {
             let listed: std::collections::HashSet<&PathBuf> = self.listed.iter().collect();
-            self.roots.iter().flat_map(|r| subdirectories(r)).filter(|d| !listed.contains(d)).collect()
+            self.roots
+                .iter()
+                .flat_map(|r| subdirectories(r))
+                .filter(|d| !listed.contains(d))
+                .collect()
         })
     }
 }
@@ -152,9 +185,18 @@ impl IconTheme {
             if !valid_name(&theme) {
                 continue;
             }
-            let roots: Vec<PathBuf> = bases.iter().map(|b| b.join(&theme)).filter(|r| r.is_dir()).collect();
+            let roots: Vec<PathBuf> = bases
+                .iter()
+                .map(|b| b.join(&theme))
+                .filter(|r| r.is_dir())
+                .collect();
             // The first index wins; a theme can still be spread over several base directories.
-            let Some(index) = roots.iter().find_map(|r| read_small(&r.join("index.theme"))) else { continue };
+            let Some(index) = roots
+                .iter()
+                .find_map(|r| read_small(&r.join("index.theme")))
+            else {
+                continue;
+            };
             let index = String::from_utf8_lossy(&index);
             let head = section(&index, "Icon Theme");
             let get = |k: &str| head.iter().find(|(key, _)| *key == k).map(|(_, v)| *v);
@@ -166,13 +208,20 @@ impl IconTheme {
                 .collect();
             subdirs.sort_by_key(|(key, _)| *key);
             // Not checked for existence: a theme lists hundreds, and the search stops at a hit.
-            let listed = subdirs.iter().flat_map(|(_, sub)| roots.iter().map(move |r| r.join(sub))).collect();
+            let listed = subdirs
+                .iter()
+                .flat_map(|(_, sub)| roots.iter().map(move |r| r.join(sub)))
+                .collect();
             for parent in list(get("Inherits")) {
                 if chain.len() < MAX_THEMES && !chain.iter().any(|t| t == parent) {
                     chain.push(parent.to_string());
                 }
             }
-            themes.push(Theme { roots, listed, unlisted: std::cell::OnceCell::new() });
+            themes.push(Theme {
+                roots,
+                listed,
+                unlisted: std::cell::OnceCell::new(),
+            });
         }
         (!themes.is_empty()).then_some(Self { themes })
     }
@@ -185,7 +234,9 @@ impl IconTheme {
         }
         let file = format!("{icon}.svg");
         let hit = |dirs: &[PathBuf]| dirs.iter().map(|d| d.join(&file)).find(|p| p.is_file());
-        self.themes.iter().find_map(|t| hit(&t.listed).or_else(|| hit(t.unlisted())))
+        self.themes
+            .iter()
+            .find_map(|t| hit(&t.listed).or_else(|| hit(t.unlisted())))
     }
 }
 
@@ -199,7 +250,10 @@ pub fn rasterize_mask(svg: &[u8], px: u32) -> Option<Vec<u8>> {
     // Glyphs are paths: no `<image>` is loaded, so an icon can't make us read another file
     // (`/dev/zero`, a huge picture) or nest an SVG.
     let opts = usvg::Options {
-        image_href_resolver: usvg::ImageHrefResolver { resolve_data: Box::new(|_, _, _| None), resolve_string: Box::new(|_, _| None) },
+        image_href_resolver: usvg::ImageHrefResolver {
+            resolve_data: Box::new(|_, _, _| None),
+            resolve_string: Box::new(|_, _| None),
+        },
         ..usvg::Options::default()
     };
     let tree = usvg::Tree::from_data(svg, &opts).ok()?;
@@ -209,10 +263,25 @@ pub fn rasterize_mask(svg: &[u8], px: u32) -> Option<Vec<u8>> {
         return None;
     }
     let s = px as f32 / side;
-    let (dx, dy) = ((px as f32 - size.width() * s) / 2.0, (px as f32 - size.height() * s) / 2.0);
+    let (dx, dy) = (
+        (px as f32 - size.width() * s) / 2.0,
+        (px as f32 - size.height() * s) / 2.0,
+    );
     let mut pixmap = tiny_skia::Pixmap::new(px, px)?;
-    resvg::render(&tree, tiny_skia::Transform::from_scale(s, s).post_translate(dx, dy), &mut pixmap.as_mut());
-    Some(pixmap.data().as_chunks::<4>().0.iter().map(|[_, _, _, a]| *a).collect())
+    resvg::render(
+        &tree,
+        tiny_skia::Transform::from_scale(s, s).post_translate(dx, dy),
+        &mut pixmap.as_mut(),
+    );
+    Some(
+        pixmap
+            .data()
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|[_, _, _, a]| *a)
+            .collect(),
+    )
 }
 
 #[cfg(test)]
@@ -221,7 +290,8 @@ mod tests {
 
     /// A throwaway icon tree: `files` are (path under the base, contents).
     fn tree(tag: &str, files: &[(&str, &str)]) -> PathBuf {
-        let base = std::env::temp_dir().join(format!("photocraft-icons-{tag}-{}", std::process::id()));
+        let base =
+            std::env::temp_dir().join(format!("photocraft-icons-{tag}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&base);
         for (path, text) in files {
             let p = base.join(path);
@@ -238,26 +308,52 @@ mod tests {
         let base = tree(
             "chain",
             &[
-                ("Child/index.theme", "[Icon Theme]\nInherits=Parent, Child\nDirectories=48,16\n[48]\nSize=48\nType=Fixed\n[16]\nSize=16\nType=Fixed\n"),
+                (
+                    "Child/index.theme",
+                    "[Icon Theme]\nInherits=Parent, Child\nDirectories=48,16\n[48]\nSize=48\nType=Fixed\n[16]\nSize=16\nType=Fixed\n",
+                ),
                 ("Child/48/a-symbolic.svg", "big"),
                 // Not in the index: still found, and before the parent's copy.
                 ("Child/symbolic/ui/d-symbolic.svg", SQUARE),
                 ("Parent/ui/d-symbolic.svg", SQUARE),
                 ("Child/16/a-symbolic.svg", SQUARE),
-                ("Parent/index.theme", "[Icon Theme]\nDirectories=ui\n[ui]\nSize=16\nMinSize=8\nMaxSize=512\nType=Scalable\n"),
+                (
+                    "Parent/index.theme",
+                    "[Icon Theme]\nDirectories=ui\n[ui]\nSize=16\nMinSize=8\nMaxSize=512\nType=Scalable\n",
+                ),
                 ("Parent/ui/b-symbolic.svg", SQUARE),
-                ("hicolor/index.theme", "[Icon Theme]\nDirectories=s\n[s]\nSize=16\nType=Scalable\n"),
+                (
+                    "hicolor/index.theme",
+                    "[Icon Theme]\nDirectories=s\n[s]\nSize=16\nType=Scalable\n",
+                ),
                 ("hicolor/s/c-symbolic.svg", SQUARE),
             ],
         );
         let theme = IconTheme::load("Child", std::slice::from_ref(&base)).expect("the theme loads");
-        assert_eq!(theme.find_svg("a-symbolic"), Some(base.join("Child/16/a-symbolic.svg")), "16 px before 48 px");
-        assert_eq!(theme.find_svg("b-symbolic"), Some(base.join("Parent/ui/b-symbolic.svg")));
-        assert_eq!(theme.find_svg("c-symbolic"), Some(base.join("hicolor/s/c-symbolic.svg")));
-        assert_eq!(theme.find_svg("d-symbolic"), Some(base.join("Child/symbolic/ui/d-symbolic.svg")), "unlisted, but the theme's own");
+        assert_eq!(
+            theme.find_svg("a-symbolic"),
+            Some(base.join("Child/16/a-symbolic.svg")),
+            "16 px before 48 px"
+        );
+        assert_eq!(
+            theme.find_svg("b-symbolic"),
+            Some(base.join("Parent/ui/b-symbolic.svg"))
+        );
+        assert_eq!(
+            theme.find_svg("c-symbolic"),
+            Some(base.join("hicolor/s/c-symbolic.svg"))
+        );
+        assert_eq!(
+            theme.find_svg("d-symbolic"),
+            Some(base.join("Child/symbolic/ui/d-symbolic.svg")),
+            "unlisted, but the theme's own"
+        );
         assert_eq!(theme.find_svg("missing"), None);
         assert_eq!(theme.find_svg("../Parent/ui/b-symbolic"), None);
-        assert!(IconTheme::load("Nowhere", std::slice::from_ref(&base)).is_some(), "hicolor still answers");
+        assert!(
+            IconTheme::load("Nowhere", std::slice::from_ref(&base)).is_some(),
+            "hicolor still answers"
+        );
         assert!(IconTheme::load("Nowhere", &[base.join("empty")]).is_none());
         let _ = std::fs::remove_dir_all(base);
     }
@@ -286,10 +382,25 @@ mod tests {
     fn distance_follows_the_spec() {
         assert_eq!(distance(&[("Size", "16"), ("Type", "Fixed")]), (0, 1));
         assert_eq!(distance(&[("Size", "22"), ("Type", "Fixed")]), (6, 1));
-        assert_eq!(distance(&[("Size", "16"), ("Scale", "2"), ("Type", "Fixed")]), (16, 2));
-        assert_eq!(distance(&[("Size", "32"), ("MinSize", "8"), ("MaxSize", "512"), ("Type", "Scalable")]), (0, 1));
+        assert_eq!(
+            distance(&[("Size", "16"), ("Scale", "2"), ("Type", "Fixed")]),
+            (16, 2)
+        );
+        assert_eq!(
+            distance(&[
+                ("Size", "32"),
+                ("MinSize", "8"),
+                ("MaxSize", "512"),
+                ("Type", "Scalable")
+            ]),
+            (0, 1)
+        );
         assert_eq!(distance(&[("Size", "48"), ("Type", "Scalable")]), (32, 1));
-        assert_eq!(distance(&[("Size", "18")]), (0, 1), "Threshold 2 by default");
+        assert_eq!(
+            distance(&[("Size", "18")]),
+            (0, 1),
+            "Threshold 2 by default"
+        );
     }
 
     #[test]
@@ -322,8 +433,22 @@ mod tests {
             _ => None,
         };
         let dirs = base_dirs(&var);
-        let want: Vec<PathBuf> = ["/home/u/.icons", "/home/u/.local/share/icons", "/a/icons", "/b/icons"].iter().map(PathBuf::from).collect();
+        let want: Vec<PathBuf> = [
+            "/home/u/.icons",
+            "/home/u/.local/share/icons",
+            "/a/icons",
+            "/b/icons",
+        ]
+        .iter()
+        .map(PathBuf::from)
+        .collect();
         assert_eq!(dirs, want);
-        assert_eq!(base_dirs(&|_| None), vec![PathBuf::from("/usr/local/share/icons"), PathBuf::from("/usr/share/icons")]);
+        assert_eq!(
+            base_dirs(&|_| None),
+            vec![
+                PathBuf::from("/usr/local/share/icons"),
+                PathBuf::from("/usr/share/icons")
+            ]
+        );
     }
 }

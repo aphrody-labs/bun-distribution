@@ -11,7 +11,10 @@ use serde_json::json;
 
 fn main() {
     let mut args = std::env::args().skip(1);
-    let out = std::path::PathBuf::from(args.next().expect("usage: gen_photos OUT_DIR [COUNT] [LONG_EDGE]"));
+    let out = std::path::PathBuf::from(
+        args.next()
+            .expect("usage: gen_photos OUT_DIR [COUNT] [LONG_EDGE]"),
+    );
     let count: usize = args.next().and_then(|c| c.parse().ok()).unwrap_or(200);
     let edge: usize = args.next().and_then(|c| c.parse().ok()).unwrap_or(2000);
     std::fs::create_dir_all(&out).expect("create output folder");
@@ -21,7 +24,8 @@ fn main() {
     for i in 0..count {
         let id = ids[i % ids.len()];
         let round = i / ids.len();
-        s.execute("library.select", &json!({"ids": [id.0]})).expect("select");
+        s.execute("library.select", &json!({"ids": [id.0]}))
+            .expect("select");
         s.execute("develop.reset", &json!({})).expect("reset");
         let v = json!({
             "light.exposure": (round as f64 * 0.37).sin() * 0.8,
@@ -41,5 +45,9 @@ fn main() {
         std::fs::create_dir_all(&dir).expect("mkdir");
         std::fs::write(dir.join(format!("LCG{:05}.jpg", i + 1)), bytes).expect("write");
     }
-    eprintln!("wrote {count} photos ({edge} px) to {} in {:.1} s", out.display(), t0.elapsed().as_secs_f64());
+    eprintln!(
+        "wrote {count} photos ({edge} px) to {} in {:.1} s",
+        out.display(),
+        t0.elapsed().as_secs_f64()
+    );
 }

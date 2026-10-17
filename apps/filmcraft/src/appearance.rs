@@ -14,13 +14,24 @@ const PORTAL_KEY: &str = "color-scheme";
 
 #[cfg(target_os = "linux")]
 fn portal_proxy() -> Option<zbus::blocking::Proxy<'static>> {
-    let conn = zbus::blocking::connection::Builder::session().ok()?.method_timeout(std::time::Duration::from_secs(2)).build().ok()?;
-    zbus::blocking::Proxy::new(&conn, "org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop", "org.freedesktop.portal.Settings").ok()
+    let conn = zbus::blocking::connection::Builder::session()
+        .ok()?
+        .method_timeout(std::time::Duration::from_secs(2))
+        .build()
+        .ok()?;
+    zbus::blocking::Proxy::new(
+        &conn,
+        "org.freedesktop.portal.Desktop",
+        "/org/freedesktop/portal/desktop",
+        "org.freedesktop.portal.Settings",
+    )
+    .ok()
 }
 
 #[cfg(target_os = "linux")]
 fn portal_theme(proxy: &zbus::blocking::Proxy<'_>) -> Option<egui::Theme> {
-    let value: zbus::zvariant::OwnedValue = proxy.call("Read", &(PORTAL_NAMESPACE, PORTAL_KEY)).ok()?;
+    let value: zbus::zvariant::OwnedValue =
+        proxy.call("Read", &(PORTAL_NAMESPACE, PORTAL_KEY)).ok()?;
     decode(portal_code(value)?)
 }
 
@@ -51,8 +62,17 @@ fn decode(code: u32) -> Option<egui::Theme> {
 /// One-shot fallback for desktops without the settings portal: runs once, by absolute path.
 #[cfg(target_os = "linux")]
 fn gtk_theme() -> Option<egui::Theme> {
-    let exe = ["/usr/bin/gsettings", "/bin/gsettings", "/usr/local/bin/gsettings"].into_iter().find(|p| std::path::Path::new(p).is_file())?;
-    let output = std::process::Command::new(exe).args(["get", "org.gnome.desktop.interface", "color-scheme"]).output().ok()?;
+    let exe = [
+        "/usr/bin/gsettings",
+        "/bin/gsettings",
+        "/usr/local/bin/gsettings",
+    ]
+    .into_iter()
+    .find(|p| std::path::Path::new(p).is_file())?;
+    let output = std::process::Command::new(exe)
+        .args(["get", "org.gnome.desktop.interface", "color-scheme"])
+        .output()
+        .ok()?;
     if !output.status.success() {
         return None;
     }
@@ -99,7 +119,9 @@ pub fn service() -> Option<filmcraft_ui_egui::SystemThemeFn> {
         let worker = move || {
             let proxy = portal_proxy();
             // Subscribe before Read so a change during startup cannot be missed.
-            let signals = proxy.as_ref().and_then(|p| p.receive_signal("SettingChanged").ok());
+            let signals = proxy
+                .as_ref()
+                .and_then(|p| p.receive_signal("SettingChanged").ok());
             let initial = proxy.as_ref().and_then(portal_theme).or_else(gtk_theme);
             publish(&worker_value, code_of(initial), || {
                 if let Some(ctx) = worker_wake.get() {
@@ -110,7 +132,11 @@ pub fn service() -> Option<filmcraft_ui_egui::SystemThemeFn> {
             let Some(signals) = signals else { return };
             // Sleeps in the signal iterator: no polling.
             for message in signals {
-                let Ok((namespace, key, changed)) = message.body().deserialize::<(String, String, zbus::zvariant::OwnedValue)>() else {
+                let Ok((namespace, key, changed)) =
+                    message
+                        .body()
+                        .deserialize::<(String, String, zbus::zvariant::OwnedValue)>()
+                else {
                     continue;
                 };
                 if namespace != PORTAL_NAMESPACE || key != PORTAL_KEY {
@@ -173,16 +199,35 @@ mod tests {
         assert_eq!(super::decode(1), Some(egui::Theme::Dark));
         assert_eq!(super::decode(2), Some(egui::Theme::Light));
         assert_eq!(super::decode(9), None);
-        let nested = zbus::zvariant::Value::Value(Box::new(zbus::zvariant::Value::Value(Box::new(zbus::zvariant::Value::U32(2)))));
-        assert_eq!(super::portal_code(zbus::zvariant::OwnedValue::try_from(nested).unwrap()), Some(2));
+        let nested = zbus::zvariant::Value::Value(Box::new(zbus::zvariant::Value::Value(
+            Box::new(zbus::zvariant::Value::U32(2)),
+        )));
+        assert_eq!(
+            super::portal_code(zbus::zvariant::OwnedValue::try_from(nested).unwrap()),
+            Some(2)
+        );
         let plain = zbus::zvariant::OwnedValue::from(1u32);
         assert_eq!(super::portal_code(plain), Some(1));
-        let wrong = zbus::zvariant::OwnedValue::try_from(zbus::zvariant::Value::from("dark")).unwrap();
+        let wrong =
+            zbus::zvariant::OwnedValue::try_from(zbus::zvariant::Value::from("dark")).unwrap();
         assert_eq!(super::portal_code(wrong), None);
-        assert_eq!(super::parse_gtk_scheme("'prefer-light'\n"), Some(egui::Theme::Light));
-        assert_eq!(super::parse_gtk_scheme("'prefer-dark'\n"), Some(egui::Theme::Dark));
+        assert_eq!(
+            super::parse_gtk_scheme("'prefer-light'\n"),
+            Some(egui::Theme::Light)
+        );
+        assert_eq!(
+            super::parse_gtk_scheme("'prefer-dark'\n"),
+            Some(egui::Theme::Dark)
+        );
         assert_eq!(super::parse_gtk_scheme("'default'\n"), None);
         assert_eq!(super::parse_gtk_scheme(""), None);
-        assert_eq!((super::code_of(None), super::code_of(Some(egui::Theme::Dark)), super::code_of(Some(egui::Theme::Light))), (0, 1, 2));
+        assert_eq!(
+            (
+                super::code_of(None),
+                super::code_of(Some(egui::Theme::Dark)),
+                super::code_of(Some(egui::Theme::Light))
+            ),
+            (0, 1, 2)
+        );
     }
 }

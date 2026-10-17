@@ -74,8 +74,15 @@ impl Events {
         if sequence > self.sequence {
             return Err(("InvalidArgument", "event cursor is in the future".into()));
         }
-        if self.items.front().is_some_and(|first| sequence + 1 < first.sequence) {
-            return Err(("EventGap", "event queue overflowed; refresh the window state".into()));
+        if self
+            .items
+            .front()
+            .is_some_and(|first| sequence + 1 < first.sequence)
+        {
+            return Err((
+                "EventGap",
+                "event queue overflowed; refresh the window state".into(),
+            ));
         }
         Ok(json!({"sequence": self.sequence,
       "events": self.items.iter().filter(|event| event.sequence > sequence).collect::<Vec<_>>() }))
@@ -102,7 +109,10 @@ fn authorize(policy: &Policy, method: &str) -> HostResult {
     if let Some(grant) = permission(method)
         && !policy.grants.contains(grant)
     {
-        return Err(("PermissionDenied", format!("desktop grant {grant} is required")));
+        return Err((
+            "PermissionDenied",
+            format!("desktop grant {grant} is required"),
+        ));
     }
     Ok(Value::Null)
 }
@@ -113,22 +123,29 @@ fn url_for(policy: &Policy, input: &str) -> Result<Url, (&'static str, String)> 
     if !(url.scheme() == "https" || (url.scheme() == "http" && loopback))
         || !url.username().is_empty()
         || url.password().is_some()
-        || !policy.allowed_origins.contains(&url.origin().ascii_serialization())
+        || !policy
+            .allowed_origins
+            .contains(&url.origin().ascii_serialization())
     {
-        return Err(("PermissionDenied", "URL is outside the desktop origin policy".into()));
+        return Err((
+            "PermissionDenied",
+            "URL is outside the desktop origin policy".into(),
+        ));
     }
     Ok(url)
 }
 
 fn string<'a>(params: &'a Value, key: &str) -> Result<&'a str, (&'static str, String)> {
-    params[key].as_str().ok_or(("InvalidArgument", format!("{key} must be a string")))
+    params[key]
+        .as_str()
+        .ok_or(("InvalidArgument", format!("{key} must be a string")))
 }
 
 fn dimension(params: &Value, key: &str, default: f64) -> Result<f64, (&'static str, String)> {
     let value = match params.get(key) {
-        Some(value) => {
-            value.as_f64().ok_or(("InvalidArgument", format!("{key} must be numeric")))?
-        },
+        Some(value) => value
+            .as_f64()
+            .ok_or(("InvalidArgument", format!("{key} must be numeric")))?,
         None => default,
     };
     if !(64.0..=8192.0).contains(&value) {
@@ -152,7 +169,9 @@ fn execute(
     }
     if request.method == "shutdown" {
         for window in app.webview_windows().values() {
-            window.destroy().map_err(|error| ("Internal", error.to_string()))?;
+            window
+                .destroy()
+                .map_err(|error| ("Internal", error.to_string()))?;
         }
         return Ok(json!({"stopped": true}));
     }
@@ -173,43 +192,43 @@ fn execute(
         let navigation_label = label.clone();
         let permission_label = label.clone();
         let window = WebviewWindowBuilder::new(app, &label, WebviewUrl::External(url))
-      .title(title)
-      .inner_size(
-        dimension(&request.params, "width", 800.0)?,
-        dimension(&request.params, "height", 600.0)?,
-      )
-      .incognito(true)
-      // Pages receive no application commands, host token, filesystem, downloads or popups.
-      .on_navigation(move |url| {
-        let allowed = url.origin() == origin;
-        if !allowed {
-          lock(&navigation_events).push(
-            &navigation_label,
-            "navigation-denied",
-            json!({"origin": url.origin().ascii_serialization()}),
-          );
-        }
-        allowed
-      })
-      .on_new_window(|_, _| NewWindowResponse::Deny)
-      .on_download(|_, _| false)
-      .on_permission_request(move |_, permission| {
-        lock(&permission_events).push(
-          &permission_label,
-          "permission-denied",
-          json!({"permission": format!("{permission:?}")}),
-        );
-        PermissionResponse::Deny
-      })
-      .on_page_load(move |window, payload| {
-        let kind = match payload.event() {
-          PageLoadEvent::Started => "load-started",
-          PageLoadEvent::Finished => "load-finished",
-        };
-        lock(&page_events).push(window.label(), kind, Value::Null);
-      })
-      .build()
-      .map_err(|error| ("Internal", error.to_string()))?;
+            .title(title)
+            .inner_size(
+                dimension(&request.params, "width", 800.0)?,
+                dimension(&request.params, "height", 600.0)?,
+            )
+            .incognito(true)
+            // Pages receive no application commands, host token, filesystem, downloads or popups.
+            .on_navigation(move |url| {
+                let allowed = url.origin() == origin;
+                if !allowed {
+                    lock(&navigation_events).push(
+                        &navigation_label,
+                        "navigation-denied",
+                        json!({"origin": url.origin().ascii_serialization()}),
+                    );
+                }
+                allowed
+            })
+            .on_new_window(|_, _| NewWindowResponse::Deny)
+            .on_download(|_, _| false)
+            .on_permission_request(move |_, permission| {
+                lock(&permission_events).push(
+                    &permission_label,
+                    "permission-denied",
+                    json!({"permission": format!("{permission:?}")}),
+                );
+                PermissionResponse::Deny
+            })
+            .on_page_load(move |window, payload| {
+                let kind = match payload.event() {
+                    PageLoadEvent::Started => "load-started",
+                    PageLoadEvent::Finished => "load-finished",
+                };
+                lock(&page_events).push(window.label(), kind, Value::Null);
+            })
+            .build()
+            .map_err(|error| ("Internal", error.to_string()))?;
         let window_events = Arc::clone(events);
         let event_label = label.clone();
         window.on_window_event(move |event| {
@@ -237,7 +256,7 @@ fn execute(
                 return Err(("InvalidArgument", "title is longer than 1024 bytes".into()));
             }
             window.set_title(title).map(|()| Value::Null)
-        },
+        }
         "window.resize" => window
             .set_size(tauri::LogicalSize::new(
                 dimension(&request.params, "width", 800.0)?,
@@ -245,10 +264,14 @@ fn execute(
             ))
             .map(|()| Value::Null),
         "window.info" => {
-            let size = window.inner_size().map_err(|error| ("Internal", error.to_string()))?;
-            Ok(json!({"window": label, "width": size.width, "height": size.height,
-        "visible": window.is_visible().map_err(|error| ("Internal", error.to_string()))?}))
-        },
+            let size = window
+                .inner_size()
+                .map_err(|error| ("Internal", error.to_string()))?;
+            Ok(
+                json!({"window": label, "width": size.width, "height": size.height,
+        "visible": window.is_visible().map_err(|error| ("Internal", error.to_string()))?}),
+            )
+        }
         _ => return Err(("InvalidArgument", "unknown desktop method".into())),
     }
     .map_err(|error| ("Internal", error.to_string()))
@@ -434,11 +457,13 @@ pub fn run(mut context: tauri::Context) -> Result<i32, Box<dyn std::error::Error
   }).build(context)?;
     let exit_stopping = Arc::clone(&stopping);
     let code = app.run_return(move |_, event| match event {
-        tauri::RunEvent::ExitRequested { code: None, api, .. } => api.prevent_exit(),
+        tauri::RunEvent::ExitRequested {
+            code: None, api, ..
+        } => api.prevent_exit(),
         tauri::RunEvent::Exit => {
             exit_stopping.store(true, Ordering::Release);
-        },
-        _ => {},
+        }
+        _ => {}
     });
     stopping.store(true, Ordering::Release);
     let joined = lock(&worker).take().map(|worker| worker.join());
@@ -467,7 +492,10 @@ mod tests {
     #[test]
     fn native_policy_denies_undeclared_grants_and_origins() {
         assert!(authorize(&policy(), "window.create").is_ok());
-        assert_eq!(authorize(&policy(), "window.title").unwrap_err().0, "PermissionDenied");
+        assert_eq!(
+            authorize(&policy(), "window.title").unwrap_err().0,
+            "PermissionDenied"
+        );
         assert!(url_for(&policy(), "https://example.test/page").is_ok());
         for url in [
             "https://evil.test",

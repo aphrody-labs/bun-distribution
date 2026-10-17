@@ -45,7 +45,13 @@ pub fn hook(ctx: &egui::Context) -> (Hook, Launcher) {
         let _ = queue_tx.send((req, answer));
         rx
     });
-    (hook, Launcher { queue, ctx: ctx.clone() })
+    (
+        hook,
+        Launcher {
+            queue,
+            ctx: ctx.clone(),
+        },
+    )
 }
 
 impl Launcher {
@@ -56,22 +62,32 @@ impl Launcher {
             // Built here, on the UI thread: macOS shows the panel as a sheet on the window now.
             let dialog = rfd::AsyncFileDialog::new().set_parent(parent);
             let picking: Picking = match req {
-                FileDialogRequest::Open { purpose } => Box::pin(open_filters(dialog, &purpose).pick_file()),
+                FileDialogRequest::Open { purpose } => {
+                    Box::pin(open_filters(dialog, &purpose).pick_file())
+                }
                 FileDialogRequest::Save { name } => {
                     let exts = save_exts(&name);
-                    Box::pin(dialog.set_file_name(name).add_filter("Documents", &exts).save_file())
+                    Box::pin(
+                        dialog
+                            .set_file_name(name)
+                            .add_filter("Documents", &exts)
+                            .save_file(),
+                    )
                 }
             };
             let ctx = self.ctx.clone();
-            let waiting = std::thread::Builder::new().name("file dialog".into()).spawn(move || {
-                // The picker only starts when first polled: without a system dialog it never does.
-                let picked = match no_system_dialog() {
-                    Some(reason) => Err(reason),
-                    None => Ok(pollster::block_on(picking).map(|f| f.path().to_string_lossy().to_string())),
-                };
-                let _ = answer.send(picked);
-                ctx.request_repaint();
-            });
+            let waiting = std::thread::Builder::new()
+                .name("file dialog".into())
+                .spawn(move || {
+                    // The picker only starts when first polled: without a system dialog it never does.
+                    let picked = match no_system_dialog() {
+                        Some(reason) => Err(reason),
+                        None => Ok(pollster::block_on(picking)
+                            .map(|f| f.path().to_string_lossy().to_string())),
+                    };
+                    let _ = answer.send(picked);
+                    ctx.request_repaint();
+                });
             // The answer's sender went with the closure, so the app sees the dialog as cancelled.
             if let Err(e) = waiting {
                 log::error!("couldn't wait for the file dialog: {e}");
@@ -119,7 +135,9 @@ fn portal_or_zenity_missing() -> Option<String> {
         .stderr(std::process::Stdio::null())
         .status();
     match portal {
-        Ok(status) if !status.success() => Some("no xdg-desktop-portal FileChooser on the session bus and no zenity".into()),
+        Ok(status) if !status.success() => {
+            Some("no xdg-desktop-portal FileChooser on the session bus and no zenity".into())
+        }
         Ok(_) => None,
         Err(e) => {
             log::debug!("couldn't ask D-Bus for the file chooser portal: {e}");
@@ -137,7 +155,8 @@ fn portal_or_zenity_missing() -> Option<String> {
 /// Whether an executable named `program` is in a `PATH` folder.
 #[cfg(all(unix, not(target_os = "macos")))]
 fn on_path(program: &str) -> bool {
-    std::env::var_os("PATH").is_some_and(|paths| std::env::split_paths(&paths).any(|dir| dir.join(program).is_file()))
+    std::env::var_os("PATH")
+        .is_some_and(|paths| std::env::split_paths(&paths).any(|dir| dir.join(program).is_file()))
 }
 
 /// The file types Save As offers: every format the engine saves, with the suggested name's own
@@ -154,7 +173,12 @@ fn save_exts(name: &str) -> Vec<String> {
         .unwrap_or_else(|| "docx".to_string());
     let mut exts: Vec<String> = Vec::with_capacity(wordcraft_engine::io::SAVE_EXTS.len());
     exts.push(suggested.clone());
-    exts.extend(wordcraft_engine::io::SAVE_EXTS.iter().filter(|e| **e != suggested).map(|e| (*e).to_string()));
+    exts.extend(
+        wordcraft_engine::io::SAVE_EXTS
+            .iter()
+            .filter(|e| **e != suggested)
+            .map(|e| (*e).to_string()),
+    );
     exts
 }
 
@@ -175,7 +199,11 @@ mod tests {
         assert_eq!(save_exts("mystery.rtf2")[0], "docx");
         // Every savable format is still offered, once.
         let exts = save_exts("novel.docx");
-        assert!(wordcraft_engine::io::SAVE_EXTS.iter().all(|e| exts.iter().any(|x| x == e)));
+        assert!(
+            wordcraft_engine::io::SAVE_EXTS
+                .iter()
+                .all(|e| exts.iter().any(|x| x == e))
+        );
         assert_eq!(exts.len(), wordcraft_engine::io::SAVE_EXTS.len());
     }
 }

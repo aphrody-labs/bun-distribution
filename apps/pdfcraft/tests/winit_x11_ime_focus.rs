@@ -9,12 +9,22 @@ fn winit_focuses_the_x11_input_context_it_replaces() {
     // once the queued requests are handled (rust-windowing/winit#4727). A re-vendored copy without
     // the patch would silently bring the bug back: re-apply the patch, or drop the copy once a winit
     // 0.30 release has the fix.
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/libraries/pdfcraft/apps");
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../docs/libraries/pdfcraft/apps");
     let x11 = root.join("vendor/winit/src/platform_impl/linux/x11");
     let ime = std::fs::read_to_string(x11.join("ime/mod.rs")).unwrap();
     let set_ime_allowed = "allowed: bool,\n    ) -> Result<bool, ImeContextCreationError> {";
-    assert!(ime.contains(set_ime_allowed), "set_ime_allowed no longer says whether it replaced the context");
+    assert!(
+        ime.contains(set_ime_allowed),
+        "set_ime_allowed no longer says whether it replaced the context"
+    );
     let events = std::fs::read_to_string(x11.join("event_processor.rs")).unwrap();
-    assert!(events.contains("Ok(true) => ime_focus = Some(window_id),"), "a replaced input context is not focused");
-    assert!(events.contains("let _ = ime.get_mut().focus(window_id);"), "a replaced input context is not focused");
+    assert!(
+        events.contains("Ok(true) => ime_focus = Some(window_id),"),
+        "a replaced input context is not focused"
+    );
+    assert!(
+        events.contains("let _ = ime.get_mut().focus(window_id);"),
+        "a replaced input context is not focused"
+    );
 }

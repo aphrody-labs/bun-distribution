@@ -24,7 +24,10 @@ impl AppleEvents {
     /// that launched the app (a Finder double-click) is caught too.
     pub fn install() -> Self {
         let (registration, inbox) = Registration::install();
-        Self { _registration: registration, inbox }
+        Self {
+            _registration: registration,
+            inbox,
+        }
     }
 
     /// The queue the UI drains (`PdfCraftApp::os_events`); events arriving later wake `ctx`.
@@ -37,7 +40,12 @@ impl AppleEvents {
                 .drain()
                 .into_iter()
                 .map(|e| match e {
-                    Event::Open(paths) => OsEvent::Open(paths.into_iter().map(|p| p.to_string_lossy().into_owned()).collect()),
+                    Event::Open(paths) => OsEvent::Open(
+                        paths
+                            .into_iter()
+                            .map(|p| p.to_string_lossy().into_owned())
+                            .collect(),
+                    ),
                     Event::Quit => OsEvent::Quit,
                 })
                 .collect()

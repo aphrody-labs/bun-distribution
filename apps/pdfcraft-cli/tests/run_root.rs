@@ -43,12 +43,21 @@ fn script_image_output_is_confined_to_the_root() {
     let abs = |rel: &str| base.join(rel).to_str().unwrap().to_owned();
 
     #[cfg_attr(not(windows), allow(unused_mut))]
-    let mut refused = vec![abs("outside/escaped.png"), abs("outside/existing.txt"), "../outside/escaped.png".into(), abs("outside/new/dir/x.png")];
+    let mut refused = vec![
+        abs("outside/escaped.png"),
+        abs("outside/existing.txt"),
+        "../outside/escaped.png".into(),
+        abs("outside/new/dir/x.png"),
+    ];
     #[cfg(windows)]
     {
         refused.push(r"..\outside\escaped.png".into());
         refused.push(r"\\pdfcraft-test.invalid\share\x.png".into());
-        if let Some(drive) = (b'D'..=b'Z').rev().map(|d| format!("{}:\\", d as char)).find(|d| !Path::new(d).exists()) {
+        if let Some(drive) = (b'D'..=b'Z')
+            .rev()
+            .map(|d| format!("{}:\\", d as char))
+            .find(|d| !Path::new(d).exists())
+        {
             refused.push(format!("{drive}x.png"));
         }
     }
@@ -56,23 +65,40 @@ fn script_image_output_is_confined_to_the_root() {
         let o = render_to(&base, &base, Some(&root), out);
         let stderr = String::from_utf8_lossy(&o.stderr);
         assert!(!o.status.success(), "{out}: expected a refusal");
-        assert!(stderr.contains("step 2 (page_render)") && stderr.contains("is outside the allowed directory"), "{out}: {stderr}");
+        assert!(
+            stderr.contains("step 2 (page_render)")
+                && stderr.contains("is outside the allowed directory"),
+            "{out}: {stderr}"
+        );
     }
     assert!(!base.join("outside/escaped.png").exists() && !base.join("outside/new").exists());
-    assert_eq!(std::fs::read_to_string(base.join("outside/existing.txt")).unwrap(), "SENTINEL\n");
+    assert_eq!(
+        std::fs::read_to_string(base.join("outside/existing.txt")).unwrap(),
+        "SENTINEL\n"
+    );
 
     // "." is the root itself: refused, without staging a temporary file beside the root. The
     // file at the old fixed staging name and the listing are canaries; staging names are random.
     std::fs::write(base.join(".root.pdfcraft-tmp"), "SENTINEL\n").unwrap();
     let listing = || {
-        let mut names: Vec<_> = std::fs::read_dir(&base).unwrap().map(|e| e.unwrap().file_name()).collect();
+        let mut names: Vec<_> = std::fs::read_dir(&base)
+            .unwrap()
+            .map(|e| e.unwrap().file_name())
+            .collect();
         names.sort();
         names
     };
     let before = listing();
     let o = render_to(&base, &base, Some(&root), ".");
-    assert!(!o.status.success() && String::from_utf8_lossy(&o.stderr).contains("is a folder"), "{}", String::from_utf8_lossy(&o.stderr));
-    assert_eq!(std::fs::read_to_string(base.join(".root.pdfcraft-tmp")).unwrap(), "SENTINEL\n");
+    assert!(
+        !o.status.success() && String::from_utf8_lossy(&o.stderr).contains("is a folder"),
+        "{}",
+        String::from_utf8_lossy(&o.stderr)
+    );
+    assert_eq!(
+        std::fs::read_to_string(base.join(".root.pdfcraft-tmp")).unwrap(),
+        "SENTINEL\n"
+    );
     assert_eq!(listing(), before, "nothing was left beside the root");
 
     // A relative path resolves inside the root, not in the working directory.
@@ -80,9 +106,16 @@ fn script_image_output_is_confined_to_the_root() {
     assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
     assert!(is_png(&root.join("relative.png")) && !base.join("relative.png").exists());
     // So does an absolute one inside the root, and a new folder in it.
-    for (out, file) in [(abs("root/inside.png"), "inside.png"), ("pages/one.png".into(), "pages/one.png")] {
+    for (out, file) in [
+        (abs("root/inside.png"), "inside.png"),
+        ("pages/one.png".into(), "pages/one.png"),
+    ] {
         let o = render_to(&base, &base, Some(&root), &out);
-        assert!(o.status.success(), "{out}: {}", String::from_utf8_lossy(&o.stderr));
+        assert!(
+            o.status.success(),
+            "{out}: {}",
+            String::from_utf8_lossy(&o.stderr)
+        );
         assert!(is_png(&root.join(file)), "{out}");
     }
 
@@ -94,7 +127,11 @@ fn script_image_output_is_confined_to_the_root() {
     #[cfg(unix)]
     {
         let o = render_to(&base, &base, None, "/dev/stdout");
-        assert!(o.status.success() && o.stdout.windows(PNG.len()).any(|w| w == PNG), "{}", String::from_utf8_lossy(&o.stderr));
+        assert!(
+            o.status.success() && o.stdout.windows(PNG.len()).any(|w| w == PNG),
+            "{}",
+            String::from_utf8_lossy(&o.stderr)
+        );
     }
     let _ = std::fs::remove_dir_all(&base);
 }

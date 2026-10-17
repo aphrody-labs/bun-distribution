@@ -54,8 +54,7 @@ pub const SKIP_ENV: &str = "VECTORCRAFT_GPU_SKIP";
 const NAME_ENV: &str = "WGPU_ADAPTER_NAME";
 
 /// Where to read how to choose another adapter, for the error that ends the app.
-const HELP: &str =
-    "to choose a graphics adapter, see https://github.com/storytold/vectorcraft/blob/main/docs/development.md#desktop-graphics-processor";
+const HELP: &str = "to choose a graphics adapter, see https://github.com/storytold/vectorcraft/blob/main/docs/development.md#desktop-graphics-processor";
 
 /// Frames the UI ran before the failure, below which it was still starting up. The failure in
 /// #502 came on the first or second frame; later, the adapter has proved itself, and a lost
@@ -71,7 +70,11 @@ pub const FIRST_FRAME_TIMEOUT: Duration = Duration::from_secs(20);
 /// (the integrated one avoids the flicker of #306). Elsewhere, the system's own order: Mesa's
 /// device-select layer puts the GPU the desktop runs on first (the integrated one on hybrid
 /// laptops), and a Wayland compositor may not show frames from another GPU (#502).
-pub const AUTOMATIC: PowerPreference = if cfg!(any(windows, target_os = "macos")) { PowerPreference::LowPower } else { PowerPreference::None };
+pub const AUTOMATIC: PowerPreference = if cfg!(any(windows, target_os = "macos")) {
+    PowerPreference::LowPower
+} else {
+    PowerPreference::None
+};
 
 /// The power preference that orders the adapters: the `WGPU_POWER_PREF` environment variable
 /// (`low`, `high`, `none`) when set, otherwise Preferences › Performance › Graphics Processor
@@ -95,13 +98,24 @@ pub fn automatic(pref: Option<&str>, env: Option<PowerPreference>) -> bool {
 
 /// The GPUs to rank first: those that drive a display, when the choice is [`automatic`].
 pub fn preferred_displays(pref: Option<&str>, env: Option<PowerPreference>) -> Vec<DisplayGpu> {
-    if automatic(pref, env) { display_gpus() } else { Vec::new() }
+    if automatic(pref, env) {
+        display_gpus()
+    } else {
+        Vec::new()
+    }
 }
 
 /// The GPU to rank first: the one the Wayland compositor draws with, when the choice is
 /// [`automatic`].
-pub fn preferred_compositor(pref: Option<&str>, env: Option<PowerPreference>) -> Option<(u32, u32)> {
-    if automatic(pref, env) { crate::compositor_gpu::compositor_gpu() } else { None }
+pub fn preferred_compositor(
+    pref: Option<&str>,
+    env: Option<PowerPreference>,
+) -> Option<(u32, u32)> {
+    if automatic(pref, env) {
+        crate::compositor_gpu::compositor_gpu()
+    } else {
+        None
+    }
 }
 
 /// The graphics backends the window starts with: on Windows Direct3D 12, falling back to OpenGL,
@@ -110,7 +124,11 @@ pub fn preferred_compositor(pref: Option<&str>, env: Option<PowerPreference>) ->
 /// `igvk64.dll`, #806) crashed the app before its window appeared. DX12 is Windows' own backend,
 /// as in PdfCraft. Elsewhere, `default`.
 pub fn backends(default: Backends, env_set: bool) -> Backends {
-    if cfg!(windows) && !env_set { Backends::DX12 | Backends::GL } else { default }
+    if cfg!(windows) && !env_set {
+        Backends::DX12 | Backends::GL
+    } else {
+        default
+    }
 }
 
 /// The largest texture side to ask the device for, which bounds the window's surface: the
@@ -172,7 +190,13 @@ pub struct DisplayGpu {
 
 impl std::fmt::Display for DisplayGpu {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:04x}:{:04x}{}", self.pci.0, self.pci.1, if self.primary { " (primary)" } else { "" })
+        write!(
+            f,
+            "{:04x}:{:04x}{}",
+            self.pci.0,
+            self.pci.1,
+            if self.primary { " (primary)" } else { "" }
+        )
     }
 }
 
@@ -225,7 +249,9 @@ fn windows_display_gpus() -> Vec<DisplayGpu> {
             continue;
         }
         // Remote Desktop and other non-PCI devices (`ROOT\BasicDisplay\0000`) are left out.
-        let Some(pci) = pci_ids(&device.DeviceID()) else { continue };
+        let Some(pci) = pci_ids(&device.DeviceID()) else {
+            continue;
+        };
         add_display_gpu(&mut gpus, pci, device.StateFlags.has(Flags::PRIMARY_DEVICE));
     }
     gpus
@@ -238,7 +264,11 @@ fn pci_ids(device_id: &str) -> Option<(u32, u32)> {
     let field = |key: &str| {
         device_id.split(['\\', '&']).find_map(|part| {
             let (name, hex) = part.split_at_checked(key.len())?;
-            if name.eq_ignore_ascii_case(key) { u32::from_str_radix(hex, 16).ok() } else { None }
+            if name.eq_ignore_ascii_case(key) {
+                u32::from_str_radix(hex, 16).ok()
+            } else {
+                None
+            }
         })
     };
     Some((field("VEN_")?, field("DEV_")?))
@@ -253,17 +283,27 @@ fn linux_display_gpus(drm: &std::path::Path) -> Vec<DisplayGpu> {
         u32::from_str_radix(s.trim().trim_start_matches("0x"), 16).ok()
     };
     let mut gpus = Vec::new();
-    let Ok(entries) = std::fs::read_dir(drm) else { return gpus };
+    let Ok(entries) = std::fs::read_dir(drm) else {
+        return gpus;
+    };
     // A machine has a handful of connectors; the cap only bounds a pathological sysfs.
     for entry in entries.flatten().take(256) {
         let name = entry.file_name();
-        let Some((card, connector)) = name.to_str().and_then(|n| n.split_once('-')) else { continue };
-        let connected = std::fs::read_to_string(entry.path().join("status")).is_ok_and(|s| s.trim() == "connected");
+        let Some((card, connector)) = name.to_str().and_then(|n| n.split_once('-')) else {
+            continue;
+        };
+        let connected = std::fs::read_to_string(entry.path().join("status"))
+            .is_ok_and(|s| s.trim() == "connected");
         if !connected {
             continue;
         }
         let device = drm.join(card).join("device");
-        let (Some(v), Some(d)) = (read_hex(device.join("vendor")), read_hex(device.join("device"))) else { continue };
+        let (Some(v), Some(d)) = (
+            read_hex(device.join("vendor")),
+            read_hex(device.join("device")),
+        ) else {
+            continue;
+        };
         add_display_gpu(&mut gpus, (v, d), is_internal_panel(connector));
     }
     gpus
@@ -272,7 +312,9 @@ fn linux_display_gpus(drm: &std::path::Path) -> Vec<DisplayGpu> {
 /// A laptop's built-in panel: an embedded DisplayPort, LVDS or DSI connector.
 #[cfg(any(target_os = "linux", test))]
 fn is_internal_panel(connector: &str) -> bool {
-    ["eDP", "LVDS", "DSI"].iter().any(|kind| connector.starts_with(kind))
+    ["eDP", "LVDS", "DSI"]
+        .iter()
+        .any(|kind| connector.starts_with(kind))
 }
 
 /// `backend:vendor:device`, e.g. `Vulkan:1002:164e` (PCI ids, as `MESA_VK_DEVICE_SELECT` takes them).
@@ -307,10 +349,16 @@ pub fn adapter_order(
     skip: &[String],
 ) -> Vec<usize> {
     let named = named.map(str::to_lowercase).filter(|n| !n.is_empty());
-    let mut order: Vec<(usize, &Candidate)> = candidates.iter().enumerate().filter(|(_, c)| c.presents && !skip.contains(&c.key)).collect();
+    let mut order: Vec<(usize, &Candidate)> = candidates
+        .iter()
+        .enumerate()
+        .filter(|(_, c)| c.presents && !skip.contains(&c.key))
+        .collect();
     // Stable, so equals keep the system's order.
     order.sort_by_key(|(_, c)| {
-        let unnamed = named.as_ref().is_some_and(|n| !c.name.to_lowercase().contains(n));
+        let unnamed = named
+            .as_ref()
+            .is_some_and(|n| !c.name.to_lowercase().contains(n));
         let (drives_display, drives_primary) = c.drives(displays);
         (
             unnamed,
@@ -331,7 +379,8 @@ pub fn adapter_order(
 fn power_rank(t: DeviceType, power: PowerPreference) -> u8 {
     match (power, t) {
         (PowerPreference::None, _) => 0,
-        (PowerPreference::LowPower, DeviceType::IntegratedGpu) | (PowerPreference::HighPerformance, DeviceType::DiscreteGpu) => 0,
+        (PowerPreference::LowPower, DeviceType::IntegratedGpu)
+        | (PowerPreference::HighPerformance, DeviceType::DiscreteGpu) => 0,
         (_, DeviceType::IntegratedGpu | DeviceType::DiscreteGpu) => 1,
         (_, DeviceType::Other) => 2,
         (_, DeviceType::VirtualGpu) => 3,
@@ -341,11 +390,17 @@ fn power_rank(t: DeviceType, power: PowerPreference) -> u8 {
 
 /// The adapters [`SKIP_ENV`] lists.
 pub fn skipped() -> Vec<String> {
-    std::env::var(SKIP_ENV).map(|v| parse_skip(&v)).unwrap_or_default()
+    std::env::var(SKIP_ENV)
+        .map(|v| parse_skip(&v))
+        .unwrap_or_default()
 }
 
 fn parse_skip(v: &str) -> Vec<String> {
-    v.split(',').map(str::trim).filter(|k| !k.is_empty()).map(String::from).collect()
+    v.split(',')
+        .map(str::trim)
+        .filter(|k| !k.is_empty())
+        .map(String::from)
+        .collect()
 }
 
 /// What the window's start-up leaves for [`finish`].
@@ -403,17 +458,28 @@ fn first_frame(frames: u64, since: Duration, minimized: bool) -> FirstFrame {
 pub fn watch_first_frame(startup: Arc<Startup>) {
     let watch = move || loop {
         std::thread::sleep(Duration::from_millis(250));
-        let Some(due) = startup.ready.get() else { continue };
+        let Some(due) = startup.ready.get() else {
+            continue;
+        };
         let ui = startup.ui.get();
         let frames = ui.map_or(0, egui::Context::cumulative_frame_nr);
-        let minimized = ui.and_then(|c| c.input(|i| i.viewport().minimized)).unwrap_or(false);
+        let minimized = ui
+            .and_then(|c| c.input(|i| i.viewport().minimized))
+            .unwrap_or(false);
         match first_frame(frames, due.elapsed(), minimized) {
             FirstFrame::Wait => continue,
             FirstFrame::Shown => return,
             FirstFrame::Hung => {}
         }
         let mut skip = skipped();
-        let Some(failed) = restart_without(true, frames, startup.adapter.get().map(String::as_str), &skip) else { return };
+        let Some(failed) = restart_without(
+            true,
+            frames,
+            startup.adapter.get().map(String::as_str),
+            &skip,
+        ) else {
+            return;
+        };
         log::error!(
             "the window's first frame didn't reach the screen in {}s on graphics adapter {failed}: starting again without it",
             FIRST_FRAME_TIMEOUT.as_secs()
@@ -427,7 +493,10 @@ pub fn watch_first_frame(startup: Arc<Startup>) {
             }
         }
     };
-    if let Err(e) = std::thread::Builder::new().name("first frame".into()).spawn(watch) {
+    if let Err(e) = std::thread::Builder::new()
+        .name("first frame".into())
+        .spawn(watch)
+    {
         log::warn!("no watch on the window's first frame: {e}");
     }
 }
@@ -445,8 +514,18 @@ pub fn selector(
     let named = std::env::var(NAME_ENV).ok();
     let skip = skipped();
     Arc::new(move |adapters, surface| {
-        let candidates: Vec<Candidate> = adapters.iter().map(|a| Candidate::new(a, surface)).collect();
-        let order = adapter_order(&candidates, power, &displays, compositor, named.as_deref(), &skip);
+        let candidates: Vec<Candidate> = adapters
+            .iter()
+            .map(|a| Candidate::new(a, surface))
+            .collect();
+        let order = adapter_order(
+            &candidates,
+            power,
+            &displays,
+            compositor,
+            named.as_deref(),
+            &skip,
+        );
         let listed: Vec<String> = candidates
             .iter()
             .map(|c| {
@@ -464,22 +543,40 @@ pub fn selector(
                 } else {
                     ""
                 };
-                format!("{} ({:?}, {:?}, {}{note})", c.name.trim(), c.backend, c.device_type, c.key)
+                format!(
+                    "{} ({:?}, {:?}, {}{note})",
+                    c.name.trim(),
+                    c.backend,
+                    c.device_type,
+                    c.key
+                )
             })
             .collect();
         log::info!("graphics adapters: {}", listed.join("; "));
-        let first = order.first().and_then(|&i| adapters.get(i).zip(candidates.get(i)));
+        let first = order
+            .first()
+            .and_then(|&i| adapters.get(i).zip(candidates.get(i)));
         let Some((adapter, chosen)) = first else {
-            return Err(format!("no graphics adapter can show the window (power preference {power:?}, {} adapters)", adapters.len()));
+            return Err(format!(
+                "no graphics adapter can show the window (power preference {power:?}, {} adapters)",
+                adapters.len()
+            ));
         };
         let why = match chosen.drives(&displays) {
             _ if chosen.composites(compositor) => "the compositor draws with it".to_string(),
             (_, true) => "it drives the primary display".to_string(),
             (true, false) => "it drives a display".to_string(),
             (false, false) if displays.is_empty() => format!("power preference {power:?}"),
-            (false, false) => format!("no adapter matches a display GPU, so power preference {power:?}"),
+            (false, false) => {
+                format!("no adapter matches a display GPU, so power preference {power:?}")
+            }
         };
-        log::info!("drawing on {} ({:?}, {:?}): {why}", chosen.name.trim(), chosen.backend, chosen.device_type);
+        log::info!(
+            "drawing on {} ({:?}, {:?}): {why}",
+            chosen.name.trim(),
+            chosen.backend,
+            chosen.device_type
+        );
         // Set once; eframe picks the adapter once.
         let _ = startup.adapter.set(chosen.key.clone());
         Ok(adapter.clone())
@@ -494,19 +591,31 @@ static GRAPHICS_PANIC: AtomicBool = AtomicBool::new(false);
 pub fn watch_panics() {
     let default = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
-        GRAPHICS_PANIC.store(info.location().is_some_and(|l| in_graphics_stack(l.file())), Ordering::Relaxed);
+        GRAPHICS_PANIC.store(
+            info.location().is_some_and(|l| in_graphics_stack(l.file())),
+            Ordering::Relaxed,
+        );
         default(info);
     }));
 }
 
 /// A source file of wgpu (`wgpu-core-30.0.1/src/…`, `wgpu-hal-…`), egui-wgpu or naga.
 fn in_graphics_stack(file: &str) -> bool {
-    file.split(['/', '\\']).any(|dir| ["wgpu-", "egui-wgpu-", "naga-"].iter().any(|p| dir.starts_with(p)))
+    file.split(['/', '\\']).any(|dir| {
+        ["wgpu-", "egui-wgpu-", "naga-"]
+            .iter()
+            .any(|p| dir.starts_with(p))
+    })
 }
 
 /// The adapter to start again without: the one picked, when the graphics failed while the window
 /// was starting up and it wasn't already left out.
-fn restart_without<'a>(graphics_failed: bool, frames: u64, picked: Option<&'a str>, skip: &[String]) -> Option<&'a str> {
+fn restart_without<'a>(
+    graphics_failed: bool,
+    frames: u64,
+    picked: Option<&'a str>,
+    skip: &[String],
+) -> Option<&'a str> {
     picked.filter(|p| graphics_failed && frames < STARTUP_FRAMES && !skip.iter().any(|s| s == p))
 }
 
@@ -520,12 +629,26 @@ pub fn finish(outcome: Result<eframe::Result, String>, startup: &Startup) -> Res
         Ok(Err(e)) => (e.to_string(), false),
         Err(panic) => (panic, GRAPHICS_PANIC.load(Ordering::Relaxed)),
     };
-    let frames = startup.ui.get().map_or(0, egui::Context::cumulative_frame_nr);
+    let frames = startup
+        .ui
+        .get()
+        .map_or(0, egui::Context::cumulative_frame_nr);
     let mut skip = skipped();
-    let Some(failed) = restart_without(graphics_failed, frames, startup.adapter.get().map(String::as_str), &skip) else {
-        return Err(if graphics_failed { format!("{why} ({HELP})") } else { why });
+    let Some(failed) = restart_without(
+        graphics_failed,
+        frames,
+        startup.adapter.get().map(String::as_str),
+        &skip,
+    ) else {
+        return Err(if graphics_failed {
+            format!("{why} ({HELP})")
+        } else {
+            why
+        });
     };
-    log::error!("the window failed on graphics adapter {failed} ({why}): starting again without it");
+    log::error!(
+        "the window failed on graphics adapter {failed} ({why}): starting again without it"
+    );
     skip.push(failed.to_string());
     restart(&skip.join(",")).map_err(|e| format!("{why}; starting again failed: {e}"))
 }
@@ -551,7 +674,14 @@ mod tests {
     use super::*;
 
     fn gpu(name: &str, backend: Backend, device_type: DeviceType) -> Candidate {
-        Candidate { key: format!("{backend:?}:{name}"), name: name.into(), backend, device_type, pci: (0, 0), presents: true }
+        Candidate {
+            key: format!("{backend:?}:{name}"),
+            name: name.into(),
+            backend,
+            device_type,
+            pci: (0, 0),
+            presents: true,
+        }
     }
 
     /// #1459: a 9048 px wide window (two display scales' ratio past 8192) fits an adapter that
@@ -571,12 +701,27 @@ mod tests {
     const INTEL_IGPU: (u32, u32) = (0x8086, 0xa780);
     const WARP: (u32, u32) = (0x1414, 0x008c);
 
-    fn pci_gpu(name: &str, backend: Backend, device_type: DeviceType, pci: (u32, u32)) -> Candidate {
-        Candidate { key: key(backend, pci.0, pci.1, name), name: name.into(), backend, device_type, pci, presents: true }
+    fn pci_gpu(
+        name: &str,
+        backend: Backend,
+        device_type: DeviceType,
+        pci: (u32, u32),
+    ) -> Candidate {
+        Candidate {
+            key: key(backend, pci.0, pci.1, name),
+            name: name.into(),
+            backend,
+            device_type,
+            pci,
+            presents: true,
+        }
     }
 
     fn monitor(pci: (u32, u32)) -> DisplayGpu {
-        DisplayGpu { pci, primary: false }
+        DisplayGpu {
+            pci,
+            primary: false,
+        }
     }
 
     fn primary(pci: (u32, u32)) -> DisplayGpu {
@@ -588,12 +733,42 @@ mod tests {
     /// OpenGL (which reports no device id).
     fn ryzen_desktop() -> Vec<Candidate> {
         vec![
-            pci_gpu("NVIDIA GeForce RTX 3090", Backend::Vulkan, DeviceType::DiscreteGpu, NVIDIA_3090),
-            pci_gpu("AMD Radeon(TM) Graphics", Backend::Vulkan, DeviceType::IntegratedGpu, AMD_IGPU),
-            pci_gpu("NVIDIA GeForce RTX 3090", Backend::Dx12, DeviceType::DiscreteGpu, NVIDIA_3090),
-            pci_gpu("AMD Radeon(TM) Graphics", Backend::Dx12, DeviceType::IntegratedGpu, AMD_IGPU),
-            pci_gpu("Microsoft Basic Render Driver", Backend::Dx12, DeviceType::Cpu, WARP),
-            pci_gpu("NVIDIA GeForce RTX 3090/PCIe/SSE2", Backend::Gl, DeviceType::Other, (NVIDIA_3090.0, 0)),
+            pci_gpu(
+                "NVIDIA GeForce RTX 3090",
+                Backend::Vulkan,
+                DeviceType::DiscreteGpu,
+                NVIDIA_3090,
+            ),
+            pci_gpu(
+                "AMD Radeon(TM) Graphics",
+                Backend::Vulkan,
+                DeviceType::IntegratedGpu,
+                AMD_IGPU,
+            ),
+            pci_gpu(
+                "NVIDIA GeForce RTX 3090",
+                Backend::Dx12,
+                DeviceType::DiscreteGpu,
+                NVIDIA_3090,
+            ),
+            pci_gpu(
+                "AMD Radeon(TM) Graphics",
+                Backend::Dx12,
+                DeviceType::IntegratedGpu,
+                AMD_IGPU,
+            ),
+            pci_gpu(
+                "Microsoft Basic Render Driver",
+                Backend::Dx12,
+                DeviceType::Cpu,
+                WARP,
+            ),
+            pci_gpu(
+                "NVIDIA GeForce RTX 3090/PCIe/SSE2",
+                Backend::Gl,
+                DeviceType::Other,
+                (NVIDIA_3090.0, 0),
+            ),
         ]
     }
 
@@ -604,14 +779,35 @@ mod tests {
     fn a_desktop_draws_on_the_gpu_that_drives_its_monitors() {
         let c = ryzen_desktop();
         for displays in [vec![primary(NVIDIA_3090)], vec![monitor(NVIDIA_3090)]] {
-            assert_eq!(adapter_order(&c, PowerPreference::LowPower, &displays, None, None, &[]), [2, 0, 3, 1, 5, 4], "{displays:?}");
-            assert_eq!(adapter_order(&c, PowerPreference::None, &displays, None, None, &[]), [2, 0, 3, 1, 5, 4], "{displays:?}");
+            assert_eq!(
+                adapter_order(&c, PowerPreference::LowPower, &displays, None, None, &[]),
+                [2, 0, 3, 1, 5, 4],
+                "{displays:?}"
+            );
+            assert_eq!(
+                adapter_order(&c, PowerPreference::None, &displays, None, None, &[]),
+                [2, 0, 3, 1, 5, 4],
+                "{displays:?}"
+            );
         }
         // Without the display information the order is power saving's, as before.
-        assert_eq!(adapter_order(&c, PowerPreference::LowPower, &[], None, None, &[]), [3, 1, 2, 0, 5, 4]);
+        assert_eq!(
+            adapter_order(&c, PowerPreference::LowPower, &[], None, None, &[]),
+            [3, 1, 2, 0, 5, 4]
+        );
         // After the NVIDIA adapters failed, the integrated GPU is next.
         let skip = vec![c[2].key.clone(), c[0].key.clone()];
-        assert_eq!(adapter_order(&c, PowerPreference::LowPower, &[primary(NVIDIA_3090)], None, None, &skip), [3, 1, 5, 4]);
+        assert_eq!(
+            adapter_order(
+                &c,
+                PowerPreference::LowPower,
+                &[primary(NVIDIA_3090)],
+                None,
+                None,
+                &skip
+            ),
+            [3, 1, 5, 4]
+        );
     }
 
     /// A hybrid laptop: the panel (primary) on the integrated GPU, an external monitor on the
@@ -619,22 +815,73 @@ mod tests {
     #[test]
     fn a_hybrid_laptop_draws_on_the_integrated_gpu_that_drives_its_panel() {
         let c = ryzen_desktop();
-        for displays in [vec![primary(AMD_IGPU), monitor(NVIDIA_3090)], vec![monitor(NVIDIA_3090), primary(AMD_IGPU)], vec![primary(AMD_IGPU)]] {
-            assert_eq!(adapter_order(&c, PowerPreference::LowPower, &displays, None, None, &[]), [3, 1, 2, 0, 5, 4], "{displays:?}");
+        for displays in [
+            vec![primary(AMD_IGPU), monitor(NVIDIA_3090)],
+            vec![monitor(NVIDIA_3090), primary(AMD_IGPU)],
+            vec![primary(AMD_IGPU)],
+        ] {
+            assert_eq!(
+                adapter_order(&c, PowerPreference::LowPower, &displays, None, None, &[]),
+                [3, 1, 2, 0, 5, 4],
+                "{displays:?}"
+            );
         }
         // Linux names no primary unless there is a built-in panel: a monitor on each GPU keeps the
         // system's order among them (Mesa puts the compositor's GPU first), and a GPU without one
         // comes after both.
         let linux = vec![
-            pci_gpu("AMD Radeon Graphics (RADV RAPHAEL_MENDOCINO)", Backend::Vulkan, DeviceType::IntegratedGpu, AMD_IGPU),
-            pci_gpu("NVIDIA GeForce RTX 3090", Backend::Vulkan, DeviceType::DiscreteGpu, NVIDIA_3090),
-            pci_gpu("Intel(R) Arc(TM) A380", Backend::Vulkan, DeviceType::DiscreteGpu, INTEL_IGPU),
-            pci_gpu("llvmpipe (LLVM 20.1.8, 256 bits)", Backend::Vulkan, DeviceType::Cpu, (0x10005, 0)),
+            pci_gpu(
+                "AMD Radeon Graphics (RADV RAPHAEL_MENDOCINO)",
+                Backend::Vulkan,
+                DeviceType::IntegratedGpu,
+                AMD_IGPU,
+            ),
+            pci_gpu(
+                "NVIDIA GeForce RTX 3090",
+                Backend::Vulkan,
+                DeviceType::DiscreteGpu,
+                NVIDIA_3090,
+            ),
+            pci_gpu(
+                "Intel(R) Arc(TM) A380",
+                Backend::Vulkan,
+                DeviceType::DiscreteGpu,
+                INTEL_IGPU,
+            ),
+            pci_gpu(
+                "llvmpipe (LLVM 20.1.8, 256 bits)",
+                Backend::Vulkan,
+                DeviceType::Cpu,
+                (0x10005, 0),
+            ),
         ];
         let both = [monitor(AMD_IGPU), monitor(NVIDIA_3090)];
-        assert_eq!(adapter_order(&linux, PowerPreference::None, &both, None, None, &[]), [0, 1, 2, 3]);
-        assert_eq!(adapter_order(&linux, PowerPreference::None, &[monitor(INTEL_IGPU)], None, None, &[]), [2, 0, 1, 3]);
-        assert_eq!(adapter_order(&linux, PowerPreference::None, &[monitor(NVIDIA_3090), primary(AMD_IGPU)], None, None, &[]), [0, 1, 2, 3]);
+        assert_eq!(
+            adapter_order(&linux, PowerPreference::None, &both, None, None, &[]),
+            [0, 1, 2, 3]
+        );
+        assert_eq!(
+            adapter_order(
+                &linux,
+                PowerPreference::None,
+                &[monitor(INTEL_IGPU)],
+                None,
+                None,
+                &[]
+            ),
+            [2, 0, 1, 3]
+        );
+        assert_eq!(
+            adapter_order(
+                &linux,
+                PowerPreference::None,
+                &[monitor(NVIDIA_3090), primary(AMD_IGPU)],
+                None,
+                None,
+                &[]
+            ),
+            [0, 1, 2, 3]
+        );
     }
 
     /// A hybrid laptop whose Wayland compositor runs on the discrete GPU (Hyprland with
@@ -646,21 +893,82 @@ mod tests {
         const RTX_3050: (u32, u32) = (0x10de, 0x25ac);
         const INTEL_RPL: (u32, u32) = (0x8086, 0xa7a8);
         let mut c = vec![
-            pci_gpu("NVIDIA GeForce RTX 3050 6GB Laptop GPU", Backend::Vulkan, DeviceType::DiscreteGpu, RTX_3050),
-            pci_gpu("Intel(R) Graphics (RPL-P)", Backend::Vulkan, DeviceType::IntegratedGpu, INTEL_RPL),
-            pci_gpu("NVIDIA GeForce RTX 3050 6GB Laptop GPU/PCIe/SSE2", Backend::Gl, DeviceType::Other, (RTX_3050.0, 0)),
+            pci_gpu(
+                "NVIDIA GeForce RTX 3050 6GB Laptop GPU",
+                Backend::Vulkan,
+                DeviceType::DiscreteGpu,
+                RTX_3050,
+            ),
+            pci_gpu(
+                "Intel(R) Graphics (RPL-P)",
+                Backend::Vulkan,
+                DeviceType::IntegratedGpu,
+                INTEL_RPL,
+            ),
+            pci_gpu(
+                "NVIDIA GeForce RTX 3050 6GB Laptop GPU/PCIe/SSE2",
+                Backend::Gl,
+                DeviceType::Other,
+                (RTX_3050.0, 0),
+            ),
         ];
         c[2].presents = false;
         let panel = [primary(INTEL_RPL)];
-        assert_eq!(adapter_order(&c, PowerPreference::None, &panel, Some(RTX_3050), None, &[]), [0, 1]);
-        assert_eq!(adapter_order(&c, PowerPreference::None, &panel, None, None, &[]), [1, 0]);
+        assert_eq!(
+            adapter_order(&c, PowerPreference::None, &panel, Some(RTX_3050), None, &[]),
+            [0, 1]
+        );
+        assert_eq!(
+            adapter_order(&c, PowerPreference::None, &panel, None, None, &[]),
+            [1, 0]
+        );
         // The usual hybrid laptop, with the compositor on the integrated GPU: the panel's GPU.
-        assert_eq!(adapter_order(&c, PowerPreference::None, &[primary(INTEL_RPL), monitor(RTX_3050)], Some(INTEL_RPL), None, &[]), [1, 0]);
+        assert_eq!(
+            adapter_order(
+                &c,
+                PowerPreference::None,
+                &[primary(INTEL_RPL), monitor(RTX_3050)],
+                Some(INTEL_RPL),
+                None,
+                &[]
+            ),
+            [1, 0]
+        );
         // `WGPU_ADAPTER_NAME` still comes first, and a restart after a failure still moves on.
-        assert_eq!(adapter_order(&c, PowerPreference::None, &panel, Some(RTX_3050), Some("intel"), &[]), [1, 0]);
-        assert_eq!(adapter_order(&c, PowerPreference::None, &panel, Some(RTX_3050), None, &[c[0].key.clone()]), [1]);
+        assert_eq!(
+            adapter_order(
+                &c,
+                PowerPreference::None,
+                &panel,
+                Some(RTX_3050),
+                Some("intel"),
+                &[]
+            ),
+            [1, 0]
+        );
+        assert_eq!(
+            adapter_order(
+                &c,
+                PowerPreference::None,
+                &panel,
+                Some(RTX_3050),
+                None,
+                &[c[0].key.clone()]
+            ),
+            [1]
+        );
         // A compositor GPU no adapter matches (a virtual one) leaves the displays in charge.
-        assert_eq!(adapter_order(&c, PowerPreference::None, &panel, Some((0x1af4, 0x1050)), None, &[]), [1, 0]);
+        assert_eq!(
+            adapter_order(
+                &c,
+                PowerPreference::None,
+                &panel,
+                Some((0x1af4, 0x1050)),
+                None,
+                &[]
+            ),
+            [1, 0]
+        );
     }
 
     /// A Windows desktop with a monitor on each GPU: the window opens on the primary display, so
@@ -668,11 +976,41 @@ mod tests {
     #[test]
     fn the_primary_display_decides_between_gpus_that_both_drive_a_monitor() {
         let c = ryzen_desktop();
-        assert_eq!(adapter_order(&c, PowerPreference::LowPower, &[monitor(AMD_IGPU), primary(NVIDIA_3090)], None, None, &[]), [2, 0, 3, 1, 5, 4]);
-        assert_eq!(adapter_order(&c, PowerPreference::LowPower, &[primary(AMD_IGPU), monitor(NVIDIA_3090)], None, None, &[]), [3, 1, 2, 0, 5, 4]);
+        assert_eq!(
+            adapter_order(
+                &c,
+                PowerPreference::LowPower,
+                &[monitor(AMD_IGPU), primary(NVIDIA_3090)],
+                None,
+                None,
+                &[]
+            ),
+            [2, 0, 3, 1, 5, 4]
+        );
+        assert_eq!(
+            adapter_order(
+                &c,
+                PowerPreference::LowPower,
+                &[primary(AMD_IGPU), monitor(NVIDIA_3090)],
+                None,
+                None,
+                &[]
+            ),
+            [3, 1, 2, 0, 5, 4]
+        );
         // The displays only matter among adapters that can show the window; a GPU driving no
         // display still loses to one that does.
-        assert_eq!(adapter_order(&c, PowerPreference::LowPower, &[monitor(AMD_IGPU), monitor(INTEL_IGPU)], None, None, &[]), [3, 1, 2, 0, 5, 4]);
+        assert_eq!(
+            adapter_order(
+                &c,
+                PowerPreference::LowPower,
+                &[monitor(AMD_IGPU), monitor(INTEL_IGPU)],
+                None,
+                None,
+                &[]
+            ),
+            [3, 1, 2, 0, 5, 4]
+        );
     }
 
     /// Display GPUs none of the adapters match (another driver's ids, OpenGL's missing device id,
@@ -681,20 +1019,55 @@ mod tests {
     fn displays_no_adapter_matches_leave_the_power_preference_in_charge() {
         let c = ryzen_desktop();
         let low = adapter_order(&c, PowerPreference::LowPower, &[], None, None, &[]);
-        for displays in [vec![monitor(INTEL_IGPU)], vec![primary((0x8086, 0x1234)), monitor((0x8086, 0x5678))], vec![primary((0, 0))]] {
-            assert_eq!(adapter_order(&c, PowerPreference::LowPower, &displays, None, None, &[]), low, "{displays:?}");
+        for displays in [
+            vec![monitor(INTEL_IGPU)],
+            vec![primary((0x8086, 0x1234)), monitor((0x8086, 0x5678))],
+            vec![primary((0, 0))],
+        ] {
+            assert_eq!(
+                adapter_order(&c, PowerPreference::LowPower, &displays, None, None, &[]),
+                low,
+                "{displays:?}"
+            );
         }
         assert_eq!(
-            names(&c, &adapter_order(&c, PowerPreference::HighPerformance, &[monitor(INTEL_IGPU)], None, None, &[]))[0],
+            names(
+                &c,
+                &adapter_order(
+                    &c,
+                    PowerPreference::HighPerformance,
+                    &[monitor(INTEL_IGPU)],
+                    None,
+                    None,
+                    &[]
+                )
+            )[0],
             "NVIDIA GeForce RTX 3090"
         );
         // The #502 machine's adapters report no ids in these tests: the primary display never matches.
         let c = issue_502();
         assert_eq!(
-            adapter_order(&c, PowerPreference::None, &[primary(NVIDIA_3090)], None, None, &[]),
+            adapter_order(
+                &c,
+                PowerPreference::None,
+                &[primary(NVIDIA_3090)],
+                None,
+                None,
+                &[]
+            ),
             adapter_order(&c, PowerPreference::None, &[], None, None, &[])
         );
-        assert!(adapter_order(&[], PowerPreference::LowPower, &[primary(NVIDIA_3090)], None, None, &[]).is_empty());
+        assert!(
+            adapter_order(
+                &[],
+                PowerPreference::LowPower,
+                &[primary(NVIDIA_3090)],
+                None,
+                None,
+                &[]
+            )
+            .is_empty()
+        );
     }
 
     /// `WGPU_ADAPTER_NAME` and "can't present" still come before the displays.
@@ -702,10 +1075,23 @@ mod tests {
     fn a_named_adapter_comes_before_the_one_driving_the_display() {
         let mut c = ryzen_desktop();
         let displays = [primary(NVIDIA_3090)];
-        assert_eq!(adapter_order(&c, PowerPreference::LowPower, &displays, None, Some("radeon"), &[]), [3, 1, 2, 0, 5, 4]);
+        assert_eq!(
+            adapter_order(
+                &c,
+                PowerPreference::LowPower,
+                &displays,
+                None,
+                Some("radeon"),
+                &[]
+            ),
+            [3, 1, 2, 0, 5, 4]
+        );
         c[2].presents = false;
         c[0].presents = false;
-        assert_eq!(adapter_order(&c, PowerPreference::LowPower, &displays, None, None, &[]), [3, 1, 5, 4]);
+        assert_eq!(
+            adapter_order(&c, PowerPreference::LowPower, &displays, None, None, &[]),
+            [3, 1, 5, 4]
+        );
     }
 
     /// A user's own choice (Preferences or `WGPU_POWER_PREF`) is kept as it is; only Automatic
@@ -718,20 +1104,35 @@ mod tests {
         assert!(!automatic(Some("lowPower"), None));
         assert!(!automatic(Some("highPerformance"), None));
         assert!(!automatic(None, Some(PowerPreference::None)));
-        assert!(!automatic(Some("automatic"), Some(PowerPreference::LowPower)));
+        assert!(!automatic(
+            Some("automatic"),
+            Some(PowerPreference::LowPower)
+        ));
         assert!(preferred_displays(Some("lowPower"), None).is_empty());
         assert!(preferred_displays(None, Some(PowerPreference::HighPerformance)).is_empty());
         // Automatic reports whatever this machine has (nothing on macOS, in CI, or under Remote Desktop).
         assert_eq!(preferred_displays(None, None), display_gpus());
         assert_eq!(preferred_compositor(Some("lowPower"), None), None);
-        assert_eq!(preferred_compositor(None, Some(PowerPreference::HighPerformance)), None);
-        assert_eq!(preferred_compositor(None, None), crate::compositor_gpu::compositor_gpu());
+        assert_eq!(
+            preferred_compositor(None, Some(PowerPreference::HighPerformance)),
+            None
+        );
+        assert_eq!(
+            preferred_compositor(None, None),
+            crate::compositor_gpu::compositor_gpu()
+        );
     }
 
     #[test]
     fn pci_ids_come_from_windows_device_ids() {
-        assert_eq!(pci_ids("PCI\\VEN_10DE&DEV_2204&SUBSYS_40421458&REV_A1"), Some(NVIDIA_3090));
-        assert_eq!(pci_ids("PCI\\VEN_1002&DEV_164E&SUBSYS_88771043&REV_C1"), Some(AMD_IGPU));
+        assert_eq!(
+            pci_ids("PCI\\VEN_10DE&DEV_2204&SUBSYS_40421458&REV_A1"),
+            Some(NVIDIA_3090)
+        );
+        assert_eq!(
+            pci_ids("PCI\\VEN_1002&DEV_164E&SUBSYS_88771043&REV_C1"),
+            Some(AMD_IGPU)
+        );
         assert_eq!(pci_ids("pci\\ven_1002&dev_164e"), Some(AMD_IGPU));
         // Remote Desktop and other non-PCI display devices, and malformed ids.
         assert_eq!(pci_ids("ROOT\\BasicDisplay\\0000"), None);
@@ -773,8 +1174,14 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         let card = |name: &str, (vendor, device): (u32, u32)| -> std::io::Result<()> {
             std::fs::create_dir_all(dir.join(name).join("device"))?;
-            std::fs::write(dir.join(name).join("device/vendor"), format!("{vendor:#06x}\n"))?;
-            std::fs::write(dir.join(name).join("device/device"), format!("{device:#06x}\n"))
+            std::fs::write(
+                dir.join(name).join("device/vendor"),
+                format!("{vendor:#06x}\n"),
+            )?;
+            std::fs::write(
+                dir.join(name).join("device/device"),
+                format!("{device:#06x}\n"),
+            )
         };
         let connector = |name: &str, status: &str| -> std::io::Result<()> {
             std::fs::create_dir_all(dir.join(name))?;
@@ -812,10 +1219,26 @@ mod tests {
     /// renderer, and OpenGL.
     fn issue_502() -> Vec<Candidate> {
         vec![
-            gpu("NVIDIA GeForce RTX 5070", Backend::Vulkan, DeviceType::DiscreteGpu),
-            gpu("AMD Ryzen 9 7900X (RADV RAPHAEL_MENDOCINO)", Backend::Vulkan, DeviceType::IntegratedGpu),
-            gpu("llvmpipe (LLVM 20.1.8, 256 bits)", Backend::Vulkan, DeviceType::Cpu),
-            gpu("NVIDIA GeForce RTX 5070/PCIe/SSE2", Backend::Gl, DeviceType::Other),
+            gpu(
+                "NVIDIA GeForce RTX 5070",
+                Backend::Vulkan,
+                DeviceType::DiscreteGpu,
+            ),
+            gpu(
+                "AMD Ryzen 9 7900X (RADV RAPHAEL_MENDOCINO)",
+                Backend::Vulkan,
+                DeviceType::IntegratedGpu,
+            ),
+            gpu(
+                "llvmpipe (LLVM 20.1.8, 256 bits)",
+                Backend::Vulkan,
+                DeviceType::Cpu,
+            ),
+            gpu(
+                "NVIDIA GeForce RTX 5070/PCIe/SSE2",
+                Backend::Gl,
+                DeviceType::Other,
+            ),
         ]
     }
 
@@ -879,14 +1302,32 @@ mod tests {
             pci: (0, 0),
             presents: true,
         };
-        let c = vec![mac("NVIDIA GeForce GT 750M", DeviceType::DiscreteGpu), mac("Intel Iris Pro Graphics", DeviceType::IntegratedGpu)];
-        assert_eq!((c[0].key.as_str(), c[1].key.as_str()), ("Metal:NVIDIA GeForce GT 750M", "Metal:Intel Iris Pro Graphics"));
+        let c = vec![
+            mac("NVIDIA GeForce GT 750M", DeviceType::DiscreteGpu),
+            mac("Intel Iris Pro Graphics", DeviceType::IntegratedGpu),
+        ];
+        assert_eq!(
+            (c[0].key.as_str(), c[1].key.as_str()),
+            (
+                "Metal:NVIDIA GeForce GT 750M",
+                "Metal:Intel Iris Pro Graphics"
+            )
+        );
         let first = adapter_order(&c, PowerPreference::LowPower, &[], None, None, &[]);
         assert_eq!(names(&c, &first)[0], "Intel Iris Pro Graphics");
         let skip = parse_skip(&c[first[0]].key);
-        assert_eq!(names(&c, &adapter_order(&c, PowerPreference::LowPower, &[], None, None, &skip)), ["NVIDIA GeForce GT 750M"]);
+        assert_eq!(
+            names(
+                &c,
+                &adapter_order(&c, PowerPreference::LowPower, &[], None, None, &skip)
+            ),
+            ["NVIDIA GeForce GT 750M"]
+        );
         // A comma in a name can't split the list.
-        assert_eq!(parse_skip(&key(Backend::Gl, 0, 0, "Mesa, llvmpipe")), ["Gl:Mesa  llvmpipe"]);
+        assert_eq!(
+            parse_skip(&key(Backend::Gl, 0, 0, "Mesa, llvmpipe")),
+            ["Gl:Mesa  llvmpipe"]
+        );
     }
 
     #[test]
@@ -897,14 +1338,23 @@ mod tests {
         // Still drawing (or presenting) the first frame: waited for, then given up on (#964).
         for frames in [0, 1] {
             assert_eq!(first_frame(frames, s(3), false), FirstFrame::Wait);
-            assert_eq!(first_frame(frames, FIRST_FRAME_TIMEOUT, false), FirstFrame::Hung);
+            assert_eq!(
+                first_frame(frames, FIRST_FRAME_TIMEOUT, false),
+                FirstFrame::Hung
+            );
         }
         // A window minimized at the start may not draw again until restored.
         assert_eq!(first_frame(1, s(60), true), FirstFrame::Shown);
         // A hung adapter is left out once, like one that failed.
         let skip = vec!["Dx12:10de:28a0".to_string()];
-        assert_eq!(restart_without(true, 1, Some("Dx12:10de:28a0"), &skip), None);
-        assert_eq!(restart_without(true, 1, Some("Dx12:8086:a7a8"), &skip), Some("Dx12:8086:a7a8"));
+        assert_eq!(
+            restart_without(true, 1, Some("Dx12:10de:28a0"), &skip),
+            None
+        );
+        assert_eq!(
+            restart_without(true, 1, Some("Dx12:8086:a7a8"), &skip),
+            Some("Dx12:8086:a7a8")
+        );
     }
 
     #[test]
@@ -912,7 +1362,9 @@ mod tests {
         let c = issue_502();
         let mut skip = vec![];
         let mut tried = vec![];
-        while let Some(&i) = adapter_order(&c, PowerPreference::LowPower, &[], None, None, &skip).first() {
+        while let Some(&i) =
+            adapter_order(&c, PowerPreference::LowPower, &[], None, None, &skip).first()
+        {
             tried.push(c[i].name.clone());
             skip.push(c[i].key.clone());
         }
@@ -932,27 +1384,59 @@ mod tests {
         let mut c = issue_502();
         c[0].presents = false;
         c[3].presents = false;
-        for power in [PowerPreference::None, PowerPreference::LowPower, PowerPreference::HighPerformance] {
+        for power in [
+            PowerPreference::None,
+            PowerPreference::LowPower,
+            PowerPreference::HighPerformance,
+        ] {
             let order = adapter_order(&c, power, &[], None, None, &[]);
-            assert!(!order.contains(&0) && !order.contains(&3), "{power:?}: {order:?}");
+            assert!(
+                !order.contains(&0) && !order.contains(&3),
+                "{power:?}: {order:?}"
+            );
             assert_eq!(order.len(), 2);
         }
         for p in &mut c {
             p.presents = false;
         }
         assert!(adapter_order(&c, PowerPreference::None, &[], None, None, &[]).is_empty());
-        assert!(adapter_order(&[], PowerPreference::HighPerformance, &[], None, None, &[]).is_empty());
+        assert!(
+            adapter_order(&[], PowerPreference::HighPerformance, &[], None, None, &[]).is_empty()
+        );
     }
 
     #[test]
     fn wgpu_adapter_name_picks_an_adapter_first_and_the_rest_stay_as_fallbacks() {
         let c = issue_502();
-        let order = adapter_order(&c, PowerPreference::HighPerformance, &[], None, Some("radv"), &[]);
-        assert_eq!(c[order[0]].name, "AMD Ryzen 9 7900X (RADV RAPHAEL_MENDOCINO)");
+        let order = adapter_order(
+            &c,
+            PowerPreference::HighPerformance,
+            &[],
+            None,
+            Some("radv"),
+            &[],
+        );
+        assert_eq!(
+            c[order[0]].name,
+            "AMD Ryzen 9 7900X (RADV RAPHAEL_MENDOCINO)"
+        );
         assert_eq!(order.len(), 4);
         // Any case; every match comes before the rest, natively first.
-        let order = adapter_order(&c, PowerPreference::LowPower, &[], None, Some("GeForce"), &[]);
-        assert_eq!(names(&c, &order[..2]), ["NVIDIA GeForce RTX 5070", "NVIDIA GeForce RTX 5070/PCIe/SSE2"]);
+        let order = adapter_order(
+            &c,
+            PowerPreference::LowPower,
+            &[],
+            None,
+            Some("GeForce"),
+            &[],
+        );
+        assert_eq!(
+            names(&c, &order[..2]),
+            [
+                "NVIDIA GeForce RTX 5070",
+                "NVIDIA GeForce RTX 5070/PCIe/SSE2"
+            ]
+        );
         // An empty name or one nothing matches changes nothing.
         for named in ["", "no such gpu"] {
             assert_eq!(
@@ -962,7 +1446,10 @@ mod tests {
         }
         // A named adapter that failed is left out like any other.
         let skip = vec![c[1].key.clone()];
-        assert_eq!(adapter_order(&c, PowerPreference::None, &[], None, Some("radv"), &skip)[0], 0);
+        assert_eq!(
+            adapter_order(&c, PowerPreference::None, &[], None, Some("radv"), &skip)[0],
+            0
+        );
     }
 
     /// A Windows machine lists every GPU twice (Vulkan and DX12): power saving still takes the
@@ -970,15 +1457,38 @@ mod tests {
     #[test]
     fn hybrid_laptop_on_windows_renders_on_the_integrated_gpu_with_power_saving() {
         let c = vec![
-            gpu("Intel(R) Arc(TM) A370M", Backend::Vulkan, DeviceType::DiscreteGpu),
-            gpu("Intel(R) Iris(R) Xe Graphics", Backend::Vulkan, DeviceType::IntegratedGpu),
-            gpu("Intel(R) Arc(TM) A370M", Backend::Dx12, DeviceType::DiscreteGpu),
-            gpu("Intel(R) Iris(R) Xe Graphics", Backend::Dx12, DeviceType::IntegratedGpu),
-            gpu("Microsoft Basic Render Driver", Backend::Dx12, DeviceType::Cpu),
+            gpu(
+                "Intel(R) Arc(TM) A370M",
+                Backend::Vulkan,
+                DeviceType::DiscreteGpu,
+            ),
+            gpu(
+                "Intel(R) Iris(R) Xe Graphics",
+                Backend::Vulkan,
+                DeviceType::IntegratedGpu,
+            ),
+            gpu(
+                "Intel(R) Arc(TM) A370M",
+                Backend::Dx12,
+                DeviceType::DiscreteGpu,
+            ),
+            gpu(
+                "Intel(R) Iris(R) Xe Graphics",
+                Backend::Dx12,
+                DeviceType::IntegratedGpu,
+            ),
+            gpu(
+                "Microsoft Basic Render Driver",
+                Backend::Dx12,
+                DeviceType::Cpu,
+            ),
         ];
         let order = adapter_order(&c, PowerPreference::LowPower, &[], None, None, &[]);
         assert_eq!(order, [3, 1, 2, 0, 4]);
-        assert_eq!(adapter_order(&c, PowerPreference::HighPerformance, &[], None, None, &[]), [2, 0, 3, 1, 4]);
+        assert_eq!(
+            adapter_order(&c, PowerPreference::HighPerformance, &[], None, None, &[]),
+            [2, 0, 3, 1, 4]
+        );
     }
 
     /// The machine of #545: one Intel GPU, whose Vulkan driver made the window flicker black.
@@ -987,15 +1497,46 @@ mod tests {
     #[test]
     fn a_windows_gpu_renders_through_dx12_before_vulkan() {
         let c = vec![
-            gpu("Intel(R) Graphics", Backend::Vulkan, DeviceType::IntegratedGpu),
-            gpu("Intel(R) Graphics", Backend::Dx12, DeviceType::IntegratedGpu),
-            gpu("Microsoft Basic Render Driver", Backend::Dx12, DeviceType::Cpu),
+            gpu(
+                "Intel(R) Graphics",
+                Backend::Vulkan,
+                DeviceType::IntegratedGpu,
+            ),
+            gpu(
+                "Intel(R) Graphics",
+                Backend::Dx12,
+                DeviceType::IntegratedGpu,
+            ),
+            gpu(
+                "Microsoft Basic Render Driver",
+                Backend::Dx12,
+                DeviceType::Cpu,
+            ),
             gpu("Intel(R) Graphics", Backend::Gl, DeviceType::Other),
         ];
-        for power in [PowerPreference::LowPower, PowerPreference::HighPerformance, PowerPreference::None] {
-            assert_eq!(adapter_order(&c, power, &[], None, None, &[]), [1, 0, 3, 2], "{power:?}");
+        for power in [
+            PowerPreference::LowPower,
+            PowerPreference::HighPerformance,
+            PowerPreference::None,
+        ] {
+            assert_eq!(
+                adapter_order(&c, power, &[], None, None, &[]),
+                [1, 0, 3, 2],
+                "{power:?}"
+            );
         }
-        assert_eq!(adapter_order(&c, PowerPreference::LowPower, &[], None, None, &[c[1].key.clone()]), [0, 3, 2], "DX12 failed: Vulkan next");
+        assert_eq!(
+            adapter_order(
+                &c,
+                PowerPreference::LowPower,
+                &[],
+                None,
+                None,
+                &[c[1].key.clone()]
+            ),
+            [0, 3, 2],
+            "DX12 failed: Vulkan next"
+        );
     }
 
     #[test]
@@ -1007,24 +1548,50 @@ mod tests {
         } else {
             assert_eq!(start, all);
         }
-        assert_eq!(backends(Backends::VULKAN, true), Backends::VULKAN, "WGPU_BACKEND=vulkan still picks it");
+        assert_eq!(
+            backends(Backends::VULKAN, true),
+            Backends::VULKAN,
+            "WGPU_BACKEND=vulkan still picks it"
+        );
     }
 
     #[test]
     fn power_preference_follows_the_environment_then_the_preference() {
         assert_eq!(power_preference(None, None), AUTOMATIC);
         assert_eq!(power_preference(Some("automatic"), None), AUTOMATIC);
-        assert_eq!(power_preference(Some("lowPower"), None), PowerPreference::LowPower);
-        assert_eq!(power_preference(Some("highPerformance"), None), PowerPreference::HighPerformance);
+        assert_eq!(
+            power_preference(Some("lowPower"), None),
+            PowerPreference::LowPower
+        );
+        assert_eq!(
+            power_preference(Some("highPerformance"), None),
+            PowerPreference::HighPerformance
+        );
         // 0.5.0's default, and values this version doesn't know (a newer or damaged file).
         for old in ["powerSaving", "turbo", ""] {
             assert_eq!(power_preference(Some(old), None), AUTOMATIC, "{old}");
         }
         // WGPU_POWER_PREF wins over the preference, either way.
-        assert_eq!(power_preference(Some("lowPower"), Some(PowerPreference::HighPerformance)), PowerPreference::HighPerformance);
-        assert_eq!(power_preference(Some("highPerformance"), Some(PowerPreference::LowPower)), PowerPreference::LowPower);
-        assert_eq!(power_preference(Some("lowPower"), Some(PowerPreference::None)), PowerPreference::None);
-        assert_eq!(AUTOMATIC, if cfg!(any(windows, target_os = "macos")) { PowerPreference::LowPower } else { PowerPreference::None });
+        assert_eq!(
+            power_preference(Some("lowPower"), Some(PowerPreference::HighPerformance)),
+            PowerPreference::HighPerformance
+        );
+        assert_eq!(
+            power_preference(Some("highPerformance"), Some(PowerPreference::LowPower)),
+            PowerPreference::LowPower
+        );
+        assert_eq!(
+            power_preference(Some("lowPower"), Some(PowerPreference::None)),
+            PowerPreference::None
+        );
+        assert_eq!(
+            AUTOMATIC,
+            if cfg!(any(windows, target_os = "macos")) {
+                PowerPreference::LowPower
+            } else {
+                PowerPreference::None
+            }
+        );
     }
 
     /// The preference the engine saves is the one the app reads back before the window opens.
@@ -1032,23 +1599,48 @@ mod tests {
     fn the_saved_engine_preference_is_found() {
         let mut prefs = vectorcraft_engine::Prefs::default();
         let saved = prefs.to_json();
-        assert_eq!(saved.get("gpuPreference").and_then(serde_json::Value::as_str), Some("automatic"));
-        for (value, power) in [("lowPower", PowerPreference::LowPower), ("highPerformance", PowerPreference::HighPerformance)] {
+        assert_eq!(
+            saved
+                .get("gpuPreference")
+                .and_then(serde_json::Value::as_str),
+            Some("automatic")
+        );
+        for (value, power) in [
+            ("lowPower", PowerPreference::LowPower),
+            ("highPerformance", PowerPreference::HighPerformance),
+        ] {
             prefs.gpu_preference = value.into();
             let saved = prefs.to_json();
-            assert_eq!(power_preference(saved.get("gpuPreference").and_then(serde_json::Value::as_str), None), power);
+            assert_eq!(
+                power_preference(
+                    saved
+                        .get("gpuPreference")
+                        .and_then(serde_json::Value::as_str),
+                    None
+                ),
+                power
+            );
         }
         // Every choice Preferences offer means something here.
         for (value, _) in vectorcraft_engine::cmd::prefscmds::GPU_PREFERENCES {
-            assert!(["automatic", "lowPower", "highPerformance"].contains(value), "{value}");
+            assert!(
+                ["automatic", "lowPower", "highPerformance"].contains(value),
+                "{value}"
+            );
         }
     }
 
     #[test]
     fn skipped_adapters_parse_from_a_comma_separated_list() {
-        assert_eq!(parse_skip("Vulkan:1002:164e, Gl:10de:2f04,,"), ["Vulkan:1002:164e", "Gl:10de:2f04"]);
+        assert_eq!(
+            parse_skip("Vulkan:1002:164e, Gl:10de:2f04,,"),
+            ["Vulkan:1002:164e", "Gl:10de:2f04"]
+        );
         assert!(parse_skip("").is_empty());
-        assert_eq!(key(Backend::Vulkan, 0x1002, 0x164e, "AMD Radeon"), "Vulkan:1002:164e");
+        assert_eq!(
+            key(Backend::Vulkan, 0x1002, 0x164e, "AMD Radeon"),
+            "Vulkan:1002:164e"
+        );
         assert_eq!(key(Backend::Gl, 0x10de, 0x2f04, "NVIDIA"), "Gl:10de:2f04");
     }
 
@@ -1083,7 +1675,10 @@ mod tests {
         assert_eq!(restart_without(false, 0, amd, &[]), None);
         assert_eq!(restart_without(true, 0, None, &[]), None);
         // Never the same adapter twice, so restarts end.
-        assert_eq!(restart_without(true, 0, amd, &["Vulkan:1002:164e".into()]), None);
+        assert_eq!(
+            restart_without(true, 0, amd, &["Vulkan:1002:164e".into()]),
+            None
+        );
     }
 
     #[test]
@@ -1091,11 +1686,16 @@ mod tests {
         let startup = Startup::default();
         assert_eq!(finish(Ok(Ok(())), &startup), Ok(()));
         // No adapter was picked (none can show the window): the error is returned, nothing restarts.
-        let none =
-            eframe::Error::Wgpu(eframe::egui_wgpu::WgpuError::CustomNativeAdapterSelectionError("no graphics adapter can show the window".into()));
+        let none = eframe::Error::Wgpu(
+            eframe::egui_wgpu::WgpuError::CustomNativeAdapterSelectionError(
+                "no graphics adapter can show the window".into(),
+            ),
+        );
         assert_eq!(
             finish(Ok(Err(none)), &startup),
-            Err(format!("WGPU error: Adapter selection failed: no graphics adapter can show the window ({HELP})"))
+            Err(format!(
+                "WGPU error: Adapter selection failed: no graphics adapter can show the window ({HELP})"
+            ))
         );
         let _ = startup.adapter.set("Vulkan:1002:164e".into());
         GRAPHICS_PANIC.store(false, Ordering::Relaxed);

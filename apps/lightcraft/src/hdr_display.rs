@@ -60,8 +60,13 @@ pub enum HdrEncoding {
 /// The display output decision.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DisplayOutput {
-    Sdr { reason: &'static str },
-    Hdr { format: TextureFormat, encoding: HdrEncoding },
+    Sdr {
+        reason: &'static str,
+    },
+    Hdr {
+        format: TextureFormat,
+        encoding: HdrEncoding,
+    },
 }
 
 impl DisplayOutput {
@@ -85,45 +90,71 @@ fn encoding_of(format: TextureFormat, platform: Platform) -> Option<HdrEncoding>
 /// float first (keeps SDR white at 1.0 and needs no PQ encode), then 10-bit PQ. `None` = SDR only.
 /// (For configuring the surface once eframe lets the app pick its format.)
 #[cfg_attr(not(test), allow(dead_code))]
-pub fn preferred_hdr_format(available: &[TextureFormat], platform: Platform) -> Option<TextureFormat> {
+pub fn preferred_hdr_format(
+    available: &[TextureFormat],
+    platform: Platform,
+) -> Option<TextureFormat> {
     if !platform.has_hdr_path() {
         return None;
     }
-    [TextureFormat::Rgba16Float, TextureFormat::Rgb10a2Unorm].into_iter().find(|f| available.contains(f) && encoding_of(*f, platform).is_some())
+    [TextureFormat::Rgba16Float, TextureFormat::Rgb10a2Unorm]
+        .into_iter()
+        .find(|f| available.contains(f) && encoding_of(*f, platform).is_some())
 }
 
 /// The decision for the window: `target` is the format the renderer configured (`None`: the glow
 /// renderer or no wgpu state), `display_headroom` the display's current peak over SDR white as the
 /// OS reports it (`None`: unknown, `Some(1.0)`: an SDR display or HDR switched off in the OS),
 /// `disabled` the user's opt-out (`LIGHTCRAFT_HDR_DISPLAY=0`).
-pub fn choose(target: Option<TextureFormat>, platform: Platform, display_headroom: Option<f32>, disabled: bool) -> DisplayOutput {
+pub fn choose(
+    target: Option<TextureFormat>,
+    platform: Platform,
+    display_headroom: Option<f32>,
+    disabled: bool,
+) -> DisplayOutput {
     if disabled {
-        return DisplayOutput::Sdr { reason: "HDR display is switched off" };
+        return DisplayOutput::Sdr {
+            reason: "HDR display is switched off",
+        };
     }
     if !platform.has_hdr_path() {
-        return DisplayOutput::Sdr { reason: "this windowing system has no HDR output" };
+        return DisplayOutput::Sdr {
+            reason: "this windowing system has no HDR output",
+        };
     }
     let Some(format) = target else {
-        return DisplayOutput::Sdr { reason: "the window renderer is not wgpu" };
+        return DisplayOutput::Sdr {
+            reason: "the window renderer is not wgpu",
+        };
     };
     let Some(encoding) = encoding_of(format, platform) else {
-        return DisplayOutput::Sdr { reason: "the window surface is 8-bit" };
+        return DisplayOutput::Sdr {
+            reason: "the window surface is 8-bit",
+        };
     };
     match display_headroom {
         Some(h) if h.is_finite() && h > 1.0 => DisplayOutput::Hdr { format, encoding },
-        Some(_) => DisplayOutput::Sdr { reason: "the display is in SDR mode" },
-        None => DisplayOutput::Sdr { reason: "the display's HDR headroom is unknown" },
+        Some(_) => DisplayOutput::Sdr {
+            reason: "the display is in SDR mode",
+        },
+        None => DisplayOutput::Sdr {
+            reason: "the display's HDR headroom is unknown",
+        },
     }
 }
 
 /// The decision for this start, logged once (the window renderer's `target` format).
 pub fn report(target: Option<TextureFormat>) -> DisplayOutput {
-    let disabled = std::env::var("LIGHTCRAFT_HDR_DISPLAY").ok().is_some_and(|v| matches!(v.trim(), "0" | "off" | "false" | "no"));
+    let disabled = std::env::var("LIGHTCRAFT_HDR_DISPLAY")
+        .ok()
+        .is_some_and(|v| matches!(v.trim(), "0" | "off" | "false" | "no"));
     // no OS headroom query is wired yet: unknown, so SDR unless everything else is HDR-ready
     let out = choose(target, Platform::current(), None, disabled);
     match out {
         DisplayOutput::Sdr { reason } => log::info!("display: SDR ({reason})"),
-        DisplayOutput::Hdr { format, encoding } => log::info!("display: HDR {encoding:?} ({format:?})"),
+        DisplayOutput::Hdr { format, encoding } => {
+            log::info!("display: HDR {encoding:?} ({format:?})")
+        }
     }
     out
 }
@@ -137,18 +168,30 @@ mod tests {
     fn eight_bit_surfaces_are_sdr() {
         for p in [Platform::MacOs, Platform::Windows, Platform::Wayland] {
             for f in [F::Bgra8Unorm, F::Bgra8UnormSrgb, F::Rgba8Unorm] {
-                assert!(!choose(Some(f), p, Some(4.0), false).is_hdr(), "{p:?} {f:?}");
+                assert!(
+                    !choose(Some(f), p, Some(4.0), false).is_hdr(),
+                    "{p:?} {f:?}"
+                );
             }
         }
     }
 
     #[test]
     fn hdr_needs_platform_format_and_headroom() {
-        let hdr = DisplayOutput::Hdr { format: F::Rgba16Float, encoding: HdrEncoding::ExtendedLinear };
-        assert_eq!(choose(Some(F::Rgba16Float), Platform::MacOs, Some(2.0), false), hdr);
+        let hdr = DisplayOutput::Hdr {
+            format: F::Rgba16Float,
+            encoding: HdrEncoding::ExtendedLinear,
+        };
+        assert_eq!(
+            choose(Some(F::Rgba16Float), Platform::MacOs, Some(2.0), false),
+            hdr
+        );
         assert_eq!(
             choose(Some(F::Rgb10a2Unorm), Platform::Windows, Some(4.0), false),
-            DisplayOutput::Hdr { format: F::Rgb10a2Unorm, encoding: HdrEncoding::Pq10 }
+            DisplayOutput::Hdr {
+                format: F::Rgb10a2Unorm,
+                encoding: HdrEncoding::Pq10
+            }
         );
         // any missing condition falls back to SDR
         assert!(!choose(Some(F::Rgba16Float), Platform::X11, Some(4.0), false).is_hdr());
@@ -165,9 +208,18 @@ mod tests {
     #[test]
     fn preferred_format_picks_float_then_pq() {
         let all = [F::Bgra8Unorm, F::Rgb10a2Unorm, F::Rgba16Float];
-        assert_eq!(preferred_hdr_format(&all, Platform::Windows), Some(F::Rgba16Float));
-        assert_eq!(preferred_hdr_format(&[F::Bgra8Unorm, F::Rgb10a2Unorm], Platform::Wayland), Some(F::Rgb10a2Unorm));
-        assert_eq!(preferred_hdr_format(&[F::Bgra8Unorm, F::Rgb10a2Unorm], Platform::MacOs), None);
+        assert_eq!(
+            preferred_hdr_format(&all, Platform::Windows),
+            Some(F::Rgba16Float)
+        );
+        assert_eq!(
+            preferred_hdr_format(&[F::Bgra8Unorm, F::Rgb10a2Unorm], Platform::Wayland),
+            Some(F::Rgb10a2Unorm)
+        );
+        assert_eq!(
+            preferred_hdr_format(&[F::Bgra8Unorm, F::Rgb10a2Unorm], Platform::MacOs),
+            None
+        );
         assert_eq!(preferred_hdr_format(&all, Platform::X11), None);
         assert_eq!(preferred_hdr_format(&[], Platform::MacOs), None);
     }

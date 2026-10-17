@@ -109,7 +109,11 @@ pub struct Choice {
 pub fn choose(candidates: &[Backend], previous: &Record, version: &str) -> Option<Choice> {
     let first = *candidates.first()?;
     let same_version = previous.version == version;
-    let mut failed: Vec<Backend> = if same_version { previous.failed.clone() } else { Vec::new() };
+    let mut failed: Vec<Backend> = if same_version {
+        previous.failed.clone()
+    } else {
+        Vec::new()
+    };
     failed.retain(|b| candidates.contains(b));
     let unfinished = previous.trying.filter(|_| same_version);
     if let Some(b) = unfinished
@@ -126,12 +130,23 @@ pub fn choose(candidates: &[Backend], previous: &Record, version: &str) -> Optio
         }
     };
     let switched_from = unfinished.filter(|b| *b != backend);
-    Some(Choice { backend, record: Record { version: version.to_owned(), trying: Some(backend), failed }, switched_from })
+    Some(Choice {
+        backend,
+        record: Record {
+            version: version.to_owned(),
+            trying: Some(backend),
+            failed,
+        },
+        switched_from,
+    })
 }
 
 /// The record in `path`; a missing or unreadable file is an empty record.
 pub fn read(path: &Path) -> Record {
-    std::fs::read(path).ok().and_then(|bytes| serde_json::from_slice(&bytes).ok()).unwrap_or_default()
+    std::fs::read(path)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+        .unwrap_or_default()
 }
 
 /// Write `record` to `path` (creating the directory).
@@ -160,7 +175,9 @@ impl Startup {
     /// platform has no candidates.
     pub fn begin(path: Option<PathBuf>, version: &str) -> Option<Startup> {
         if wgpu::Backends::from_env().is_some_and(|b| !b.is_empty()) {
-            log::info!("graphics: WGPU_BACKEND is set, wgpu picks the backend and the start-up fallback is off");
+            log::info!(
+                "graphics: WGPU_BACKEND is set, wgpu picks the backend and the start-up fallback is off"
+            );
             return None;
         }
         Self::begin_unforced(path, version)
@@ -181,9 +198,17 @@ impl Startup {
                 choice.backend.name(),
                 choice.record.failed
             ),
-            None => log::info!("graphics: {} (WGPU_BACKEND overrides)", choice.backend.name()),
+            None => log::info!(
+                "graphics: {} (WGPU_BACKEND overrides)",
+                choice.backend.name()
+            ),
         }
-        Some(Startup { backend: choice.backend, switched_from: choice.switched_from, path, record: choice.record })
+        Some(Startup {
+            backend: choice.backend,
+            switched_from: choice.switched_from,
+            path,
+            record: choice.record,
+        })
     }
 
     /// The backends wgpu may use: the chosen one, with OpenGL as the in-process fallback when it
@@ -246,13 +271,21 @@ mod tests {
 
     fn temp_path(tag: &str) -> PathBuf {
         static N: AtomicUsize = AtomicUsize::new(0);
-        let d = std::env::temp_dir().join(format!("designcraft-gpu-{tag}-{}-{}", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+        let d = std::env::temp_dir().join(format!(
+            "designcraft-gpu-{tag}-{}-{}",
+            std::process::id(),
+            N.fetch_add(1, Ordering::Relaxed)
+        ));
         let _ = std::fs::remove_dir_all(&d);
         d.join(FILE)
     }
 
     fn record(trying: Option<Backend>, failed: &[Backend]) -> Record {
-        Record { version: V.into(), trying, failed: failed.to_vec() }
+        Record {
+            version: V.into(),
+            trying,
+            failed: failed.to_vec(),
+        }
     }
 
     #[test]
@@ -263,7 +296,11 @@ mod tests {
             assert!(!c[..i].contains(b), "{b:?} twice in {c:?}");
         }
         if cfg!(windows) {
-            assert_eq!(c[0], Backend::Dx12, "DirectX 12 is the Windows default (AMD's Vulkan driver faulted at the first present)");
+            assert_eq!(
+                c[0],
+                Backend::Dx12,
+                "DirectX 12 is the Windows default (AMD's Vulkan driver faulted at the first present)"
+            );
             assert!(!c.contains(&Backend::Metal));
         }
         if cfg!(target_os = "macos") {
@@ -307,7 +344,12 @@ mod tests {
 
     #[test]
     fn when_every_candidate_failed_the_list_starts_over() {
-        let c = choose(WIN, &record(Some(Backend::Gl), &[Backend::Dx12, Backend::Vulkan]), V).unwrap();
+        let c = choose(
+            WIN,
+            &record(Some(Backend::Gl), &[Backend::Dx12, Backend::Vulkan]),
+            V,
+        )
+        .unwrap();
         assert_eq!(c.backend, Backend::Dx12);
         assert_eq!(c.record.failed, &[]);
         assert_eq!(c.switched_from, Some(Backend::Gl));
@@ -315,13 +357,22 @@ mod tests {
 
     #[test]
     fn another_version_or_platform_forgets_what_failed() {
-        let old = Record { version: "0.4.0".into(), trying: Some(Backend::Dx12), failed: vec![Backend::Vulkan] };
+        let old = Record {
+            version: "0.4.0".into(),
+            trying: Some(Backend::Dx12),
+            failed: vec![Backend::Vulkan],
+        };
         let c = choose(WIN, &old, V).unwrap();
         assert_eq!(c.backend, Backend::Dx12);
         assert_eq!(c.record, record(Some(Backend::Dx12), &[]));
         assert_eq!(c.switched_from, None);
         // A backend that is no candidate here (a record copied from another machine) is dropped.
-        let c = choose(&[Backend::Vulkan, Backend::Gl], &record(None, &[Backend::Metal, Backend::Vulkan]), V).unwrap();
+        let c = choose(
+            &[Backend::Vulkan, Backend::Gl],
+            &record(None, &[Backend::Metal, Backend::Vulkan]),
+            V,
+        )
+        .unwrap();
         assert_eq!(c.backend, Backend::Gl);
         assert_eq!(c.record.failed, &[Backend::Vulkan]);
     }
@@ -334,12 +385,22 @@ mod tests {
         write(&path, &r).expect("write");
         assert_eq!(read(&path), r);
         let text = std::fs::read_to_string(&path).expect("read");
-        assert!(text.contains("\"trying\": \"vulkan\"") && text.contains("\"dx12\""), "{text}");
+        assert!(
+            text.contains("\"trying\": \"vulkan\"") && text.contains("\"dx12\""),
+            "{text}"
+        );
         std::fs::write(&path, b"{not json").expect("garbage");
         assert_eq!(read(&path), Record::default());
         // Unknown fields and missing ones are tolerated.
         std::fs::write(&path, br#"{"failed":["gl"],"later":1}"#).expect("partial");
-        assert_eq!(read(&path), Record { version: String::new(), trying: None, failed: vec![Backend::Gl] });
+        assert_eq!(
+            read(&path),
+            Record {
+                version: String::new(),
+                trying: None,
+                failed: vec![Backend::Gl]
+            }
+        );
         let _ = std::fs::remove_dir_all(path.parent().expect("dir"));
     }
 
@@ -352,7 +413,10 @@ mod tests {
         assert_eq!(read(&path).trying, Some(first));
         assert!(s.backends().contains(first.bit()));
         // OpenGL is the in-process fallback, except on Windows where it is only its own candidate.
-        assert_eq!(s.backends().contains(wgpu::Backends::GL), !cfg!(windows) || first == Backend::Gl);
+        assert_eq!(
+            s.backends().contains(wgpu::Backends::GL),
+            !cfg!(windows) || first == Backend::Gl
+        );
         assert_eq!(s.status_line(), None);
 
         // wgpu actually picked OpenGL (the chosen backend had no adapter): blame that one.
@@ -372,7 +436,12 @@ mod tests {
         if s.backend != Backend::Gl {
             assert_eq!(s.switched_from, Some(Backend::Gl));
             let line = s.status_line().expect("status");
-            assert!(line.contains("OpenGL") && line.contains(s.backend.name()) && line.contains("WGPU_BACKEND"), "{line}");
+            assert!(
+                line.contains("OpenGL")
+                    && line.contains(s.backend.name())
+                    && line.contains("WGPU_BACKEND"),
+                "{line}"
+            );
             assert!(!s.backends().contains(wgpu::Backends::GL));
         } else {
             assert_eq!(s.switched_from, None);

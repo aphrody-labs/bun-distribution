@@ -23,7 +23,8 @@ pub fn download(name: &str, mime: &str, bytes: &[u8]) -> Result<(), String> {
     let parts = js_sys::Array::of1(&js_sys::Uint8Array::from(bytes));
     let options = web_sys::BlobPropertyBag::new();
     options.set_type(mime);
-    let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&parts, &options).map_err(js_error)?;
+    let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&parts, &options)
+        .map_err(js_error)?;
     let url = web_sys::Url::create_object_url_with_blob(&blob).map_err(js_error)?;
     if let Err(e) = click_link(&document, &body, &url, name) {
         let _ = web_sys::Url::revoke_object_url(&url);
@@ -33,13 +34,24 @@ pub fn download(name: &str, mime: &str, bytes: &[u8]) -> Result<(), String> {
     let revoke = wasm_bindgen::closure::Closure::once_into_js(move || {
         let _ = web_sys::Url::revoke_object_url(&later);
     });
-    if window.set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), REVOKE_AFTER_MS).is_err() {
+    if window
+        .set_timeout_with_callback_and_timeout_and_arguments_0(
+            revoke.unchecked_ref(),
+            REVOKE_AFTER_MS,
+        )
+        .is_err()
+    {
         let _ = web_sys::Url::revoke_object_url(&url);
     }
     Ok(())
 }
 
-fn click_link(document: &web_sys::Document, body: &web_sys::HtmlElement, url: &str, name: &str) -> Result<(), String> {
+fn click_link(
+    document: &web_sys::Document,
+    body: &web_sys::HtmlElement,
+    url: &str,
+    name: &str,
+) -> Result<(), String> {
     let link = document
         .create_element("a")
         .map_err(js_error)?
@@ -47,7 +59,8 @@ fn click_link(document: &web_sys::Document, body: &web_sys::HtmlElement, url: &s
         .map_err(|_| "could not create a download link".to_string())?;
     link.set_href(url);
     link.set_download(name);
-    link.set_attribute("style", "display:none").map_err(js_error)?;
+    link.set_attribute("style", "display:none")
+        .map_err(js_error)?;
     body.append_child(&link).map_err(js_error)?;
     link.click();
     link.remove();

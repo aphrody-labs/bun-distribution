@@ -22,7 +22,14 @@
 // window next to it (#57). `--version` and diagnostics then go nowhere when started from a terminal
 // (std ignores the missing console handles, so nothing fails); debug builds keep the console.
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use std::cell::Cell;
 use std::rc::Rc;
@@ -52,7 +59,9 @@ const APP_ID: &str = "ai.storyteller.pdfcraft";
 #[cfg(target_os = "macos")]
 const APP_ICON_PNG: &[u8] = include_bytes!("../../../assets/pdfcraft/app-icon/pdfcraft-1024.png");
 #[cfg(not(target_os = "macos"))]
-const APP_ICON_PNG: &[u8] = include_bytes!("../../../assets/pdfcraft/app-icon/hicolor/256x256/apps/ai.storyteller.pdfcraft.png");
+const APP_ICON_PNG: &[u8] = include_bytes!(
+    "../../../assets/pdfcraft/app-icon/hicolor/256x256/apps/ai.storyteller.pdfcraft.png"
+);
 
 /// The app was called PrintCraft before; settings saved then are under this key.
 const LEGACY_STORAGE_KEY: &str = "printcraft";
@@ -78,11 +87,18 @@ fn migrate_legacy_folders() {
     let mut moves = vec![(eframe::storage_dir("PrintCraft"), settings_dir())];
     // Recovery lives in the settings folder except on Windows, where it is under %LOCALAPPDATA%.
     if cfg!(windows) {
-        let local = std::env::var_os("LOCALAPPDATA").filter(|v| !v.is_empty()).map(std::path::PathBuf::from);
-        moves.push((local.as_ref().map(|d| d.join("PrintCraft")), local.map(|d| d.join("PdfCraft"))));
+        let local = std::env::var_os("LOCALAPPDATA")
+            .filter(|v| !v.is_empty())
+            .map(std::path::PathBuf::from);
+        moves.push((
+            local.as_ref().map(|d| d.join("PrintCraft")),
+            local.map(|d| d.join("PdfCraft")),
+        ));
     }
     for (old, new) in moves {
-        let (Some(old), Some(new)) = (old, new) else { continue };
+        let (Some(old), Some(new)) = (old, new) else {
+            continue;
+        };
         if !old.is_dir() || new.exists() {
             continue;
         }
@@ -103,20 +119,30 @@ fn migrate_legacy_folders() {
 /// of the app, which only ever opens paths, is unaffected. Other schemes (`http://`, `mailto:`…),
 /// URIs naming another host, and plain paths pass through untouched.
 fn path_from_arg(arg: String) -> String {
-    let Some(rest) = arg.strip_prefix("file://") else { return arg };
+    let Some(rest) = arg.strip_prefix("file://") else {
+        return arg;
+    };
     let rest = rest.strip_prefix("localhost").unwrap_or(rest);
     if !rest.starts_with('/') {
         return arg;
     }
     // `file:///C:/x.pdf` on Windows names `C:/x.pdf`. `rest` starts with the one-byte '/', so
     // byte 1 is a char boundary.
-    let rest = if cfg!(windows) && rest.as_bytes().get(2) == Some(&b':') { &rest[1..] } else { rest };
+    let rest = if cfg!(windows) && rest.as_bytes().get(2) == Some(&b':') {
+        &rest[1..]
+    } else {
+        rest
+    };
     let mut out = Vec::with_capacity(rest.len());
     let mut bytes = rest.bytes();
     while let Some(b) = bytes.next() {
         if b == b'%' {
             let hex = bytes.clone().take(2).collect::<Vec<u8>>();
-            if let Some(byte) = std::str::from_utf8(&hex).ok().filter(|h| h.len() == 2).and_then(|h| u8::from_str_radix(h, 16).ok()) {
+            if let Some(byte) = std::str::from_utf8(&hex)
+                .ok()
+                .filter(|h| h.len() == 2)
+                .and_then(|h| u8::from_str_radix(h, 16).ok())
+            {
                 out.push(byte);
                 bytes.nth(1);
                 continue;
@@ -141,7 +167,9 @@ fn rejoin_split_paths(args: Vec<String>, exists: impl Fn(&str) -> bool) -> Vec<S
             continue;
         }
         // The longest run starting here that names a file; capped so a long list stays cheap.
-        let end = (i + 2..=args.len().min(i + 32)).rev().find(|&j| args.get(i..j).is_some_and(|run| exists(&run.join(" "))));
+        let end = (i + 2..=args.len().min(i + 32))
+            .rev()
+            .find(|&j| args.get(i..j).is_some_and(|run| exists(&run.join(" "))));
         match end.and_then(|j| Some((j, args.get(i..j)?.join(" ")))) {
             Some((j, joined)) => {
                 out.push(joined);
@@ -173,7 +201,10 @@ fn main() -> eframe::Result {
             log::error!("{report}");
         } else {
             // `eprintln!` panics on a broken stderr pipe, and a panic inside the panic hook aborts.
-            let _ = std::io::Write::write_fmt(&mut std::io::stderr(), format_args!("pdfcraft: {report}\n"));
+            let _ = std::io::Write::write_fmt(
+                &mut std::io::stderr(),
+                format_args!("pdfcraft: {report}\n"),
+            );
         }
     }));
     let mut files = Vec::new();
@@ -201,14 +232,22 @@ fn main() -> eframe::Result {
     let files = rejoin_split_paths(files, |p| std::path::Path::new(p).is_file());
     let integrated = cfg!(target_os = "macos");
     // GNOME on Wayland leaves the window frame to the app (src/decorations.rs).
-    let window_controls = if cfg!(any(target_os = "macos", target_os = "windows")) { None } else { decorations::app_drawn() };
+    let window_controls = if cfg!(any(target_os = "macos", target_os = "windows")) {
+        None
+    } else {
+        decorations::app_drawn()
+    };
     migrate_legacy_folders();
     // The log file lives in the settings folder; opened after the arguments (so `--version` leaves
     // no file behind) and after the PrintCraft migration (which a fresh folder would block).
     // Records logged until now are written to it first.
     if let (Some(logger), Some(dir)) = (logger, settings_dir()) {
         match logger.attach_dir(&dir.join("logs")) {
-            Ok(path) => log::info!("PdfCraft {}, log file {}", pdfcraft_engine::build_info::version(), path.display()),
+            Ok(path) => log::info!(
+                "PdfCraft {}, log file {}",
+                pdfcraft_engine::build_info::version(),
+                path.display()
+            ),
             // Standard error only by now (`attach_dir` gave up on the file); unlike `eprintln!`, never panics.
             Err(e) => log::warn!("no log file: {e}"),
         }
@@ -216,21 +255,36 @@ fn main() -> eframe::Result {
     // Windows: a launch that only names files (an Outlook attachment, an Explorer double-click)
     // hands them to the PdfCraft already running and exits (#282, #317). Any option means the
     // caller wants this launch's own window.
-    let may_hand_off = !new_window && !files.is_empty() && options.is_empty() && control_file.is_none() && !create_images;
+    let may_hand_off = !new_window
+        && !files.is_empty()
+        && options.is_empty()
+        && control_file.is_none()
+        && !create_images;
     let instance = match single_instance::claim(&single_instance::absolute(&files), may_hand_off) {
         single_instance::Claim::HandedOff => return Ok(()),
         single_instance::Claim::Primary(server) => Some(server),
         single_instance::Claim::Alone => None,
     };
     let choice = renderer_choice(std::env::var("PDFCRAFT_RENDERER").ok().as_deref());
-    let launch = Launch { files, options, control_file, create_images, integrated, window_controls };
+    let launch = Launch {
+        files,
+        options,
+        control_file,
+        create_images,
+        integrated,
+        window_controls,
+    };
     // Finder, Open With and the Dock deliver files as Apple events, not arguments; catch the one
     // that launched us as well as later ones. Lives until the event loop returns.
     #[cfg(target_os = "macos")]
     let apple_events = apple_events::AppleEvents::install();
     // Set once the app is created, which is after the renderer has started.
     let started = Rc::new(Cell::new(false));
-    let first = if choice == RendererChoice::Gl { eframe::Renderer::Glow } else { eframe::Renderer::Wgpu };
+    let first = if choice == RendererChoice::Gl {
+        eframe::Renderer::Glow
+    } else {
+        eframe::Renderer::Wgpu
+    };
     let result = eframe::run_native(
         "PdfCraft",
         native_options(launch.integrated, launch.window_controls.is_some(), first),
@@ -248,10 +302,16 @@ fn main() -> eframe::Result {
         Err(e @ eframe::Error::Wgpu(_)) if retry_with_gl(choice, started.get()) => {
             // Old or unusual GPUs and drivers (#461, #435, #392) can't give wgpu a device; OpenGL
             // usually still works there, so that's better than quitting.
-            log::error!("the GPU renderer (wgpu) didn't start: {e}. Starting with OpenGL instead; set PDFCRAFT_RENDERER=gl to skip wgpu.");
+            log::error!(
+                "the GPU renderer (wgpu) didn't start: {e}. Starting with OpenGL instead; set PDFCRAFT_RENDERER=gl to skip wgpu."
+            );
             eframe::run_native(
                 "PdfCraft",
-                native_options(launch.integrated, launch.window_controls.is_some(), eframe::Renderer::Glow),
+                native_options(
+                    launch.integrated,
+                    launch.window_controls.is_some(),
+                    eframe::Renderer::Glow,
+                ),
                 app_creator(
                     launch,
                     started,
@@ -291,7 +351,11 @@ fn retry_with_gl(choice: RendererChoice, app_started: bool) -> bool {
 }
 
 /// The window and renderer settings for one run.
-fn native_options(integrated: bool, app_frame: bool, renderer: eframe::Renderer) -> eframe::NativeOptions {
+fn native_options(
+    integrated: bool,
+    app_frame: bool,
+    renderer: eframe::Renderer,
+) -> eframe::NativeOptions {
     let mut viewport = egui::ViewportBuilder::default()
         .with_title("PdfCraft")
         .with_inner_size([1440.0, 920.0])
@@ -305,7 +369,10 @@ fn native_options(integrated: bool, app_frame: bool, renderer: eframe::Renderer)
         Err(e) => log::warn!("app icon: {e}"),
     }
     if integrated {
-        viewport = viewport.with_fullsize_content_view(true).with_titlebar_shown(false).with_title_shown(false);
+        viewport = viewport
+            .with_fullsize_content_view(true)
+            .with_titlebar_shown(false)
+            .with_title_shown(false);
     }
     if app_frame {
         // The tab strip is the title bar (pdfcraft_ui_egui::window_controls).
@@ -313,7 +380,12 @@ fn native_options(integrated: bool, app_frame: bool, renderer: eframe::Renderer)
     }
     let persistence_path = settings_dir().map(|d| d.join("app.ron"));
     // Set explicitly, so the renderer never depends on which one eframe defaults to.
-    let mut native = eframe::NativeOptions { viewport, persistence_path, renderer, ..Default::default() };
+    let mut native = eframe::NativeOptions {
+        viewport,
+        persistence_path,
+        renderer,
+        ..Default::default()
+    };
     if renderer == eframe::Renderer::Wgpu {
         configure_gpu(&mut native);
     }
@@ -338,7 +410,14 @@ fn app_creator<'a>(
     instance: Option<&'a single_instance::Server>,
     #[cfg(target_os = "macos")] apple_events: &'a apple_events::AppleEvents,
 ) -> eframe::AppCreator<'a> {
-    let Launch { files, options, control_file, create_images, integrated, window_controls } = launch;
+    let Launch {
+        files,
+        options,
+        control_file,
+        create_images,
+        integrated,
+        window_controls,
+    } = launch;
     Box::new(move |cc| {
         started.set(true);
         let mut app = PdfCraftApp::new();
@@ -348,7 +427,10 @@ fn app_creator<'a>(
         app.enable_desktop_theme();
         // The system's reopen-windows choice (macOS) starts the preference; a saved choice replaces it.
         app.reopen_last_session = reopen::system_default();
-        if let Some(json) = cc.storage.and_then(|s| s.get_string("pdfcraft").or_else(|| s.get_string(LEGACY_STORAGE_KEY))) {
+        if let Some(json) = cc.storage.and_then(|s| {
+            s.get_string("pdfcraft")
+                .or_else(|| s.get_string(LEGACY_STORAGE_KEY))
+        }) {
             app.restore(&json);
         }
         app.integrated_titlebar = integrated;
@@ -435,7 +517,10 @@ fn notify_software_renderer(app: &mut PdfCraftApp, device_type: eframe::wgpu::De
 /// script driving nothing, and the file that couldn't be replaced may be another user's, planted
 /// at a shared path such as `/tmp/pc.json` to receive the commands. This runs before any document
 /// opens, so nothing is lost.
-fn open_control_channel(file: &str, endpoint: std::io::Result<pdfcraft_ui_egui::control::Endpoint>) -> Result<(), String> {
+fn open_control_channel(
+    file: &str,
+    endpoint: std::io::Result<pdfcraft_ui_egui::control::Endpoint>,
+) -> Result<(), String> {
     match endpoint.and_then(|ep| write_control_file(file, ep.port, &ep.token).map(|()| ep.port)) {
         // Never the token (AGENTS.md §3): it stays in the owner-only file.
         Ok(port) => {
@@ -443,7 +528,9 @@ fn open_control_channel(file: &str, endpoint: std::io::Result<pdfcraft_ui_egui::
             Ok(())
         }
         Err(e) => {
-            let message = format!("--control {file}: {e}. Use a control file in a folder only you can write, such as ~/.pdfcraft-control.json");
+            let message = format!(
+                "--control {file}: {e}. Use a control file in a folder only you can write, such as ~/.pdfcraft-control.json"
+            );
             log::error!("{message}");
             Err(message)
         }
@@ -458,16 +545,22 @@ fn open_control_channel(file: &str, endpoint: std::io::Result<pdfcraft_ui_egui::
 /// file also never sees it half-written.
 fn write_control_file(path: &str, port: u16, token: &str) -> std::io::Result<()> {
     use std::io::{ErrorKind, Write};
-    let json = serde_json::json!({ "port": port, "token": token, "pid": std::process::id() }).to_string();
+    let json =
+        serde_json::json!({ "port": port, "token": token, "pid": std::process::id() }).to_string();
     let path = std::path::Path::new(path);
-    let name = path.file_name().ok_or_else(|| std::io::Error::new(ErrorKind::InvalidInput, "not a file name"))?;
+    let name = path
+        .file_name()
+        .ok_or_else(|| std::io::Error::new(ErrorKind::InvalidInput, "not a file name"))?;
     // Unpredictable suffixes, so the name can't be planted in advance. `RandomState` is keyed from
     // the operating system's random source.
     let random = std::hash::RandomState::new();
     for i in 0..16u32 {
         let mut staged = std::ffi::OsString::from(".");
         staged.push(name);
-        staged.push(format!(".{:016x}.tmp", std::hash::BuildHasher::hash_one(&random, i)));
+        staged.push(format!(
+            ".{:016x}.tmp",
+            std::hash::BuildHasher::hash_one(&random, i)
+        ));
         let staged = path.with_file_name(staged);
         let mut opts = std::fs::OpenOptions::new();
         opts.write(true).create_new(true);
@@ -481,7 +574,11 @@ fn write_control_file(path: &str, port: u16, token: &str) -> std::io::Result<()>
             Err(e) if e.kind() == ErrorKind::AlreadyExists => continue,
             // Windows refuses `create_new` on a folder with "access denied"; the name is taken all
             // the same. A folder we can't write to, with nothing at the name, still fails here.
-            Err(e) if e.kind() == ErrorKind::PermissionDenied && staged.symlink_metadata().is_ok() => continue,
+            Err(e)
+                if e.kind() == ErrorKind::PermissionDenied && staged.symlink_metadata().is_ok() =>
+            {
+                continue;
+            }
             Err(e) => return Err(e),
         };
         // The block closes the file before it is renamed.
@@ -495,7 +592,10 @@ fn write_control_file(path: &str, port: u16, token: &str) -> std::io::Result<()>
         }
         return done;
     }
-    Err(std::io::Error::new(ErrorKind::AlreadyExists, "no free name for the control file's temporary copy"))
+    Err(std::io::Error::new(
+        ErrorKind::AlreadyExists,
+        "no free name for the control file's temporary copy",
+    ))
 }
 
 /// How wgpu finds a GPU. Each choice yields to its wgpu environment variable.
@@ -523,12 +623,18 @@ fn write_control_file(path: &str, port: u16, token: &str) -> std::io::Result<()>
 ///   into the process, and a faulty one (an Intel driver in issue #37) crashed PdfCraft before
 ///   its window appeared. D3D12 is the native, best-supported backend there.
 fn configure_gpu(native: &mut eframe::NativeOptions) {
-    let eframe::egui_wgpu::WgpuSetup::CreateNew(setup) = &mut native.wgpu_options.wgpu_setup else { return };
+    let eframe::egui_wgpu::WgpuSetup::CreateNew(setup) = &mut native.wgpu_options.wgpu_setup else {
+        return;
+    };
     // Nothing draws or dispatches indirectly, so wgpu's check of indirect arguments only costs a
     // compute shader when the device is created, one that Metal can't compile on an Intel Iris
     // Pro: the device is lost and the window falls back to OpenGL. `WGPU_VALIDATION_INDIRECT_CALL=1`
     // turns the check back on.
-    setup.instance_descriptor.flags = setup.instance_descriptor.flags.difference(eframe::wgpu::InstanceFlags::VALIDATION_INDIRECT_CALL).with_env();
+    setup.instance_descriptor.flags = setup
+        .instance_descriptor
+        .flags
+        .difference(eframe::wgpu::InstanceFlags::VALIDATION_INDIRECT_CALL)
+        .with_env();
     // egui-wgpu requests only 8192 pixels even when the adapter can render larger surfaces.
     // A restored 3440-point window at 250% DPI requests 8600 pixels and otherwise panics in
     // Surface::configure before the app starts. Keep the renderer's other device requirements,
@@ -536,7 +642,8 @@ fn configure_gpu(native: &mut eframe::NativeOptions) {
     let device_descriptor = std::sync::Arc::clone(&setup.device_descriptor);
     setup.device_descriptor = std::sync::Arc::new(move |adapter| {
         let mut descriptor = device_descriptor(adapter);
-        descriptor.required_limits = surface_texture_limits(descriptor.required_limits, &adapter.limits());
+        descriptor.required_limits =
+            surface_texture_limits(descriptor.required_limits, &adapter.limits());
         descriptor
     });
     if std::env::var_os("WGPU_POWER_PREF").is_none() {
@@ -545,7 +652,10 @@ fn configure_gpu(native: &mut eframe::NativeOptions) {
         let compositor = compositor_gpu::compositor_gpu();
         if !displays.is_empty() || compositor.is_some() {
             setup.native_adapter_selector = Some(std::sync::Arc::new(move |adapters, surface| {
-                let usable: Vec<&eframe::wgpu::Adapter> = adapters.iter().filter(|a| surface.is_none_or(|s| a.is_surface_supported(s))).collect();
+                let usable: Vec<&eframe::wgpu::Adapter> = adapters
+                    .iter()
+                    .filter(|a| surface.is_none_or(|s| a.is_surface_supported(s)))
+                    .collect();
                 let infos: Vec<(u32, u32, eframe::wgpu::DeviceType)> = usable
                     .iter()
                     .map(|a| {
@@ -553,27 +663,41 @@ fn configure_gpu(native: &mut eframe::NativeOptions) {
                         (info.vendor, info.device, info.device_type)
                     })
                     .collect();
-                let picked = pick_adapter(&infos, &displays, compositor).and_then(|i| usable.get(i)).map(|a| (*a).clone());
+                let picked = pick_adapter(&infos, &displays, compositor)
+                    .and_then(|i| usable.get(i))
+                    .map(|a| (*a).clone());
                 match &picked {
                     // Which GPU draws is the first question when a window stays black (#8, #378, #445).
                     Some(a) => {
                         let info = a.get_info();
-                        log::info!("drawing on {} ({:?}, {:?})", info.name, info.device_type, info.backend);
+                        log::info!(
+                            "drawing on {} ({:?}, {:?})",
+                            info.name,
+                            info.device_type,
+                            info.backend
+                        );
                     }
-                    None => log::warn!("no GPU can draw to this window; {} were considered", usable.len()),
+                    None => log::warn!(
+                        "no GPU can draw to this window; {} were considered",
+                        usable.len()
+                    ),
                 }
                 picked.ok_or_else(|| "no GPU can draw to this window".to_string())
             }));
         }
     }
     if cfg!(target_os = "windows") && std::env::var_os("WGPU_BACKEND").is_none() {
-        setup.instance_descriptor.backends = eframe::wgpu::Backends::DX12 | eframe::wgpu::Backends::GL;
+        setup.instance_descriptor.backends =
+            eframe::wgpu::Backends::DX12 | eframe::wgpu::Backends::GL;
     }
 }
 
 /// Surface textures must fit the device's enabled limits, not just the physical GPU's limits.
 /// Changing only the 2D extent preserves egui-wgpu's backend-specific downlevel requirements.
-fn surface_texture_limits(mut required: eframe::wgpu::Limits, supported: &eframe::wgpu::Limits) -> eframe::wgpu::Limits {
+fn surface_texture_limits(
+    mut required: eframe::wgpu::Limits,
+    supported: &eframe::wgpu::Limits,
+) -> eframe::wgpu::Limits {
     required.max_texture_dimension_2d = supported.max_texture_dimension_2d;
     required
 }
@@ -636,7 +760,9 @@ fn windows_display_gpus() -> Vec<DisplayGpu> {
         if !device.StateFlags.has(Flags::ATTACHED_TO_DESKTOP) {
             continue;
         }
-        let Some(pci) = pci_ids(&device.DeviceID()) else { continue };
+        let Some(pci) = pci_ids(&device.DeviceID()) else {
+            continue;
+        };
         add_display_gpu(&mut gpus, pci, device.StateFlags.has(Flags::PRIMARY_DEVICE));
     }
     gpus
@@ -649,7 +775,11 @@ fn pci_ids(device_id: &str) -> Option<(u32, u32)> {
     let field = |key: &str| {
         device_id.split(['\\', '&']).find_map(|part| {
             let (name, hex) = part.split_at_checked(key.len())?;
-            if name.eq_ignore_ascii_case(key) { u32::from_str_radix(hex, 16).ok() } else { None }
+            if name.eq_ignore_ascii_case(key) {
+                u32::from_str_radix(hex, 16).ok()
+            } else {
+                None
+            }
         })
     };
     Some((field("VEN_")?, field("DEV_")?))
@@ -658,7 +788,9 @@ fn pci_ids(device_id: &str) -> Option<(u32, u32)> {
 /// Whether a DRM connector name (`eDP-1`, `LVDS-1`, `DSI-1`) is a laptop's built-in panel.
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 fn is_internal_panel(connector: &str) -> bool {
-    ["eDP", "LVDS", "DSI"].iter().any(|kind| connector.starts_with(kind))
+    ["eDP", "LVDS", "DSI"]
+        .iter()
+        .any(|kind| connector.starts_with(kind))
 }
 
 /// The GPUs with a connected monitor, read from the DRM connectors under `drm` (`card1-DP-3/status`
@@ -670,17 +802,27 @@ fn linux_display_gpus(drm: &std::path::Path) -> Vec<DisplayGpu> {
         u32::from_str_radix(s.trim().trim_start_matches("0x"), 16).ok()
     };
     let mut gpus: Vec<DisplayGpu> = Vec::new();
-    let Ok(entries) = std::fs::read_dir(drm) else { return gpus };
+    let Ok(entries) = std::fs::read_dir(drm) else {
+        return gpus;
+    };
     // A machine has a handful of connectors; the cap only bounds a pathological sysfs.
     for entry in entries.flatten().take(256) {
         let name = entry.file_name();
-        let Some((card, connector)) = name.to_str().and_then(|n| n.split_once('-')) else { continue };
-        let connected = std::fs::read_to_string(entry.path().join("status")).is_ok_and(|s| s.trim() == "connected");
+        let Some((card, connector)) = name.to_str().and_then(|n| n.split_once('-')) else {
+            continue;
+        };
+        let connected = std::fs::read_to_string(entry.path().join("status"))
+            .is_ok_and(|s| s.trim() == "connected");
         if !connected {
             continue;
         }
         let device = drm.join(card).join("device");
-        let (Some(v), Some(d)) = (read_hex(device.join("vendor")), read_hex(device.join("device"))) else { continue };
+        let (Some(v), Some(d)) = (
+            read_hex(device.join("vendor")),
+            read_hex(device.join("device")),
+        ) else {
+            continue;
+        };
         add_display_gpu(&mut gpus, (v, d), is_internal_panel(connector));
     }
     gpus
@@ -691,7 +833,11 @@ fn linux_display_gpus(drm: &std::path::Path) -> Vec<DisplayGpu> {
 /// primary display (a hybrid laptop's panel, #8; the primary display on Windows, #378), or else,
 /// with no primary display known (a Linux desktop with a monitor on each GPU, #445), the discrete
 /// one. Otherwise the most frugal kind: integrated, discrete, other, virtual, software.
-fn pick_adapter(adapters: &[(u32, u32, eframe::wgpu::DeviceType)], displays: &[DisplayGpu], compositor: Option<(u32, u32)>) -> Option<usize> {
+fn pick_adapter(
+    adapters: &[(u32, u32, eframe::wgpu::DeviceType)],
+    displays: &[DisplayGpu],
+    compositor: Option<(u32, u32)>,
+) -> Option<usize> {
     use eframe::wgpu::DeviceType;
     let display = |pci: (u32, u32)| displays.iter().find(|g| g.pci == pci);
     let multi_gpu_desktop = displays.len() > 1 && !displays.iter().any(|g| g.primary);
@@ -712,7 +858,12 @@ fn pick_adapter(adapters: &[(u32, u32, eframe::wgpu::DeviceType)], displays: &[D
                 DeviceType::VirtualGpu => 4,
                 DeviceType::Cpu => 5,
             };
-            (compositor != Some((*vendor, *device)), !drives_display, !drives_primary, rank)
+            (
+                compositor != Some((*vendor, *device)),
+                !drives_display,
+                !drives_primary,
+                rank,
+            )
         })
         .map(|(i, _)| i)
 }
@@ -722,7 +873,10 @@ mod tests {
     use pdfcraft_ui_egui::control::Endpoint;
 
     fn endpoint() -> std::io::Result<Endpoint> {
-        Ok(Endpoint { port: 4321, token: "0123456789abcdef".into() })
+        Ok(Endpoint {
+            port: 4321,
+            token: "0123456789abcdef".into(),
+        })
     }
 
     /// Tests that open a real GPU device take this first, so only one of them is inside the
@@ -735,7 +889,8 @@ mod tests {
 
     fn gpu() -> std::sync::MutexGuard<'static, ()> {
         // A test that panicked while holding it leaves nothing to clean up.
-        GPU.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+        GPU.lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     #[test]
@@ -748,33 +903,72 @@ mod tests {
         // A folder in the way stands in for a file another user created first: the write fails.
         std::fs::create_dir(dir.join("taken.json")).unwrap();
         let err = super::open_control_channel(&path("taken.json"), endpoint()).unwrap_err();
-        assert!(err.contains("--control") && err.contains("taken.json") && err.contains("only you can write"), "{err}");
+        assert!(
+            err.contains("--control")
+                && err.contains("taken.json")
+                && err.contains("only you can write"),
+            "{err}"
+        );
         // No listener: nothing to publish.
-        let err = super::open_control_channel(&path("pc.json"), Err(std::io::Error::other("no loopback"))).unwrap_err();
+        let err = super::open_control_channel(
+            &path("pc.json"),
+            Err(std::io::Error::other("no loopback")),
+        )
+        .unwrap_err();
         assert!(err.contains("no loopback"), "{err}");
         assert!(!dir.join("pc.json").exists());
 
         super::open_control_channel(&path("pc.json"), endpoint()).unwrap();
-        let written: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(dir.join("pc.json")).unwrap()).unwrap();
-        assert_eq!((written["port"].as_u64(), written["token"].as_str()), (Some(4321), Some("0123456789abcdef")));
+        let written: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(dir.join("pc.json")).unwrap()).unwrap();
+        assert_eq!(
+            (written["port"].as_u64(), written["token"].as_str()),
+            (Some(4321), Some("0123456789abcdef"))
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
     fn path_from_arg_decodes_file_uris() {
-        assert_eq!(super::path_from_arg("file:///home/alice/report.pdf".to_string()), "/home/alice/report.pdf");
-        assert_eq!(super::path_from_arg("file:///home/alice/my%20report.pdf".to_string()), "/home/alice/my report.pdf");
-        assert_eq!(super::path_from_arg("file://localhost/tmp/a%C3%A9.pdf".to_string()), "/tmp/aé.pdf");
+        assert_eq!(
+            super::path_from_arg("file:///home/alice/report.pdf".to_string()),
+            "/home/alice/report.pdf"
+        );
+        assert_eq!(
+            super::path_from_arg("file:///home/alice/my%20report.pdf".to_string()),
+            "/home/alice/my report.pdf"
+        );
+        assert_eq!(
+            super::path_from_arg("file://localhost/tmp/a%C3%A9.pdf".to_string()),
+            "/tmp/aé.pdf"
+        );
         // Malformed or truncated escapes are kept as written; bytes that aren't UTF-8 keep the URI.
-        assert_eq!(super::path_from_arg("file:///tmp/100%.pdf".to_string()), "/tmp/100%.pdf");
-        assert_eq!(super::path_from_arg("file:///tmp/a%2".to_string()), "/tmp/a%2");
-        assert_eq!(super::path_from_arg("file:///tmp/%zz%".to_string()), "/tmp/%zz%");
-        assert_eq!(super::path_from_arg("file:///tmp/%FF.pdf".to_string()), "file:///tmp/%FF.pdf");
+        assert_eq!(
+            super::path_from_arg("file:///tmp/100%.pdf".to_string()),
+            "/tmp/100%.pdf"
+        );
+        assert_eq!(
+            super::path_from_arg("file:///tmp/a%2".to_string()),
+            "/tmp/a%2"
+        );
+        assert_eq!(
+            super::path_from_arg("file:///tmp/%zz%".to_string()),
+            "/tmp/%zz%"
+        );
+        assert_eq!(
+            super::path_from_arg("file:///tmp/%FF.pdf".to_string()),
+            "file:///tmp/%FF.pdf"
+        );
     }
 
     #[test]
     fn unquoted_paths_with_spaces_are_rejoined() {
-        let have = ["P:\\Archive\\00042A26 Contract.PDF", "C:\\a b c.pdf", "C:\\a.pdf", "C:\\x y.pdf"];
+        let have = [
+            "P:\\Archive\\00042A26 Contract.PDF",
+            "C:\\a b c.pdf",
+            "C:\\a.pdf",
+            "C:\\x y.pdf",
+        ];
         let exists = |p: &str| have.contains(&p);
         let args = |a: &[&str]| a.iter().map(|s| s.to_string()).collect::<Vec<_>>();
         // The case an office program produced: one path, split at its space.
@@ -783,19 +977,37 @@ mod tests {
             args(&["P:\\Archive\\00042A26 Contract.PDF"])
         );
         // The longest run wins; files that exist on their own are left alone.
-        assert_eq!(super::rejoin_split_paths(args(&["C:\\a", "b", "c.pdf", "C:\\a.pdf"]), exists), args(&["C:\\a b c.pdf", "C:\\a.pdf"]));
-        assert_eq!(super::rejoin_split_paths(args(&["C:\\a.pdf", "C:\\x", "y.pdf"]), exists), args(&["C:\\a.pdf", "C:\\x y.pdf"]));
+        assert_eq!(
+            super::rejoin_split_paths(args(&["C:\\a", "b", "c.pdf", "C:\\a.pdf"]), exists),
+            args(&["C:\\a b c.pdf", "C:\\a.pdf"])
+        );
+        assert_eq!(
+            super::rejoin_split_paths(args(&["C:\\a.pdf", "C:\\x", "y.pdf"]), exists),
+            args(&["C:\\a.pdf", "C:\\x y.pdf"])
+        );
         // Nothing to join: kept as given, so the missing file is still reported by name.
-        assert_eq!(super::rejoin_split_paths(args(&["missing.pdf", "other"]), exists), args(&["missing.pdf", "other"]));
+        assert_eq!(
+            super::rejoin_split_paths(args(&["missing.pdf", "other"]), exists),
+            args(&["missing.pdf", "other"])
+        );
         assert!(super::rejoin_split_paths(Vec::new(), exists).is_empty());
     }
 
     #[test]
     fn path_from_arg_leaves_plain_paths_and_other_schemes_alone() {
         assert_eq!(super::path_from_arg("report.pdf".to_string()), "report.pdf");
-        assert_eq!(super::path_from_arg("/home/alice/report.pdf".to_string()), "/home/alice/report.pdf");
-        assert_eq!(super::path_from_arg("https://example.com/report.pdf".to_string()), "https://example.com/report.pdf");
-        assert_eq!(super::path_from_arg("file://server/share/a.pdf".to_string()), "file://server/share/a.pdf");
+        assert_eq!(
+            super::path_from_arg("/home/alice/report.pdf".to_string()),
+            "/home/alice/report.pdf"
+        );
+        assert_eq!(
+            super::path_from_arg("https://example.com/report.pdf".to_string()),
+            "https://example.com/report.pdf"
+        );
+        assert_eq!(
+            super::path_from_arg("file://server/share/a.pdf".to_string()),
+            "file://server/share/a.pdf"
+        );
         assert_eq!(super::path_from_arg("file://".to_string()), "file://");
     }
 
@@ -815,15 +1027,31 @@ mod tests {
         assert!(!retry_with_gl(RendererChoice::Wgpu, false));
         assert!(!retry_with_gl(RendererChoice::Gl, false));
         // Each run states its renderer rather than relying on eframe's default.
-        assert_eq!(native_options(false, false, eframe::Renderer::Wgpu).renderer, eframe::Renderer::Wgpu);
-        assert_eq!(native_options(false, false, eframe::Renderer::Glow).renderer, eframe::Renderer::Glow);
+        assert_eq!(
+            native_options(false, false, eframe::Renderer::Wgpu).renderer,
+            eframe::Renderer::Wgpu
+        );
+        assert_eq!(
+            native_options(false, false, eframe::Renderer::Glow).renderer,
+            eframe::Renderer::Glow
+        );
     }
 
     #[test]
     fn the_desktop_frame_is_turned_off_only_when_the_app_draws_one() {
         use super::native_options;
-        assert_eq!(native_options(false, false, eframe::Renderer::Glow).viewport.decorations, None);
-        assert_eq!(native_options(false, true, eframe::Renderer::Glow).viewport.decorations, Some(false));
+        assert_eq!(
+            native_options(false, false, eframe::Renderer::Glow)
+                .viewport
+                .decorations,
+            None
+        );
+        assert_eq!(
+            native_options(false, true, eframe::Renderer::Glow)
+                .viewport
+                .decorations,
+            Some(false)
+        );
     }
 
     #[test]
@@ -832,9 +1060,21 @@ mod tests {
         // Issue #519: WARP or llvmpipe is announced in the app, not just in pdfcraft.log.
         let mut app = super::PdfCraftApp::new();
         super::notify_software_renderer(&mut app, DeviceType::Cpu);
-        let notice = app.toast.as_ref().map(|(m, _)| m.as_str()).unwrap_or_default();
-        assert!(notice.contains("without a graphics processor"), "{notice:?}");
-        for gpu in [DeviceType::IntegratedGpu, DeviceType::DiscreteGpu, DeviceType::VirtualGpu, DeviceType::Other] {
+        let notice = app
+            .toast
+            .as_ref()
+            .map(|(m, _)| m.as_str())
+            .unwrap_or_default();
+        assert!(
+            notice.contains("without a graphics processor"),
+            "{notice:?}"
+        );
+        for gpu in [
+            DeviceType::IntegratedGpu,
+            DeviceType::DiscreteGpu,
+            DeviceType::VirtualGpu,
+            DeviceType::Other,
+        ] {
             let mut app = super::PdfCraftApp::new();
             super::notify_software_renderer(&mut app, gpu);
             assert!(app.toast.is_none(), "{gpu:?}: {:?}", app.toast);
@@ -849,16 +1089,28 @@ mod tests {
             panic!("default setup creates its own instance")
         };
         if std::env::var_os("WGPU_POWER_PREF").is_none() {
-            assert_eq!(setup.power_preference, eframe::wgpu::PowerPreference::LowPower);
+            assert_eq!(
+                setup.power_preference,
+                eframe::wgpu::PowerPreference::LowPower
+            );
         }
         if std::env::var_os("WGPU_VALIDATION_INDIRECT_CALL").is_none() {
             let flags = setup.instance_descriptor.flags;
-            assert!(!flags.contains(eframe::wgpu::InstanceFlags::VALIDATION_INDIRECT_CALL), "Intel Metal can't compile its shader: {flags:?}");
+            assert!(
+                !flags.contains(eframe::wgpu::InstanceFlags::VALIDATION_INDIRECT_CALL),
+                "Intel Metal can't compile its shader: {flags:?}"
+            );
         }
         if cfg!(target_os = "windows") && std::env::var_os("WGPU_BACKEND").is_none() {
             let backends = setup.instance_descriptor.backends;
-            assert!(backends.contains(eframe::wgpu::Backends::DX12), "{backends:?}");
-            assert!(!backends.contains(eframe::wgpu::Backends::VULKAN), "issue #37: {backends:?}");
+            assert!(
+                backends.contains(eframe::wgpu::Backends::DX12),
+                "{backends:?}"
+            );
+            assert!(
+                !backends.contains(eframe::wgpu::Backends::VULKAN),
+                "issue #37: {backends:?}"
+            );
         }
     }
 
@@ -868,7 +1120,10 @@ mod tests {
         let (width, height) = (8600, 3423);
         let required = eframe::wgpu::Limits::default();
         assert!(width > required.max_texture_dimension_2d);
-        let supported = eframe::wgpu::Limits { max_texture_dimension_2d: 16384, ..required.clone() };
+        let supported = eframe::wgpu::Limits {
+            max_texture_dimension_2d: 16384,
+            ..required.clone()
+        };
         let enabled = super::surface_texture_limits(required, &supported);
         assert!(width <= enabled.max_texture_dimension_2d);
         assert!(height <= enabled.max_texture_dimension_2d);
@@ -876,14 +1131,23 @@ mod tests {
 
     #[test]
     fn surface_limits_preserve_other_requirements_and_never_overrequest() {
-        for required in [eframe::wgpu::Limits::default(), eframe::wgpu::Limits::downlevel_webgl2_defaults()] {
+        for required in [
+            eframe::wgpu::Limits::default(),
+            eframe::wgpu::Limits::downlevel_webgl2_defaults(),
+        ] {
             for extent in [4096, 8192, 16384] {
-                let supported = eframe::wgpu::Limits { max_texture_dimension_2d: extent, ..required.clone() };
+                let supported = eframe::wgpu::Limits {
+                    max_texture_dimension_2d: extent,
+                    ..required.clone()
+                };
                 let enabled = super::surface_texture_limits(required.clone(), &supported);
                 let mut expected = required.clone();
                 expected.max_texture_dimension_2d = extent;
                 assert_eq!(enabled, expected);
-                assert_eq!(enabled.max_texture_dimension_2d, supported.max_texture_dimension_2d);
+                assert_eq!(
+                    enabled.max_texture_dimension_2d,
+                    supported.max_texture_dimension_2d
+                );
             }
         }
     }
@@ -919,21 +1183,37 @@ mod tests {
             (40_000, 3, 1),
         ] {
             let (fw, fh, scale) = surface_fit(w, h, max);
-            assert!(fw <= max.max(1) && fh <= max.max(1), "{w} x {h} in {max}: {fw} x {fh}");
+            assert!(
+                fw <= max.max(1) && fh <= max.max(1),
+                "{w} x {h} in {max}: {fw} x {fh}"
+            );
             // A side that wasn't zero stays non-zero (`Surface::configure` rejects an empty one),
             // and a zero side stays zero (egui-wgpu skips configuring it).
-            assert_eq!((fw == 0, fh == 0), (w == 0, h == 0), "{w} x {h} in {max}: {fw} x {fh}");
-            assert!(scale.is_finite() && scale > 0.0 && scale <= 1.0, "{w} x {h} in {max}: {scale}");
+            assert_eq!(
+                (fw == 0, fh == 0),
+                (w == 0, h == 0),
+                "{w} x {h} in {max}: {fw} x {fh}"
+            );
+            assert!(
+                scale.is_finite() && scale > 0.0 && scale <= 1.0,
+                "{w} x {h} in {max}: {scale}"
+            );
         }
         // The longer side lands exactly on the limit (rounding never leaves it a pixel short),
         // and the shorter side keeps the window's proportions to within a pixel.
         for max in [2048, 8192, 16384] {
-            for long in (max + 1..=max * 5).step_by(997).chain([max * 2, max * 4, u32::MAX]) {
+            for long in (max + 1..=max * 5)
+                .step_by(997)
+                .chain([max * 2, max * 4, u32::MAX])
+            {
                 for short in [1, 3, 600, max / 3, max - 1, max, long - 1, long] {
                     let (fw, fh, scale) = surface_fit(long, short, max);
                     assert_eq!(fw, max, "{long} x {short} in {max}");
                     let expected = f64::from(short) * f64::from(max) / f64::from(long);
-                    assert!((f64::from(fh) - expected).abs() <= 1.0, "{long} x {short} in {max}: {fh}");
+                    assert!(
+                        (f64::from(fh) - expected).abs() <= 1.0,
+                        "{long} x {short} in {max}: {fh}"
+                    );
                     assert_eq!(surface_fit(short, long, max), (fh, fw, scale), "transposed");
                 }
             }
@@ -948,19 +1228,31 @@ mod tests {
         // resolves egui-wgpu from crates.io again, or a re-vendored copy without the patch, would
         // bring the crash back: re-apply the patch, or drop the copy once an egui release has a
         // fix (vendor/README.md).
-        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/libraries/pdfcraft/apps");
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../docs/libraries/pdfcraft/apps");
         let lock = std::fs::read_to_string(root.join("Cargo.lock")).unwrap();
-        let egui_wgpu = lock.split("[[package]]").find(|p| p.contains("\nname = \"egui-wgpu\"\n")).expect("egui-wgpu is in Cargo.lock");
-        assert!(!egui_wgpu.contains("\nsource = "), "egui-wgpu must resolve to vendor/egui-wgpu, not:{egui_wgpu}");
+        let egui_wgpu = lock
+            .split("[[package]]")
+            .find(|p| p.contains("\nname = \"egui-wgpu\"\n"))
+            .expect("egui-wgpu is in Cargo.lock");
+        assert!(
+            !egui_wgpu.contains("\nsource = "),
+            "egui-wgpu must resolve to vendor/egui-wgpu, not:{egui_wgpu}"
+        );
         // `surface_fit` is tested above; these keep it in the paths that size a surface.
-        let painter = std::fs::read_to_string(root.join("vendor/egui-wgpu/src/winit.rs")).unwrap().replace("\r\n", "\n");
+        let painter = std::fs::read_to_string(root.join("vendor/egui-wgpu/src/winit.rs"))
+            .unwrap()
+            .replace("\r\n", "\n");
         for patch in [
             "let (width, height, render_scale) = surface_fit(window_width, window_height, max_side);",
             "let (fit_width, fit_height, _) = surface_fit(width, height, self.max_surface_side());",
             "pixels_per_point: pixels_per_point * surface_state.render_scale,",
             "old_state.window_width,\n            old_state.window_height,",
         ] {
-            assert!(painter.contains(patch), "vendor/egui-wgpu lost its surface size patch: {patch}");
+            assert!(
+                painter.contains(patch),
+                "vendor/egui-wgpu lost its surface size patch: {patch}"
+            );
         }
     }
 
@@ -979,20 +1271,29 @@ mod tests {
             panic!("default setup creates its own instance")
         };
         let instance = pollster::block_on(native.wgpu_options.wgpu_setup.new_instance());
-        let options = wgpu::RequestAdapterOptions { power_preference: setup.power_preference, ..Default::default() };
+        let options = wgpu::RequestAdapterOptions {
+            power_preference: setup.power_preference,
+            ..Default::default()
+        };
         // CI runners have a software adapter (WARP, llvmpipe); a machine without any skips.
         let Ok(adapter) = pollster::block_on(instance.request_adapter(&options)) else {
             eprintln!("skipping: no GPU adapter on this machine");
             return;
         };
-        let Ok((device, _queue)) = pollster::block_on(adapter.request_device(&(setup.device_descriptor)(&adapter))) else {
+        let Ok((device, _queue)) =
+            pollster::block_on(adapter.request_device(&(setup.device_descriptor)(&adapter)))
+        else {
             eprintln!("skipping: the adapter gives no device");
             return;
         };
         let texture = |width: u32| {
             device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("issue-519"),
-                size: wgpu::Extent3d { width, height: 1, depth_or_array_layers: 1 },
+                size: wgpu::Extent3d {
+                    width,
+                    height: 1,
+                    depth_or_array_layers: 1,
+                },
                 mip_level_count: 1,
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
@@ -1002,19 +1303,34 @@ mod tests {
             })
         };
         let too_wide = device.limits().max_texture_dimension_2d.saturating_add(1);
-        let caught = pollster::block_on(eframe::egui_wgpu::winit::catch_errors(&device, || texture(too_wide)));
-        assert!(matches!(caught, Err(wgpu::Error::Validation { .. })), "{caught:?}");
+        let caught = pollster::block_on(eframe::egui_wgpu::winit::catch_errors(&device, || {
+            texture(too_wide)
+        }));
+        assert!(
+            matches!(caught, Err(wgpu::Error::Validation { .. })),
+            "{caught:?}"
+        );
         // The device stays usable, and nothing is left behind to catch later errors by mistake.
-        let fine = pollster::block_on(eframe::egui_wgpu::winit::catch_errors(&device, || texture(16)));
+        let fine = pollster::block_on(eframe::egui_wgpu::winit::catch_errors(&device, || {
+            texture(16)
+        }));
         assert!(fine.is_ok(), "{fine:?}");
-        assert_eq!(pollster::block_on(eframe::egui_wgpu::winit::catch_errors(&device, || 7)).ok(), Some(7));
+        assert_eq!(
+            pollster::block_on(eframe::egui_wgpu::winit::catch_errors(&device, || 7)).ok(),
+            Some(7)
+        );
         // Nested: the inner call keeps its own error, and the outer one still catches what follows.
         let caught = pollster::block_on(eframe::egui_wgpu::winit::catch_errors(&device, || {
-            let inner = pollster::block_on(eframe::egui_wgpu::winit::catch_errors(&device, || texture(too_wide)));
+            let inner = pollster::block_on(eframe::egui_wgpu::winit::catch_errors(&device, || {
+                texture(too_wide)
+            }));
             assert!(inner.is_err(), "inner: {inner:?}");
             texture(too_wide)
         }));
-        assert!(matches!(caught, Err(wgpu::Error::Validation { .. })), "outer: {caught:?}");
+        assert!(
+            matches!(caught, Err(wgpu::Error::Validation { .. })),
+            "outer: {caught:?}"
+        );
     }
 
     #[test]
@@ -1023,17 +1339,33 @@ mod tests {
         // every new window's surface, and its error reaching eframe as `WgpuError` (eframe then
         // returns `Error::Wgpu`, which `main` retries with OpenGL). Without it a failed configure
         // panics before the app is created, and the OpenGL retry never runs.
-        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/libraries/pdfcraft/apps");
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../docs/libraries/pdfcraft/apps");
         let lock = std::fs::read_to_string(root.join("Cargo.lock")).unwrap();
-        let egui_wgpu = lock.split("[[package]]").find(|p| p.contains("\nname = \"egui-wgpu\"\n")).expect("egui-wgpu is in Cargo.lock");
-        assert!(!egui_wgpu.contains("\nsource = "), "egui-wgpu must resolve to vendor/egui-wgpu, not:{egui_wgpu}");
-        let painter = std::fs::read_to_string(root.join("vendor/egui-wgpu/src/winit.rs")).unwrap().replace("\r\n", "\n");
-        let add_surface = painter.split("async fn add_surface(").nth(1).and_then(|s| s.split("\n    fn ").next()).expect("add_surface");
+        let egui_wgpu = lock
+            .split("[[package]]")
+            .find(|p| p.contains("\nname = \"egui-wgpu\"\n"))
+            .expect("egui-wgpu is in Cargo.lock");
+        assert!(
+            !egui_wgpu.contains("\nsource = "),
+            "egui-wgpu must resolve to vendor/egui-wgpu, not:{egui_wgpu}"
+        );
+        let painter = std::fs::read_to_string(root.join("vendor/egui-wgpu/src/winit.rs"))
+            .unwrap()
+            .replace("\r\n", "\n");
+        let add_surface = painter
+            .split("async fn add_surface(")
+            .nth(1)
+            .and_then(|s| s.split("\n    fn ").next())
+            .expect("add_surface");
         for patch in [
             "let installed = catch_errors(&device, || {\n            self.install_surface(surface, viewport_id, size.width, size.height, false);\n        })",
             "return Err(crate::WgpuError::ConfigureSurface(error));",
         ] {
-            assert!(add_surface.contains(patch), "vendor/egui-wgpu lost its surface configure patch: {patch}");
+            assert!(
+                add_surface.contains(patch),
+                "vendor/egui-wgpu lost its surface configure patch: {patch}"
+            );
         }
     }
 
@@ -1042,28 +1374,54 @@ mod tests {
         use eframe::{egui_wgpu, wgpu};
         let _gpu = gpu();
         let mut native = super::native_options(false, false, eframe::Renderer::Wgpu);
-        let egui_wgpu::WgpuSetup::CreateNew(setup) = &native.wgpu_options.wgpu_setup else { panic!("default setup creates its own instance") };
+        let egui_wgpu::WgpuSetup::CreateNew(setup) = &native.wgpu_options.wgpu_setup else {
+            panic!("default setup creates its own instance")
+        };
         let instance = pollster::block_on(native.wgpu_options.wgpu_setup.new_instance());
-        let options = wgpu::RequestAdapterOptions { power_preference: setup.power_preference, ..Default::default() };
+        let options = wgpu::RequestAdapterOptions {
+            power_preference: setup.power_preference,
+            ..Default::default()
+        };
         let Ok(adapter) = pollster::block_on(instance.request_adapter(&options)) else {
-            assert!(std::env::var_os("PDFCRAFT_TEST_REQUIRE_GPU").is_none(), "a GPU adapter is required for this run");
+            assert!(
+                std::env::var_os("PDFCRAFT_TEST_REQUIRE_GPU").is_none(),
+                "a GPU adapter is required for this run"
+            );
             eprintln!("skipping pipeline regression: no GPU adapter");
             return;
         };
-        let (device, queue) = pollster::block_on(adapter.request_device(&(setup.device_descriptor)(&adapter)))
-            .expect("the selected adapter must provide a test device");
+        let (device, queue) =
+            pollster::block_on(adapter.request_device(&(setup.device_descriptor)(&adapter)))
+                .expect("the selected adapter must provide a test device");
         native.wgpu_options.wgpu_setup =
-            egui_wgpu::WgpuSetup::Existing(egui_wgpu::WgpuSetupExisting { instance: instance.clone(), adapter, device, queue });
+            egui_wgpu::WgpuSetup::Existing(egui_wgpu::WgpuSetupExisting {
+                instance: instance.clone(),
+                adapter,
+                device,
+                queue,
+            });
         // Three samples is invalid on every backend, so this reproduces a pipeline error
         // without depending on a particular driver. The unpatched constructor panics.
         for samples in [3, 1, 3, 1] {
-            let options = egui_wgpu::RendererOptions { msaa_samples: samples, ..Default::default() };
-            let result = pollster::block_on(egui_wgpu::RenderState::create(&native.wgpu_options, &instance, None, options));
+            let options = egui_wgpu::RendererOptions {
+                msaa_samples: samples,
+                ..Default::default()
+            };
+            let result = pollster::block_on(egui_wgpu::RenderState::create(
+                &native.wgpu_options,
+                &instance,
+                None,
+                options,
+            ));
             if samples == 3 {
                 let error = result.err().expect("invalid pipeline must return an error");
                 assert!(error.to_string().contains("egui_pipeline"), "{error}");
             } else {
-                assert!(result.is_ok(), "the device must remain usable: {:?}", result.err());
+                assert!(
+                    result.is_ok(),
+                    "the device must remain usable: {:?}",
+                    result.err()
+                );
             }
         }
     }
@@ -1076,13 +1434,26 @@ mod tests {
         // dependency bump that resolves winit from crates.io again, or a re-vendored copy without
         // the patch, would silently bring the bug back: re-apply the patch, or drop the copy once a
         // winit 0.30 release has the fix (vendor/README.md).
-        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/libraries/pdfcraft/apps");
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../docs/libraries/pdfcraft/apps");
         let lock = std::fs::read_to_string(root.join("Cargo.lock")).unwrap();
-        let winit = lock.split("[[package]]").find(|p| p.contains("\nname = \"winit\"\n")).expect("winit is in Cargo.lock");
-        assert!(!winit.contains("\nsource = "), "winit must resolve to vendor/winit, not:{winit}");
-        let dpi_changed = std::fs::read_to_string(root.join("vendor/winit/src/platform_impl/windows/event_loop.rs")).unwrap();
+        let winit = lock
+            .split("[[package]]")
+            .find(|p| p.contains("\nname = \"winit\"\n"))
+            .expect("winit is in Cargo.lock");
+        assert!(
+            !winit.contains("\nsource = "),
+            "winit must resolve to vendor/winit, not:{winit}"
+        );
+        let dpi_changed = std::fs::read_to_string(
+            root.join("vendor/winit/src/platform_impl/windows/event_loop.rs"),
+        )
+        .unwrap();
         let patch = "if !WIN10_BUILD_VERSION.is_some_and(|build| build < 22000) {\n                new_outer_rect = suggested_rect;";
-        assert!(dpi_changed.contains(patch), "vendor/winit lost its WM_DPICHANGED patch");
+        assert!(
+            dpi_changed.contains(patch),
+            "vendor/winit lost its WM_DPICHANGED patch"
+        );
     }
 
     const NVIDIA: (u32, u32) = (0x10de, 0x2684);
@@ -1091,13 +1462,20 @@ mod tests {
 
     fn adapters() -> Vec<(u32, u32, eframe::wgpu::DeviceType)> {
         use eframe::wgpu::DeviceType;
-        vec![(NVIDIA.0, NVIDIA.1, DeviceType::DiscreteGpu), (AMD_IGPU.0, AMD_IGPU.1, DeviceType::IntegratedGpu), (0, 0, DeviceType::Cpu)]
+        vec![
+            (NVIDIA.0, NVIDIA.1, DeviceType::DiscreteGpu),
+            (AMD_IGPU.0, AMD_IGPU.1, DeviceType::IntegratedGpu),
+            (0, 0, DeviceType::Cpu),
+        ]
     }
 
     const INTEL_IGPU: (u32, u32) = (0x8086, 0xa780);
 
     fn monitor(pci: (u32, u32)) -> super::DisplayGpu {
-        super::DisplayGpu { pci, primary: false }
+        super::DisplayGpu {
+            pci,
+            primary: false,
+        }
     }
 
     fn panel(pci: (u32, u32)) -> super::DisplayGpu {
@@ -1107,23 +1485,41 @@ mod tests {
     #[test]
     fn pick_adapter_prefers_the_gpu_driving_the_monitors() {
         // A desktop whose monitors are all on the discrete GPU: the integrated one shows black.
-        assert_eq!(super::pick_adapter(&adapters(), &[monitor(NVIDIA)], None), Some(0));
+        assert_eq!(
+            super::pick_adapter(&adapters(), &[monitor(NVIDIA)], None),
+            Some(0)
+        );
         // Issue #378: the same on Windows, where the Ryzen integrated GPU without a monitor crashed
         // the display driver. Windows also says which display is the primary one.
-        assert_eq!(super::pick_adapter(&adapters(), &[panel(NVIDIA)], None), Some(0));
+        assert_eq!(
+            super::pick_adapter(&adapters(), &[panel(NVIDIA)], None),
+            Some(0)
+        );
     }
 
     #[test]
     fn pick_adapter_prefers_the_gpu_driving_the_primary_display() {
         // A Windows desktop with a monitor on each GPU: the window opens on the primary display.
-        assert_eq!(super::pick_adapter(&adapters(), &[monitor(AMD_IGPU), panel(NVIDIA)], None), Some(0));
-        assert_eq!(super::pick_adapter(&adapters(), &[panel(AMD_IGPU), monitor(NVIDIA)], None), Some(1));
+        assert_eq!(
+            super::pick_adapter(&adapters(), &[monitor(AMD_IGPU), panel(NVIDIA)], None),
+            Some(0)
+        );
+        assert_eq!(
+            super::pick_adapter(&adapters(), &[panel(AMD_IGPU), monitor(NVIDIA)], None),
+            Some(1)
+        );
     }
 
     #[test]
     fn pci_ids_come_from_windows_device_ids() {
-        assert_eq!(super::pci_ids("PCI\\VEN_10DE&DEV_2204&SUBSYS_40421458&REV_A1"), Some(NVIDIA_3090));
-        assert_eq!(super::pci_ids("PCI\\VEN_1002&DEV_164E&SUBSYS_88771043&REV_C1"), Some(AMD_IGPU));
+        assert_eq!(
+            super::pci_ids("PCI\\VEN_10DE&DEV_2204&SUBSYS_40421458&REV_A1"),
+            Some(NVIDIA_3090)
+        );
+        assert_eq!(
+            super::pci_ids("PCI\\VEN_1002&DEV_164E&SUBSYS_88771043&REV_C1"),
+            Some(AMD_IGPU)
+        );
         assert_eq!(super::pci_ids("pci\\ven_1002&dev_164e"), Some(AMD_IGPU));
         // Remote Desktop and other non-PCI display devices, and malformed ids.
         assert_eq!(super::pci_ids("ROOT\\BasicDisplay\\0000"), None);
@@ -1149,22 +1545,46 @@ mod tests {
     #[test]
     fn pick_adapter_keeps_the_integrated_gpu_on_hybrid_laptops() {
         // Issue #8: the panel is on the integrated GPU, an external monitor on the discrete one.
-        assert_eq!(super::pick_adapter(&adapters(), &[monitor(NVIDIA), panel(AMD_IGPU)], None), Some(1));
-        assert_eq!(super::pick_adapter(&adapters(), &[panel(AMD_IGPU), monitor(NVIDIA)], None), Some(1));
-        assert_eq!(super::pick_adapter(&adapters(), &[panel(AMD_IGPU)], None), Some(1));
-        assert_eq!(super::pick_adapter(&adapters(), &[monitor(AMD_IGPU)], None), Some(1));
+        assert_eq!(
+            super::pick_adapter(&adapters(), &[monitor(NVIDIA), panel(AMD_IGPU)], None),
+            Some(1)
+        );
+        assert_eq!(
+            super::pick_adapter(&adapters(), &[panel(AMD_IGPU), monitor(NVIDIA)], None),
+            Some(1)
+        );
+        assert_eq!(
+            super::pick_adapter(&adapters(), &[panel(AMD_IGPU)], None),
+            Some(1)
+        );
+        assert_eq!(
+            super::pick_adapter(&adapters(), &[monitor(AMD_IGPU)], None),
+            Some(1)
+        );
     }
 
     #[test]
     fn pick_adapter_prefers_the_discrete_gpu_on_desktops_with_a_monitor_on_each() {
         // Issue #445: one monitor on the Intel iGPU, one on the NVIDIA card, no built-in panel.
         use eframe::wgpu::DeviceType;
-        let desktop =
-            [(INTEL_IGPU.0, INTEL_IGPU.1, DeviceType::IntegratedGpu), (NVIDIA.0, NVIDIA.1, DeviceType::DiscreteGpu), (0, 0, DeviceType::Cpu)];
-        assert_eq!(super::pick_adapter(&desktop, &[monitor(INTEL_IGPU), monitor(NVIDIA)], None), Some(1));
-        assert_eq!(super::pick_adapter(&desktop, &[monitor(NVIDIA), monitor(INTEL_IGPU)], None), Some(1));
+        let desktop = [
+            (INTEL_IGPU.0, INTEL_IGPU.1, DeviceType::IntegratedGpu),
+            (NVIDIA.0, NVIDIA.1, DeviceType::DiscreteGpu),
+            (0, 0, DeviceType::Cpu),
+        ];
+        assert_eq!(
+            super::pick_adapter(&desktop, &[monitor(INTEL_IGPU), monitor(NVIDIA)], None),
+            Some(1)
+        );
+        assert_eq!(
+            super::pick_adapter(&desktop, &[monitor(NVIDIA), monitor(INTEL_IGPU)], None),
+            Some(1)
+        );
         // A GPU driving no display still loses to one that does.
-        assert_eq!(super::pick_adapter(&adapters(), &[monitor(AMD_IGPU), monitor(INTEL_IGPU)], None), Some(1));
+        assert_eq!(
+            super::pick_adapter(&adapters(), &[monitor(AMD_IGPU), monitor(INTEL_IGPU)], None),
+            Some(1)
+        );
     }
 
     #[test]
@@ -1172,20 +1592,50 @@ mod tests {
         // A hybrid laptop whose Wayland compositor runs on the discrete GPU (Hyprland with
         // `AQ_DRM_DEVICES` naming it first): the integrated GPU drives the built-in panel, yet the
         // compositor shows nothing it draws, and reports no error either.
-        assert_eq!(super::pick_adapter(&adapters(), &[panel(AMD_IGPU)], Some(NVIDIA)), Some(0));
-        assert_eq!(super::pick_adapter(&adapters(), &[panel(AMD_IGPU), monitor(NVIDIA)], Some(NVIDIA)), Some(0));
+        assert_eq!(
+            super::pick_adapter(&adapters(), &[panel(AMD_IGPU)], Some(NVIDIA)),
+            Some(0)
+        );
+        assert_eq!(
+            super::pick_adapter(
+                &adapters(),
+                &[panel(AMD_IGPU), monitor(NVIDIA)],
+                Some(NVIDIA)
+            ),
+            Some(0)
+        );
         // The usual hybrid laptop, with the compositor on the integrated GPU: as before (#8).
-        assert_eq!(super::pick_adapter(&adapters(), &[panel(AMD_IGPU), monitor(NVIDIA)], Some(AMD_IGPU)), Some(1));
+        assert_eq!(
+            super::pick_adapter(
+                &adapters(),
+                &[panel(AMD_IGPU), monitor(NVIDIA)],
+                Some(AMD_IGPU)
+            ),
+            Some(1)
+        );
         // No GPU drives a display as far as sysfs says (a container), but the compositor knows.
         assert_eq!(super::pick_adapter(&adapters(), &[], Some(NVIDIA)), Some(0));
         // A compositor GPU no adapter matches (a virtual one) leaves the displays in charge.
-        assert_eq!(super::pick_adapter(&adapters(), &[panel(AMD_IGPU)], Some((0x1af4, 0x1050))), Some(1));
+        assert_eq!(
+            super::pick_adapter(&adapters(), &[panel(AMD_IGPU)], Some((0x1af4, 0x1050))),
+            Some(1)
+        );
     }
 
     #[test]
     fn pick_adapter_falls_back_to_low_power_without_a_match() {
-        assert_eq!(super::pick_adapter(&adapters(), &[monitor((0x8086, 0x1234))], None), Some(1));
-        assert_eq!(super::pick_adapter(&adapters(), &[monitor((0x8086, 0x1234)), monitor((0x8086, 0x5678))], None), Some(1));
+        assert_eq!(
+            super::pick_adapter(&adapters(), &[monitor((0x8086, 0x1234))], None),
+            Some(1)
+        );
+        assert_eq!(
+            super::pick_adapter(
+                &adapters(),
+                &[monitor((0x8086, 0x1234)), monitor((0x8086, 0x5678))],
+                None
+            ),
+            Some(1)
+        );
         assert_eq!(super::pick_adapter(&[], &[monitor(NVIDIA)], None), None);
     }
 
@@ -1206,8 +1656,14 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         let card = |name: &str, (vendor, device): (u32, u32)| -> std::io::Result<()> {
             std::fs::create_dir_all(dir.join(name).join("device"))?;
-            std::fs::write(dir.join(name).join("device/vendor"), format!("{vendor:#06x}\n"))?;
-            std::fs::write(dir.join(name).join("device/device"), format!("{device:#06x}\n"))
+            std::fs::write(
+                dir.join(name).join("device/vendor"),
+                format!("{vendor:#06x}\n"),
+            )?;
+            std::fs::write(
+                dir.join(name).join("device/device"),
+                format!("{device:#06x}\n"),
+            )
         };
         let connector = |name: &str, status: &str| -> std::io::Result<()> {
             std::fs::create_dir_all(dir.join(name))?;
@@ -1240,7 +1696,8 @@ mod tests {
     fn scratch() -> std::path::PathBuf {
         static N: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
         let n = N.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let d = std::env::temp_dir().join(format!("pdfcraft-control-file-{}-{n}", std::process::id()));
+        let d =
+            std::env::temp_dir().join(format!("pdfcraft-control-file-{}-{n}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
@@ -1248,8 +1705,12 @@ mod tests {
 
     /// The control file's port and token, and every name in its folder.
     fn written(dir: &std::path::Path) -> (serde_json::Value, Vec<String>) {
-        let json = serde_json::from_str(&std::fs::read_to_string(dir.join("ctl.json")).unwrap()).unwrap();
-        let mut names: Vec<String> = std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
+        let json =
+            serde_json::from_str(&std::fs::read_to_string(dir.join("ctl.json")).unwrap()).unwrap();
+        let mut names: Vec<String> = std::fs::read_dir(dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
         names.sort();
         (json, names)
     }
@@ -1262,10 +1723,20 @@ mod tests {
         std::fs::write(dir.join("victim.txt"), "keep me").unwrap();
         std::fs::hard_link(dir.join("victim.txt"), dir.join("ctl.json")).unwrap();
         super::write_control_file(&dir.join("ctl.json").to_string_lossy(), 4242, "t0ken").unwrap();
-        assert_eq!(std::fs::read_to_string(dir.join("victim.txt")).unwrap(), "keep me");
+        assert_eq!(
+            std::fs::read_to_string(dir.join("victim.txt")).unwrap(),
+            "keep me"
+        );
         let (json, names) = written(&dir);
-        assert_eq!((json["port"].as_u64(), json["token"].as_str()), (Some(4242), Some("t0ken")));
-        assert_eq!(names, ["ctl.json", "victim.txt"], "no temporary file left behind");
+        assert_eq!(
+            (json["port"].as_u64(), json["token"].as_str()),
+            (Some(4242), Some("t0ken"))
+        );
+        assert_eq!(
+            names,
+            ["ctl.json", "victim.txt"],
+            "no temporary file left behind"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1286,7 +1757,12 @@ mod tests {
         }
         super::write_control_file(&link.to_string_lossy(), 4242, "t0ken").unwrap();
         assert_eq!(std::fs::read_to_string(&target).unwrap(), "keep me");
-        assert!(!std::fs::symlink_metadata(&link).unwrap().file_type().is_symlink());
+        assert!(
+            !std::fs::symlink_metadata(&link)
+                .unwrap()
+                .file_type()
+                .is_symlink()
+        );
         assert_eq!(written(&dir).0["token"].as_str(), Some("t0ken"));
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -1302,8 +1778,15 @@ mod tests {
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            let mode = std::fs::metadata(dir.join("ctl.json")).unwrap().permissions().mode();
-            assert_eq!(mode & 0o077, 0, "only the owner can read the token: {mode:o}");
+            let mode = std::fs::metadata(dir.join("ctl.json"))
+                .unwrap()
+                .permissions()
+                .mode();
+            assert_eq!(
+                mode & 0o077,
+                0,
+                "only the owner can read the token: {mode:o}"
+            );
         }
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -1313,7 +1796,9 @@ mod tests {
     #[test]
     fn the_desktop_entry_names_the_window_class() {
         let entry = include_str!("../packaging/linux/ai.storyteller.pdfcraft.desktop");
-        let class = entry.lines().find_map(|line| line.strip_prefix("StartupWMClass="));
+        let class = entry
+            .lines()
+            .find_map(|line| line.strip_prefix("StartupWMClass="));
         assert_eq!(class, Some(super::APP_ID));
     }
 }

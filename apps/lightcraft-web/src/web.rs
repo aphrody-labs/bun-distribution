@@ -41,11 +41,17 @@ fn window() -> Option<web_sys::Window> {
 
 /// Milliseconds since navigation start.
 fn perf_now() -> f64 {
-    window().and_then(|w| w.performance()).map(|p| p.now()).unwrap_or(0.0)
+    window()
+        .and_then(|w| w.performance())
+        .map(|p| p.now())
+        .unwrap_or(0.0)
 }
 
 fn set_status(text: &str) {
-    if let Some(el) = window().and_then(|w| w.document()).and_then(|d| d.get_element_by_id("lightcraft_status")) {
+    if let Some(el) = window()
+        .and_then(|w| w.document())
+        .and_then(|d| d.get_element_by_id("lightcraft_status"))
+    {
         el.set_text_content(Some(text));
     }
 }
@@ -75,7 +81,9 @@ struct Options {
 
 impl Options {
     fn from_url() -> Options {
-        let q = window().and_then(|w| w.location().search().ok()).unwrap_or_default();
+        let q = window()
+            .and_then(|w| w.location().search().ok())
+            .unwrap_or_default();
         let params: Vec<(String, String)> = q
             .trim_start_matches('?')
             .split('&')
@@ -88,7 +96,9 @@ impl Options {
         let get = |k: &str| params.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone());
         Options {
             bench: get("bench").is_some(),
-            store: get("store").filter(|s| s == "idb" || s == "memory").unwrap_or_else(|| "opfs".into()),
+            store: get("store")
+                .filter(|s| s == "idb" || s == "memory")
+                .unwrap_or_else(|| "opfs".into()),
             workers: get("workers").and_then(|v| v.parse().ok()),
             reset: get("reset").is_some(),
         }
@@ -96,13 +106,21 @@ impl Options {
 }
 
 /// Store a picked/dropped file (bytes into browser storage, then queue its import).
-async fn store_file(originals: Originals, backend: Option<Backend>, name: String, bytes: Vec<u8>, ctx: egui::Context) {
+async fn store_file(
+    originals: Originals,
+    backend: Option<Backend>,
+    name: String,
+    bytes: Vec<u8>,
+    ctx: egui::Context,
+) {
     let hash = content_hash(&bytes);
     if let Some(b) = &backend
         && let Err(e) = b.write(&storage_key(&hash), &bytes).await
     {
         // a photo whose bytes aren't stored would be gone after a reload: don't add it
-        notice(format!("{name} was not added: browser storage refused it ({e}). Free up space or back up and clear old photos."));
+        notice(format!(
+            "{name} was not added: browser storage refused it ({e}). Free up space or back up and clear old photos."
+        ));
         return;
     }
     originals.added(&name, &hash, Arc::from(bytes));
@@ -110,17 +128,38 @@ async fn store_file(originals: Originals, backend: Option<Backend>, name: String
 }
 
 /// Read a browser `File` into storage.
-async fn read_file(originals: Originals, backend: Option<Backend>, file: web_sys::File, ctx: egui::Context) {
+async fn read_file(
+    originals: Originals,
+    backend: Option<Backend>,
+    file: web_sys::File,
+    ctx: egui::Context,
+) {
     match wasm_bindgen_futures::JsFuture::from(file.array_buffer()).await {
-        Ok(buf) => store_file(originals, backend, file.name(), js_sys::Uint8Array::new(&buf).to_vec(), ctx).await,
+        Ok(buf) => {
+            store_file(
+                originals,
+                backend,
+                file.name(),
+                js_sys::Uint8Array::new(&buf).to_vec(),
+                ctx,
+            )
+            .await
+        }
         Err(e) => log::warn!("reading {}: {e:?}", file.name()),
     }
 }
 
 /// Show the browser's open dialog; picked files are imported asynchronously.
 fn open_picker(originals: Originals, backend: Option<Backend>, ctx: egui::Context) {
-    let Some(doc) = window().and_then(|w| w.document()) else { return };
-    let Ok(input) = doc.create_element("input").map(|e| e.unchecked_into::<web_sys::HtmlInputElement>()) else { return };
+    let Some(doc) = window().and_then(|w| w.document()) else {
+        return;
+    };
+    let Ok(input) = doc
+        .create_element("input")
+        .map(|e| e.unchecked_into::<web_sys::HtmlInputElement>())
+    else {
+        return;
+    };
     input.set_type("file");
     input.set_multiple(true);
     input.set_accept(ACCEPT);
@@ -129,7 +168,12 @@ fn open_picker(originals: Originals, backend: Option<Backend>, ctx: egui::Contex
         if let Some(files) = inp.files() {
             for i in 0..files.length() {
                 if let Some(f) = files.get(i) {
-                    wasm_bindgen_futures::spawn_local(read_file(originals.clone(), backend.clone(), f, ctx.clone()));
+                    wasm_bindgen_futures::spawn_local(read_file(
+                        originals.clone(),
+                        backend.clone(),
+                        f,
+                        ctx.clone(),
+                    ));
                 }
             }
         }
@@ -158,13 +202,20 @@ fn download(path: &str, bytes: &[u8]) -> Result<(), String> {
         let _ = web_sys::Url::revoke_object_url(&url);
     });
     if let Some(w) = window() {
-        let _ = w.set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), 5000);
+        let _ =
+            w.set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), 5000);
     }
     log::info!("exported {name} ({} bytes)", bytes.len());
     Ok(())
 }
 
-fn services(originals: Originals, backend: Option<Backend>, files: Files, frozen: Rc<Cell<bool>>, ctx: egui::Context) -> Services {
+fn services(
+    originals: Originals,
+    backend: Option<Backend>,
+    files: Files,
+    frozen: Rc<Cell<bool>>,
+    ctx: egui::Context,
+) -> Services {
     let (backup_backend, backup_files) = (backend.clone(), files);
     let restore_backend = backend.clone();
     Services {
@@ -172,13 +223,16 @@ fn services(originals: Originals, backend: Option<Backend>, files: Files, frozen
         pick_display_profile: None,
         screen_profile: None,
         backup_library: Some(Box::new(move |session: &mut Session| {
-            let Some(b) = backup_backend.clone() else { return Err("nothing is stored in this browser session (?store=memory)".into()) };
+            let Some(b) = backup_backend.clone() else {
+                return Err("nothing is stored in this browser session (?store=memory)".into());
+            };
             // the photos' own names for the originals in the zip
             let names: std::collections::HashMap<String, String> = session
                 .catalog
                 .photos()
                 .filter_map(|p| match &p.source {
-                    Source::File { path } => crate::store::hash_of_path(path).map(|h| (h.to_string(), p.file_name.clone())),
+                    Source::File { path } => crate::store::hash_of_path(path)
+                        .map(|h| (h.to_string(), p.file_name.clone())),
                     _ => None,
                 })
                 .collect();
@@ -197,7 +251,9 @@ fn services(originals: Originals, backend: Option<Backend>, files: Files, frozen
             Ok(json!({"started": true}))
         })),
         restore_library: Some(Box::new(move |_session: &mut Session| {
-            let Some(b) = restore_backend.clone() else { return Err("nothing is stored in this browser session (?store=memory)".into()) };
+            let Some(b) = restore_backend.clone() else {
+                return Err("nothing is stored in this browser session (?store=memory)".into());
+            };
             let frozen = frozen.clone();
             // once the backup is in place, stop saving the old library (the page reloads)
             safety::pick_and_restore(b, move || frozen.set(true));
@@ -223,7 +279,11 @@ fn services(originals: Originals, backend: Option<Backend>, files: Files, frozen
         // downloads happen on the main thread: exports run in the foreground on the web
         write_shared: None,
         png: Some(Box::new(|img: &lightcraft_raster::Rgba8| {
-            lightcraft_codecs::encode_png(&lightcraft_codecs::EncodeImage::rgba8(img), &lightcraft_codecs::EncodeMeta::default()).unwrap_or_default()
+            lightcraft_codecs::encode_png(
+                &lightcraft_codecs::EncodeImage::rgba8(img),
+                &lightcraft_codecs::EncodeMeta::default(),
+            )
+            .unwrap_or_default()
         })),
         reveal: None,
         log_file: None,
@@ -232,7 +292,9 @@ fn services(originals: Originals, backend: Option<Backend>, files: Files, frozen
         check_editor: None,
         open_url: Some(Box::new(|url: &str| {
             let w = web_sys::window().ok_or("no window")?;
-            w.open_with_url_and_target(url, "_blank").map(|_| ()).map_err(|_| "the browser blocked the new tab".to_string())
+            w.open_with_url_and_target(url, "_blank")
+                .map(|_| ())
+                .map_err(|_| "the browser blocked the new tab".to_string())
         })),
         pick_folder: None,
         // the browser reports prefers-color-scheme to egui
@@ -243,7 +305,13 @@ fn services(originals: Originals, backend: Option<Backend>, files: Files, frozen
 /// Write dirty library files to storage, in order, until none are left. A failure (quota,
 /// storage cleared) is recorded in `files` — the catalog then reports changes as unsaved instead
 /// of accepting them silently — and retried after [`SAVE_RETRY_MS`].
-async fn flush(files: Files, backend: Backend, dir: String, flushing: Rc<Cell<bool>>, failed_at: Rc<Cell<f64>>) {
+async fn flush(
+    files: Files,
+    backend: Backend,
+    dir: String,
+    flushing: Rc<Cell<bool>>,
+    failed_at: Rc<Cell<f64>>,
+) {
     'outer: loop {
         let ops = files.take_dirty();
         if ops.is_empty() {
@@ -255,8 +323,14 @@ async fn flush(files: Files, backend: Backend, dir: String, flushing: Rc<Cell<bo
         }
         for (i, op) in ops.iter().enumerate() {
             let r = match op {
-                FlushOp::Write { name, data } => backend.write(&library_key(&dir, name), data).await,
-                FlushOp::Append { name, offset, data } => backend.write_at(&library_key(&dir, name), Some(*offset), data).await,
+                FlushOp::Write { name, data } => {
+                    backend.write(&library_key(&dir, name), data).await
+                }
+                FlushOp::Append { name, offset, data } => {
+                    backend
+                        .write_at(&library_key(&dir, name), Some(*offset), data)
+                        .await
+                }
             };
             if let Err(e) = r {
                 log::error!("saving {} failed: {e}", op.name());
@@ -364,7 +438,13 @@ async fn boot(opts: Options) -> Boot {
         index.len(),
         index.total() as f64 / 1e6
     );
-    Boot { opts, backend, files, index, lib_dir }
+    Boot {
+        opts,
+        backend,
+        files,
+        index,
+        lib_dir,
+    }
 }
 
 struct WebApp {
@@ -387,13 +467,23 @@ struct WebApp {
 
 impl WebApp {
     fn new(cc: &eframe::CreationContext<'_>, boot: Boot, chinese_font: Vec<u8>) -> Self {
-        let Boot { opts, backend, files, index, lib_dir } = boot;
+        let Boot {
+            opts,
+            backend,
+            files,
+            index,
+            lib_dir,
+        } = boot;
         let originals = Originals::default();
         let t = perf_now();
         let mut session = Session::new();
         originals.install(&mut session);
         let stores = LibraryStores {
-            dir: format!("browser:{}/{lib_dir}", backend.as_ref().map_or("memory", |b| b.kind())).into(),
+            dir: format!(
+                "browser:{}/{lib_dir}",
+                backend.as_ref().map_or("memory", |b| b.kind())
+            )
+            .into(),
             catalog: Box::new(files.store()),
             files: Box::new(files.store()),
             on_disk: false,
@@ -413,13 +503,15 @@ impl WebApp {
                 log::error!("opening the library failed: {e}");
                 session = Session::new();
                 originals.install(&mut session);
-                problem = Some(lightcraft_ui_egui::panels::library_problem::LibraryProblem {
-                    can_retry: false,
-                    ..lightcraft_ui_egui::panels::library_problem::LibraryProblem::new(
-                        "the browser's storage for this page",
-                        format!("{e}. Reload the page to try again."),
-                    )
-                });
+                problem = Some(
+                    lightcraft_ui_egui::panels::library_problem::LibraryProblem {
+                        can_retry: false,
+                        ..lightcraft_ui_egui::panels::library_problem::LibraryProblem::new(
+                            "the browser's storage for this page",
+                            format!("{e}. Reload the page to try again."),
+                        )
+                    },
+                );
             }
         }
         if backend.is_some() {
@@ -431,8 +523,17 @@ impl WebApp {
         // previews are large (≤ 2560 px, f32): keep few in a 32-bit address space
         session.media.preview_capacity = 3;
         let frozen = Rc::new(Cell::new(false));
-        let mut app = LightcraftApp::new(session, services(originals.clone(), backend.clone(), files.clone(), frozen.clone(), cc.egui_ctx.clone()))
-            .with_chinese_font(chinese_font);
+        let mut app = LightcraftApp::new(
+            session,
+            services(
+                originals.clone(),
+                backend.clone(),
+                files.clone(),
+                frozen.clone(),
+                cc.egui_ctx.clone(),
+            ),
+        )
+        .with_chinese_font(chinese_font);
         let ui_written = files.get("ui.json").unwrap_or_default();
         if let Ok(ui) = serde_json::from_slice::<UiState>(&ui_written) {
             app.ui = ui;
@@ -481,7 +582,8 @@ impl WebApp {
     fn import_dropped(&mut self, ctx: &egui::Context) {
         let dropped = ctx.input(|i| i.raw.dropped_files.clone());
         for f in dropped {
-            let (originals, backend, ctx) = (self.originals.clone(), self.backend.clone(), ctx.clone());
+            let (originals, backend, ctx) =
+                (self.originals.clone(), self.backend.clone(), ctx.clone());
             wasm_bindgen_futures::spawn_local(async move {
                 let name = f.path().to_string_lossy().to_string();
                 match f.bytes_async().await {
@@ -494,7 +596,10 @@ impl WebApp {
         if !paths.is_empty() {
             let n = paths.len();
             match self.app.run("library.import", json!({"paths": paths})) {
-                Ok(_) => self.app.toast(ctx, format!("Added {n} photo{}", if n == 1 { "" } else { "s" })),
+                Ok(_) => self.app.toast(
+                    ctx,
+                    format!("Added {n} photo{}", if n == 1 { "" } else { "s" }),
+                ),
                 Err(e) => log::warn!("import: {e}"),
             }
         }
@@ -503,7 +608,8 @@ impl WebApp {
     /// Load originals the main thread asked for (and the active photo's, ahead of time).
     fn load_originals(&mut self, ctx: &egui::Context) {
         if let Some(id) = self.app.session.selection.active
-            && let Some(Source::File { path }) = self.app.session.catalog.photo(id).map(|p| &p.source)
+            && let Some(Source::File { path }) =
+                self.app.session.catalog.photo(id).map(|p| &p.source)
             && !self.originals.contains(path)
         {
             self.originals.prefetch(path);
@@ -557,14 +663,20 @@ impl WebApp {
             }
         }
         // after a failure, retry every couple of seconds rather than every frame
-        let backing_off = self.files.error().is_some() && now - self.flush_failed_at.get() < SAVE_RETRY_MS;
+        let backing_off =
+            self.files.error().is_some() && now - self.flush_failed_at.get() < SAVE_RETRY_MS;
         if let Some(b) = &self.backend
             && self.files.is_dirty()
             && !self.flushing.get()
             && !backing_off
         {
             self.flushing.set(true);
-            let (files, dir, flushing, failed_at) = (self.files.clone(), self.lib_dir.clone(), self.flushing.clone(), self.flush_failed_at.clone());
+            let (files, dir, flushing, failed_at) = (
+                self.files.clone(),
+                self.lib_dir.clone(),
+                self.flushing.clone(),
+                self.flush_failed_at.clone(),
+            );
             wasm_bindgen_futures::spawn_local(flush(files, b.clone(), dir, flushing, failed_at));
         }
     }
@@ -584,14 +696,18 @@ thread_local! {
 #[wasm_bindgen]
 pub fn command(id: String, params: String) -> js_sys::Promise {
     js_sys::Promise::new(&mut |resolve, reject| {
-        INBOX.with(|q| q.borrow_mut().push((id.clone(), params.clone(), (resolve, reject))));
+        INBOX.with(|q| {
+            q.borrow_mut()
+                .push((id.clone(), params.clone(), (resolve, reject)))
+        });
         CTX.with(|c| c.borrow().as_ref().map(|c| c.request_repaint()));
     })
 }
 
 impl WebApp {
     fn web_stats(&self) -> serde_json::Value {
-        let (alive, ready, remote, inline) = self.workers.as_ref().map_or((0, 0, 0, 0), Workers::stats);
+        let (alive, ready, remote, inline) =
+            self.workers.as_ref().map_or((0, 0, 0, 0), Workers::stats);
         let (orig_n, orig_bytes) = self.originals.usage();
         json!({
             "storage": self.backend.as_ref().map_or("memory", |b| b.kind()),
@@ -612,7 +728,11 @@ impl WebApp {
         let inbox = INBOX.with(|q| std::mem::take(&mut *q.borrow_mut()));
         for (id, params, (resolve, reject)) in inbox {
             let params: serde_json::Value = serde_json::from_str(&params).unwrap_or(json!({}));
-            let r = if id == "web.stats" { Ok(self.web_stats()) } else { self.app.run(&id, params) };
+            let r = if id == "web.stats" {
+                Ok(self.web_stats())
+            } else {
+                self.app.run(&id, params)
+            };
             let _ = match r {
                 Ok(v) => resolve.call1(&JsValue::NULL, &v.to_string().into()),
                 Err(e) => reject.call1(&JsValue::NULL, &e.into()),
@@ -641,8 +761,11 @@ impl eframe::App for WebApp {
             && let Some(report) = b.step(&mut self.app)
         {
             log::info!("lightcraft-bench {report}");
-            if let Some((alive, ready, remote, inline)) = self.workers.as_ref().map(Workers::stats) {
-                log::info!("lightcraft-workers {{\"alive\":{alive},\"ready\":{ready},\"remote_jobs\":{remote},\"inline_jobs\":{inline}}}");
+            if let Some((alive, ready, remote, inline)) = self.workers.as_ref().map(Workers::stats)
+            {
+                log::info!(
+                    "lightcraft-workers {{\"alive\":{alive},\"ready\":{ready},\"remote_jobs\":{remote},\"inline_jobs\":{inline}}}"
+                );
             }
             set_status(&format!("bench: {report}"));
             self.bench = None;
@@ -660,7 +783,10 @@ impl eframe::App for WebApp {
         self.app.ui(ui);
         if !self.first_frame_logged && !self.app.widgets.is_empty() {
             self.first_frame_logged = true;
-            log::info!("lightcraft first UI frame at {:.0} ms after navigation start", perf_now());
+            log::info!(
+                "lightcraft first UI frame at {:.0} ms after navigation start",
+                perf_now()
+            );
         }
     }
 }
@@ -672,7 +798,9 @@ pub fn start(chinese_font: Vec<u8>) {
     safety::install_panic_hook();
     log::info!("lightcraft: wasm instantiated at {:.0} ms", perf_now());
     if chinese_font.is_empty() {
-        log::warn!("lightcraft: no Simplified Chinese font supplied; Chinese-only glyphs will show as boxes");
+        log::warn!(
+            "lightcraft: no Simplified Chinese font supplied; Chinese-only glyphs will show as boxes"
+        );
     }
     let opts = Options::from_url();
     wasm_bindgen_futures::spawn_local(async move {
@@ -694,10 +822,19 @@ pub fn start(chinese_font: Vec<u8>) {
         };
         let boot = boot(opts).await;
         let runner = eframe::WebRunner::new();
-        let r = runner.start(canvas, eframe::WebOptions::default(), Box::new(move |cc| Ok(Box::new(WebApp::new(cc, boot, chinese_font))))).await;
+        let r = runner
+            .start(
+                canvas,
+                eframe::WebOptions::default(),
+                Box::new(move |cc| Ok(Box::new(WebApp::new(cc, boot, chinese_font)))),
+            )
+            .await;
         match r {
             Ok(()) => {
-                if let Some(el) = window().and_then(|w| w.document()).and_then(|d| d.get_element_by_id("lightcraft_loading")) {
+                if let Some(el) = window()
+                    .and_then(|w| w.document())
+                    .and_then(|d| d.get_element_by_id("lightcraft_loading"))
+                {
                     el.remove();
                 }
             }

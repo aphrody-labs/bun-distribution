@@ -25,14 +25,20 @@ impl AppleEvents {
     /// that launched the app (a Finder double-click) is caught too.
     pub fn install() -> Self {
         let (registration, inbox) = Registration::install();
-        Self { _registration: registration, inbox }
+        Self {
+            _registration: registration,
+            inbox,
+        }
     }
 
     /// The queue the app drains every frame ([`Opened::feed`]); events arriving later wake `ctx`.
     pub fn connect(&self, ctx: &egui::Context) -> Opened {
         let ctx = ctx.clone();
         self.inbox.set_wake(move || ctx.request_repaint());
-        Opened { inbox: self.inbox.clone(), pending: Vec::new() }
+        Opened {
+            inbox: self.inbox.clone(),
+            pending: Vec::new(),
+        }
     }
 }
 
@@ -61,7 +67,11 @@ impl Opened {
             ctx.request_repaint();
             return;
         }
-        raw.dropped_files.extend(self.pending.drain(..).map(|p| Arc::new(OpenedFile(p)) as egui::DroppedFileHandle));
+        raw.dropped_files.extend(
+            self.pending
+                .drain(..)
+                .map(|p| Arc::new(OpenedFile(p)) as egui::DroppedFileHandle),
+        );
     }
 }
 

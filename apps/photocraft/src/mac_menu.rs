@@ -20,7 +20,9 @@ use muda::accelerator::{Accelerator, Code, Modifiers};
 use muda::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 use objc2::MainThreadMarker;
 use objc2_app_kit::{NSApplication, NSEventModifierFlags, NSEventType};
-use photocraft_ui_egui::native_menu::{self, Backend, Chord, Event, MenuBar, MenuRole, Node, Standard};
+use photocraft_ui_egui::native_menu::{
+    self, Backend, Chord, Event, MenuBar, MenuRole, Node, Standard,
+};
 
 enum Handle {
     Plain(MenuItem),
@@ -62,16 +64,37 @@ impl MacMenu {
         MenuEvent::set_event_handler(Some(move |e: MenuEvent| {
             // AppKit calls this on the main thread, from the event that chose the item: a key
             // equivalent is a key-down, a click a mouse-up (or ↩ inside the open menu).
-            let event = MainThreadMarker::new().and_then(|mtm| NSApplication::sharedApplication(mtm).currentEvent());
-            let key = event.as_ref().is_some_and(|ev| ev.r#type() == NSEventType::KeyDown);
-            let flags = event.as_ref().map(|ev| ev.modifierFlags()).unwrap_or(NSEventModifierFlags::empty());
-            let mods = [NSEventModifierFlags::Command, NSEventModifierFlags::Control, NSEventModifierFlags::Option, NSEventModifierFlags::Shift]
-                .map(|m| flags.contains(m));
-            let _ = tx.send(Chosen { id: e.id.0, key, mods });
+            let event = MainThreadMarker::new()
+                .and_then(|mtm| NSApplication::sharedApplication(mtm).currentEvent());
+            let key = event
+                .as_ref()
+                .is_some_and(|ev| ev.r#type() == NSEventType::KeyDown);
+            let flags = event
+                .as_ref()
+                .map(|ev| ev.modifierFlags())
+                .unwrap_or(NSEventModifierFlags::empty());
+            let mods = [
+                NSEventModifierFlags::Command,
+                NSEventModifierFlags::Control,
+                NSEventModifierFlags::Option,
+                NSEventModifierFlags::Shift,
+            ]
+            .map(|m| flags.contains(m));
+            let _ = tx.send(Chosen {
+                id: e.id.0,
+                key,
+                mods,
+            });
             // Wake egui, so the item runs now rather than on the next mouse move.
             repaint.request_repaint();
         }));
-        MacMenu { menu: None, entries: HashMap::new(), rx, structure: 0, window: None }
+        MacMenu {
+            menu: None,
+            entries: HashMap::new(),
+            rx,
+            structure: 0,
+            window: None,
+        }
     }
 
     fn build(&mut self, bar: &MenuBar) {
@@ -109,14 +132,28 @@ impl MacMenu {
         let before: HashSet<String> = self.entries.keys().cloned().collect();
         let sub = Submenu::new(escape(&m.title), true);
         self.append(&sub, &m.children);
-        let ids = self.entries.keys().filter(|id| !before.contains(*id)).cloned().collect();
+        let ids = self
+            .entries
+            .keys()
+            .filter(|id| !before.contains(*id))
+            .cloned()
+            .collect();
         (sub, ids)
     }
 
     /// Replace the Window menu (a document opened or closed), leaving the other menus as they are.
     fn rebuild_window(&mut self, bar: &MenuBar) {
-        let (Some(menu), Some((old, ids, _))) = (self.menu.clone(), self.window.take()) else { return self.build(bar) };
-        let Some((at, spec)) = bar.menus.iter().enumerate().find(|(_, m)| m.role == MenuRole::Window) else { return self.build(bar) };
+        let (Some(menu), Some((old, ids, _))) = (self.menu.clone(), self.window.take()) else {
+            return self.build(bar);
+        };
+        let Some((at, spec)) = bar
+            .menus
+            .iter()
+            .enumerate()
+            .find(|(_, m)| m.role == MenuRole::Window)
+        else {
+            return self.build(bar);
+        };
         if menu.remove(&old).is_err() {
             return self.build(bar);
         }
@@ -137,18 +174,28 @@ impl MacMenu {
                 Node::Separator => {
                     let _ = sub.append(&PredefinedMenuItem::separator());
                 }
-                Node::Submenu { label, children, .. } => {
+                Node::Submenu {
+                    label, children, ..
+                } => {
                     let s = Submenu::new(escape(label), !children.is_empty());
                     self.append(&s, children);
                     let _ = sub.append(&s);
                 }
                 Node::Standard(item) => {
                     let p = match item {
-                        Standard::Services => PredefinedMenuItem::services(Some(photocraft_ui_egui::i18n::t("Services"))),
-                        Standard::HideOthers => PredefinedMenuItem::hide_others(Some(photocraft_ui_egui::i18n::t("Hide Others"))),
-                        Standard::ShowAll => PredefinedMenuItem::show_all(Some(photocraft_ui_egui::i18n::t("Show All"))),
+                        Standard::Services => PredefinedMenuItem::services(Some(
+                            photocraft_ui_egui::i18n::t("Services"),
+                        )),
+                        Standard::HideOthers => PredefinedMenuItem::hide_others(Some(
+                            photocraft_ui_egui::i18n::t("Hide Others"),
+                        )),
+                        Standard::ShowAll => PredefinedMenuItem::show_all(Some(
+                            photocraft_ui_egui::i18n::t("Show All"),
+                        )),
                         Standard::Minimize => PredefinedMenuItem::minimize(None),
-                        Standard::Zoom => PredefinedMenuItem::maximize(Some(photocraft_ui_egui::i18n::t("Zoom"))),
+                        Standard::Zoom => {
+                            PredefinedMenuItem::maximize(Some(photocraft_ui_egui::i18n::t("Zoom")))
+                        }
                         Standard::BringAllToFront => PredefinedMenuItem::bring_all_to_front(None),
                         Standard::CloseWindow => PredefinedMenuItem::close_window(None),
                     };
@@ -157,20 +204,39 @@ impl MacMenu {
                 Node::Item(it) => {
                     let id = self.unique_id(&it.id);
                     let chord = it.shortcut.as_deref().and_then(Chord::parse);
-                    let accel = chord.as_ref().filter(|c| c.native_ok()).and_then(accelerator);
+                    let accel = chord
+                        .as_ref()
+                        .filter(|c| c.native_ok())
+                        .and_then(accelerator);
                     let handle = match it.checked {
                         Some(c) => {
-                            let h = CheckMenuItem::with_id(id.clone(), escape(&it.label), it.enabled, c, accel);
+                            let h = CheckMenuItem::with_id(
+                                id.clone(),
+                                escape(&it.label),
+                                it.enabled,
+                                c,
+                                accel,
+                            );
                             let _ = sub.append(&h);
                             Handle::Check(h)
                         }
                         None => {
-                            let h = MenuItem::with_id(id.clone(), escape(&it.label), it.enabled, accel);
+                            let h =
+                                MenuItem::with_id(id.clone(), escape(&it.label), it.enabled, accel);
                             let _ = sub.append(&h);
                             Handle::Plain(h)
                         }
                     };
-                    self.entries.insert(id, Entry { handle, command: it.id.clone(), chord, label: it.label.clone(), enabled: it.enabled });
+                    self.entries.insert(
+                        id,
+                        Entry {
+                            handle,
+                            command: it.id.clone(),
+                            chord,
+                            label: it.label.clone(),
+                            enabled: it.enabled,
+                        },
+                    );
                 }
             }
         }
@@ -197,9 +263,15 @@ impl Backend for MacMenu {
         if self.window.as_ref().map(|w| w.2) != Some(native_menu::window_key(bar)) {
             self.rebuild_window(bar);
         }
-        let items: HashMap<&str, &native_menu::Item> = bar.items().into_iter().map(|it| (it.id.as_str(), it)).collect();
+        let items: HashMap<&str, &native_menu::Item> = bar
+            .items()
+            .into_iter()
+            .map(|it| (it.id.as_str(), it))
+            .collect();
         for e in self.entries.values_mut() {
-            let Some(it) = items.get(e.command.as_str()) else { continue };
+            let Some(it) = items.get(e.command.as_str()) else {
+                continue;
+            };
             if e.label != it.label {
                 let text = escape(&it.label);
                 match &e.handle {
@@ -228,7 +300,9 @@ impl Backend for MacMenu {
         let mut out = Vec::new();
         while let Ok(chosen) = self.rx.try_recv() {
             // Ids that aren't ours are AppKit's own items (Services, Zoom, …), already handled.
-            let Some(e) = self.entries.get(&chosen.id) else { continue };
+            let Some(e) = self.entries.get(&chosen.id) else {
+                continue;
+            };
             if e.command == native_menu::HIDE {
                 if let Some(mtm) = MainThreadMarker::new() {
                     NSApplication::sharedApplication(mtm).hide(None);
@@ -239,8 +313,17 @@ impl Backend for MacMenu {
             // menu (no ⌘ or ⌃, and the item's shortcut needs one). The key is the item's (AppKit
             // matched on it); the modifiers are the ones held.
             let [cmd, ctrl, alt, shift] = chosen.mods;
-            let key =
-                e.chord.as_ref().filter(|c| chosen.key && (cmd || ctrl || !(c.cmd || c.ctrl))).map(|c| Chord { cmd, ctrl, alt, shift, key: c.key.clone() });
+            let key = e
+                .chord
+                .as_ref()
+                .filter(|c| chosen.key && (cmd || ctrl || !(c.cmd || c.ctrl)))
+                .map(|c| Chord {
+                    cmd,
+                    ctrl,
+                    alt,
+                    shift,
+                    key: c.key.clone(),
+                });
             out.push(match key {
                 Some(chord) if e.command != native_menu::MINIMIZE => Event::Key(chord),
                 _ => Event::Click(e.command.clone()),
@@ -251,10 +334,15 @@ impl Backend for MacMenu {
 }
 
 /// Install the menu bar now (in eframe's creator closure, so winit's default menu doesn't stay).
-pub fn install(ctx: &egui::Context, app: &photocraft_ui_egui::PhotocraftApp) -> Option<native_menu::NativeMenu> {
+pub fn install(
+    ctx: &egui::Context,
+    app: &photocraft_ui_egui::PhotocraftApp,
+) -> Option<native_menu::NativeMenu> {
     let language = &app.session.prefs().interface.language;
     let lang = photocraft_ui_egui::i18n::Lang::from_pref(language);
-    let bar = native_menu::photocraft_layout(&photocraft_ui_egui::menus::menu_items(app), lang, language).bar;
+    let bar =
+        native_menu::photocraft_layout(&photocraft_ui_egui::menus::menu_items(app), lang, language)
+            .bar;
     // Never crash for a menu: if AppKit refuses, keep the in-window menus.
     let built = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let mut menu = MacMenu::new(ctx);
@@ -278,7 +366,12 @@ fn escape(s: &str) -> String {
 /// A key equivalent for AppKit. `Cmd` is ⌘ (`META`) and `Ctrl` is ⌃: never folded together.
 fn accelerator(c: &Chord) -> Option<Accelerator> {
     let mut mods = Modifiers::empty();
-    for (on, m) in [(c.cmd, Modifiers::META), (c.ctrl, Modifiers::CONTROL), (c.alt, Modifiers::ALT), (c.shift, Modifiers::SHIFT)] {
+    for (on, m) in [
+        (c.cmd, Modifiers::META),
+        (c.ctrl, Modifiers::CONTROL),
+        (c.alt, Modifiers::ALT),
+        (c.shift, Modifiers::SHIFT),
+    ] {
         if on {
             mods |= m;
         }
@@ -311,8 +404,18 @@ fn accelerator(c: &Chord) -> Option<Accelerator> {
         Code::KeyY,
         Code::KeyZ,
     ];
-    const DIGITS: [Code; 10] =
-        [Code::Digit0, Code::Digit1, Code::Digit2, Code::Digit3, Code::Digit4, Code::Digit5, Code::Digit6, Code::Digit7, Code::Digit8, Code::Digit9];
+    const DIGITS: [Code; 10] = [
+        Code::Digit0,
+        Code::Digit1,
+        Code::Digit2,
+        Code::Digit3,
+        Code::Digit4,
+        Code::Digit5,
+        Code::Digit6,
+        Code::Digit7,
+        Code::Digit8,
+        Code::Digit9,
+    ];
     const F: [Code; 24] = [
         Code::F1,
         Code::F2,
@@ -342,8 +445,12 @@ fn accelerator(c: &Chord) -> Option<Accelerator> {
     let k = c.key.as_str();
     let mut chars = k.chars();
     let code = match (chars.next(), chars.next()) {
-        (Some(ch), None) if ch.is_ascii_alphabetic() => *LETTERS.get((ch.to_ascii_uppercase() as usize).checked_sub('A' as usize)?)?,
-        (Some(ch), None) if ch.is_ascii_digit() => *DIGITS.get((ch as usize).checked_sub('0' as usize)?)?,
+        (Some(ch), None) if ch.is_ascii_alphabetic() => {
+            *LETTERS.get((ch.to_ascii_uppercase() as usize).checked_sub('A' as usize)?)?
+        }
+        (Some(ch), None) if ch.is_ascii_digit() => {
+            *DIGITS.get((ch as usize).checked_sub('0' as usize)?)?
+        }
         _ if c.is_function_key() => *F.get(k.get(1..)?.parse::<usize>().ok()?.checked_sub(1)?)?,
         _ => match k {
             "[" => Code::BracketLeft,
@@ -374,13 +481,28 @@ mod tests {
     /// Every shortcut the Mac menu shows becomes a key equivalent (or stays egui's, for bare keys).
     #[test]
     fn every_menu_shortcut_maps_to_a_key_equivalent() {
-        let app = photocraft_ui_egui::PhotocraftApp::new(photocraft_engine::Session::new(), photocraft_ui_egui::Services::default());
-        let bar = native_menu::photocraft_layout(&photocraft_ui_egui::menus::menu_items(&app), photocraft_ui_egui::i18n::Lang::EN, "auto").bar;
+        let app = photocraft_ui_egui::PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            photocraft_ui_egui::Services::default(),
+        );
+        let bar = native_menu::photocraft_layout(
+            &photocraft_ui_egui::menus::menu_items(&app),
+            photocraft_ui_egui::i18n::Lang::EN,
+            "auto",
+        )
+        .bar;
         let mut native = 0;
         for it in bar.items() {
-            let Some(c) = it.shortcut.as_deref().and_then(Chord::parse) else { continue };
+            let Some(c) = it.shortcut.as_deref().and_then(Chord::parse) else {
+                continue;
+            };
             if c.native_ok() {
-                assert!(accelerator(&c).is_some(), "{} ({}) has no key equivalent", c.portable(), it.id);
+                assert!(
+                    accelerator(&c).is_some(),
+                    "{} ({}) has no key equivalent",
+                    c.portable(),
+                    it.id
+                );
                 native += 1;
             }
         }

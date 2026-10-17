@@ -27,7 +27,13 @@ fn accel(sc: &str) -> Option<Accelerator> {
     if !(sc.contains("Cmd") || sc.contains("Ctrl") || sc.contains("Alt")) {
         return None;
     }
-    Accelerator::from_str(&sc.replace("Cmd", "CMD").replace("Alt", "ALT").replace("Shift", "SHIFT").replace("Ctrl", "CTRL")).ok()
+    Accelerator::from_str(
+        &sc.replace("Cmd", "CMD")
+            .replace("Alt", "ALT")
+            .replace("Shift", "SHIFT")
+            .replace("Ctrl", "CTRL"),
+    )
+    .ok()
 }
 
 impl NativeMenu {
@@ -41,7 +47,12 @@ impl NativeMenu {
         let about = MenuItem::with_id("dc-about", "About DesignCraft", true, None);
         let discord = MenuItem::with_id("dc-discord", "Join the ArtCraft Discord…", true, None);
         // Not the predefined Quit: it terminates the app at once, past the unsaved-changes prompt.
-        let quit = MenuItem::with_id("dc-quit", designcraft_ui_egui::i18n::tr(&app.ui.language, "Quit DesignCraft"), true, accel("Cmd+Q"));
+        let quit = MenuItem::with_id(
+            "dc-quit",
+            designcraft_ui_egui::i18n::tr(&app.ui.language, "Quit DesignCraft"),
+            true,
+            accel("Cmd+Q"),
+        );
         let _ = app_menu.append_items(&[
             &about,
             &discord,
@@ -54,9 +65,30 @@ impl NativeMenu {
             &PredefinedMenuItem::separator(),
             &quit,
         ]);
-        items.insert("dc-about".into(), ("help.about".into(), serde_json::Value::Null, Handle::Plain(about)));
-        items.insert("dc-discord".into(), ("help.discord".into(), serde_json::Value::Null, Handle::Plain(discord)));
-        items.insert("dc-quit".into(), ("app.quit".into(), serde_json::Value::Null, Handle::Plain(quit)));
+        items.insert(
+            "dc-about".into(),
+            (
+                "help.about".into(),
+                serde_json::Value::Null,
+                Handle::Plain(about),
+            ),
+        );
+        items.insert(
+            "dc-discord".into(),
+            (
+                "help.discord".into(),
+                serde_json::Value::Null,
+                Handle::Plain(discord),
+            ),
+        );
+        items.insert(
+            "dc-quit".into(),
+            (
+                "app.quit".into(),
+                serde_json::Value::Null,
+                Handle::Plain(quit),
+            ),
+        );
         let _ = menu.append(&app_menu);
         for (title, entries) in menus::menu_tree() {
             let sub = Submenu::new(designcraft_ui_egui::i18n::tr(&app.ui.language, title), true);
@@ -68,11 +100,17 @@ impl NativeMenu {
         app.native_shortcuts = items
             .values()
             .filter_map(|(id, p, _)| {
-                let sc = menus::ui_label(id).and_then(|(_, sc)| sc).or_else(|| designcraft_engine::find_command(id).and_then(|c| c.shortcut))?;
+                let sc = menus::ui_label(id)
+                    .and_then(|(_, sc)| sc)
+                    .or_else(|| designcraft_engine::find_command(id).and_then(|c| c.shortcut))?;
                 (p.is_null() && accel(sc).is_some()).then(|| id.clone())
             })
             .collect();
-        Self { _menu: menu, items, last_refresh: 0.0 }
+        Self {
+            _menu: menu,
+            items,
+            last_refresh: 0.0,
+        }
     }
 
     pub fn poll(&mut self, app: &mut DesignApp, ctx: &egui::Context) {
@@ -99,21 +137,37 @@ impl NativeMenu {
     }
 }
 
-fn build(app: &DesignApp, parent: &Submenu, entries: &[Item], items: &mut HashMap<String, (String, Value, Handle)>, counter: &mut usize) {
+fn build(
+    app: &DesignApp,
+    parent: &Submenu,
+    entries: &[Item],
+    items: &mut HashMap<String, (String, Value, Handle)>,
+    counter: &mut usize,
+) {
     for e in entries {
         match e {
             Item::Sep => {
                 let _ = parent.append(&PredefinedMenuItem::separator());
             }
             Item::Sub(label, children) => {
-                let sub = Submenu::new(designcraft_ui_egui::i18n::tr(&app.ui.language, label), true);
+                let sub =
+                    Submenu::new(designcraft_ui_egui::i18n::tr(&app.ui.language, label), true);
                 build(app, &sub, children, items, counter);
                 let _ = parent.append(&sub);
             }
-            Item::Cmd { label, id, params, shortcut } => {
+            Item::Cmd {
+                label,
+                id,
+                params,
+                shortcut,
+            } => {
                 *counter += 1;
                 let mid = format!("dc{counter}");
-                let sc = if params.is_null() { shortcut.and_then(accel) } else { None };
+                let sc = if params.is_null() {
+                    shortcut.and_then(accel)
+                } else {
+                    None
+                };
                 let label = designcraft_ui_egui::i18n::tr(&app.ui.language, label);
                 let handle = if menus::checked(app, id, params).is_some() {
                     let c = CheckMenuItem::with_id(mid.clone(), label, true, false, sc);

@@ -48,14 +48,24 @@ pub fn entry(appimage: &str) -> String {
 /// Write the entry and `icon` (a 256 px PNG) under `data_home`, unless one of `data_dirs` (or
 /// `data_home` itself, with an entry we didn't write) already has the ID's entry. Returns whether
 /// anything was written.
-pub fn integrate(appimage: &str, data_home: &Path, data_dirs: &[PathBuf], icon: &[u8]) -> std::io::Result<bool> {
+pub fn integrate(
+    appimage: &str,
+    data_home: &Path,
+    data_dirs: &[PathBuf],
+    icon: &[u8],
+) -> std::io::Result<bool> {
     let name = format!("{APP_ID}.desktop");
-    if data_dirs.iter().any(|d| d.join("applications").join(&name).exists()) {
+    if data_dirs
+        .iter()
+        .any(|d| d.join("applications").join(&name).exists())
+    {
         return Ok(false);
     }
     let path = data_home.join("applications").join(&name);
     let text = entry(appimage);
-    let icon_path = data_home.join("icons/hicolor/256x256/apps").join(format!("{APP_ID}.png"));
+    let icon_path = data_home
+        .join("icons/hicolor/256x256/apps")
+        .join(format!("{APP_ID}.png"));
     match std::fs::read_to_string(&path) {
         Ok(old) if !old.contains(MARKER) => return Ok(false),
         Ok(old) if old == text && icon_path.exists() => return Ok(false),
@@ -78,13 +88,34 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
 /// [`integrate`] for this process: when started from an AppImage, with the XDG data folders of
 /// the environment.
 pub fn integrate_from_env(icon: &[u8]) {
-    let Some(appimage) = std::env::var_os("APPIMAGE").map(|a| a.to_string_lossy().into_owned()) else { return };
-    let env_path = |k: &str| std::env::var_os(k).filter(|v| !v.is_empty()).map(PathBuf::from);
-    let Some(data_home) = env_path("XDG_DATA_HOME").or_else(|| env_path("HOME").map(|h| h.join(".local/share"))) else { return };
-    let dirs = std::env::var("XDG_DATA_DIRS").ok().filter(|v| !v.is_empty()).unwrap_or_else(|| "/usr/local/share:/usr/share".into());
-    let data_dirs: Vec<PathBuf> = dirs.split(':').filter(|d| !d.is_empty()).map(PathBuf::from).collect();
+    let Some(appimage) = std::env::var_os("APPIMAGE").map(|a| a.to_string_lossy().into_owned())
+    else {
+        return;
+    };
+    let env_path = |k: &str| {
+        std::env::var_os(k)
+            .filter(|v| !v.is_empty())
+            .map(PathBuf::from)
+    };
+    let Some(data_home) =
+        env_path("XDG_DATA_HOME").or_else(|| env_path("HOME").map(|h| h.join(".local/share")))
+    else {
+        return;
+    };
+    let dirs = std::env::var("XDG_DATA_DIRS")
+        .ok()
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| "/usr/local/share:/usr/share".into());
+    let data_dirs: Vec<PathBuf> = dirs
+        .split(':')
+        .filter(|d| !d.is_empty())
+        .map(PathBuf::from)
+        .collect();
     match integrate(&appimage, &data_home, &data_dirs, icon) {
-        Ok(true) => log::info!("AppImage: desktop entry and icon written to {}", data_home.display()),
+        Ok(true) => log::info!(
+            "AppImage: desktop entry and icon written to {}",
+            data_home.display()
+        ),
         Ok(false) => {}
         Err(e) => log::warn!("AppImage: could not write the desktop entry: {e}"),
     }
@@ -96,10 +127,20 @@ mod tests {
 
     #[test]
     fn exec_arguments_are_quoted_and_escaped() {
-        assert_eq!(exec_arg("/home/a/EffectCraft.AppImage"), "\"/home/a/EffectCraft.AppImage\"");
-        assert_eq!(exec_arg("/a b/$x\"y`z\\w%"), "\"/a b/\\\\$x\\\\\"y\\\\`z\\\\\\\\w%%\"");
+        assert_eq!(
+            exec_arg("/home/a/EffectCraft.AppImage"),
+            "\"/home/a/EffectCraft.AppImage\""
+        );
+        assert_eq!(
+            exec_arg("/a b/$x\"y`z\\w%"),
+            "\"/a b/\\\\$x\\\\\"y\\\\`z\\\\\\\\w%%\""
+        );
         let e = entry("/opt/EffectCraft.AppImage");
-        assert!(e.contains("Exec=\"/opt/EffectCraft.AppImage\" %F\n") && e.contains("NoDisplay=true\n") && e.contains("Icon=ai.storyteller.effectcraft\n"));
+        assert!(
+            e.contains("Exec=\"/opt/EffectCraft.AppImage\" %F\n")
+                && e.contains("NoDisplay=true\n")
+                && e.contains("Icon=ai.storyteller.effectcraft\n")
+        );
     }
 
     #[test]
@@ -110,22 +151,77 @@ mod tests {
         let entry_path = home.join("applications/ai.storyteller.effectcraft.desktop");
         let icon_path = home.join("icons/hicolor/256x256/apps/ai.storyteller.effectcraft.png");
         // First start: entry and icon written; again: nothing to do.
-        assert!(integrate("/a/EffectCraft.AppImage", &home, std::slice::from_ref(&system), b"png").unwrap());
+        assert!(
+            integrate(
+                "/a/EffectCraft.AppImage",
+                &home,
+                std::slice::from_ref(&system),
+                b"png"
+            )
+            .unwrap()
+        );
         assert_eq!(std::fs::read(&icon_path).unwrap(), b"png");
-        assert!(std::fs::read_to_string(&entry_path).unwrap().contains("Exec=\"/a/EffectCraft.AppImage\""));
-        assert!(!integrate("/a/EffectCraft.AppImage", &home, std::slice::from_ref(&system), b"png").unwrap());
+        assert!(
+            std::fs::read_to_string(&entry_path)
+                .unwrap()
+                .contains("Exec=\"/a/EffectCraft.AppImage\"")
+        );
+        assert!(
+            !integrate(
+                "/a/EffectCraft.AppImage",
+                &home,
+                std::slice::from_ref(&system),
+                b"png"
+            )
+            .unwrap()
+        );
         // The AppImage moved: the entry follows it.
-        assert!(integrate("/b/EffectCraft.AppImage", &home, std::slice::from_ref(&system), b"png").unwrap());
-        assert!(std::fs::read_to_string(&entry_path).unwrap().contains("Exec=\"/b/EffectCraft.AppImage\""));
+        assert!(
+            integrate(
+                "/b/EffectCraft.AppImage",
+                &home,
+                std::slice::from_ref(&system),
+                b"png"
+            )
+            .unwrap()
+        );
+        assert!(
+            std::fs::read_to_string(&entry_path)
+                .unwrap()
+                .contains("Exec=\"/b/EffectCraft.AppImage\"")
+        );
         // The user's own entry is never replaced.
         std::fs::write(&entry_path, "[Desktop Entry]\nName=Mine\n").unwrap();
-        assert!(!integrate("/c/EffectCraft.AppImage", &home, std::slice::from_ref(&system), b"png").unwrap());
-        assert_eq!(std::fs::read_to_string(&entry_path).unwrap(), "[Desktop Entry]\nName=Mine\n");
+        assert!(
+            !integrate(
+                "/c/EffectCraft.AppImage",
+                &home,
+                std::slice::from_ref(&system),
+                b"png"
+            )
+            .unwrap()
+        );
+        assert_eq!(
+            std::fs::read_to_string(&entry_path).unwrap(),
+            "[Desktop Entry]\nName=Mine\n"
+        );
         // An installed package provides the entry: nothing is written.
         let _ = std::fs::remove_dir_all(&home);
         std::fs::create_dir_all(system.join("applications")).unwrap();
-        std::fs::write(system.join("applications/ai.storyteller.effectcraft.desktop"), "x").unwrap();
-        assert!(!integrate("/a/EffectCraft.AppImage", &home, std::slice::from_ref(&system), b"png").unwrap());
+        std::fs::write(
+            system.join("applications/ai.storyteller.effectcraft.desktop"),
+            "x",
+        )
+        .unwrap();
+        assert!(
+            !integrate(
+                "/a/EffectCraft.AppImage",
+                &home,
+                std::slice::from_ref(&system),
+                b"png"
+            )
+            .unwrap()
+        );
         assert!(!entry_path.exists());
         let _ = std::fs::remove_dir_all(&root);
     }

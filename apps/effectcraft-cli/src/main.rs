@@ -37,7 +37,14 @@
 //! `<comp>` is a comp id or name (`-` = the active comp); `<layer>` an id, `#n` or name; `<value>`
 //! is JSON (`50`, `[960,540]`, `"#ff0000"`) or a bare string. See `docs/agents.md`.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use std::io::Write;
 
@@ -86,7 +93,9 @@ fn write_line(text: std::fmt::Arguments) {
 
 /// Whether stdout failed for a reason other than its reader closing it early.
 fn stdout_broken() -> bool {
-    STDOUT_FAILED.get().is_some_and(|k| *k != std::io::ErrorKind::BrokenPipe)
+    STDOUT_FAILED
+        .get()
+        .is_some_and(|k| *k != std::io::ErrorKind::BrokenPipe)
 }
 
 const USAGE: &str = "usage: effectcraft-cli <info|commands|exec|run|props|get|set|render-frame|render|script|mcp> [args] [--json]
@@ -209,7 +218,9 @@ impl Args {
                     None => (a, None),
                 };
                 if VALUED.contains(&k.as_str()) {
-                    let v = inline.or_else(|| it.next()).ok_or_else(|| format!("{k} needs a value"))?;
+                    let v = inline
+                        .or_else(|| it.next())
+                        .ok_or_else(|| format!("{k} needs a value"))?;
                     opts.push((k, Some(v)));
                 } else if !FLAGS.contains(&k.as_str()) {
                     unknown.push(format!("`{k}`"));
@@ -228,10 +239,18 @@ impl Args {
             let s = if unknown.len() == 1 { "" } else { "s" };
             return Err(format!("unknown option{s} {}", unknown.join(", ")));
         }
-        let mut a = Args { pos, opts, project: None };
+        let mut a = Args {
+            pos,
+            opts,
+            project: None,
+        };
         a.project = match a.opt("--project") {
             Some(p) => Some(p.to_string()),
-            None => a.pos.iter().position(|x| x.ends_with(".ecproj")).map(|i| a.pos.remove(i)),
+            None => a
+                .pos
+                .iter()
+                .position(|x| x.ends_with(".ecproj"))
+                .map(|i| a.pos.remove(i)),
         };
         Ok(a)
     }
@@ -240,13 +259,26 @@ impl Args {
     }
     /// Every value of a repeatable option, in order.
     fn opts(&self, k: &str) -> Vec<&str> {
-        self.opts.iter().filter(|(o, _)| o == k).filter_map(|(_, v)| v.as_deref()).collect()
+        self.opts
+            .iter()
+            .filter(|(o, _)| o == k)
+            .filter_map(|(_, v)| v.as_deref())
+            .collect()
     }
     fn opt(&self, k: &str) -> Option<&str> {
-        self.opts.iter().rev().find(|(o, _)| o == k).and_then(|(_, v)| v.as_deref())
+        self.opts
+            .iter()
+            .rev()
+            .find(|(o, _)| o == k)
+            .and_then(|(_, v)| v.as_deref())
     }
     fn num(&self, k: &str) -> Result<Option<f64>, String> {
-        self.opt(k).map(|v| v.parse::<f64>().map_err(|_| format!("{k}: not a number: {v}"))).transpose()
+        self.opt(k)
+            .map(|v| {
+                v.parse::<f64>()
+                    .map_err(|_| format!("{k}: not a number: {v}"))
+            })
+            .transpose()
     }
 }
 
@@ -254,7 +286,11 @@ impl Args {
 fn reference(s: &str) -> Option<Value> {
     match s {
         "-" | "" => None,
-        _ => Some(s.parse::<u64>().map(Value::from).unwrap_or_else(|_| json!(s))),
+        _ => Some(
+            s.parse::<u64>()
+                .map(Value::from)
+                .unwrap_or_else(|_| json!(s)),
+        ),
     }
 }
 
@@ -265,7 +301,10 @@ fn value_arg(s: &str) -> Value {
 
 fn main() {
     let raw: Vec<String> = std::env::args().skip(1).collect();
-    if matches!(raw.first().map(String::as_str), Some("--version" | "-V" | "version")) {
+    if matches!(
+        raw.first().map(String::as_str),
+        Some("--version" | "-V" | "version")
+    ) {
         say!("effectcraft-cli {}", env!("CARGO_PKG_VERSION"));
         return;
     }
@@ -324,7 +363,9 @@ fn usage_err<T>(m: &str) -> Result<T, Failure> {
 fn backend(args: &Args, default_demo: bool) -> Result<Backend, Failure> {
     if let Some(addr) = args.opt("--bridge") {
         if args.project.is_some() || args.flag("--demo") {
-            return usage_err("--bridge drives the running app's project; use `exec file.open` to open another");
+            return usage_err(
+                "--bridge drives the running app's project; use `exec file.open` to open another",
+            );
         }
         return Ok(Backend::bridge(addr)?);
     }
@@ -342,7 +383,9 @@ fn backend(args: &Args, default_demo: bool) -> Result<Backend, Failure> {
 fn session(args: &Args) -> Result<effectcraft_engine::Session, Failure> {
     let mut s = effectcraft_host::session();
     if args.flag("--autosave") {
-        let dir = effectcraft_host::config_dir().ok_or_else(|| Failure::Error("--autosave: no config directory; set EFFECTCRAFT_CONFIG_DIR".into()))?;
+        let dir = effectcraft_host::config_dir().ok_or_else(|| {
+            Failure::Error("--autosave: no config directory; set EFFECTCRAFT_CONFIG_DIR".into())
+        })?;
         // Read only auto-save settings. Opting in must not change headless rendering or load
         // the desktop's models, shortcuts, disk cache or recovery sentinel.
         use effectcraft_engine::config::ConfigStore;
@@ -353,7 +396,8 @@ fn session(args: &Args) -> Result<effectcraft_engine::Session, Failure> {
         s.prefs.normalize();
     }
     if args.flag("--gpu") {
-        let g = effectcraft_gpu::Gpu::try_headless().map_err(|e| Failure::Error(format!("--gpu: no usable GPU adapter ({e})")))?;
+        let g = effectcraft_gpu::Gpu::try_headless()
+            .map_err(|e| Failure::Error(format!("--gpu: no usable GPU adapter ({e})")))?;
         s.accel = Some(std::sync::Arc::new(g));
     } else {
         s.accel_note = Some("headless: renders on the CPU unless started with --gpu".into());
@@ -366,11 +410,18 @@ fn maybe_save(b: &mut Backend, args: &Args) -> Result<Option<String>, Failure> {
     let r = if let Some(p) = args.opt("--save-as") {
         b.exec("file.saveAs", json!({"path": p}))?
     } else if args.flag("--save") {
-        b.exec("file.save", json!({})).map_err(|e| Failure::Error(format!("{e} (use --project F to save in place, or --save-as F)")))?
+        b.exec("file.save", json!({})).map_err(|e| {
+            Failure::Error(format!(
+                "{e} (use --project F to save in place, or --save-as F)"
+            ))
+        })?
     } else {
         return Ok(None);
     };
-    Ok(r.get("path").and_then(Value::as_str).map(str::to_string).or_else(|| args.opt("--save-as").map(str::to_string)))
+    Ok(r.get("path")
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .or_else(|| args.opt("--save-as").map(str::to_string)))
 }
 
 fn tool(b: &mut Backend, name: &str, a: Value) -> Result<Value, Failure> {
@@ -385,7 +436,11 @@ fn tool(b: &mut Backend, name: &str, a: Value) -> Result<Value, Failure> {
 fn script_cmd(args: &Args, json_out: bool) -> Result<(), Failure> {
     let (code, name) = match (args.opt("--eval"), args.pos.first()) {
         (Some(c), _) => (c.to_string(), "eval".to_string()),
-        (None, Some(f)) => (std::fs::read_to_string(f).map_err(|e| Failure::Error(format!("cannot read {f}: {e}")))?, f.clone()),
+        (None, Some(f)) => (
+            std::fs::read_to_string(f)
+                .map_err(|e| Failure::Error(format!("cannot read {f}: {e}")))?,
+            f.clone(),
+        ),
         (None, None) => return usage_err("script needs a .jsx/.js file or --eval CODE"),
     };
     let mut b = backend(args, false)?;
@@ -414,7 +469,11 @@ fn script_cmd(args: &Args, json_out: bool) -> Result<(), Failure> {
             (Some(l), None) => format!(":{l}"),
             _ => String::new(),
         };
-        let msg = format!("{}{pos}: {}", e["file"].as_str().unwrap_or(&name), e["message"].as_str().unwrap_or("script error"));
+        let msg = format!(
+            "{}{pos}: {}",
+            e["file"].as_str().unwrap_or(&name),
+            e["message"].as_str().unwrap_or("script error")
+        );
         if json_out {
             std::process::exit(1);
         }
@@ -464,7 +523,12 @@ fn run(cmd: &str, args: &Args, json_out: bool) -> Result<(), Failure> {
                 );
                 say!("project: {}", p["path"].as_str().unwrap_or("(unsaved)"));
                 for i in p["items"].as_array().into_iter().flatten() {
-                    say!("  item {:>3}  {:<12} {}", i["id"], i["type"].as_str().unwrap_or(""), i["name"].as_str().unwrap_or(""));
+                    say!(
+                        "  item {:>3}  {:<12} {}",
+                        i["id"],
+                        i["type"].as_str().unwrap_or(""),
+                        i["name"].as_str().unwrap_or("")
+                    );
                 }
                 if let Some(c) = comp {
                     say!(
@@ -477,7 +541,13 @@ fn run(cmd: &str, args: &Args, json_out: bool) -> Result<(), Failure> {
                         c["duration"]
                     );
                     for l in c["layers"].as_array().into_iter().flatten() {
-                        say!("  #{:<3} id {:<4} {:<10} {}", l["index"], l["id"], l["type"].as_str().unwrap_or(""), l["name"].as_str().unwrap_or(""));
+                        say!(
+                            "  #{:<3} id {:<4} {:<10} {}",
+                            l["index"],
+                            l["id"],
+                            l["type"].as_str().unwrap_or(""),
+                            l["name"].as_str().unwrap_or("")
+                        );
                     }
                 }
             }
@@ -486,9 +556,12 @@ fn run(cmd: &str, args: &Args, json_out: bool) -> Result<(), Failure> {
         "exec" if args.flag("--list") => list_commands_cmd(args, json_out)?,
         "script" => script_cmd(args, json_out)?,
         "exec" => {
-            let Some(id) = args.pos.first().cloned() else { return usage_err("exec needs a command id") };
+            let Some(id) = args.pos.first().cloned() else {
+                return usage_err("exec needs a command id");
+            };
             let params = match (args.opt("--params"), args.pos.get(1).map(String::as_str)) {
-                (Some(p), _) | (None, Some(p)) => serde_json::from_str(p).map_err(|e| Failure::Usage(format!("params are not valid JSON: {e}")))?,
+                (Some(p), _) | (None, Some(p)) => serde_json::from_str(p)
+                    .map_err(|e| Failure::Usage(format!("params are not valid JSON: {e}")))?,
                 (None, None) => json!({}),
             };
             let mut b = backend(args, true)?;
@@ -509,12 +582,16 @@ fn run(cmd: &str, args: &Args, json_out: bool) -> Result<(), Failure> {
                 let params = match pairs.get(i + 1).filter(|p| p.trim_start().starts_with('{')) {
                     Some(p) => {
                         i += 1;
-                        serde_json::from_str(p).map_err(|e| Failure::Usage(format!("{id}: params are not valid JSON: {e}")))?
+                        serde_json::from_str(p).map_err(|e| {
+                            Failure::Usage(format!("{id}: params are not valid JSON: {e}"))
+                        })?
                     }
                     None => json!({}),
                 };
                 i += 1;
-                let r = b.exec(id, params).map_err(|e| Failure::Error(format!("{id}: {e}")))?;
+                let r = b
+                    .exec(id, params)
+                    .map_err(|e| Failure::Error(format!("{id}: {e}")))?;
                 if !json_out {
                     emit(&r, false);
                 }
@@ -533,7 +610,13 @@ fn run(cmd: &str, args: &Args, json_out: bool) -> Result<(), Failure> {
             if json_out {
                 emit(&v, true);
             } else {
-                say!("layer {} \"{}\" ({}) at {} s", v["id"], v["name"].as_str().unwrap_or(""), v["type"].as_str().unwrap_or(""), v["time"]);
+                say!(
+                    "layer {} \"{}\" ({}) at {} s",
+                    v["id"],
+                    v["name"].as_str().unwrap_or(""),
+                    v["type"].as_str().unwrap_or(""),
+                    v["time"]
+                );
                 for p in v["properties"].as_array().into_iter().flatten() {
                     let mut extra = String::new();
                     if let Some(k) = p.get("keys") {
@@ -542,14 +625,23 @@ fn run(cmd: &str, args: &Args, json_out: bool) -> Result<(), Failure> {
                     if let Some(e) = p.get("expression").and_then(Value::as_str) {
                         extra += &format!("  expr: {e}");
                     }
-                    say!("  {:<44} {:<8} {}{extra}", p["path"].as_str().unwrap_or(""), p["type"].as_str().unwrap_or(""), p["value"]);
+                    say!(
+                        "  {:<44} {:<8} {}{extra}",
+                        p["path"].as_str().unwrap_or(""),
+                        p["type"].as_str().unwrap_or(""),
+                        p["value"]
+                    );
                 }
             }
         }
         "get" => {
             let [comp, layer, path] = positional::<3>(args, "get <comp> <layer> <path>")?;
             let mut b = backend(args, true)?;
-            let v = tool(&mut b, "get_property", json!({"comp": reference(&comp), "layer": reference(&layer), "path": path, "time": args.num("--time")?}))?;
+            let v = tool(
+                &mut b,
+                "get_property",
+                json!({"comp": reference(&comp), "layer": reference(&layer), "path": path, "time": args.num("--time")?}),
+            )?;
             emit(&v, json_out);
         }
         "set" => {
@@ -558,11 +650,14 @@ fn run(cmd: &str, args: &Args, json_out: bool) -> Result<(), Failure> {
             if args.pos.len() < need {
                 return usage_err("set <comp> <layer> <path> <value> [--time S] [--expression E]");
             }
-            let (comp, layer, path) = (args.pos[0].clone(), args.pos[1].clone(), args.pos[2].clone());
+            let (comp, layer, path) = (
+                args.pos[0].clone(),
+                args.pos[1].clone(),
+                args.pos[2].clone(),
+            );
             let value = args.pos.get(3).map(|v| value_arg(v));
             let mut b = backend(args, true)?;
-            let a =
-                json!({"comp": reference(&comp), "layer": reference(&layer), "path": path, "value": value, "time": args.num("--time")?, "expression": expr});
+            let a = json!({"comp": reference(&comp), "layer": reference(&layer), "path": path, "value": value, "time": args.num("--time")?, "expression": expr});
             let v = tool(&mut b, "set_property", a)?;
             let saved = maybe_save(&mut b, args)?;
             emit(&with_saved(v, saved), json_out);
@@ -585,7 +680,10 @@ fn run(cmd: &str, args: &Args, json_out: bool) -> Result<(), Failure> {
                     time = Some(f / c["frameRate"].as_f64().unwrap_or(30.0));
                 }
                 if let Some(k) = args.num("--scale")? {
-                    let long = c["width"].as_f64().unwrap_or(0.0).max(c["height"].as_f64().unwrap_or(0.0));
+                    let long = c["width"]
+                        .as_f64()
+                        .unwrap_or(0.0)
+                        .max(c["height"].as_f64().unwrap_or(0.0));
                     max_side = (long * k).round().max(1.0) as u32;
                 }
             }
@@ -598,30 +696,52 @@ fn run(cmd: &str, args: &Args, json_out: bool) -> Result<(), Failure> {
             if json_out {
                 emit(&info, true);
             } else {
-                note!("rendered {}x{} at {:.3}s in {ms:.1} ms -> {out}", f.width, f.height, f.time);
+                note!(
+                    "rendered {}x{} at {:.3}s in {ms:.1} ms -> {out}",
+                    f.width,
+                    f.height,
+                    f.time
+                );
             }
         }
         "mcp" => {
             if args.flag("--autosave") && args.opt("--bridge").is_some() {
-                return usage_err("--autosave is for headless MCP; the bridged app owns its auto-saves");
+                return usage_err(
+                    "--autosave is for headless MCP; the bridged app owns its auto-saves",
+                );
             }
             let mut b = backend(args, false)?;
-            let (read, write) = (args.opts("--automation-read-root"), args.opts("--automation-write-root"));
+            let (read, write) = (
+                args.opts("--automation-read-root"),
+                args.opts("--automation-write-root"),
+            );
             if !read.is_empty() || !write.is_empty() {
-                let roots = |r: Vec<&str>| r.into_iter().map(std::path::PathBuf::from).collect::<Vec<_>>();
-                b.confine(effectcraft_automation::confine::Confinement::new(&roots(read), &roots(write))?);
+                let roots = |r: Vec<&str>| {
+                    r.into_iter()
+                        .map(std::path::PathBuf::from)
+                        .collect::<Vec<_>>()
+                };
+                b.confine(effectcraft_automation::confine::Confinement::new(
+                    &roots(read),
+                    &roots(write),
+                )?);
             }
             let server = McpServer::new(b);
             let mut server = if args.flag("--autosave") {
-                let root =
-                    effectcraft_host::config_dir().ok_or_else(|| Failure::Error("--autosave: no config directory; set EFFECTCRAFT_CONFIG_DIR".into()))?;
+                let root = effectcraft_host::config_dir().ok_or_else(|| {
+                    Failure::Error(
+                        "--autosave: no config directory; set EFFECTCRAFT_CONFIG_DIR".into(),
+                    )
+                })?;
                 server.with_autosave(&root)?
             } else {
                 server
             };
             // A client that closes its end of stdout has ended the session.
             match server.serve_stdio() {
-                Err(e) if e.kind() != std::io::ErrorKind::BrokenPipe => return Err(e.to_string().into()),
+                Err(e) if e.kind() != std::io::ErrorKind::BrokenPipe => {
+                    return Err(e.to_string().into());
+                }
                 _ => {}
             }
         }
@@ -647,7 +767,9 @@ fn with_saved(v: Value, saved: Option<String>) -> Value {
 /// A relative `--out` is relative to the working directory, like `--project` and every other CLI
 /// path. The Render Queue alone would resolve it against the project's folder.
 fn from_cwd(path: &str) -> Result<String, Failure> {
-    std::path::absolute(path).map(|p| p.to_string_lossy().into_owned()).map_err(|e| Failure::Error(format!("render: cannot resolve --out {path}: {e}")))
+    std::path::absolute(path)
+        .map(|p| p.to_string_lossy().into_owned())
+        .map_err(|e| Failure::Error(format!("render: cannot resolve --out {path}: {e}")))
 }
 
 /// `render`: queue `--comp` (or the active comp) with the given settings unless `--queue`, then
@@ -655,31 +777,47 @@ fn from_cwd(path: &str) -> Result<String, Failure> {
 fn render(args: &Args, json_out: bool) -> Result<(), Failure> {
     use effectcraft_engine::project::render_queue::{OutputFormat, RenderStatus};
     if args.opt("--bridge").is_some() {
-        return usage_err("render runs headless; use `exec renderQueue.add` / `renderQueue.render` with --bridge");
+        return usage_err(
+            "render runs headless; use `exec renderQueue.add` / `renderQueue.render` with --bridge",
+        );
     }
     let mut s = session(args)?;
     if args.opt("--template").is_some() {
         template::prepare(&mut s, args)?;
     } else {
         match &args.project {
-            Some(p) => s.execute("file.open", json!({"path": p})).map_err(|e| Failure::Error(e.to_string()))?,
-            None => s.execute("file.openDemoProject", json!({})).map_err(|e| Failure::Error(e.to_string()))?,
+            Some(p) => s
+                .execute("file.open", json!({"path": p}))
+                .map_err(|e| Failure::Error(e.to_string()))?,
+            None => s
+                .execute("file.openDemoProject", json!({}))
+                .map_err(|e| Failure::Error(e.to_string()))?,
         };
     }
     let err = |e: effectcraft_engine::EngineError| Failure::Error(e.to_string());
     if !args.flag("--queue") {
-        let Some(out) = args.opt("--out") else { return usage_err("render: --out FILE is required (or --queue)") };
+        let Some(out) = args.opt("--out") else {
+            return usage_err("render: --out FILE is required (or --queue)");
+        };
         let out = &from_cwd(out)?;
         let mut p = json!({"output": out});
         if let Some(c) = args.opt("--comp") {
             p["comp"] = json!(c);
         }
-        let ext = std::path::Path::new(out).extension().map(|e| e.to_string_lossy().to_string());
+        let ext = std::path::Path::new(out)
+            .extension()
+            .map(|e| e.to_string_lossy().to_string());
         if let Some(f) = args.opt("--format").map(str::to_string).or(ext) {
             p["format"] = json!(f);
         }
         match (args.num("--start")?, args.num("--end")?) {
-            (None, None) => p["timeSpan"] = json!(if args.flag("--work-area") { "workArea" } else { "comp" }),
+            (None, None) => {
+                p["timeSpan"] = json!(if args.flag("--work-area") {
+                    "workArea"
+                } else {
+                    "comp"
+                })
+            }
             (a, b) => {
                 p["start"] = json!(a.unwrap_or(0.0));
                 if let Some(b) = b {
@@ -693,7 +831,12 @@ fn render(args: &Args, json_out: bool) -> Result<(), Failure> {
         if let Some(r) = args.opt("--resolution").or(args.opt("--scale")) {
             p["resolution"] = r.parse::<f64>().map(|v| json!(v)).unwrap_or(json!(r));
         }
-        for (flag, key) in [("--quality", "quality"), ("--channels", "channels"), ("--prores", "proresProfile"), ("--audio", "audio")] {
+        for (flag, key) in [
+            ("--quality", "quality"),
+            ("--channels", "channels"),
+            ("--prores", "proresProfile"),
+            ("--audio", "audio"),
+        ] {
             if let Some(v) = args.opt(flag) {
                 p[key] = json!(v);
             }
@@ -720,14 +863,21 @@ fn render(args: &Args, json_out: bool) -> Result<(), Failure> {
                 p[key] = json!(v);
             }
         }
-        for (flag, key) in [("--video-quality", "quality"), ("--keyint", "keyframeInterval"), ("--audio-bitrate", "audioBitrate")] {
+        for (flag, key) in [
+            ("--video-quality", "quality"),
+            ("--keyint", "keyframeInterval"),
+            ("--audio-bitrate", "audioBitrate"),
+        ] {
             if let Some(v) = args.num(flag)? {
                 p[key] = json!(v);
             }
         }
         // Render exactly this item: unqueue whatever the project's queue already holds.
         for k in 0..s.project.render_queue.len() {
-            let _ = s.execute("renderQueue.setRender", json!({"index": k + 1, "render": false}));
+            let _ = s.execute(
+                "renderQueue.setRender",
+                json!({"index": k + 1, "render": false}),
+            );
         }
         let r = s.execute("renderQueue.add", p).map_err(err)?;
         note!(
@@ -740,12 +890,16 @@ fn render(args: &Args, json_out: bool) -> Result<(), Failure> {
             r["outputModuleSummary"].as_str().unwrap_or("")
         );
     }
-    s.execute("renderQueue.render", json!({"wait": false})).map_err(err)?;
+    s.execute("renderQueue.render", json!({"wait": false}))
+        .map_err(err)?;
     let tty = std::io::IsTerminal::is_terminal(&std::io::stderr());
     while s.is_rendering() {
         std::thread::sleep(std::time::Duration::from_millis(100));
         if tty && let Some(p) = s.render_progress() {
-            let left = p.remaining.map(|r| format!(", ~{r:.1}s left")).unwrap_or_default();
+            let left = p
+                .remaining
+                .map(|r| format!(", ~{r:.1}s left"))
+                .unwrap_or_default();
             let _ = write!(
                 std::io::stderr(),
                 "
@@ -765,12 +919,27 @@ fn render(args: &Args, json_out: bool) -> Result<(), Failure> {
     }
     let mut results = vec![];
     let mut failed = vec![];
-    for it in s.project.render_queue.iter().filter(|i| i.render && i.started.is_some()) {
-        let name = s.project.item(it.comp).map(|i| i.name.clone()).unwrap_or_else(|| "?".into());
+    for it in s
+        .project
+        .render_queue
+        .iter()
+        .filter(|i| i.render && i.started.is_some())
+    {
+        let name = s
+            .project
+            .item(it.comp)
+            .map(|i| i.name.clone())
+            .unwrap_or_else(|| "?".into());
         match &it.status {
             RenderStatus::Done => {
-                note!("done: {name} → {} in {:.2}s", it.last_output.as_deref().unwrap_or("?"), it.render_time.unwrap_or(0.0));
-                results.push(json!({"comp": name, "output": it.last_output, "seconds": it.render_time}));
+                note!(
+                    "done: {name} → {} in {:.2}s",
+                    it.last_output.as_deref().unwrap_or("?"),
+                    it.render_time.unwrap_or(0.0)
+                );
+                results.push(
+                    json!({"comp": name, "output": it.last_output, "seconds": it.render_time}),
+                );
             }
             RenderStatus::Failed(e) => failed.push(format!("{name}: {e}")),
             other => failed.push(format!("{name}: {}", other.label())),
@@ -789,7 +958,11 @@ fn render(args: &Args, json_out: bool) -> Result<(), Failure> {
 /// `--schemas` also each command's params JSON Schema).
 fn list_commands_cmd(args: &Args, json_out: bool) -> Result<(), Failure> {
     let mut b = backend(args, false)?;
-    let v = tool(&mut b, "list_commands", json!({"filter": args.opt("--filter"), "enabled_only": args.flag("--enabled"), "schemas": args.flag("--schemas")}))?;
+    let v = tool(
+        &mut b,
+        "list_commands",
+        json!({"filter": args.opt("--filter"), "enabled_only": args.flag("--enabled"), "schemas": args.flag("--schemas")}),
+    )?;
     if json_out {
         emit(&v, true);
     } else {
@@ -819,15 +992,27 @@ fn bench_cmd(args: &Args) -> Result<(), Failure> {
     }
     .map_err(|e| Failure::Error(e.to_string()))?;
     if let Some(c) = args.opt("--comp") {
-        s.execute("comp.open", json!({"comp": c})).map_err(|e| Failure::Error(e.to_string()))?;
+        s.execute("comp.open", json!({"comp": c}))
+            .map_err(|e| Failure::Error(e.to_string()))?;
     }
     if args.flag("--gpu") {
         return bench_gpu(&s, args);
     }
-    let cid = s.active_comp_id().ok_or_else(|| Failure::Error("no composition".into()))?;
+    let cid = s
+        .active_comp_id()
+        .ok_or_else(|| Failure::Error("no composition".into()))?;
     let t = Tick::from_seconds_f64(args.num("--time")?.unwrap_or(3.0));
-    let opts = RenderOpts { scale: args.num("--scale")?.unwrap_or(1.0), ..Default::default() };
-    bench(&s, cid, t, opts, args.num("--n")?.unwrap_or(10.0).max(1.0) as usize);
+    let opts = RenderOpts {
+        scale: args.num("--scale")?.unwrap_or(1.0),
+        ..Default::default()
+    };
+    bench(
+        &s,
+        cid,
+        t,
+        opts,
+        args.num("--n")?.unwrap_or(10.0).max(1.0) as usize,
+    );
     if let Some(n) = args.num("--play")? {
         bench_play(&s, cid, t, opts, n.max(1.0) as usize);
     }
@@ -841,7 +1026,11 @@ fn bench_cmd(args: &Args) -> Result<(), Failure> {
 /// `--footage N` resize it. See docs/architecture.md ▸ Performance.
 fn bench_ops(args: &Args) -> Result<(), Failure> {
     use effectcraft_engine::perf::{self, LargeSpec};
-    let mut spec = if args.flag("--small") { LargeSpec::small() } else { LargeSpec::default() };
+    let mut spec = if args.flag("--small") {
+        LargeSpec::small()
+    } else {
+        LargeSpec::default()
+    };
     if let Some(n) = args.num("--layers")? {
         spec.main_layers = n.max(1.0) as usize;
     }
@@ -857,7 +1046,14 @@ fn bench_ops(args: &Args) -> Result<(), Failure> {
     drop(effectcraft_host::session());
     let host_ms = t0.elapsed().as_secs_f64() * 1000.0;
     let (mut m, _) = perf::ops_bench(&spec, &dir, &effectcraft_host::session);
-    m.insert(0, perf::Measure { name: "hostSession", ms: host_ms, note: "a fully wired session (media, expressions, scripting, export)".into() });
+    m.insert(
+        0,
+        perf::Measure {
+            name: "hostSession",
+            ms: host_ms,
+            note: "a fully wired session (media, expressions, scripting, export)".into(),
+        },
+    );
     let path = dir.join("bench-large.ecproj").to_string_lossy().to_string();
     m.extend(effectcraft_ui_egui::bench::ui_ops(|| {
         let mut s = effectcraft_host::session();
@@ -868,9 +1064,17 @@ fn bench_ops(args: &Args) -> Result<(), Failure> {
     }));
     let _ = std::fs::remove_dir_all(&dir);
     if args.flag("--json") {
-        emit(&json!({"spec": format!("{spec:?}"), "measures": m.iter().map(perf::Measure::json).collect::<Vec<_>>()}), true);
+        emit(
+            &json!({"spec": format!("{spec:?}"), "measures": m.iter().map(perf::Measure::json).collect::<Vec<_>>()}),
+            true,
+        );
     } else {
-        say!("bench --ops: {} comps, {} layers in Main, {} footage items", spec.comps, spec.main_layers, spec.footage);
+        say!(
+            "bench --ops: {} comps, {} layers in Main, {} footage items",
+            spec.comps,
+            spec.main_layers,
+            spec.footage
+        );
         for x in &m {
             say!("  {:<22} {:>10.2} ms  {}", x.name, x.ms, x.note);
         }
@@ -896,11 +1100,19 @@ fn min(v: &[f64]) -> f64 {
 
 /// CPU time of the whole process (all threads) in ms: a load-independent measure of work.
 fn cpu_ms() -> f64 {
-    cpu_time::ProcessTime::try_now().map(|t| t.as_duration().as_secs_f64() * 1e3).unwrap_or(0.0)
+    cpu_time::ProcessTime::try_now()
+        .map(|t| t.as_duration().as_secs_f64() * 1e3)
+        .unwrap_or(0.0)
 }
 
 /// One frame: (wall ms, CPU ms, per-layer timings).
-fn render_timed(s: &Session, cid: ItemId, t: Tick, opts: RenderOpts, cache: Option<&LayerCache>) -> (f64, f64, Vec<LayerTiming>) {
+fn render_timed(
+    s: &Session,
+    cid: ItemId,
+    t: Tick,
+    opts: RenderOpts,
+    cache: Option<&LayerCache>,
+) -> (f64, f64, Vec<LayerTiming>) {
     let prof = std::sync::Mutex::new(Vec::<LayerTiming>::new());
     let mut r = Renderer::new(&s.project, s.footage.as_ref(), opts);
     r.expr = s.expr.as_deref();
@@ -950,9 +1162,20 @@ fn bench(s: &Session, cid: ItemId, t: Tick, opts: RenderOpts, n: usize) {
         min(&cpus)
     );
     for (d, name, p, c, fx) in per_layer {
-        note!("  {:indent$}{name:<28} process {:8.2} ms  composite {:8.2} ms  (min)", "", min(&p), min(&c), indent = d * 2);
+        note!(
+            "  {:indent$}{name:<28} process {:8.2} ms  composite {:8.2} ms  (min)",
+            "",
+            min(&p),
+            min(&c),
+            indent = d * 2
+        );
         for (id, v) in fx {
-            note!("  {:indent$}  fx {id:<30} {:8.2} ms", "", min(&v), indent = d * 2);
+            note!(
+                "  {:indent$}  fx {id:<30} {:8.2} ms",
+                "",
+                min(&v),
+                indent = d * 2
+            );
         }
     }
 }
@@ -960,7 +1183,9 @@ fn bench(s: &Session, cid: ItemId, t: Tick, opts: RenderOpts, n: usize) {
 /// `frame --bench-play N`: render N consecutive frames from `t` as playback does, without and
 /// with the layer cache, and print per-frame times.
 fn bench_play(s: &Session, cid: ItemId, t: Tick, opts: RenderOpts, n: usize) {
-    let Some(comp) = s.project.comp(cid) else { return };
+    let Some(comp) = s.project.comp(cid) else {
+        return;
+    };
     let f0 = comp.frame_rate.frame_at(t);
     let cache = LayerCache::default();
     for (label, c) in [("no cache", None), ("layer cache", Some(&cache))] {
@@ -981,7 +1206,13 @@ fn bench_play(s: &Session, cid: ItemId, t: Tick, opts: RenderOpts, n: usize) {
         );
     }
     let st = cache.stats();
-    note!("  layer cache: {} hits, {} misses, {} entries, {:.1} MB", st.hits, st.misses, st.entries, st.bytes as f64 / 1e6);
+    note!(
+        "  layer cache: {} hits, {} misses, {} entries, {:.1} MB",
+        st.hits,
+        st.misses,
+        st.entries,
+        st.bytes as f64 / 1e6
+    );
 }
 
 /// Median wall time (ms) of `n` runs of `f` after one warm-up run.
@@ -1011,19 +1242,35 @@ fn adjustment_bench_comp(p: &mut effectcraft_engine::project::Project) -> Option
         "Adjustment (bench)",
         effectcraft_engine::color::Label::None,
         None,
-        ItemKind::Solid(Solid { color: [1.0; 3], width: w, height: h, pixel_aspect: 1.0 }),
+        ItemKind::Solid(Solid {
+            color: [1.0; 3],
+            width: w,
+            height: h,
+            pixel_aspect: 1.0,
+        }),
     );
-    let mut l = build::layer(p, &comp, "Adjustment (bench)", LayerSource::Solid { item: sid }, (w, h), None);
+    let mut l = build::layer(
+        p,
+        &comp,
+        "Adjustment (bench)",
+        LayerSource::Solid { item: sid },
+        (w, h),
+        None,
+    );
     l.switches.adjustment = true;
     for (id, vals) in [
-        ("ec.blur.gaussian", vec![("blurriness", Value::Scalar(12.0))]),
+        (
+            "ec.blur.gaussian",
+            vec![("blurriness", Value::Scalar(12.0))],
+        ),
         ("ec.color.levels", vec![("gamma", Value::Scalar(1.3))]),
         ("ec.color.vibrance", vec![("vibrance", Value::Scalar(40.0))]),
         ("ec.stylize.glow", vec![("threshold", Value::Scalar(55.0))]),
     ] {
         let spec = effects::find(id)?;
         let mut next = p.next_id;
-        let mut g = effects::instantiate(spec, &mut Ids(&mut next), spec.name, [w as f64, h as f64]);
+        let mut g =
+            effects::instantiate(spec, &mut Ids(&mut next), spec.name, [w as f64, h as f64]);
         p.next_id = next;
         for (k, v) in vals {
             g.prop_mut(k)?.value = v;
@@ -1031,7 +1278,12 @@ fn adjustment_bench_comp(p: &mut effectcraft_engine::project::Project) -> Option
         l.props.sub_mut("effects")?.children.push(g.into());
     }
     comp.layers.insert(0, l);
-    Some(p.add_item("Adjustment Layers (bench)", effectcraft_engine::color::Label::None, None, ItemKind::Comp(comp.into())))
+    Some(p.add_item(
+        "Adjustment Layers (bench)",
+        effectcraft_engine::color::Label::None,
+        None,
+        ItemKind::Comp(comp.into()),
+    ))
 }
 
 /// `bench --gpu`'s Advanced 3D comp (1920×1080): a ground plane, PBR primitives, extruded
@@ -1040,14 +1292,24 @@ fn adjustment_bench_comp(p: &mut effectcraft_engine::project::Project) -> Option
 fn adv3d_bench_comp(p: &mut effectcraft_engine::project::Project) -> Option<ItemId> {
     use effectcraft_engine::keyframe::{Keyframe, TextDoc, Value};
     use effectcraft_engine::project::build::{self, Ids};
-    use effectcraft_engine::project::{Comp, ItemKind, Layer, LayerSource, LightKind, PrimitiveKind, Renderer as R3, Solid};
+    use effectcraft_engine::project::{
+        Comp, ItemKind, Layer, LayerSource, LightKind, PrimitiveKind, Renderer as R3, Solid,
+    };
     let (w, h) = (1920u32, 1080u32);
-    let mut comp = Comp::new(w, h, effectcraft_time::FrameRate::FPS_30, Tick::from_seconds_f64(10.0));
+    let mut comp = Comp::new(
+        w,
+        h,
+        effectcraft_time::FrameRate::FPS_30,
+        Tick::from_seconds_f64(10.0),
+    );
     comp.renderer = R3::Advanced3D;
     comp.enable_motion_blur = true;
     comp.motion_blur_samples = 8;
     let mut layers: Vec<Layer> = vec![];
-    let mut add = |p: &mut effectcraft_engine::project::Project, comp: &Comp, src: LayerSource, edit: &dyn Fn(&mut Layer)| {
+    let mut add = |p: &mut effectcraft_engine::project::Project,
+                   comp: &Comp,
+                   src: LayerSource,
+                   edit: &dyn Fn(&mut Layer)| {
         let mut l = build::layer(p, comp, "L", src, (w, h), None);
         edit(&mut l);
         layers.insert(0, l);
@@ -1057,13 +1319,28 @@ fn adv3d_bench_comp(p: &mut effectcraft_engine::project::Project) -> Option<Item
             pr.value = v;
         }
     }
-    add(p, &comp, LayerSource::Primitive { kind: PrimitiveKind::Plane }, &|l| {
-        set(l, "geometryOptions/width", Value::Scalar(6000.0));
-        set(l, "geometryOptions/height", Value::Scalar(6000.0));
-        set(l, "transform/position", Value::Vec3([960.0, 800.0, 0.0]));
-        set(l, "transform/rotationX", Value::Scalar(90.0));
-    });
-    for (i, kind) in [PrimitiveKind::Sphere, PrimitiveKind::Torus, PrimitiveKind::Cube, PrimitiveKind::Sphere].into_iter().enumerate() {
+    add(
+        p,
+        &comp,
+        LayerSource::Primitive {
+            kind: PrimitiveKind::Plane,
+        },
+        &|l| {
+            set(l, "geometryOptions/width", Value::Scalar(6000.0));
+            set(l, "geometryOptions/height", Value::Scalar(6000.0));
+            set(l, "transform/position", Value::Vec3([960.0, 800.0, 0.0]));
+            set(l, "transform/rotationX", Value::Scalar(90.0));
+        },
+    );
+    for (i, kind) in [
+        PrimitiveKind::Sphere,
+        PrimitiveKind::Torus,
+        PrimitiveKind::Cube,
+        PrimitiveKind::Sphere,
+    ]
+    .into_iter()
+    .enumerate()
+    {
         add(p, &comp, LayerSource::Primitive { kind }, &|l| {
             let x = 400.0 + 380.0 * i as f64;
             set(l, "geometryOptions/radius", Value::Scalar(140.0));
@@ -1071,10 +1348,18 @@ fn adv3d_bench_comp(p: &mut effectcraft_engine::project::Project) -> Option<Item
             for k in ["width", "height", "depth"] {
                 set(l, &format!("geometryOptions/{k}"), Value::Scalar(220.0));
             }
-            set(l, "transform/position", Value::Vec3([x, 640.0, 300.0 * i as f64 - 300.0]));
+            set(
+                l,
+                "transform/position",
+                Value::Vec3([x, 640.0, 300.0 * i as f64 - 300.0]),
+            );
             set(l, "transform/rotationX", Value::Scalar(35.0));
             set(l, "transform/rotationY", Value::Scalar(25.0));
-            set(l, "materialOptions/metallic", Value::Scalar(if i % 2 == 1 { 100.0 } else { 0.0 }));
+            set(
+                l,
+                "materialOptions/metallic",
+                Value::Scalar(if i % 2 == 1 { 100.0 } else { 0.0 }),
+            );
             set(l, "materialOptions/roughness", Value::Scalar(30.0));
             set(l, "materialOptions/castsShadows", Value::Enum(1));
             if i == 0 {
@@ -1082,7 +1367,10 @@ fn adv3d_bench_comp(p: &mut effectcraft_engine::project::Project) -> Option<Item
                 if let Some(pr) = l.props.prop_mut("transform/position") {
                     pr.keys = vec![
                         Keyframe::new(Tick::ZERO, Value::Vec3([x, 640.0, -300.0])),
-                        Keyframe::new(Tick::from_seconds_f64(10.0), Value::Vec3([x + 300.0 * 60.0, 640.0, -300.0])),
+                        Keyframe::new(
+                            Tick::from_seconds_f64(10.0),
+                            Value::Vec3([x + 300.0 * 60.0, 640.0, -300.0]),
+                        ),
                     ];
                 }
             }
@@ -1090,10 +1378,18 @@ fn adv3d_bench_comp(p: &mut effectcraft_engine::project::Project) -> Option<Item
     }
     add(p, &comp, LayerSource::Text, &|l| {
         l.switches.three_d = true;
-        let doc = TextDoc { text: "EffectCraft".into(), size: 180.0, fill: [0.95, 0.75, 0.2, 1.0], apply_fill: true, ..Default::default() };
+        let doc = TextDoc {
+            text: "EffectCraft".into(),
+            size: 180.0,
+            fill: [0.95, 0.75, 0.2, 1.0],
+            apply_fill: true,
+            ..Default::default()
+        };
         set(l, "text/sourceText", Value::Text(Box::new(doc)));
         let mut next = 900_000u64;
-        l.props.children.push(build::extrusion_geometry_options(&mut Ids(&mut next)).into());
+        l.props
+            .children
+            .push(build::extrusion_geometry_options(&mut Ids(&mut next)).into());
         set(l, "geometryOptions/extrusionDepth", Value::Scalar(40.0));
         set(l, "geometryOptions/bevelStyle", Value::Enum(1));
         set(l, "transform/position", Value::Vec3([960.0, 260.0, 200.0]));
@@ -1103,26 +1399,64 @@ fn adv3d_bench_comp(p: &mut effectcraft_engine::project::Project) -> Option<Item
         "Environment (bench)",
         effectcraft_engine::color::Label::None,
         None,
-        ItemKind::Solid(Solid { color: [0.55, 0.65, 0.9], width: 64, height: 32, pixel_aspect: 1.0 }),
+        ItemKind::Solid(Solid {
+            color: [0.55, 0.65, 0.9],
+            width: 64,
+            height: 32,
+            pixel_aspect: 1.0,
+        }),
     );
     add(p, &comp, LayerSource::Solid { item: env }, &|l| {
         l.environment = true;
         l.switches.three_d = true;
     });
-    add(p, &comp, LayerSource::Light { kind: LightKind::Environment }, &|l| set(l, "lightOptions/intensity", Value::Scalar(40.0)));
-    add(p, &comp, LayerSource::Light { kind: LightKind::Spot }, &|l| {
-        set(l, "transform/position", Value::Vec3([500.0, -600.0, -900.0]));
-        set(l, "transform/poi", Value::Vec3([960.0, 640.0, 0.0]));
-        set(l, "lightOptions/castsShadows", Value::Bool(true));
-        set(l, "lightOptions/coneAngle", Value::Scalar(100.0));
-        set(l, "lightOptions/shadowDiffusion", Value::Scalar(8.0));
-    });
-    add(p, &comp, LayerSource::Light { kind: LightKind::Point }, &|l| {
-        set(l, "transform/position", Value::Vec3([1500.0, 200.0, -500.0]));
-        set(l, "lightOptions/intensity", Value::Scalar(50.0));
-    });
+    add(
+        p,
+        &comp,
+        LayerSource::Light {
+            kind: LightKind::Environment,
+        },
+        &|l| set(l, "lightOptions/intensity", Value::Scalar(40.0)),
+    );
+    add(
+        p,
+        &comp,
+        LayerSource::Light {
+            kind: LightKind::Spot,
+        },
+        &|l| {
+            set(
+                l,
+                "transform/position",
+                Value::Vec3([500.0, -600.0, -900.0]),
+            );
+            set(l, "transform/poi", Value::Vec3([960.0, 640.0, 0.0]));
+            set(l, "lightOptions/castsShadows", Value::Bool(true));
+            set(l, "lightOptions/coneAngle", Value::Scalar(100.0));
+            set(l, "lightOptions/shadowDiffusion", Value::Scalar(8.0));
+        },
+    );
+    add(
+        p,
+        &comp,
+        LayerSource::Light {
+            kind: LightKind::Point,
+        },
+        &|l| {
+            set(
+                l,
+                "transform/position",
+                Value::Vec3([1500.0, 200.0, -500.0]),
+            );
+            set(l, "lightOptions/intensity", Value::Scalar(50.0));
+        },
+    );
     add(p, &comp, LayerSource::Camera, &|l| {
-        let zoom = match l.props.prop_mut("cameraOptions/zoom").map(|pr| pr.value.clone()) {
+        let zoom = match l
+            .props
+            .prop_mut("cameraOptions/zoom")
+            .map(|pr| pr.value.clone())
+        {
             Some(Value::Scalar(z)) => z,
             _ => 2666.7,
         };
@@ -1134,7 +1468,12 @@ fn adv3d_bench_comp(p: &mut effectcraft_engine::project::Project) -> Option<Item
         set(l, "cameraOptions/highlightThreshold", Value::Scalar(200.0));
     });
     comp.layers = layers;
-    Some(p.add_item("Advanced 3D (bench)", effectcraft_engine::color::Label::None, None, ItemKind::Comp(comp.into())))
+    Some(p.add_item(
+        "Advanced 3D (bench)",
+        effectcraft_engine::color::Label::None,
+        None,
+        ItemKind::Comp(comp.into()),
+    ))
 }
 
 /// `bench --gpu`: CPU vs GPU ms/frame for every comp (or `--comp`) at Full and Half. "cold"
@@ -1144,7 +1483,8 @@ fn adv3d_bench_comp(p: &mut effectcraft_engine::project::Project) -> Option<Item
 /// warm; "up/dn MB" are the GPU's uploads / readbacks per warm GPU frame.
 fn bench_gpu(s: &Session, args: &Args) -> Result<(), Failure> {
     use effectcraft_render::Backend;
-    let gpu = effectcraft_gpu::Gpu::try_headless().map_err(|e| Failure::Error(format!("--gpu: no usable GPU adapter ({e})")))?;
+    let gpu = effectcraft_gpu::Gpu::try_headless()
+        .map_err(|e| Failure::Error(format!("--gpu: no usable GPU adapter ({e})")))?;
     let n = args.num("--n")?.unwrap_or(10.0).max(1.0) as usize;
     // Every comp, plus an adjustment-layer comp built for the benchmark (the main comp under a
     // full-frame adjustment layer with a GPU effect stack) and an Advanced 3D comp (`--adv3d`:
@@ -1162,7 +1502,10 @@ fn bench_gpu(s: &Session, args: &Args) -> Result<(), Failure> {
         }
     };
     let project = &project;
-    note!("GPU: {} — median of {n} runs (ms/frame)", effectcraft_render::Accelerator::name(&gpu));
+    note!(
+        "GPU: {} — median of {n} runs (ms/frame)",
+        effectcraft_render::Accelerator::name(&gpu)
+    );
     note!(
         "{:<28} {:>5} {:>10} {:>9} {:>9} {:>9} {:>9} {:>9} {:>8} {:>9} {:>9} {:>11}",
         "comp",
@@ -1179,12 +1522,29 @@ fn bench_gpu(s: &Session, args: &Args) -> Result<(), Failure> {
         "up/dn MB"
     );
     for cid in comps {
-        let Some(comp) = project.comp(cid) else { continue };
-        let name = project.item(cid).map(|i| i.name.clone()).unwrap_or_default();
-        let t = Tick::from_seconds_f64(args.num("--time")?.unwrap_or(3.0).min(comp.duration.seconds() * 0.5));
+        let Some(comp) = project.comp(cid) else {
+            continue;
+        };
+        let name = project
+            .item(cid)
+            .map(|i| i.name.clone())
+            .unwrap_or_default();
+        let t = Tick::from_seconds_f64(
+            args.num("--time")?
+                .unwrap_or(3.0)
+                .min(comp.duration.seconds() * 0.5),
+        );
         for (label, scale) in [("Full", 1.0), ("Half", 0.5)] {
             let mk = |backend: Backend, cache: Option<&LayerCache>| {
-                let mut r = Renderer::new(project, s.footage.as_ref(), RenderOpts { scale, backend, ..Default::default() });
+                let mut r = Renderer::new(
+                    project,
+                    s.footage.as_ref(),
+                    RenderOpts {
+                        scale,
+                        backend,
+                        ..Default::default()
+                    },
+                );
                 r.expr = s.expr.as_deref();
                 r.cache = cache;
                 r.accel = Some(&gpu);
@@ -1209,7 +1569,11 @@ fn bench_gpu(s: &Session, args: &Args) -> Result<(), Failure> {
             });
             let t1 = gpu.context().transfer_stats();
             let per = |b: u64| b as f64 / (n + 1) as f64 / (1u64 << 20) as f64;
-            let traffic = format!("{:.1}/{:.1}", per(t1.upload_bytes - t0.upload_bytes), per(t1.readback_bytes - t0.readback_bytes));
+            let traffic = format!(
+                "{:.1}/{:.1}",
+                per(t1.upload_bytes - t0.upload_bytes),
+                per(t1.readback_bytes - t0.readback_bytes)
+            );
             // Auto: warm-up frames on both sides, then the measured choice.
             for _ in 0..2 * effectcraft_render::AutoPick::WARMUP {
                 std::hint::black_box(mk(Backend::Auto, Some(&gcache)));
@@ -1218,17 +1582,32 @@ fn bench_gpu(s: &Session, args: &Args) -> Result<(), Failure> {
                 std::hint::black_box(mk(Backend::Auto, Some(&gcache)));
             });
             let view = time_ms(n, || {
-                let mut r = Renderer::new(project, s.footage.as_ref(), RenderOpts { scale, backend: Backend::Gpu, ..Default::default() });
+                let mut r = Renderer::new(
+                    project,
+                    s.footage.as_ref(),
+                    RenderOpts {
+                        scale,
+                        backend: Backend::Gpu,
+                        ..Default::default()
+                    },
+                );
                 r.expr = s.expr.as_deref();
                 r.cache = Some(&gcache);
                 r.accel = Some(&gpu);
                 std::hint::black_box(gpu.render_display(&r, cid, t));
                 gpu.wait();
             });
-            let size = format!("{}x{}", (comp.width as f64 * scale).round(), (comp.height as f64 * scale).round());
+            let size = format!(
+                "{}x{}",
+                (comp.width as f64 * scale).round(),
+                (comp.height as f64 * scale).round()
+            );
             // Agreement: share of pixels where the GPU frame differs from the CPU reference by
             // more than 1/255 on any channel.
-            let (a, b) = (mk(Backend::Cpu, Some(&cache)), mk(Backend::Gpu, Some(&gcache)));
+            let (a, b) = (
+                mk(Backend::Cpu, Some(&cache)),
+                mk(Backend::Gpu, Some(&gcache)),
+            );
             let off = a
                 .data
                 .iter()
@@ -1262,26 +1641,55 @@ mod tests {
     #[test]
     fn unknown_options_are_refused() {
         let err = |args: &[&str]| parse(args).err().unwrap();
-        assert_eq!(err(&["exec", "comp.new", "--bogus", "--empty", "--saveas", "z.ecproj"]), "unknown options `--bogus`, `--saveas`");
+        assert_eq!(
+            err(&[
+                "exec", "comp.new", "--bogus", "--empty", "--saveas", "z.ecproj"
+            ]),
+            "unknown options `--bogus`, `--saveas`"
+        );
         assert_eq!(err(&["render", "--bogus=1"]), "unknown option `--bogus`");
         assert_eq!(err(&["info", "--json=yes"]), "--json takes no value");
-        let a = parse(&["render", "t.ecproj", "--comp=Main", "--work-area", "--out", "x.mp4", "--json"]).unwrap();
-        assert_eq!((a.project.as_deref(), a.opt("--comp"), a.opt("--out")), (Some("t.ecproj"), Some("Main"), Some("x.mp4")));
+        let a = parse(&[
+            "render",
+            "t.ecproj",
+            "--comp=Main",
+            "--work-area",
+            "--out",
+            "x.mp4",
+            "--json",
+        ])
+        .unwrap();
+        assert_eq!(
+            (a.project.as_deref(), a.opt("--comp"), a.opt("--out")),
+            (Some("t.ecproj"), Some("Main"), Some("x.mp4"))
+        );
         assert!(a.flag("--work-area") && a.flag("--json"));
     }
 
     /// Every `--option` the CLI reads is declared in VALUED or FLAGS, so none is refused.
     #[test]
     fn every_option_read_is_declared() {
-        let code = include_str!("main.rs").split("#[cfg(test)]").next().unwrap();
+        let code = include_str!("main.rs")
+            .split("#[cfg(test)]")
+            .next()
+            .unwrap();
         for rest in code.split("\"--").skip(1) {
-            let name: String = rest.chars().take_while(|c| c.is_ascii_alphanumeric() || *c == '-').collect();
+            let name: String = rest
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '-')
+                .collect();
             let opt = format!("--{name}");
             // `--help` and `--version` are handled before parsing.
-            if name.is_empty() || !rest[name.len()..].starts_with('"') || ["--help", "--version"].contains(&opt.as_str()) {
+            if name.is_empty()
+                || !rest[name.len()..].starts_with('"')
+                || ["--help", "--version"].contains(&opt.as_str())
+            {
                 continue;
             }
-            assert!(VALUED.contains(&opt.as_str()) || FLAGS.contains(&opt.as_str()), "{opt} is read but not declared");
+            assert!(
+                VALUED.contains(&opt.as_str()) || FLAGS.contains(&opt.as_str()),
+                "{opt} is read but not declared"
+            );
         }
     }
 }

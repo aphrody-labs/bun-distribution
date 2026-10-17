@@ -15,7 +15,8 @@
 use std::collections::BTreeSet;
 
 use windows::Win32::Graphics::DirectWrite::{
-    DWRITE_FACTORY_TYPE_SHARED, DWriteCreateFactory, IDWriteFactory3, IDWriteFontSet, IDWriteLocalFontFileLoader,
+    DWRITE_FACTORY_TYPE_SHARED, DWriteCreateFactory, IDWriteFactory3, IDWriteFontSet,
+    IDWriteLocalFontFileLoader,
 };
 use windows::core::Interface;
 
@@ -49,7 +50,9 @@ fn collection_files() -> windows::core::Result<BTreeSet<String>> {
         let factory: IDWriteFactory3 = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED)?;
         let mut collection = None;
         factory.GetSystemFontCollection(false, &mut collection, true)?;
-        let Some(collection) = collection else { return Ok(BTreeSet::new()) };
+        let Some(collection) = collection else {
+            return Ok(BTreeSet::new());
+        };
         collection.GetFontSet()?
     };
     // SAFETY: a count of the set's fonts.
@@ -85,8 +88,20 @@ mod tests {
     #[test]
     fn directwrite_lists_the_installed_font_files() {
         let files = super::font_files();
-        assert!(files.iter().all(|f| std::path::Path::new(f).is_absolute()), "{:?}", files.first());
-        let fonts = std::path::Path::new(&std::env::var("WINDIR").unwrap()).join("Fonts").to_string_lossy().to_lowercase();
-        assert!(files.iter().any(|f| f.to_lowercase().starts_with(&fonts)), "{} files, {:?}", files.len(), files.first());
+        assert!(
+            files.iter().all(|f| std::path::Path::new(f).is_absolute()),
+            "{:?}",
+            files.first()
+        );
+        let fonts = std::path::Path::new(&std::env::var("WINDIR").unwrap())
+            .join("Fonts")
+            .to_string_lossy()
+            .to_lowercase();
+        assert!(
+            files.iter().any(|f| f.to_lowercase().starts_with(&fonts)),
+            "{} files, {:?}",
+            files.len(),
+            files.first()
+        );
     }
 }

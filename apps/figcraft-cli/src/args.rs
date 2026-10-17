@@ -19,7 +19,10 @@ impl Args {
         while let Some(arg) = it.next() {
             let name = if let Some(n) = arg.strip_prefix("--") {
                 n
-            } else if let Some(n) = arg.strip_prefix('-').filter(|n| n.len() == 1 && !n.starts_with(|c: char| c.is_ascii_digit())) {
+            } else if let Some(n) = arg
+                .strip_prefix('-')
+                .filter(|n| n.len() == 1 && !n.starts_with(|c: char| c.is_ascii_digit()))
+            {
                 n
             } else {
                 a.positional.push(arg.clone());
@@ -32,7 +35,10 @@ impl Args {
             if valued.contains(&name) {
                 let v = match inline {
                     Some(v) => v,
-                    None => it.next().cloned().ok_or_else(|| CliError::Usage(format!("`{arg}` needs a value")))?,
+                    None => it
+                        .next()
+                        .cloned()
+                        .ok_or_else(|| CliError::Usage(format!("`{arg}` needs a value")))?,
                 };
                 a.values.insert(name.to_string(), v);
             } else if flags.contains(&name) && inline.is_none() {
@@ -68,7 +74,12 @@ impl Args {
                 .filter(|b| *b <= figcraft_doc::PrintSettings::MAX_BLEED)
                 .ok_or_else(|| CliError::Usage(format!("--bleed takes points or a length like 3mm or 0.125in (up to 2in), got `{s}`")))?,
         };
-        Ok(figcraft_doc::PrintSettings { bleed, crop_marks: self.flag("crop-marks"), bleed_marks: self.flag("bleed-marks"), cmyk: self.flag("cmyk") })
+        Ok(figcraft_doc::PrintSettings {
+            bleed,
+            crop_marks: self.flag("crop-marks"),
+            bleed_marks: self.flag("bleed-marks"),
+            cmyk: self.flag("cmyk"),
+        })
     }
 
     pub fn scale(&self) -> CliResult<f64> {
@@ -79,7 +90,9 @@ impl Args {
                 .parse::<f64>()
                 .ok()
                 .filter(|v| v.is_finite() && *v > 0.0 && *v <= 64.0)
-                .ok_or_else(|| CliError::Usage(format!("--scale must be a number in (0, 64], got `{s}`"))),
+                .ok_or_else(|| {
+                    CliError::Usage(format!("--scale must be a number in (0, 64], got `{s}`"))
+                }),
         }
     }
 
@@ -89,7 +102,11 @@ impl Args {
             None => Ok(default.to_vec()),
             Some(s) => s
                 .split(',')
-                .map(|v| v.trim().replace('_', "").parse::<usize>().map_err(|_| CliError::Usage(format!("--{k} must be whole numbers, got `{s}`"))))
+                .map(|v| {
+                    v.trim().replace('_', "").parse::<usize>().map_err(|_| {
+                        CliError::Usage(format!("--{k} must be whole numbers, got `{s}`"))
+                    })
+                })
                 .collect(),
         }
     }
@@ -105,7 +122,12 @@ mod tests {
 
     #[test]
     fn parses_options_and_flags() {
-        let a = Args::parse(&v(&["in.figcraft", "-o", "out", "--scale=2", "--json"]), &["o", "scale"], &["json"]).unwrap();
+        let a = Args::parse(
+            &v(&["in.figcraft", "-o", "out", "--scale=2", "--json"]),
+            &["o", "scale"],
+            &["json"],
+        )
+        .unwrap();
         assert_eq!(a.positional, ["in.figcraft"]);
         assert_eq!(a.value("o").as_deref(), Some("out"));
         assert_eq!(a.scale().unwrap(), 2.0);
@@ -114,9 +136,18 @@ mod tests {
 
     #[test]
     fn rejects_bad_input() {
-        assert!(matches!(Args::parse(&v(&["--nope"]), &[], &[]), Err(CliError::Usage(_))));
-        assert!(matches!(Args::parse(&v(&["-o"]), &["o"], &[]), Err(CliError::Usage(_))));
-        assert!(matches!(Args::parse(&v(&["--json=1"]), &[], &["json"]), Err(CliError::Usage(_))));
+        assert!(matches!(
+            Args::parse(&v(&["--nope"]), &[], &[]),
+            Err(CliError::Usage(_))
+        ));
+        assert!(matches!(
+            Args::parse(&v(&["-o"]), &["o"], &[]),
+            Err(CliError::Usage(_))
+        ));
+        assert!(matches!(
+            Args::parse(&v(&["--json=1"]), &[], &["json"]),
+            Err(CliError::Usage(_))
+        ));
         let a = Args::parse(&v(&["--scale", "abc"]), &["scale"], &[]).unwrap();
         assert!(a.scale().is_err());
         let a = Args::parse(&v(&["--scale", "-3"]), &["scale"], &[]).unwrap();

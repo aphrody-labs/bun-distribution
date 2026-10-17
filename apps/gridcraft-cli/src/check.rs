@@ -53,7 +53,10 @@ pub struct Options {
 
 impl Default for Options {
     fn default() -> Self {
-        Options { tolerance: 1e-9, max_report: 20 }
+        Options {
+            tolerance: 1e-9,
+            max_report: 20,
+        }
     }
 }
 
@@ -129,7 +132,11 @@ pub struct RoundTrip {
 
 impl RoundTrip {
     pub fn differing(&self) -> Vec<&'static str> {
-        self.categories.iter().filter(|c| c.diffs > 0).map(|c| c.name).collect()
+        self.categories
+            .iter()
+            .filter(|c| c.diffs > 0)
+            .map(|c| c.name)
+            .collect()
     }
     fn is_clean(&self) -> bool {
         self.error.is_none() && self.categories.iter().all(|c| c.diffs == 0)
@@ -162,7 +169,12 @@ struct Diffs {
 
 impl Diffs {
     fn new(name: &'static str, max: usize) -> Diffs {
-        Diffs { name, count: 0, max, examples: vec![] }
+        Diffs {
+            name,
+            count: 0,
+            max,
+            examples: vec![],
+        }
     }
     fn push(&mut self, f: impl FnOnce() -> String) {
         self.count = self.count.saturating_add(1);
@@ -171,7 +183,11 @@ impl Diffs {
         }
     }
     fn done(self) -> Category {
-        Category { name: self.name, diffs: self.count, examples: self.examples }
+        Category {
+            name: self.name,
+            diffs: self.count,
+            examples: self.examples,
+        }
     }
 }
 
@@ -211,7 +227,11 @@ pub fn main(args: &[String]) -> ExitCode {
             let path = p.to_string_lossy().into_owned();
             match gridcraft_engine::io::read_file(&path) {
                 Ok(bytes) => check_bytes(&path, &bytes, &opts),
-                Err(e) => FileReport { path, error: Some(e.to_string()), ..Default::default() },
+                Err(e) => FileReport {
+                    path,
+                    error: Some(e.to_string()),
+                    ..Default::default()
+                },
             }
         })
         .collect();
@@ -220,7 +240,11 @@ pub fn main(args: &[String]) -> ExitCode {
     } else {
         print_human(&reports, &opts);
     }
-    if reports.iter().all(FileReport::is_clean) { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+    if reports.iter().all(FileReport::is_clean) {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    }
 }
 
 /// Files named on the command line are checked whatever their extension; directories contribute
@@ -248,17 +272,26 @@ fn walk(dir: &Path, depth: usize, out: &mut Vec<PathBuf>) {
     if depth > MAX_DEPTH || out.len() >= MAX_FILES {
         return;
     }
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     let mut entries: Vec<PathBuf> = rd.flatten().map(|e| e.path()).collect();
     entries.sort();
     for p in entries {
-        let name = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        let name = p
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
         if name.starts_with('.') || name.starts_with("~$") {
             continue;
         }
         if p.is_dir() {
             walk(&p, depth + 1, out);
-        } else if p.extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case("xlsx") || e.eq_ignore_ascii_case("xlsm")) {
+        } else if p
+            .extension()
+            .and_then(|e| e.to_str())
+            .is_some_and(|e| e.eq_ignore_ascii_case("xlsx") || e.eq_ignore_ascii_case("xlsm"))
+        {
             out.push(p);
         }
         if out.len() >= MAX_FILES {
@@ -271,15 +304,28 @@ fn walk(dir: &Path, depth: usize, out: &mut Vec<PathBuf>) {
 /// GridCraft's reader, calculator or writer is caught and reported as an internal error, so one
 /// bad file doesn't end a corpus run.
 pub fn check_bytes(path: &str, bytes: &[u8], opts: &Options) -> FileReport {
-    let guarded = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| check_inner(path, bytes, opts)));
+    let guarded = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        check_inner(path, bytes, opts)
+    }));
     guarded.unwrap_or_else(|p| {
-        let msg = p.downcast_ref::<&str>().map(|s| s.to_string()).or_else(|| p.downcast_ref::<String>().cloned()).unwrap_or_default();
-        FileReport { path: path.to_string(), error: Some(format!("internal error while checking: {msg}")), ..Default::default() }
+        let msg = p
+            .downcast_ref::<&str>()
+            .map(|s| s.to_string())
+            .or_else(|| p.downcast_ref::<String>().cloned())
+            .unwrap_or_default();
+        FileReport {
+            path: path.to_string(),
+            error: Some(format!("internal error while checking: {msg}")),
+            ..Default::default()
+        }
     })
 }
 
 fn check_inner(path: &str, bytes: &[u8], opts: &Options) -> FileReport {
-    let mut report = FileReport { path: path.to_string(), ..Default::default() };
+    let mut report = FileReport {
+        path: path.to_string(),
+        ..Default::default()
+    };
     let (cached, warnings) = match gridcraft_engine::io::open_bytes(path, bytes) {
         Ok(x) => x,
         Err(e) => {
@@ -326,8 +372,16 @@ fn is_volatile(e: &Expr, volatile_names: &HashSet<String>) -> bool {
 
 /// Upper-cased defined names whose formula is volatile, directly or through other names.
 fn volatile_names(wb: &Workbook) -> HashSet<String> {
-    let parsed: Vec<(String, Option<Expr>)> =
-        wb.names.iter().map(|n| (n.name.to_ascii_uppercase(), gridcraft_engine::formula::parse(&n.formula).ok())).collect();
+    let parsed: Vec<(String, Option<Expr>)> = wb
+        .names
+        .iter()
+        .map(|n| {
+            (
+                n.name.to_ascii_uppercase(),
+                gridcraft_engine::formula::parse(&n.formula).ok(),
+            )
+        })
+        .collect();
     let mut set = HashSet::new();
     // Each round adds at least one name or stops, so `len + 1` rounds reach the fixed point.
     for _ in 0..=parsed.len() {
@@ -364,7 +418,9 @@ pub fn bool_cached_as_number(expected: &Value, actual: &Value) -> bool {
 /// Whether GridCraft's `actual` agrees with the producer's `expected`.
 pub fn values_match(expected: &Value, actual: &Value, tolerance: f64) -> bool {
     match (expected, actual) {
-        (Value::Number(a), Value::Number(b)) => (a - b).abs() <= tolerance * a.abs().max(b.abs()).max(1.0),
+        (Value::Number(a), Value::Number(b)) => {
+            (a - b).abs() <= tolerance * a.abs().max(b.abs()).max(1.0)
+        }
         (Value::Text(a), Value::Text(b)) => a == b,
         (Value::Bool(a), Value::Bool(b)) => a == b,
         (Value::Error(a), Value::Error(b)) => a == b,
@@ -413,16 +469,31 @@ impl MismatchIndex {
     }
     /// Whether a mismatched cell other than `own` lies in the area.
     fn any_in(&self, sheet: usize, r0: u32, r1: u32, c0: u32, c1: u32, own: Key) -> bool {
-        let Some(cols) = self.sheet_cols.get(&sheet) else { return false };
-        cols.range(c0..=c1)
-            .any(|&col| self.cols.get(&(sheet, col)).is_some_and(|rows| rows.range(r0..=r1).any(|&row| (sheet, CellRef::new(row, col)) != own)))
+        let Some(cols) = self.sheet_cols.get(&sheet) else {
+            return false;
+        };
+        cols.range(c0..=c1).any(|&col| {
+            self.cols.get(&(sheet, col)).is_some_and(|rows| {
+                rows.range(r0..=r1)
+                    .any(|&row| (sheet, CellRef::new(row, col)) != own)
+            })
+        })
     }
 }
 
 /// Compares every formula cell of `cached` (as the producer saved it) with `fresh` (recalculated
 /// by GridCraft). Without `trust_cache` nothing is compared (see [`CalcReport::stale_cache`]).
-pub fn oracle(cached: &Workbook, fresh: &Workbook, calc: &Calc, trust_cache: bool, opts: &Options) -> CalcReport {
-    let mut r = CalcReport { stale_cache: !trust_cache, ..Default::default() };
+pub fn oracle(
+    cached: &Workbook,
+    fresh: &Workbook,
+    calc: &Calc,
+    trust_cache: bool,
+    opts: &Options,
+) -> CalcReport {
+    let mut r = CalcReport {
+        stale_cache: !trust_cache,
+        ..Default::default()
+    };
     let vnames = volatile_names(cached);
     let mut volatile: HashSet<Key> = HashSet::new();
     for (si, sh) in cached.sheets.iter().enumerate() {
@@ -464,11 +535,19 @@ pub fn oracle(cached: &Workbook, fresh: &Workbook, calc: &Calc, trust_cache: boo
                 continue;
             }
             r.checked += 1;
-            let actual = fresh.sheet(si).and_then(|s| s.cell(c)).map(|x| x.value.scalar()).unwrap_or_default();
+            let actual = fresh
+                .sheet(si)
+                .and_then(|s| s.cell(c))
+                .map(|x| x.value.scalar())
+                .unwrap_or_default();
             let funcs = match f.expr_arc() {
                 Some(e) => {
                     let names = functions_of(&e);
-                    if names.is_empty() { vec!["(no function)".to_string()] } else { names }
+                    if names.is_empty() {
+                        vec!["(no function)".to_string()]
+                    } else {
+                        names
+                    }
                 }
                 None => vec!["(unparsed)".to_string()],
             };
@@ -488,7 +567,13 @@ pub fn oracle(cached: &Workbook, fresh: &Workbook, calc: &Calc, trust_cache: boo
                 r.matched += 1;
             } else {
                 r.mismatched += 1;
-                *r.signatures.entry(format!("{} → {}", type_name(&cell.value), type_name(&actual))).or_default() += 1;
+                *r.signatures
+                    .entry(format!(
+                        "{} → {}",
+                        type_name(&cell.value),
+                        type_name(&actual)
+                    ))
+                    .or_default() += 1;
                 bad.push(((si, c), funcs));
             }
         }
@@ -499,11 +584,16 @@ pub fn oracle(cached: &Workbook, fresh: &Workbook, calc: &Calc, trust_cache: boo
     let index = MismatchIndex::new(&keys);
     let mut listed: Vec<(bool, Key, Vec<String>)> = Vec::with_capacity(bad.len());
     for (k, funcs) in bad {
-        let upstream = calc
-            .graph
-            .precedents_of(k)
-            .iter()
-            .any(|a| index.any_in(a.sheet, a.range.start.row, a.range.end.row, a.range.start.col, a.range.end.col, k));
+        let upstream = calc.graph.precedents_of(k).iter().any(|a| {
+            index.any_in(
+                a.sheet,
+                a.range.start.row,
+                a.range.end.row,
+                a.range.start.col,
+                a.range.end.col,
+                k,
+            )
+        });
         if !upstream {
             for n in &funcs {
                 r.functions.entry(n.clone()).or_default().primary += 1;
@@ -516,7 +606,11 @@ pub fn oracle(cached: &Workbook, fresh: &Workbook, calc: &Calc, trust_cache: boo
     for (primary, k, functions) in listed.into_iter().take(opts.max_report) {
         let cell = cached.sheet(k.0).and_then(|s| s.cell(k.1));
         let expected = cell.map(|c| c.value.clone()).unwrap_or_default();
-        let actual = fresh.sheet(k.0).and_then(|s| s.cell(k.1)).map(|x| x.value.scalar()).unwrap_or_default();
+        let actual = fresh
+            .sheet(k.0)
+            .and_then(|s| s.cell(k.1))
+            .map(|x| x.value.scalar())
+            .unwrap_or_default();
         r.mismatches.push(Mismatch {
             cell: cell_name(cached, k),
             formula: cell.map(formula_text).unwrap_or_default(),
@@ -537,7 +631,12 @@ pub fn oracle(cached: &Workbook, fresh: &Workbook, calc: &Calc, trust_cache: boo
 pub fn round_trip(wb: &Workbook, source: &[u8], opts: &Options) -> RoundTrip {
     let bytes = match gridcraft_engine::io::save_bytes(wb, "roundtrip.xlsx") {
         Ok(b) => b,
-        Err(e) => return RoundTrip { error: Some(format!("write failed: {e}")), categories: vec![] },
+        Err(e) => {
+            return RoundTrip {
+                error: Some(format!("write failed: {e}")),
+                categories: vec![],
+            };
+        }
     };
     let mut package = Diffs::new("package", opts.max_report);
     match validate_package(&bytes) {
@@ -553,11 +652,19 @@ pub fn round_trip(wb: &Workbook, source: &[u8], opts: &Options) -> RoundTrip {
     }
     let back = match gridcraft_engine::io::open_bytes("roundtrip.xlsx", &bytes) {
         Ok((b, _)) => b,
-        Err(e) => return RoundTrip { error: Some(format!("reading the written file failed: {e}")), categories: vec![package.done()] },
+        Err(e) => {
+            return RoundTrip {
+                error: Some(format!("reading the written file failed: {e}")),
+                categories: vec![package.done()],
+            };
+        }
     };
     let mut categories = diff_workbooks(wb, &back, opts);
     categories.push(package.done());
-    RoundTrip { error: None, categories }
+    RoundTrip {
+        error: None,
+        categories,
+    }
 }
 
 fn value_show(v: &Value) -> String {
@@ -572,7 +679,9 @@ fn value_show(v: &Value) -> String {
 }
 
 fn opt_formula(c: Option<&Cell>) -> String {
-    c.filter(|c| c.formula.is_some()).map(formula_text).unwrap_or_default()
+    c.filter(|c| c.formula.is_some())
+        .map(formula_text)
+        .unwrap_or_default()
 }
 
 /// Per-sheet comparison of two lists, reporting what one side has and the other lacks.
@@ -590,7 +699,9 @@ fn diff_sets(d: &mut Diffs, sheet: &str, a: &BTreeSet<String>, b: &BTreeSet<Stri
 fn cond_format_list(s: &Sheet) -> Vec<String> {
     let mut cfs: Vec<_> = s.cond_formats.iter().collect();
     cfs.sort_by_key(|c| c.priority);
-    cfs.iter().map(|c| format!("{:?} {:?} stopIfTrue={}", c.ranges, c.rule, c.stop_if_true)).collect()
+    cfs.iter()
+        .map(|c| format!("{:?} {:?} stopIfTrue={}", c.ranges, c.rule, c.stop_if_true))
+        .collect()
 }
 
 fn diff_count(d: &mut Diffs, sheet: &str, a: usize, b: usize) {
@@ -610,7 +721,10 @@ fn as_cached(v: Value) -> Value {
 }
 
 fn num_fmt<'a>(wb: &'a Workbook, c: Option<&Cell>) -> &'a str {
-    wb.styles.get(c.map(|c| c.style).unwrap_or_default()).num_fmt.as_str()
+    wb.styles
+        .get(c.map(|c| c.style).unwrap_or_default())
+        .num_fmt
+        .as_str()
 }
 
 /// Feature-by-feature comparison of a workbook (`a`) with what reading it back gave (`b`). Sheets
@@ -618,7 +732,10 @@ fn num_fmt<'a>(wb: &'a Workbook, c: Option<&Cell>) -> &'a str {
 pub fn diff_workbooks(a: &Workbook, b: &Workbook, opts: &Options) -> Vec<Category> {
     let m = opts.max_report;
     let mut sheets = Diffs::new("sheets", m);
-    let (an, bn): (Vec<&str>, Vec<&str>) = (a.sheets.iter().map(|s| s.name.as_str()).collect(), b.sheets.iter().map(|s| s.name.as_str()).collect());
+    let (an, bn): (Vec<&str>, Vec<&str>) = (
+        a.sheets.iter().map(|s| s.name.as_str()).collect(),
+        b.sheets.iter().map(|s| s.name.as_str()).collect(),
+    );
     if an != bn {
         sheets.push(|| format!("{an:?} → {bn:?}"));
     }
@@ -636,10 +753,18 @@ pub fn diff_workbooks(a: &Workbook, b: &Workbook, opts: &Options) -> Vec<Categor
     for (sa, sb) in a.sheets.iter().zip(b.sheets.iter()) {
         let name = quote_sheet(&sa.name);
         let mut cell = |c: CellRef, ca: Option<&Cell>, cb: Option<&Cell>| {
-            let cached = |x: Option<&Cell>| as_cached(x.map(|x| x.value.scalar()).unwrap_or_default());
+            let cached =
+                |x: Option<&Cell>| as_cached(x.map(|x| x.value.scalar()).unwrap_or_default());
             let (va, vb) = (cached(ca), cached(cb));
             if va != vb {
-                values.push(|| format!("{name}!{}: {} → {}", c.a1(), value_show(&va), value_show(&vb)));
+                values.push(|| {
+                    format!(
+                        "{name}!{}: {} → {}",
+                        c.a1(),
+                        value_show(&va),
+                        value_show(&vb)
+                    )
+                });
             }
             let (fa, fb) = (opt_formula(ca), opt_formula(cb));
             if fa != fb {
@@ -658,30 +783,68 @@ pub fn diff_workbooks(a: &Workbook, b: &Workbook, opts: &Options) -> Vec<Categor
                 cell(c, None, Some(cb));
             }
         }
-        let set = |f: &dyn Fn(&Sheet) -> Vec<String>, s: &Sheet| f(s).into_iter().collect::<BTreeSet<String>>();
+        let set = |f: &dyn Fn(&Sheet) -> Vec<String>, s: &Sheet| {
+            f(s).into_iter().collect::<BTreeSet<String>>()
+        };
         let merge_list = |s: &Sheet| -> Vec<String> { s.merges.iter().map(|r| r.a1()).collect() };
-        diff_sets(&mut merges, &name, &set(&merge_list, sa), &set(&merge_list, sb));
+        diff_sets(
+            &mut merges,
+            &name,
+            &set(&merge_list, sa),
+            &set(&merge_list, sb),
+        );
         let table_list = |s: &Sheet| -> Vec<String> {
             s.tables
                 .iter()
-                .map(|t| format!("{} {} [{}]", t.name, t.range.a1(), t.columns.iter().map(|c| c.name.as_str()).collect::<Vec<_>>().join(", ")))
+                .map(|t| {
+                    format!(
+                        "{} {} [{}]",
+                        t.name,
+                        t.range.a1(),
+                        t.columns
+                            .iter()
+                            .map(|c| c.name.as_str())
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    )
+                })
                 .collect()
         };
-        diff_sets(&mut tables, &name, &set(&table_list, sa), &set(&table_list, sb));
+        diff_sets(
+            &mut tables,
+            &name,
+            &set(&table_list, sa),
+            &set(&table_list, sb),
+        );
         let (cfa, cfb) = (cond_format_list(sa), cond_format_list(sb));
         if cfa.len() != cfb.len() {
             cond_formats.push(|| format!("{name}: {} → {}", cfa.len(), cfb.len()));
         } else if let Some((x, y)) = cfa.iter().zip(&cfb).find(|(x, y)| x != y) {
             cond_formats.push(|| format!("{name}: {x} → {y}"));
         }
-        diff_count(&mut validations, &name, sa.validations.len(), sb.validations.len());
-        let chart_list = |s: &Sheet| s.charts.iter().map(|c| format!("{:?} ({} series)", c.kind, c.series.len())).collect::<Vec<_>>();
+        diff_count(
+            &mut validations,
+            &name,
+            sa.validations.len(),
+            sb.validations.len(),
+        );
+        let chart_list = |s: &Sheet| {
+            s.charts
+                .iter()
+                .map(|c| format!("{:?} ({} series)", c.kind, c.series.len()))
+                .collect::<Vec<_>>()
+        };
         let (ca, cb) = (chart_list(sa), chart_list(sb));
         if ca != cb {
             charts.push(|| format!("{name}: {ca:?} → {cb:?}"));
         }
         diff_count(&mut comments, &name, sa.comments.len(), sb.comments.len());
-        diff_count(&mut hyperlinks, &name, sa.hyperlinks.len(), sb.hyperlinks.len());
+        diff_count(
+            &mut hyperlinks,
+            &name,
+            sa.hyperlinks.len(),
+            sb.hyperlinks.len(),
+        );
         diff_count(&mut pivots, &name, sa.pivots.len(), sb.pivots.len());
     }
     let mut names = Diffs::new("names", m);
@@ -689,7 +852,15 @@ pub fn diff_workbooks(a: &Workbook, b: &Workbook, opts: &Options) -> Vec<Categor
         wb.names
             .iter()
             .map(|n| {
-                let scope = n.scope.map(|i| format!("{}!", quote_sheet(wb.sheet(i).map(|s| s.name.as_str()).unwrap_or("?")))).unwrap_or_default();
+                let scope = n
+                    .scope
+                    .map(|i| {
+                        format!(
+                            "{}!",
+                            quote_sheet(wb.sheet(i).map(|s| s.name.as_str()).unwrap_or("?"))
+                        )
+                    })
+                    .unwrap_or_default();
                 format!("{scope}{}={}", n.name, n.formula)
             })
             .collect()
@@ -739,10 +910,16 @@ fn xml_elements(xml: &[u8]) -> Result<Vec<(String, Vec<(String, String)>)>, Stri
                             Ok(v) => v.into_owned(),
                             Err(_) => String::from_utf8_lossy(&a.value).into_owned(),
                         };
-                        (String::from_utf8_lossy(local_name(a.key.as_ref())).into_owned(), v)
+                        (
+                            String::from_utf8_lossy(local_name(a.key.as_ref())).into_owned(),
+                            v,
+                        )
                     })
                     .collect();
-                out.push((String::from_utf8_lossy(local_name(e.name().as_ref())).into_owned(), attrs));
+                out.push((
+                    String::from_utf8_lossy(local_name(e.name().as_ref())).into_owned(),
+                    attrs,
+                ));
             }
             Ok(Event::Eof) => break,
             Ok(_) => {}
@@ -807,20 +984,31 @@ fn resolve_target(source_dir: &str, target: &str) -> String {
 type Zip<'a> = zip::ZipArchive<Cursor<&'a [u8]>>;
 
 fn zip_names(zip: &mut Zip<'_>) -> Vec<String> {
-    (0..zip.len().min(MAX_ENTRIES)).filter_map(|i| zip.by_index_raw(i).ok().filter(|f| !f.is_dir()).map(|f| f.name().to_string())).collect()
+    (0..zip.len().min(MAX_ENTRIES))
+        .filter_map(|i| {
+            zip.by_index_raw(i)
+                .ok()
+                .filter(|f| !f.is_dir())
+                .map(|f| f.name().to_string())
+        })
+        .collect()
 }
 
 fn read_zip_part(zip: &mut Zip<'_>, name: &str) -> Result<Vec<u8>, String> {
     let f = zip.by_name(name).map_err(|e| format!("{name}: {e}"))?;
     let mut buf = Vec::new();
-    f.take(MAX_XML_PART).read_to_end(&mut buf).map_err(|e| format!("{name}: {e}"))?;
+    f.take(MAX_XML_PART)
+        .read_to_end(&mut buf)
+        .map_err(|e| format!("{name}: {e}"))?;
     Ok(buf)
 }
 
 /// Whether the producer flagged its cached results as stale with `<calcPr fullCalcOnLoad="1">`:
 /// libraries that don't calculate write it, and store 0 or nothing as every formula's value.
 fn full_calc_on_load(bytes: &[u8]) -> bool {
-    let Ok(mut zip) = zip::ZipArchive::new(Cursor::new(bytes)) else { return false };
+    let Ok(mut zip) = zip::ZipArchive::new(Cursor::new(bytes)) else {
+        return false;
+    };
     let names = zip_names(&mut zip);
     let find = |key: &str| names.iter().find(|n| part_key(n) == key).cloned();
     let mut workbook = "xl/workbook.xml".to_string();
@@ -829,35 +1017,48 @@ fn full_calc_on_load(bytes: &[u8]) -> bool {
         && let Ok(els) = xml_elements(&xml)
         && let Some(target) = els
             .iter()
-            .find(|(e, a)| e == "Relationship" && attr(a, "Type").is_some_and(|t| t.ends_with("/officeDocument")))
+            .find(|(e, a)| {
+                e == "Relationship"
+                    && attr(a, "Type").is_some_and(|t| t.ends_with("/officeDocument"))
+            })
             .and_then(|(_, a)| attr(a, "Target"))
     {
         workbook = resolve_target("", target);
     }
-    let Some(name) = find(&part_key(&workbook)) else { return false };
-    let Ok(xml) = read_zip_part(&mut zip, &name) else { return false };
-    xml_elements(&xml)
-        .ok()
-        .into_iter()
-        .flatten()
-        .any(|(e, a)| e == "calcPr" && attr(&a, "fullCalcOnLoad").is_some_and(|v| v == "1" || v.eq_ignore_ascii_case("true")))
+    let Some(name) = find(&part_key(&workbook)) else {
+        return false;
+    };
+    let Ok(xml) = read_zip_part(&mut zip, &name) else {
+        return false;
+    };
+    xml_elements(&xml).ok().into_iter().flatten().any(|(e, a)| {
+        e == "calcPr"
+            && attr(&a, "fullCalcOnLoad")
+                .is_some_and(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+    })
 }
 
 /// Problems Excel would repair in a written package: parts without a content type, content-type
 /// overrides for missing parts, relationship files for missing parts, duplicate relationship ids
 /// and internal relationships pointing at missing parts. `Err` when the package can't be read.
 pub fn validate_package(bytes: &[u8]) -> Result<Vec<String>, String> {
-    let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| format!("not a zip package: {e}"))?;
+    let mut zip =
+        zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| format!("not a zip package: {e}"))?;
     let names = zip_names(&mut zip);
     let parts: HashSet<String> = names.iter().map(|n| part_key(n)).collect();
     let mut read_part = |name: &str| read_zip_part(&mut zip, name);
     let mut issues = Vec::new();
-    let ct_name = names.iter().find(|n| part_key(n) == "[content_types].xml").cloned();
+    let ct_name = names
+        .iter()
+        .find(|n| part_key(n) == "[content_types].xml")
+        .cloned();
     let (mut defaults, mut overrides) = (HashSet::new(), HashSet::new());
     match ct_name {
         None => issues.push("no [Content_Types].xml".to_string()),
         Some(n) => {
-            for (el, attrs) in xml_elements(&read_part(&n)?).map_err(|e| format!("[Content_Types].xml: {e}"))? {
+            for (el, attrs) in
+                xml_elements(&read_part(&n)?).map_err(|e| format!("[Content_Types].xml: {e}"))?
+            {
                 match el.as_str() {
                     "Default" => {
                         if let Some(x) = attr(&attrs, "Extension") {
@@ -881,26 +1082,39 @@ pub fn validate_package(bytes: &[u8]) -> Result<Vec<String>, String> {
         if key == "[content_types].xml" {
             continue;
         }
-        let ext = key.rsplit('/').next().and_then(|f| f.rsplit_once('.')).map(|(_, e)| e.to_string());
+        let ext = key
+            .rsplit('/')
+            .next()
+            .and_then(|f| f.rsplit_once('.'))
+            .map(|(_, e)| e.to_string());
         if !overrides.contains(&key) && !ext.is_some_and(|e| defaults.contains(&e)) {
             issues.push(format!("part {n} has no content type"));
         }
     }
-    let mut missing_overrides: Vec<&String> = overrides.iter().filter(|p| !parts.contains(*p)).collect();
+    let mut missing_overrides: Vec<&String> =
+        overrides.iter().filter(|p| !parts.contains(*p)).collect();
     missing_overrides.sort();
     for p in missing_overrides {
         issues.push(format!("content type override for missing part /{p}"));
     }
     for n in sorted {
         let key = part_key(n);
-        let Some(rels_file) = key.strip_suffix(".rels") else { continue };
+        let Some(rels_file) = key.strip_suffix(".rels") else {
+            continue;
+        };
         // `dir/_rels/name.rels` describes `dir/name`; `_rels/.rels` the package itself.
         let (dir, file) = match rels_file.rsplit_once('/') {
             Some((d, f)) => (d, f),
             None => continue,
         };
-        let Some(src_dir) = dir.strip_suffix("_rels").map(|d| d.trim_end_matches('/')) else { continue };
-        let source = if src_dir.is_empty() { file.to_string() } else { format!("{src_dir}/{file}") };
+        let Some(src_dir) = dir.strip_suffix("_rels").map(|d| d.trim_end_matches('/')) else {
+            continue;
+        };
+        let source = if src_dir.is_empty() {
+            file.to_string()
+        } else {
+            format!("{src_dir}/{file}")
+        };
         if !source.is_empty() && !parts.contains(&source) {
             issues.push(format!("{n} describes missing part {source}"));
         }
@@ -919,8 +1133,12 @@ pub fn validate_package(bytes: &[u8]) -> Result<Vec<String>, String> {
             let target = attr(&attrs, "Target").unwrap_or("");
             let resolved = resolve_target(src_dir, target);
             if !parts.contains(&resolved.to_ascii_lowercase()) {
-                let kind = attr(&attrs, "Type").and_then(|t| t.rsplit('/').next()).unwrap_or("?");
-                issues.push(format!("{n}: {id} ({kind}) targets missing part {resolved}"));
+                let kind = attr(&attrs, "Type")
+                    .and_then(|t| t.rsplit('/').next())
+                    .unwrap_or("?");
+                issues.push(format!(
+                    "{n}: {id} ({kind}) targets missing part {resolved}"
+                ));
             }
         }
     }
@@ -932,27 +1150,38 @@ pub fn validate_package(bytes: &[u8]) -> Result<Vec<String>, String> {
 /// nothing are left out, as a save may rightly drop them: a link to a place in the workbook
 /// (`#Sheet1!A1`, written as a cell's `location`) and a target part with nothing in it.
 fn relationship_kinds(bytes: &[u8]) -> Result<BTreeMap<String, String>, String> {
-    let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| format!("not a zip package: {e}"))?;
+    let mut zip =
+        zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| format!("not a zip package: {e}"))?;
     let names = zip_names(&mut zip);
     let by_key: HashMap<String, &String> = names.iter().map(|n| (part_key(n), n)).collect();
     let mut kinds = BTreeMap::new();
     for n in names.iter().filter(|n| part_key(n).ends_with(".rels")) {
-        let Some(src_dir) = rels_source_dir(&part_key(n)) else { continue };
-        let Ok(els) = read_zip_part(&mut zip, n).and_then(|xml| xml_elements(&xml)) else { continue };
+        let Some(src_dir) = rels_source_dir(&part_key(n)) else {
+            continue;
+        };
+        let Ok(els) = read_zip_part(&mut zip, n).and_then(|xml| xml_elements(&xml)) else {
+            continue;
+        };
         for (_, attrs) in els.iter().filter(|(el, _)| el == "Relationship") {
-            let Some(kind) = attr(attrs, "Type").and_then(|t| t.rsplit('/').next()) else { continue };
+            let Some(kind) = attr(attrs, "Type").and_then(|t| t.rsplit('/').next()) else {
+                continue;
+            };
             let target = attr(attrs, "Target").unwrap_or("");
             if kind.eq_ignore_ascii_case("hyperlink") && target.starts_with('#') {
                 continue;
             }
-            let external = attr(attrs, "TargetMode").is_some_and(|m| m.eq_ignore_ascii_case("External"));
+            let external =
+                attr(attrs, "TargetMode").is_some_and(|m| m.eq_ignore_ascii_case("External"));
             if !external
-                && let Some(part) = by_key.get(&resolve_target(&src_dir, target).to_ascii_lowercase())
+                && let Some(part) =
+                    by_key.get(&resolve_target(&src_dir, target).to_ascii_lowercase())
                 && !holds_something(&mut zip, part, kind)
             {
                 continue;
             }
-            kinds.entry(kind.to_ascii_lowercase()).or_insert_with(|| kind.to_string());
+            kinds
+                .entry(kind.to_ascii_lowercase())
+                .or_insert_with(|| kind.to_string());
         }
     }
     Ok(kinds)
@@ -969,7 +1198,9 @@ fn rels_source_dir(key: &str) -> Option<String> {
 /// comes first) a comment, for VML a shape. Read only as far as needed; an unreadable part counts.
 fn holds_something(zip: &mut Zip<'_>, name: &str, kind: &str) -> bool {
     use quick_xml::events::Event;
-    let Ok(f) = zip.by_name(name) else { return true };
+    let Ok(f) = zip.by_name(name) else {
+        return true;
+    };
     let mut reader = quick_xml::Reader::from_reader(std::io::BufReader::new(f.take(MAX_XML_PART)));
     let wanted: Option<&[u8]> = match kind.to_ascii_lowercase().as_str() {
         "comments" => Some(b"comment"),
@@ -1020,7 +1251,10 @@ struct Totals {
 }
 
 fn totals(reports: &[FileReport]) -> Totals {
-    let mut t = Totals { files: reports.len(), ..Default::default() };
+    let mut t = Totals {
+        files: reports.len(),
+        ..Default::default()
+    };
     for r in reports {
         if r.error.is_some() {
             t.failed += 1;
@@ -1055,14 +1289,25 @@ fn totals(reports: &[FileReport]) -> Totals {
 
 /// Functions with mismatches, worst first: most primary mismatches, then most mismatches.
 fn ranked(functions: &BTreeMap<String, FnStat>) -> Vec<(&String, &FnStat)> {
-    let mut v: Vec<(&String, &FnStat)> = functions.iter().filter(|(_, s)| s.mismatched > 0).collect();
-    v.sort_by(|a, b| b.1.primary.cmp(&a.1.primary).then(b.1.mismatched.cmp(&a.1.mismatched)).then(a.0.cmp(b.0)));
+    let mut v: Vec<(&String, &FnStat)> =
+        functions.iter().filter(|(_, s)| s.mismatched > 0).collect();
+    v.sort_by(|a, b| {
+        b.1.primary
+            .cmp(&a.1.primary)
+            .then(b.1.mismatched.cmp(&a.1.mismatched))
+            .then(a.0.cmp(b.0))
+    });
     v
 }
 
 fn functions_json(functions: &BTreeMap<String, FnStat>) -> Json {
     let mut v: Vec<(&String, &FnStat)> = functions.iter().collect();
-    v.sort_by(|a, b| b.1.primary.cmp(&a.1.primary).then(b.1.mismatched.cmp(&a.1.mismatched)).then(a.0.cmp(b.0)));
+    v.sort_by(|a, b| {
+        b.1.primary
+            .cmp(&a.1.primary)
+            .then(b.1.mismatched.cmp(&a.1.mismatched))
+            .then(a.0.cmp(b.0))
+    });
     Json::Array(v.into_iter().map(|(n, s)| json!({"name": n, "checked": s.checked, "mismatched": s.mismatched, "primary": s.primary})).collect())
 }
 
@@ -1119,13 +1364,19 @@ pub fn report_json(reports: &[FileReport], opts: &Options) -> Json {
 
 /// One report line: line breaks and tabs shown escaped so that they stay visible as differences.
 fn one_line(s: &str) -> String {
-    s.replace('\n', "\\n").replace('\r', "\\r").replace('\t', "\\t")
+    s.replace('\n', "\\n")
+        .replace('\r', "\\r")
+        .replace('\t', "\\t")
 }
 
 /// `…tail` of a long label.
 fn fit(s: &str, w: usize) -> String {
     let n = s.chars().count();
-    if n <= w { s.to_string() } else { format!("…{}", s.chars().skip(n + 1 - w).collect::<String>()) }
+    if n <= w {
+        s.to_string()
+    } else {
+        format!("…{}", s.chars().skip(n + 1 - w).collect::<String>())
+    }
 }
 
 fn print_human(reports: &[FileReport], opts: &Options) {
@@ -1146,13 +1397,22 @@ fn print_human(reports: &[FileReport], opts: &Options) {
             c.volatile
         );
         if c.stale_cache {
-            outln!("  (the producer asked for a full recalculation on load: its cached values aren't results)");
+            outln!(
+                "  (the producer asked for a full recalculation on load: its cached values aren't results)"
+            );
         }
         if c.bool_as_number > 0 {
-            outln!("  ({} matched TRUE/FALSE results were saved by the producer as 1/0, without t=\"b\")", c.bool_as_number);
+            outln!(
+                "  ({} matched TRUE/FALSE results were saved by the producer as 1/0, without t=\"b\")",
+                c.bool_as_number
+            );
         }
         for m in &c.mismatches {
-            let tag = if m.primary { "mismatch" } else { "  (downstream)" };
+            let tag = if m.primary {
+                "mismatch"
+            } else {
+                "  (downstream)"
+            };
             outln!(
                 "  {tag} {}  {}  expected {}  got {}  [{}]",
                 m.cell,
@@ -1184,7 +1444,12 @@ fn print_human(reports: &[FileReport], opts: &Options) {
         }
     }
     outln!("");
-    let w = reports.iter().map(|r| r.path.chars().count()).max().unwrap_or(4).clamp(4, 50);
+    let w = reports
+        .iter()
+        .map(|r| r.path.chars().count())
+        .max()
+        .unwrap_or(4)
+        .clamp(4, 50);
     outln!(
         "{:<w$}  {:>8}  {:>8}  {:>8}  {:>8}  {:>9}  {:>8}  round trip",
         "file",
@@ -1222,9 +1487,21 @@ fn print_human(reports: &[FileReport], opts: &Options) {
     if !top.is_empty() {
         outln!("");
         outln!("top mismatching functions (primary = no mismatching precedent):");
-        outln!("  {:<20}  {:>8}  {:>10}  {:>8}", "function", "primary", "mismatched", "checked");
+        outln!(
+            "  {:<20}  {:>8}  {:>10}  {:>8}",
+            "function",
+            "primary",
+            "mismatched",
+            "checked"
+        );
         for (n, s) in top.iter().take(opts.max_report.max(1)) {
-            outln!("  {:<20}  {:>8}  {:>10}  {:>8}", n, s.primary, s.mismatched, s.checked);
+            outln!(
+                "  {:<20}  {:>8}  {:>10}  {:>8}",
+                n,
+                s.primary,
+                s.mismatched,
+                s.checked
+            );
         }
     }
     let mut sigs: Vec<(&String, &usize)> = t.signatures.iter().collect();
@@ -1237,7 +1514,12 @@ fn print_human(reports: &[FileReport], opts: &Options) {
         }
     }
     outln!("");
-    outln!("files: {} ({} opened, {} failed to open)", t.files, t.opened, t.failed);
+    outln!(
+        "files: {} ({} opened, {} failed to open)",
+        t.files,
+        t.opened,
+        t.failed
+    );
     outln!(
         "formula cells: {} ({} checked: {} matched, {} mismatched; {} no oracle; {} volatile)",
         t.formula_cells,
@@ -1248,15 +1530,30 @@ fn print_human(reports: &[FileReport], opts: &Options) {
         t.volatile
     );
     if t.bool_as_number > 0 {
-        outln!("booleans saved as 1/0 by the producer: {} (counted as matched)", t.bool_as_number);
+        outln!(
+            "booleans saved as 1/0 by the producer: {} (counted as matched)",
+            t.bool_as_number
+        );
     }
-    let cats: Vec<String> = t.categories.iter().map(|(c, n)| format!("{c} {n}")).collect();
+    let cats: Vec<String> = t
+        .categories
+        .iter()
+        .map(|(c, n)| format!("{c} {n}"))
+        .collect();
     outln!(
         "round trip: {} of {} files differ{}{}",
         t.round_trip_differing,
         t.opened,
-        if t.round_trip_failed > 0 { format!(" ({} failed)", t.round_trip_failed) } else { String::new() },
-        if cats.is_empty() { String::new() } else { format!("; categories (files): {}", cats.join(", ")) }
+        if t.round_trip_failed > 0 {
+            format!(" ({} failed)", t.round_trip_failed)
+        } else {
+            String::new()
+        },
+        if cats.is_empty() {
+            String::new()
+        } else {
+            format!("; categories (files): {}", cats.join(", "))
+        }
     );
 }
 
@@ -1281,7 +1578,11 @@ mod tests {
         let sh = wb.sheet_mut(0).unwrap();
         for (a1, input, cached) in cells {
             let cell = if input.starts_with('=') {
-                Cell { value: cached.clone(), formula: Some(Arc::new(Formula::new(input))), ..Default::default() }
+                Cell {
+                    value: cached.clone(),
+                    formula: Some(Arc::new(Formula::new(input))),
+                    ..Default::default()
+                }
             } else {
                 Cell::value(cached.clone())
             };
@@ -1301,10 +1602,23 @@ mod tests {
 
     #[test]
     fn matching_cached_values_pass() {
-        let wb = book(&[("A1", "2", n(2.0)), ("B1", "=A1*3", n(6.0)), ("C1", "=A1&\"x\"", Value::text("2x")), ("D1", "=A1>1", Value::Bool(true))]);
+        let wb = book(&[
+            ("A1", "2", n(2.0)),
+            ("B1", "=A1*3", n(6.0)),
+            ("C1", "=A1&\"x\"", Value::text("2x")),
+            ("D1", "=A1>1", Value::Bool(true)),
+        ]);
         let r = check(&wb, &Options::default());
         assert_eq!(r.error, None);
-        assert_eq!((r.calc.formula_cells, r.calc.checked, r.calc.matched, r.calc.mismatched), (3, 3, 3, 0));
+        assert_eq!(
+            (
+                r.calc.formula_cells,
+                r.calc.checked,
+                r.calc.matched,
+                r.calc.mismatched
+            ),
+            (3, 3, 3, 0)
+        );
         assert!(r.is_clean(), "{r:?}");
     }
 
@@ -1312,29 +1626,68 @@ mod tests {
     fn wrong_cached_value_is_a_mismatch_and_ranks_its_function() {
         // Excel "said" SUM gives 7; GridCraft computes 6. C1 reads B1 and is consistent with
         // Excel's 7, so it mismatches too, but only as a downstream effect.
-        let wb = book(&[("A1", "2", n(2.0)), ("A2", "4", n(4.0)), ("B1", "=SUM(A1:A2)", n(7.0)), ("C1", "=B1+1", n(8.0))]);
+        let wb = book(&[
+            ("A1", "2", n(2.0)),
+            ("A2", "4", n(4.0)),
+            ("B1", "=SUM(A1:A2)", n(7.0)),
+            ("C1", "=B1+1", n(8.0)),
+        ]);
         let r = check(&wb, &Options::default());
         assert_eq!((r.calc.checked, r.calc.mismatched), (2, 2));
         let first = &r.calc.mismatches[0];
         assert_eq!(first.cell, "Sheet1!B1");
         assert_eq!(first.formula, "=SUM(A1:A2)");
-        assert_eq!((first.expected.clone(), first.actual.clone(), first.kind, first.primary), (n(7.0), n(6.0), "numeric", true));
+        assert_eq!(
+            (
+                first.expected.clone(),
+                first.actual.clone(),
+                first.kind,
+                first.primary
+            ),
+            (n(7.0), n(6.0), "numeric", true)
+        );
         assert!(!r.calc.mismatches[1].primary);
-        assert_eq!(r.calc.functions["SUM"], FnStat { checked: 1, mismatched: 1, primary: 1 });
-        assert_eq!(r.calc.functions["(no function)"], FnStat { checked: 1, mismatched: 1, primary: 0 });
+        assert_eq!(
+            r.calc.functions["SUM"],
+            FnStat {
+                checked: 1,
+                mismatched: 1,
+                primary: 1
+            }
+        );
+        assert_eq!(
+            r.calc.functions["(no function)"],
+            FnStat {
+                checked: 1,
+                mismatched: 1,
+                primary: 0
+            }
+        );
         assert!(!r.is_clean());
     }
 
     #[test]
     fn errors_compare_by_kind() {
-        let wb = book(&[("A1", "=1/0", Value::Error(CellError::Div0)), ("A2", "=1/0", Value::Error(CellError::NA)), ("A3", "=1/0", n(0.0))]);
+        let wb = book(&[
+            ("A1", "=1/0", Value::Error(CellError::Div0)),
+            ("A2", "=1/0", Value::Error(CellError::NA)),
+            ("A3", "=1/0", n(0.0)),
+        ]);
         let r = check(&wb, &Options::default());
         assert_eq!((r.calc.matched, r.calc.mismatched), (1, 2));
         assert!(r.calc.mismatches.iter().all(|m| m.kind == "error"));
         assert_eq!(r.calc.signatures.get("#N/A → #DIV/0!"), Some(&1));
         assert_eq!(r.calc.signatures.get("number → #DIV/0!"), Some(&1));
-        assert!(values_match(&Value::Error(CellError::NA), &Value::Error(CellError::NA), 0.0));
-        assert!(!values_match(&Value::Error(CellError::NA), &Value::Error(CellError::Value), 0.0));
+        assert!(values_match(
+            &Value::Error(CellError::NA),
+            &Value::Error(CellError::NA),
+            0.0
+        ));
+        assert!(!values_match(
+            &Value::Error(CellError::NA),
+            &Value::Error(CellError::Value),
+            0.0
+        ));
     }
 
     #[test]
@@ -1351,7 +1704,18 @@ mod tests {
         assert!(!values_match(&Value::Bool(true), &n(1.0), 1.0));
         let wb = book(&[("A1", "=1+2", n(3.0000000001))]);
         assert_eq!(check(&wb, &Options::default()).calc.matched, 1);
-        assert_eq!(check(&wb, &Options { tolerance: 1e-12, ..Default::default() }).calc.mismatched, 1);
+        assert_eq!(
+            check(
+                &wb,
+                &Options {
+                    tolerance: 1e-12,
+                    ..Default::default()
+                }
+            )
+            .calc
+            .mismatched,
+            1
+        );
     }
 
     /// Business Central writes TRUE and FALSE as `<c><f>TRUE()</f><v>1</v></c>`, without `t="b"`:
@@ -1366,13 +1730,22 @@ mod tests {
             ("E1", "=TRUE()+0", n(1.0)),
         ]);
         let r = check(&wb, &Options::default());
-        assert_eq!((r.calc.checked, r.calc.matched, r.calc.mismatched), (5, 4, 1));
+        assert_eq!(
+            (r.calc.checked, r.calc.matched, r.calc.mismatched),
+            (5, 4, 1)
+        );
         // A cached 0 for TRUE is still a mismatch, and a number result is compared as a number.
         assert_eq!(r.calc.mismatches[0].cell, "Sheet1!D1");
         assert_eq!(r.calc.signatures.get("number → bool"), Some(&1));
         assert_eq!(r.calc.bool_as_number, 2);
         let v = report_json(std::slice::from_ref(&r), &Options::default());
-        assert_eq!((v["files"][0]["calc"]["boolAsNumber"].clone(), v["totals"]["boolAsNumber"].clone()), (json!(2), json!(2)));
+        assert_eq!(
+            (
+                v["files"][0]["calc"]["boolAsNumber"].clone(),
+                v["totals"]["boolAsNumber"].clone()
+            ),
+            (json!(2), json!(2))
+        );
         assert!(bool_cached_as_number(&n(1.0), &Value::Bool(true)));
         assert!(!bool_cached_as_number(&n(1.0), &Value::Bool(false)));
         assert!(!bool_cached_as_number(&n(2.0), &Value::Bool(true)));
@@ -1381,10 +1754,22 @@ mod tests {
 
     #[test]
     fn missing_cached_values_and_volatile_formulas_are_skipped() {
-        let wb =
-            book(&[("A1", "=1+1", Value::Empty), ("B1", "=NOW()", n(1.0)), ("B2", "=B1+1", n(2.0)), ("B3", "=CELL(\"filename\")", Value::text("x"))]);
+        let wb = book(&[
+            ("A1", "=1+1", Value::Empty),
+            ("B1", "=NOW()", n(1.0)),
+            ("B2", "=B1+1", n(2.0)),
+            ("B3", "=CELL(\"filename\")", Value::text("x")),
+        ]);
         let r = check(&wb, &Options::default());
-        assert_eq!((r.calc.formula_cells, r.calc.checked, r.calc.no_oracle, r.calc.volatile), (4, 0, 1, 3));
+        assert_eq!(
+            (
+                r.calc.formula_cells,
+                r.calc.checked,
+                r.calc.no_oracle,
+                r.calc.volatile
+            ),
+            (4, 0, 1, 3)
+        );
     }
 
     #[test]
@@ -1397,8 +1782,12 @@ mod tests {
         assert!(full_calc_on_load(&bytes));
         let r = check_bytes("t.xlsx", &bytes, &Options::default());
         assert!(r.calc.stale_cache);
-        assert_eq!((r.calc.checked, r.calc.no_oracle, r.calc.mismatched), (0, 2, 0));
-        let fresh = gridcraft_engine::io::save_bytes(&book(&[("B1", "=2+2", n(0.0))]), "t.xlsx").unwrap();
+        assert_eq!(
+            (r.calc.checked, r.calc.no_oracle, r.calc.mismatched),
+            (0, 2, 0)
+        );
+        let fresh =
+            gridcraft_engine::io::save_bytes(&book(&[("B1", "=2+2", n(0.0))]), "t.xlsx").unwrap();
         assert!(!full_calc_on_load(&fresh));
         assert!(!full_calc_on_load(b"not a zip"));
     }
@@ -1419,8 +1808,15 @@ mod tests {
 
     #[test]
     fn round_trip_of_a_simple_book_is_clean() {
-        let mut wb = book(&[("A1", "2", n(2.0)), ("B1", "=A1*3", n(6.0)), ("A2", "x", Value::text("x"))]);
-        wb.sheet_mut(0).unwrap().merges.push(gridcraft_engine::core::RangeRef::parse("C1:D2").unwrap());
+        let mut wb = book(&[
+            ("A1", "2", n(2.0)),
+            ("B1", "=A1*3", n(6.0)),
+            ("A2", "x", Value::text("x")),
+        ]);
+        wb.sheet_mut(0)
+            .unwrap()
+            .merges
+            .push(gridcraft_engine::core::RangeRef::parse("C1:D2").unwrap());
         let source = gridcraft_engine::io::save_bytes(&wb, "t.xlsx").unwrap();
         let rt = round_trip(&wb, &source, &Options::default());
         assert_eq!(rt.error, None);
@@ -1431,14 +1827,24 @@ mod tests {
     #[test]
     fn diff_detects_lost_features() {
         let mut a = book(&[("A1", "2", n(2.0)), ("B1", "=A1*3", n(6.0))]);
-        a.sheet_mut(0).unwrap().merges.push(gridcraft_engine::core::RangeRef::parse("C1:D2").unwrap());
+        a.sheet_mut(0)
+            .unwrap()
+            .merges
+            .push(gridcraft_engine::core::RangeRef::parse("C1:D2").unwrap());
         let mut b = a.clone();
         let sh = b.sheet_mut(0).unwrap();
         sh.merges.clear();
         sh.set_cell(at("A1"), Cell::value(n(3.0)));
         sh.set_cell(at("B1"), Cell::value(n(6.0)));
         b.sheets.push(Arc::new(Sheet::new("Extra")));
-        let cats = diff_workbooks(&a, &b, &Options { max_report: 1, ..Default::default() });
+        let cats = diff_workbooks(
+            &a,
+            &b,
+            &Options {
+                max_report: 1,
+                ..Default::default()
+            },
+        );
         let get = |name: &str| cats.iter().find(|c| c.name == name).unwrap();
         assert_eq!(get("values").diffs, 1);
         assert_eq!(get("values").examples, ["Sheet1!A1: 2 → 3"]);
@@ -1453,7 +1859,13 @@ mod tests {
         use gridcraft_engine::model::{CfRule, CfValueKind, Color, CondFormat};
         let bar = |gradient: bool, priority: u32| CondFormat {
             ranges: vec![gridcraft_engine::core::RangeRef::parse("A1").unwrap()],
-            rule: CfRule::DataBar { min: CfValueKind::Min, max: CfValueKind::Max, color: Color::Rgb(0x638EC6), gradient, show_value: true },
+            rule: CfRule::DataBar {
+                min: CfValueKind::Min,
+                max: CfValueKind::Max,
+                color: Color::Rgb(0x638EC6),
+                gradient,
+                show_value: true,
+            },
             priority,
             stop_if_true: false,
         };
@@ -1462,8 +1874,13 @@ mod tests {
             wb.sheet_mut(0).unwrap().cond_formats.push(cf);
             wb
         };
-        let diffs =
-            |a: &Workbook, b: &Workbook| diff_workbooks(a, b, &Options::default()).into_iter().find(|c| c.name == "condFormats").unwrap().diffs;
+        let diffs = |a: &Workbook, b: &Workbook| {
+            diff_workbooks(a, b, &Options::default())
+                .into_iter()
+                .find(|c| c.name == "condFormats")
+                .unwrap()
+                .diffs
+        };
         assert_eq!(diffs(&with(bar(false, 1)), &with(bar(true, 1))), 1);
         assert_eq!(diffs(&with(bar(true, 1)), &with(bar(true, 1))), 0);
         assert_eq!(diffs(&with(bar(true, 1)), &with(bar(true, 5))), 0);
@@ -1472,7 +1889,8 @@ mod tests {
     fn zip_of(parts: &[(&str, &str)]) -> Vec<u8> {
         let mut z = zip::ZipWriter::new(Cursor::new(Vec::new()));
         for (name, body) in parts {
-            z.start_file(*name, zip::write::SimpleFileOptions::default()).unwrap();
+            z.start_file(*name, zip::write::SimpleFileOptions::default())
+                .unwrap();
             z.write_all(body.as_bytes()).unwrap();
         }
         z.finish().unwrap().into_inner()
@@ -1485,7 +1903,10 @@ mod tests {
                 "[Content_Types].xml",
                 r#"<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="r"/><Override PartName="/xl/workbook.xml" ContentType="w"/><Override PartName="/xl/gone.xml" ContentType="g"/></Types>"#,
             ),
-            ("_rels/.rels", r#"<Relationships><Relationship Id="rId1" Type="x/officeDocument" Target="xl/workbook.xml"/></Relationships>"#),
+            (
+                "_rels/.rels",
+                r#"<Relationships><Relationship Id="rId1" Type="x/officeDocument" Target="xl/workbook.xml"/></Relationships>"#,
+            ),
             ("xl/workbook.xml", "<workbook/>"),
             ("xl/styles.xml", "<styleSheet/>"),
             (
@@ -1504,7 +1925,8 @@ mod tests {
             ]
         );
         assert!(validate_package(b"not a zip").is_err());
-        let own = gridcraft_engine::io::save_bytes(&book(&[("A1", "=1", n(1.0))]), "t.xlsx").unwrap();
+        let own =
+            gridcraft_engine::io::save_bytes(&book(&[("A1", "=1", n(1.0))]), "t.xlsx").unwrap();
         assert_eq!(validate_package(&own).unwrap(), Vec::<String>::new());
     }
 
@@ -1525,16 +1947,26 @@ mod tests {
             let mut body = String::new();
             f.read_to_string(&mut body).unwrap();
             if let Some(at) = pending.iter().position(|(r, _)| *r == name) {
-                body = body.replace("</Relationships>", &format!("{}</Relationships>", pending.remove(at).1));
+                body = body.replace(
+                    "</Relationships>",
+                    &format!("{}</Relationships>", pending.remove(at).1),
+                );
             }
-            out.start_file(name, zip::write::SimpleFileOptions::default()).unwrap();
+            out.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
             out.write_all(body.as_bytes()).unwrap();
         }
         let created = pending.iter().map(|(r, extra)| {
             (*r, format!(r#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">{extra}</Relationships>"#))
         });
-        for (name, body) in created.collect::<Vec<_>>().iter().map(|(n, b)| (*n, b.as_str())).chain(parts.iter().copied()) {
-            out.start_file(name, zip::write::SimpleFileOptions::default()).unwrap();
+        for (name, body) in created
+            .collect::<Vec<_>>()
+            .iter()
+            .map(|(n, b)| (*n, b.as_str()))
+            .chain(parts.iter().copied())
+        {
+            out.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
             out.write_all(body.as_bytes()).unwrap();
         }
         out.finish().unwrap().into_inner()
@@ -1543,7 +1975,13 @@ mod tests {
     /// The `package` examples of checking `source`.
     fn package_of(source: &[u8]) -> Vec<String> {
         let r = check_bytes("t.xlsx", source, &Options::default());
-        r.round_trip.categories.iter().find(|c| c.name == "package").unwrap().examples.clone()
+        r.round_trip
+            .categories
+            .iter()
+            .find(|c| c.name == "package")
+            .unwrap()
+            .examples
+            .clone()
     }
 
     fn plain() -> Vec<u8> {
@@ -1555,9 +1993,17 @@ mod tests {
         // A kind GridCraft doesn't know is dropped on save; a calculation chain is never written
         // (Excel rebuilds it), so its absence isn't a loss.
         let calc_chain = r#"<Relationship Id="rId91" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain" Target="calcChain.xml"/>"#;
-        let source = with_rels(&plain(), &[(WB_RELS, &format!("{MADE_UP}{calc_chain}"))], &[MADE_UP_PART, ("xl/calcChain.xml", "<calcChain/>")]);
+        let source = with_rels(
+            &plain(),
+            &[(WB_RELS, &format!("{MADE_UP}{calc_chain}"))],
+            &[MADE_UP_PART, ("xl/calcChain.xml", "<calcChain/>")],
+        );
         assert_eq!(package_of(&source), ["lost relationship madeUp"]);
-        assert!(check_bytes("t.xlsx", &plain(), &Options::default()).round_trip.is_clean());
+        assert!(
+            check_bytes("t.xlsx", &plain(), &Options::default())
+                .round_trip
+                .is_clean()
+        );
     }
 
     // In the three tests below the made-up kind stays lost, so the comparison is known to run.
@@ -1566,7 +2012,11 @@ mod tests {
     fn an_internal_link_written_as_a_relationship_is_not_a_loss() {
         // openpyxl writes `#Sheet1!B2` as an external relationship; GridCraft writes `location`.
         let link = r##"<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="#Sheet1!B2" TargetMode="External"/>"##;
-        let source = with_rels(&plain(), &[(WB_RELS, MADE_UP), (SHEET_RELS, link)], &[MADE_UP_PART]);
+        let source = with_rels(
+            &plain(),
+            &[(WB_RELS, MADE_UP), (SHEET_RELS, link)],
+            &[MADE_UP_PART],
+        );
         assert_eq!(package_of(&source), ["lost relationship madeUp"]);
     }
 
@@ -1578,7 +2028,11 @@ mod tests {
         let source = with_rels(
             &plain(),
             &[(WB_RELS, MADE_UP), (SHEET_RELS, rels)],
-            &[MADE_UP_PART, ("xl/comments1.xml", comments), ("xl/drawings/vmlDrawing1.vml", vml)],
+            &[
+                MADE_UP_PART,
+                ("xl/comments1.xml", comments),
+                ("xl/drawings/vmlDrawing1.vml", vml),
+            ],
         );
         assert_eq!(package_of(&source), ["lost relationship madeUp"]);
     }
@@ -1586,15 +2040,23 @@ mod tests {
     #[test]
     fn empty_drawings_and_person_lists_are_not_a_loss() {
         let drawing = r#"<Relationship Id="rId8" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>"#;
-        let person =
-            r#"<Relationship Id="rId92" Type="http://schemas.microsoft.com/office/2017/10/relationships/person" Target="persons/person.xml"/>"#;
+        let person = r#"<Relationship Id="rId92" Type="http://schemas.microsoft.com/office/2017/10/relationships/person" Target="persons/person.xml"/>"#;
         let source = with_rels(
             &plain(),
-            &[(WB_RELS, &format!("{MADE_UP}{person}")), (SHEET_RELS, drawing)],
+            &[
+                (WB_RELS, &format!("{MADE_UP}{person}")),
+                (SHEET_RELS, drawing),
+            ],
             &[
                 MADE_UP_PART,
-                ("xl/drawings/drawing1.xml", r#"<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"/>"#),
-                ("xl/persons/person.xml", r#"<personList xmlns="http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments"/>"#),
+                (
+                    "xl/drawings/drawing1.xml",
+                    r#"<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"/>"#,
+                ),
+                (
+                    "xl/persons/person.xml",
+                    r#"<personList xmlns="http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments"/>"#,
+                ),
             ],
         );
         assert_eq!(package_of(&source), ["lost relationship madeUp"]);
@@ -1610,14 +2072,40 @@ mod tests {
     #[test]
     fn json_schema_keys() {
         let wb = book(&[("A1", "=1+1", n(3.0))]);
-        let reports = vec![check(&wb, &Options::default()), check_bytes("bad.xlsx", b"", &Options::default())];
+        let reports = vec![
+            check(&wb, &Options::default()),
+            check_bytes("bad.xlsx", b"", &Options::default()),
+        ];
         let v = report_json(&reports, &Options::default());
-        let keys = |v: &Json| v.as_object().unwrap().keys().cloned().collect::<BTreeSet<String>>();
-        let set = |k: &[&str]| k.iter().map(|s| s.to_string()).collect::<BTreeSet<String>>();
-        assert_eq!(keys(&v), set(&["schema", "tolerance", "files", "totals", "functions", "signatures"]));
+        let keys = |v: &Json| {
+            v.as_object()
+                .unwrap()
+                .keys()
+                .cloned()
+                .collect::<BTreeSet<String>>()
+        };
+        let set = |k: &[&str]| {
+            k.iter()
+                .map(|s| s.to_string())
+                .collect::<BTreeSet<String>>()
+        };
+        assert_eq!(
+            keys(&v),
+            set(&[
+                "schema",
+                "tolerance",
+                "files",
+                "totals",
+                "functions",
+                "signatures"
+            ])
+        );
         assert_eq!(v["schema"], SCHEMA);
         let f = &v["files"][0];
-        assert_eq!(keys(f), set(&["path", "opened", "error", "warnings", "calc", "roundTrip"]));
+        assert_eq!(
+            keys(f),
+            set(&["path", "opened", "error", "warnings", "calc", "roundTrip"])
+        );
         assert_eq!(
             keys(&f["calc"]),
             set(&[
@@ -1635,9 +2123,23 @@ mod tests {
             ])
         );
         assert_eq!(f["calc"]["signatures"], json!({"number → number": 1}));
-        assert_eq!(keys(&f["calc"]["mismatches"][0]), set(&["cell", "formula", "expected", "actual", "kind", "functions", "primary"]));
+        assert_eq!(
+            keys(&f["calc"]["mismatches"][0]),
+            set(&[
+                "cell",
+                "formula",
+                "expected",
+                "actual",
+                "kind",
+                "functions",
+                "primary"
+            ])
+        );
         assert_eq!(f["calc"]["mismatches"][0]["expected"], json!(3.0));
-        assert_eq!(keys(&f["roundTrip"]), set(&["error", "differing", "categories"]));
+        assert_eq!(
+            keys(&f["roundTrip"]),
+            set(&["error", "differing", "categories"])
+        );
         assert_eq!(
             keys(&f["roundTrip"]["categories"]),
             set(&[
@@ -1657,7 +2159,10 @@ mod tests {
                 "package"
             ])
         );
-        assert_eq!(keys(&f["roundTrip"]["categories"]["values"]), set(&["equal", "diffs", "examples"]));
+        assert_eq!(
+            keys(&f["roundTrip"]["categories"]["values"]),
+            set(&["equal", "diffs", "examples"])
+        );
         assert_eq!(v["files"][1]["opened"], json!(false));
         assert_eq!(
             keys(&v["totals"]),
@@ -1677,6 +2182,9 @@ mod tests {
                 "categoriesDiffering"
             ])
         );
-        assert_eq!(keys(&v["functions"][0]), set(&["name", "checked", "mismatched", "primary"]));
+        assert_eq!(
+            keys(&v["functions"][0]),
+            set(&["name", "checked", "mismatched", "primary"])
+        );
     }
 }

@@ -16,7 +16,14 @@
 //! designcraft-cli links                   # Discord, website, app page and GitHub links
 //! designcraft-cli --version               # print the version
 //! ```
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 use std::process::ExitCode;
 
 /// `println!` that ends the program quietly when stdout is closed (`designcraft-cli commands |
@@ -105,9 +112,16 @@ fn main() -> ExitCode {
                 .and_then(|v| v.as_array().cloned())
                 .unwrap_or_default()
                 .into_iter()
-                .filter(|c| filter.as_ref().is_none_or(|f| c.to_string().to_lowercase().contains(f.as_str())))
+                .filter(|c| {
+                    filter
+                        .as_ref()
+                        .is_none_or(|f| c.to_string().to_lowercase().contains(f.as_str()))
+                })
                 .collect();
-            outln!("{}", serde_json::to_string_pretty(&list).unwrap_or_default());
+            outln!(
+                "{}",
+                serde_json::to_string_pretty(&list).unwrap_or_default()
+            );
             ExitCode::SUCCESS
         }
         Some("describe") => report(describe(args.get(1).map(String::as_str))),
@@ -119,7 +133,9 @@ fn main() -> ExitCode {
         Some("validate-pdf") => report(validate_pdf(args.get(1).map(String::as_str))),
         Some("links") => {
             use designcraft_engine::links::*;
-            outln!("Discord   {DISCORD}\nWebsite   {WEBSITE}\nApp page  {APP_PAGE}\nGitHub    {GITHUB}\nIssues    {ISSUES}");
+            outln!(
+                "Discord   {DISCORD}\nWebsite   {WEBSITE}\nApp page  {APP_PAGE}\nGitHub    {GITHUB}\nIssues    {ISSUES}"
+            );
             ExitCode::SUCCESS
         }
         // Asking for help is not an error: it goes to stdout and succeeds. An unknown command
@@ -153,8 +169,15 @@ fn validate_pdf(path: Option<&str>) -> Result<(), String> {
     let issues = designcraft_pdf::check_pdfx4(&bytes);
     let valid = issues.is_empty();
     let report = json!({"path": path, "standard": "PDF/X-4", "valid": valid, "issues": issues});
-    outln!("{}", serde_json::to_string_pretty(&report).map_err(|e| e.to_string())?);
-    if valid { Ok(()) } else { Err(format!("{path} failed PDF/X-4 validation")) }
+    outln!(
+        "{}",
+        serde_json::to_string_pretty(&report).map_err(|e| e.to_string())?
+    );
+    if valid {
+        Ok(())
+    } else {
+        Err(format!("{path} failed PDF/X-4 validation"))
+    }
 }
 
 /// `mcp` (headless, in-process engine) or `mcp --connect PORT|HOST:PORT` (drive a running app
@@ -166,9 +189,19 @@ fn mcp(args: &[String]) -> Result<(), String> {
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
-            "--connect" => connect = Some(it.next().cloned().ok_or("--connect needs a port or host:port")?),
+            "--connect" => {
+                connect = Some(
+                    it.next()
+                        .cloned()
+                        .ok_or("--connect needs a port or host:port")?,
+                )
+            }
             "--sample" => sample = true,
-            other => return Err(format!("unknown mcp option `{other}` (usage: designcraft-cli mcp [--connect PORT] [--sample])")),
+            other => {
+                return Err(format!(
+                    "unknown mcp option `{other}` (usage: designcraft-cli mcp [--connect PORT] [--sample])"
+                ));
+            }
         }
     }
     let backend: Box<dyn Backend> = match connect {
@@ -182,15 +215,22 @@ fn mcp(args: &[String]) -> Result<(), String> {
         None => {
             let mut h = Headless::with_document();
             if sample {
-                h.session.execute("file.newSample", &json!({})).map_err(|e| e.to_string())?;
+                h.session
+                    .execute("file.newSample", &json!({}))
+                    .map_err(|e| e.to_string())?;
             }
             Box::new(h)
         }
     };
-    eprintln!("designcraft-cli: MCP server on stdio ({})", backend.describe());
+    eprintln!(
+        "designcraft-cli: MCP server on stdio ({})",
+        backend.describe()
+    );
     let stdin = std::io::stdin();
     let stdout = std::io::stdout();
-    Server::new(backend).serve(stdin.lock(), stdout.lock()).map_err(|e| e.to_string())
+    Server::new(backend)
+        .serve(stdin.lock(), stdout.lock())
+        .map_err(|e| e.to_string())
 }
 
 /// The first `--page`, `--scale` or `--pdf-options` with no `--export` or `--all-pages` after it.
@@ -232,26 +272,34 @@ fn run(args: &[String]) -> Result<(), String> {
     // Earlier --cmd results, for `$N.path` references.
     let mut results: Vec<Value> = Vec::new();
     while let Some(a) = it.next() {
-        let mut val = || it.next().cloned().ok_or_else(|| format!("{a} needs a value"));
+        let mut val = || {
+            it.next()
+                .cloned()
+                .ok_or_else(|| format!("{a} needs a value"))
+        };
         match a.as_str() {
             "--in" => {
                 let p = val()?;
-                s.execute("file.open", &json!({"path": p})).map_err(|e| e.to_string())?;
+                s.execute("file.open", &json!({"path": p}))
+                    .map_err(|e| e.to_string())?;
                 opened = true;
             }
             "--sample" => {
-                s.execute("file.newSample", &json!({})).map_err(|e| e.to_string())?;
+                s.execute("file.newSample", &json!({}))
+                    .map_err(|e| e.to_string())?;
                 opened = true;
             }
             "--cmd" => {
                 if !opened {
-                    s.execute("file.new", &json!({})).map_err(|e| e.to_string())?;
+                    s.execute("file.new", &json!({}))
+                        .map_err(|e| e.to_string())?;
                     opened = true;
                 }
                 let c = val()?;
                 let (id, p) = c.split_once('=').unwrap_or((&c, "{}"));
                 let p: Value = serde_json::from_str(p).map_err(|e| format!("--cmd {id}: {e}"))?;
-                let p = designcraft_engine::script::resolve(&p, &results).map_err(|e| format!("--cmd {id}: {e}"))?;
+                let p = designcraft_engine::script::resolve(&p, &results)
+                    .map_err(|e| format!("--cmd {id}: {e}"))?;
                 let r = s.execute(id, &p).map_err(|e| e.to_string())?;
                 results.push(r.clone());
                 if !r.is_null() {
@@ -261,12 +309,15 @@ fn run(args: &[String]) -> Result<(), String> {
             "--page" => page = val()?.parse().map_err(|_| "bad --page")?,
             "--scale" => scale = val()?.parse().map_err(|_| "bad --scale")?,
             "--pdf-options" => {
-                pdf_opts = serde_json::from_str(&val()?).map_err(|e| format!("--pdf-options: {e}"))?;
+                pdf_opts =
+                    serde_json::from_str(&val()?).map_err(|e| format!("--pdf-options: {e}"))?;
             }
             "--export" => {
                 let out = val()?;
                 if out.ends_with(".epub") {
-                    let r = s.execute("file.exportEpub", &json!({"path": out})).map_err(|e| e.to_string())?;
+                    let r = s
+                        .execute("file.exportEpub", &json!({"path": out}))
+                        .map_err(|e| e.to_string())?;
                     eprintln!("wrote {out} ({} bytes)", r["bytes"]);
                 } else if out.ends_with(".pdf") {
                     let mut p = pdf_opts.clone();
@@ -296,12 +347,15 @@ fn run(args: &[String]) -> Result<(), String> {
 
 fn export(s: &mut Session, out: &str, page: usize, scale: f64) -> Result<(), String> {
     if out.to_ascii_lowercase().ends_with(".idml") {
-        let r = s.execute("file.exportIdml", &json!({"path": out})).map_err(|e| e.to_string())?;
+        let r = s
+            .execute("file.exportIdml", &json!({"path": out}))
+            .map_err(|e| e.to_string())?;
         eprintln!("wrote {out} ({} bytes)", r["bytes"]);
         return Ok(());
     }
     if out.ends_with(".designcraft") {
-        s.execute("file.saveAs", &json!({"path": out})).map_err(|e| e.to_string())?;
+        s.execute("file.saveAs", &json!({"path": out}))
+            .map_err(|e| e.to_string())?;
         eprintln!("saved {out}");
         return Ok(());
     }
@@ -309,11 +363,32 @@ fn export(s: &mut Session, out: &str, page: usize, scale: f64) -> Result<(), Str
     let mut r = designcraft_render::Renderer::new();
     let t = std::time::Instant::now();
     let img = r
-        .render_page(&st.doc, &s.cache, page, scale, true, &designcraft_render::RenderOptions { printing_only: true, ..Default::default() })
+        .render_page(
+            &st.doc,
+            &s.cache,
+            page,
+            scale,
+            true,
+            &designcraft_render::RenderOptions {
+                printing_only: true,
+                ..Default::default()
+            },
+        )
         .ok_or("no such page")?;
-    let bytes = if out.ends_with(".jpg") || out.ends_with(".jpeg") { img.to_jpeg(90) } else { img.to_png() };
-    designcraft_engine::atomic::write_atomic(std::path::Path::new(out), &bytes).map_err(|e| format!("{out}: {e}"))?;
-    eprintln!("wrote {out} ({}×{}, {:.1} ms, {} glyphs)", img.width, img.height, t.elapsed().as_secs_f64() * 1000.0, r.stats.glyphs);
+    let bytes = if out.ends_with(".jpg") || out.ends_with(".jpeg") {
+        img.to_jpeg(90)
+    } else {
+        img.to_png()
+    };
+    designcraft_engine::atomic::write_atomic(std::path::Path::new(out), &bytes)
+        .map_err(|e| format!("{out}: {e}"))?;
+    eprintln!(
+        "wrote {out} ({}×{}, {:.1} ms, {} glyphs)",
+        img.width,
+        img.height,
+        t.elapsed().as_secs_f64() * 1000.0,
+        r.stats.glyphs
+    );
     Ok(())
 }
 
@@ -322,17 +397,27 @@ fn describe(id: Option<&str>) -> Result<(), String> {
     let id = id.ok_or("usage: designcraft-cli describe COMMAND")?;
     let s = Session::new();
     let all = serde_json::to_value(s.commands()).map_err(|e| e.to_string())?;
-    let c = all.as_array().and_then(|a| a.iter().find(|c| c["id"] == id)).ok_or_else(|| {
-        let near: Vec<String> = all
-            .as_array()
-            .into_iter()
-            .flatten()
-            .filter_map(|c| c["id"].as_str())
-            .filter(|c| c.split('.').next() == id.split('.').next())
-            .map(str::to_string)
-            .collect();
-        format!("no command `{id}`{}", if near.is_empty() { String::new() } else { format!(" (similar: {})", near.join(", ")) })
-    })?;
+    let c = all
+        .as_array()
+        .and_then(|a| a.iter().find(|c| c["id"] == id))
+        .ok_or_else(|| {
+            let near: Vec<String> = all
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|c| c["id"].as_str())
+                .filter(|c| c.split('.').next() == id.split('.').next())
+                .map(str::to_string)
+                .collect();
+            format!(
+                "no command `{id}`{}",
+                if near.is_empty() {
+                    String::new()
+                } else {
+                    format!(" (similar: {})", near.join(", "))
+                }
+            )
+        })?;
     // Enablement depends on a live document and selection: not meaningful here.
     let mut c = c.clone();
     if let Some(o) = c.as_object_mut() {
@@ -354,11 +439,19 @@ fn script(args: &[String]) -> Result<(), String> {
     let mut keep_going = false;
     let mut it = args.iter();
     while let Some(a) = it.next() {
-        let mut val = || it.next().cloned().ok_or_else(|| format!("{a} needs a value"));
+        let mut val = || {
+            it.next()
+                .cloned()
+                .ok_or_else(|| format!("{a} needs a value"))
+        };
         match a.as_str() {
             "--in" => {
                 let p = val()?;
-                let cmd = if p.to_lowercase().ends_with(".idml") { "file.openIdml" } else { "file.open" };
+                let cmd = if p.to_lowercase().ends_with(".idml") {
+                    "file.openIdml"
+                } else {
+                    "file.open"
+                };
                 setup.push((cmd.into(), json!({"path": p})));
             }
             "--sample" => setup.push(("file.newSample".into(), json!({}))),
@@ -377,7 +470,8 @@ fn script(args: &[String]) -> Result<(), String> {
     let text = match file.as_deref() {
         None | Some("-") => {
             let mut t = String::new();
-            std::io::Read::read_to_string(&mut std::io::stdin(), &mut t).map_err(|e| e.to_string())?;
+            std::io::Read::read_to_string(&mut std::io::stdin(), &mut t)
+                .map_err(|e| e.to_string())?;
             t
         }
         Some(f) => std::fs::read_to_string(f).map_err(|e| format!("{f}: {e}"))?,
@@ -394,7 +488,9 @@ fn script(args: &[String]) -> Result<(), String> {
         None => Box::new(Headless::with_document()),
     };
     let b = &mut *backend;
-    let exec = |b: &mut dyn Backend, id: &str, p: Value| b.call("engine.execute", json!({"command": id, "params": p}));
+    let exec = |b: &mut dyn Backend, id: &str, p: Value| {
+        b.call("engine.execute", json!({"command": id, "params": p}))
+    };
     for (c, p) in &setup {
         exec(b, c, p.clone())?;
     }
@@ -402,10 +498,14 @@ fn script(args: &[String]) -> Result<(), String> {
         // Run every step; failures become {"error": …} results.
         let mut results: Vec<Value> = Vec::new();
         for st in &steps {
-            let r = designcraft_engine::script::resolve(&st.params, &results).and_then(|p| exec(b, &st.command, p));
+            let r = designcraft_engine::script::resolve(&st.params, &results)
+                .and_then(|p| exec(b, &st.command, p));
             results.push(r.unwrap_or_else(|e| json!({"error": e, "command": st.command})));
         }
-        designcraft_engine::script::Report { results, failed: None }
+        designcraft_engine::script::Report {
+            results,
+            failed: None,
+        }
     } else {
         designcraft_engine::script::run(&steps, |id, p| exec(b, id, p))
     };
@@ -428,7 +528,10 @@ fn script(args: &[String]) -> Result<(), String> {
             }
         }
     }
-    outln!("{}", serde_json::to_string_pretty(&report.to_json()).unwrap_or_default());
+    outln!(
+        "{}",
+        serde_json::to_string_pretty(&report.to_json()).unwrap_or_default()
+    );
     match report.failed {
         Some((i, c, e)) => Err(format!("step {i} ({c}) failed: {e}")),
         None => Ok(()),
@@ -452,13 +555,21 @@ fn app(args: &[String]) -> Result<(), String> {
     let addr = control_addr(&port);
     let mut r = Remote::connect(&addr)
         .map_err(|e| format!("cannot connect to the DesignCraft app at {addr}: {e} (start it with `designcraft --control {port}`)"))?;
-    let json_arg =
-        |s: Option<&String>| -> Result<Value, String> { s.map_or(Ok(json!({})), |t| serde_json::from_str(t).map_err(|e| format!("bad JSON: {e}"))) };
+    let json_arg = |s: Option<&String>| -> Result<Value, String> {
+        s.map_or(Ok(json!({})), |t| {
+            serde_json::from_str(t).map_err(|e| format!("bad JSON: {e}"))
+        })
+    };
     let out = match method {
         Some(m) => r.call(&m, json_arg(rest.first())?)?,
         None => {
-            let cmd = rest.first().ok_or("usage: designcraft-cli app [--port PORT] COMMAND [JSON]")?;
-            r.call("engine.execute", json!({"command": cmd, "params": json_arg(rest.get(1))?}))?
+            let cmd = rest
+                .first()
+                .ok_or("usage: designcraft-cli app [--port PORT] COMMAND [JSON]")?;
+            r.call(
+                "engine.execute",
+                json!({"command": cmd, "params": json_arg(rest.get(1))?}),
+            )?
         }
     };
     outln!("{}", serde_json::to_string_pretty(&out).unwrap_or_default());

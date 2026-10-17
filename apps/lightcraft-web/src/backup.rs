@@ -44,7 +44,11 @@ The photos in originals/ are the untouched files you imported; edits live in the
 /// Is `name` a safe library folder name (`library` or `library-<letters, digits, ->`)?
 pub fn valid_library_dir(name: &str) -> bool {
     name == DEFAULT_LIBRARY_DIR
-        || name.strip_prefix("library-").is_some_and(|s| !s.is_empty() && s.len() <= 64 && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-'))
+        || name.strip_prefix("library-").is_some_and(|s| {
+            !s.is_empty()
+                && s.len() <= 64
+                && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+        })
 }
 
 /// Is `h` a plausible content hash (used as a storage key segment)?
@@ -54,8 +58,21 @@ pub fn valid_hash(h: &str) -> bool {
 
 /// Zip entry name for an original.
 pub fn original_entry(hash: &str, file_name: &str) -> String {
-    let name: String = file_name.chars().map(|c| if c == '/' || c == '\\' || c.is_control() { '_' } else { c }).collect();
-    let name = if name.is_empty() || name == "." || name == ".." { "original".to_string() } else { name };
+    let name: String = file_name
+        .chars()
+        .map(|c| {
+            if c == '/' || c == '\\' || c.is_control() {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect();
+    let name = if name.is_empty() || name == "." || name == ".." {
+        "original".to_string()
+    } else {
+        name
+    };
     format!("originals/{hash}/{name}")
 }
 
@@ -63,7 +80,9 @@ pub fn original_entry(hash: &str, file_name: &str) -> String {
 /// `None` to skip it (README, thumbnails, anything unknown or unsafe).
 pub fn restore_key(entry: &str, dir: &str) -> Option<String> {
     if let Some(name) = entry.strip_prefix("library/") {
-        return crate::files::LIBRARY_FILES.contains(&name).then(|| format!("{dir}/{name}"));
+        return crate::files::LIBRARY_FILES
+            .contains(&name)
+            .then(|| format!("{dir}/{name}"));
     }
     let rest = entry.strip_prefix("originals/")?;
     let (hash, _) = rest.split_once('/').unwrap_or((rest, ""));
@@ -120,7 +139,12 @@ impl ZipWriter {
         u16le(&mut h, 0); // extra
         h.extend_from_slice(name.as_bytes());
         self.offset += header_len + u64::from(size);
-        self.entries.push(Central { name: name.to_string(), crc, size, offset });
+        self.entries.push(Central {
+            name: name.to_string(),
+            crc,
+            size,
+            offset,
+        });
         Ok(h)
     }
 
@@ -189,7 +213,10 @@ pub fn tail_len(file_len: u64) -> u64 {
 
 /// The central directory's (offset, size) from the last [`tail_len`] bytes of a zip.
 pub fn find_central(tail: &[u8]) -> Result<(u64, u64), String> {
-    let at = (0..tail.len().saturating_sub(21)).rev().find(|&i| rd32(tail, i) == Some(END_SIG)).ok_or("not a zip file (no end record)")?;
+    let at = (0..tail.len().saturating_sub(21))
+        .rev()
+        .find(|&i| rd32(tail, i) == Some(END_SIG))
+        .ok_or("not a zip file (no end record)")?;
     let size = rd32(tail, at + 12).ok_or("truncated zip")?;
     let offset = rd32(tail, at + 16).ok_or("truncated zip")?;
     if size == u32::MAX || offset == u32::MAX {
@@ -215,7 +242,13 @@ pub fn parse_central(cd: &[u8]) -> Result<Vec<ZipEntry>, String> {
         let comment = usize::from(rd16(cd, i + 32).ok_or_else(bad)?);
         let header = rd32(cd, i + 42).ok_or_else(bad)?;
         let name = cd.get(i + 46..i + 46 + n).ok_or_else(bad)?;
-        out.push(ZipEntry { name: String::from_utf8_lossy(name).into_owned(), crc, size: u64::from(size), header: u64::from(header), method });
+        out.push(ZipEntry {
+            name: String::from_utf8_lossy(name).into_owned(),
+            crc,
+            size: u64::from(size),
+            header: u64::from(header),
+            method,
+        });
         i += 46 + n + extra + comment;
     }
     Ok(out)
@@ -234,7 +267,10 @@ pub fn data_offset(entry: &ZipEntry, local: &[u8]) -> Result<u64, String> {
 /// Check an entry's bytes.
 pub fn verify(entry: &ZipEntry, data: &[u8]) -> Result<(), String> {
     if entry.method != 0 {
-        return Err(format!("{}: compressed entries are not supported (not a LightCraft backup?)", entry.name));
+        return Err(format!(
+            "{}: compressed entries are not supported (not a LightCraft backup?)",
+            entry.name
+        ));
     }
     if data.len() as u64 != entry.size || crc32fast::hash(data) != entry.crc {
         return Err(format!("{}: damaged (checksum mismatch)", entry.name));
@@ -247,7 +283,10 @@ pub fn verify(entry: &ZipEntry, data: &[u8]) -> Result<(), String> {
 /// give that photo's catalog record a different image (the zip checksum can't tell).
 pub fn verify_original(entry: &ZipEntry, hash: &str, data: &[u8]) -> Result<(), String> {
     if crate::store::content_hash(data) != hash {
-        return Err(format!("{}: the file doesn't match its content hash (damaged or altered backup)", entry.name));
+        return Err(format!(
+            "{}: the file doesn't match its content hash (damaged or altered backup)",
+            entry.name
+        ));
     }
     Ok(())
 }
@@ -274,8 +313,11 @@ mod tests {
 
     #[test]
     fn written_backups_read_back() {
-        let files: [(&str, &[u8]); 3] =
-            [("README.txt", README.as_bytes()), ("library/catalog.log", b"{\"seq\":1}\n"), ("originals/abc123/IMG 1.jpg", &[0, 1, 2, 3, 255])];
+        let files: [(&str, &[u8]); 3] = [
+            ("README.txt", README.as_bytes()),
+            ("library/catalog.log", b"{\"seq\":1}\n"),
+            ("originals/abc123/IMG 1.jpg", &[0, 1, 2, 3, 255]),
+        ];
         let zip = build(&files);
         let tail = &zip[zip.len() - tail_len(zip.len() as u64) as usize..];
         let (off, size) = find_central(tail).unwrap();
@@ -283,7 +325,8 @@ mod tests {
         assert_eq!(entries.len(), 3);
         for (e, (name, data)) in entries.iter().zip(files) {
             assert_eq!(e.name, name);
-            let start = data_offset(e, &zip[e.header as usize..e.header as usize + 30]).unwrap() as usize;
+            let start =
+                data_offset(e, &zip[e.header as usize..e.header as usize + 30]).unwrap() as usize;
             let got = &zip[start..start + e.size as usize];
             assert_eq!(got, data);
             verify(e, got).unwrap();
@@ -317,22 +360,38 @@ mod tests {
 
     #[test]
     fn restore_keys_are_safe() {
-        assert_eq!(restore_key("library/catalog.snap", "library-restored-1").as_deref(), Some("library-restored-1/catalog.snap"));
+        assert_eq!(
+            restore_key("library/catalog.snap", "library-restored-1").as_deref(),
+            Some("library-restored-1/catalog.snap")
+        );
         assert_eq!(restore_key("library/../../x", "library-r"), None);
         assert_eq!(restore_key("library/evil.bin", "library-r"), None);
-        assert_eq!(restore_key("originals/abc123/IMG.jpg", "d").as_deref(), Some("originals/abc123"));
+        assert_eq!(
+            restore_key("originals/abc123/IMG.jpg", "d").as_deref(),
+            Some("originals/abc123")
+        );
         assert_eq!(restore_key("originals/../library/catalog.log", "d"), None);
         assert_eq!(restore_key("README.txt", "d"), None);
         assert_eq!(restore_key("thumbs/x.jpg", "d"), None);
-        assert_eq!(original_entry("abc", "a/b\\c.jpg"), "originals/abc/a_b_c.jpg");
+        assert_eq!(
+            original_entry("abc", "a/b\\c.jpg"),
+            "originals/abc/a_b_c.jpg"
+        );
         assert_eq!(original_entry("abc", ".."), "originals/abc/original");
         assert!(valid_library_dir("library") && valid_library_dir("library-restored-17"));
-        assert!(!valid_library_dir("library-../x") && !valid_library_dir("originals") && !valid_library_dir("library-"));
+        assert!(
+            !valid_library_dir("library-../x")
+                && !valid_library_dir("originals")
+                && !valid_library_dir("library-")
+        );
     }
 
     #[test]
     fn size_limits_are_errors_not_panics() {
-        let mut w = ZipWriter { offset: MAX_BYTES - 10, ..Default::default() };
+        let mut w = ZipWriter {
+            offset: MAX_BYTES - 10,
+            ..Default::default()
+        };
         assert!(w.entry("x", &[0; 64]).is_err());
     }
 }

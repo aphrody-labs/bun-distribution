@@ -56,7 +56,10 @@ impl WebLocks {
     /// The page's Web Locks with a first snapshot of them, kept fresh from then on; `None` when
     /// the browser has none or won't say which are held (heartbeats alone decide then).
     pub async fn start(prefix: &'static str) -> Option<Self> {
-        let locks = Self { prefix, seen: Arc::new(Mutex::new((f64::NEG_INFINITY, BTreeSet::new()))) };
+        let locks = Self {
+            prefix,
+            seen: Arc::new(Mutex::new((f64::NEG_INFINITY, BTreeSet::new()))),
+        };
         locks.refresh().await?;
         let again = locks.clone();
         let tick = Closure::<dyn FnMut()>::new(move || {
@@ -66,7 +69,12 @@ impl WebLocks {
                 let _ = locks.refresh().await;
             });
         });
-        web_sys::window()?.set_interval_with_callback_and_timeout_and_arguments_0(tick.as_ref().unchecked_ref(), REFRESH_MS).ok()?;
+        web_sys::window()?
+            .set_interval_with_callback_and_timeout_and_arguments_0(
+                tick.as_ref().unchecked_ref(),
+                REFRESH_MS,
+            )
+            .ok()?;
         // The timer lives as long as the page.
         tick.forget();
         Some(locks)
@@ -103,7 +111,9 @@ impl WebLocks {
         let until = Promise::new(&mut |resolve, _| release = Some(resolve));
         let release = release?;
         let granted = Closure::once_into_js(move |_lock: JsValue| until);
-        method(&m, "request")?.call2(&m, &name.clone().into(), &granted).ok()?;
+        method(&m, "request")?
+            .call2(&m, &name.clone().into(), &granted)
+            .ok()?;
         RELEASE.with(|r| r.borrow_mut().insert(name.clone(), release));
         Some(Box::new(LockHold(name)))
     }

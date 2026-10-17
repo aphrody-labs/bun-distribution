@@ -13,8 +13,8 @@ use wasm_bindgen_futures::JsFuture;
 
 use crate::backend::Backend;
 use crate::backup::{
-    ACTIVE_LIBRARY, README, ZipWriter, data_offset, find_central, original_entry, parse_central, restore_key, restored_dir_name, tail_len,
-    valid_hash, verify, verify_original,
+    ACTIVE_LIBRARY, README, ZipWriter, data_offset, find_central, original_entry, parse_central,
+    restore_key, restored_dir_name, tail_len, valid_hash, verify, verify_original,
 };
 use crate::files::{Files, LIBRARY_FILES};
 use crate::store::storage_key;
@@ -43,7 +43,9 @@ fn document() -> Option<web_sys::Document> {
 
 /// Ask the user (the browser's own confirm box). `false` when it can't be shown.
 pub fn confirm(text: &str) -> bool {
-    web_sys::window().and_then(|w| w.confirm_with_message(text).ok()).unwrap_or(false)
+    web_sys::window()
+        .and_then(|w| w.confirm_with_message(text).ok())
+        .unwrap_or(false)
 }
 
 /// Cover the page with a message (the app can't continue, or must not start).
@@ -52,7 +54,9 @@ pub fn show_blocking(text: &str) {
     let el = match doc.get_element_by_id("lightcraft_blocking") {
         Some(el) => el,
         None => {
-            let Ok(el) = doc.create_element("div") else { return };
+            let Ok(el) = doc.create_element("div") else {
+                return;
+            };
             el.set_id("lightcraft_blocking");
             let _ = el.set_attribute(
                 "style",
@@ -75,12 +79,18 @@ pub fn show_blocking(text: &str) {
 /// frozen canvas, and say that the stored library is intact.
 pub fn install_panic_hook() {
     std::panic::set_hook(Box::new(|info| {
-        let msg = match (info.payload().downcast_ref::<&str>(), info.payload().downcast_ref::<String>()) {
+        let msg = match (
+            info.payload().downcast_ref::<&str>(),
+            info.payload().downcast_ref::<String>(),
+        ) {
             (Some(s), _) => (*s).to_string(),
             (_, Some(s)) => s.clone(),
             _ => "unknown error".into(),
         };
-        let at = info.location().map(|l| format!(" at {}:{}", l.file(), l.line())).unwrap_or_default();
+        let at = info
+            .location()
+            .map(|l| format!(" at {}:{}", l.file(), l.line()))
+            .unwrap_or_default();
         log::error!("LightCraft panicked{at}: {msg}");
         show_blocking(&format!(
             "LightCraft stopped after an internal error:\n{msg}\n\nThe library saved in this browser is kept. Reload the page to continue.\n\
@@ -97,8 +107,13 @@ const TAB_LOCK: &str = "lightcraft-library";
 /// it refused the request).
 pub async fn acquire_tab_lock() -> Option<bool> {
     let nav = Reflect::get(&js_sys::global(), &"navigator".into()).ok()?;
-    let locks = Reflect::get(&nav, &"locks".into()).ok().filter(|l| !l.is_undefined() && !l.is_null())?;
-    let request: js_sys::Function = Reflect::get(&locks, &"request".into()).ok()?.dyn_into().ok()?;
+    let locks = Reflect::get(&nav, &"locks".into())
+        .ok()
+        .filter(|l| !l.is_undefined() && !l.is_null())?;
+    let request: js_sys::Function = Reflect::get(&locks, &"request".into())
+        .ok()?
+        .dyn_into()
+        .ok()?;
     let opts = js_sys::Object::new();
     Reflect::set(&opts, &"ifAvailable".into(), &true.into()).ok()?;
     let granted = js_sys::Promise::new(&mut |resolve, reject| {
@@ -106,12 +121,18 @@ pub async fn acquire_tab_lock() -> Option<bool> {
             let ours = !lock.is_null() && !lock.is_undefined();
             let _ = resolve.call1(&JsValue::NULL, &ours.into());
             // keep the lock until the page goes away: a promise that never settles
-            if ours { js_sys::Promise::new(&mut |_, _| {}).into() } else { JsValue::NULL }
+            if ours {
+                js_sys::Promise::new(&mut |_, _| {}).into()
+            } else {
+                JsValue::NULL
+            }
         });
         // a refused request never calls `cb`: settle with its error instead of waiting forever
         match request.call3(&locks, &TAB_LOCK.into(), &opts, &cb) {
             Ok(pending) => {
-                let catch = Reflect::get(&pending, &"catch".into()).ok().and_then(|c| c.dyn_into::<js_sys::Function>().ok());
+                let catch = Reflect::get(&pending, &"catch".into())
+                    .ok()
+                    .and_then(|c| c.dyn_into::<js_sys::Function>().ok());
                 if let Some(catch) = catch {
                     let _ = catch.call1(&pending, &reject);
                 }
@@ -144,7 +165,8 @@ pub fn download_blob(name: &str, blob: &web_sys::Blob) -> Result<(), String> {
         let _ = web_sys::Url::revoke_object_url(&url);
     });
     if let Some(w) = web_sys::window() {
-        let _ = w.set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), 60_000);
+        let _ =
+            w.set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), 60_000);
     }
     Ok(())
 }
@@ -152,7 +174,11 @@ pub fn download_blob(name: &str, blob: &web_sys::Blob) -> Result<(), String> {
 /// File ▸ Back Up Library…: a zip of the library files (as the app has them, saved or not) and
 /// every original in storage, built entry by entry into the browser's memory (outside the wasm
 /// heap) and downloaded. `names`: content hash → the photo's file name.
-pub async fn backup(files: Files, backend: Backend, names: HashMap<String, String>) -> Result<(usize, f64), String> {
+pub async fn backup(
+    files: Files,
+    backend: Backend,
+    names: HashMap<String, String>,
+) -> Result<(usize, f64), String> {
     let parts = js_sys::Array::new();
     let mut zip = ZipWriter::default();
     let mut bytes = 0f64;
@@ -188,16 +214,24 @@ pub async fn backup(files: Files, backend: Backend, names: HashMap<String, Strin
     parts.push(&Uint8Array::from(&tail[..]));
     let opts = web_sys::BlobPropertyBag::new();
     opts.set_type("application/zip");
-    let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&parts, &opts).map_err(|e| format!("{e:?}"))?;
-    let day: String = String::from(js_sys::Date::new_0().to_iso_string()).chars().take(10).collect();
+    let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&parts, &opts)
+        .map_err(|e| format!("{e:?}"))?;
+    let day: String = String::from(js_sys::Date::new_0().to_iso_string())
+        .chars()
+        .take(10)
+        .collect();
     download_blob(&format!("lightcraft-library-backup-{day}.zip"), &blob)?;
     Ok((originals, bytes + tail.len() as f64))
 }
 
 /// Bytes `start..end` of a picked file.
 async fn read_range(file: &web_sys::File, start: u64, end: u64) -> Result<Vec<u8>, String> {
-    let blob = file.slice_with_f64_and_f64(start as f64, end as f64).map_err(|e| format!("{e:?}"))?;
-    let buf = JsFuture::from(blob.array_buffer()).await.map_err(|e| format!("{e:?}"))?;
+    let blob = file
+        .slice_with_f64_and_f64(start as f64, end as f64)
+        .map_err(|e| format!("{e:?}"))?;
+    let buf = JsFuture::from(blob.array_buffer())
+        .await
+        .map_err(|e| format!("{e:?}"))?;
     Ok(Uint8Array::new(&buf).to_vec())
 }
 
@@ -209,13 +243,18 @@ pub async fn restore(file: web_sys::File, backend: Backend) -> Result<String, St
     let (cd_offset, cd_size) = find_central(&tail)?;
     let cd = read_range(&file, cd_offset, cd_offset + cd_size).await?;
     let entries = parse_central(&cd)?;
-    if !entries.iter().any(|e| e.name == "library/catalog.snap" || e.name == "library/catalog.log") {
+    if !entries
+        .iter()
+        .any(|e| e.name == "library/catalog.snap" || e.name == "library/catalog.log")
+    {
         return Err("this isn't a LightCraft library backup (no library/catalog files)".into());
     }
     let dir = restored_dir_name(js_sys::Date::now());
     let mut written = 0usize;
     for e in &entries {
-        let Some(key) = restore_key(&e.name, &dir) else { continue };
+        let Some(key) = restore_key(&e.name, &dir) else {
+            continue;
+        };
         // originals are named by their content: one already stored is the same file
         if key.starts_with("originals/") && backend.exists(&key).await? {
             continue;
@@ -227,7 +266,10 @@ pub async fn restore(file: web_sys::File, backend: Backend) -> Result<String, St
         if let Some(hash) = key.strip_prefix("originals/") {
             verify_original(e, hash, &data)?;
         }
-        backend.write(&key, &data).await.map_err(|err| format!("storing {}: {err}", e.name))?;
+        backend
+            .write(&key, &data)
+            .await
+            .map_err(|err| format!("storing {}: {err}", e.name))?;
         written += 1;
     }
     backend.write(ACTIVE_LIBRARY, dir.as_bytes()).await?;
@@ -245,13 +287,20 @@ pub fn pick_and_restore(backend: Backend, before_reload: impl FnOnce() + 'static
         return;
     }
     let Some(doc) = document() else { return };
-    let Ok(input) = doc.create_element("input").map(|e| e.unchecked_into::<web_sys::HtmlInputElement>()) else { return };
+    let Ok(input) = doc
+        .create_element("input")
+        .map(|e| e.unchecked_into::<web_sys::HtmlInputElement>())
+    else {
+        return;
+    };
     input.set_type("file");
     input.set_accept(".zip,application/zip");
     let inp = input.clone();
     let mut before_reload = Some(before_reload);
     let on_change = Closure::<dyn FnMut()>::new(move || {
-        let Some(file) = inp.files().and_then(|f| f.get(0)) else { return };
+        let Some(file) = inp.files().and_then(|f| f.get(0)) else {
+            return;
+        };
         let backend = backend.clone();
         let before = before_reload.take();
         notice(format!("Restoring {}…", file.name()));
@@ -265,7 +314,9 @@ pub fn pick_and_restore(backend: Backend, before_reload: impl FnOnce() + 'static
                         let _ = w.location().reload();
                     }
                 }
-                Err(e) => notice(format!("Restore failed: {e}. Nothing was changed: the current library is still in use.")),
+                Err(e) => notice(format!(
+                    "Restore failed: {e}. Nothing was changed: the current library is still in use."
+                )),
             }
         });
     });

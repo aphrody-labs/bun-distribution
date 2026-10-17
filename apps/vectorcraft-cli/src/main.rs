@@ -115,7 +115,11 @@ USAGE:
 /// The usage text plus the formats `document.open` reads and `document.export` writes.
 fn usage() -> String {
     use vectorcraft_engine::cmd::fileio::{OPEN_EXTS, export_extensions};
-    format!("{USAGE}\nReadable formats: .{}\nWritable formats: .{}\n", OPEN_EXTS.join(", ."), export_extensions().join(", ."))
+    format!(
+        "{USAGE}\nReadable formats: .{}\nWritable formats: .{}\n",
+        OPEN_EXTS.join(", ."),
+        export_extensions().join(", .")
+    )
 }
 
 fn main() -> ExitCode {
@@ -168,8 +172,14 @@ fn mcp(args: &[String]) -> Result<(), String> {
             "--connect" => connect = Some(it.next().cloned().ok_or("--connect needs an address")?),
             "--headless" => headless = true,
             "--automation-read-root" | "--automation-write-root" => {
-                let dir = inline.or_else(|| it.next().cloned()).ok_or_else(|| format!("{flag} needs a folder"))?;
-                let slot = if flag == "--automation-read-root" { &mut read_root } else { &mut write_root };
+                let dir = inline
+                    .or_else(|| it.next().cloned())
+                    .ok_or_else(|| format!("{flag} needs a folder"))?;
+                let slot = if flag == "--automation-read-root" {
+                    &mut read_root
+                } else {
+                    &mut write_root
+                };
                 if slot.replace(dir).is_some() {
                     return Err(format!("{flag} is given twice: it takes one folder"));
                 }
@@ -180,7 +190,10 @@ fn mcp(args: &[String]) -> Result<(), String> {
     if headless && connect.is_some() {
         return Err("use either --connect or --headless".into());
     }
-    let roots = AutomationRoots::new(read_root.as_deref().map(Path::new), write_root.as_deref().map(Path::new))?;
+    let roots = AutomationRoots::new(
+        read_root.as_deref().map(Path::new),
+        write_root.as_deref().map(Path::new),
+    )?;
     if roots.is_some() && connect.is_some() {
         return Err("--automation-read-root and --automation-write-root confine the headless server; a running app enforces its own roots:                     start it with `vectorcraft --control <port> --automation-read-root <dir> --automation-write-root <dir>`"
             .into());
@@ -188,8 +201,14 @@ fn mcp(args: &[String]) -> Result<(), String> {
     let backend: Box<dyn Backend> = if let Some(roots) = roots {
         // Every thread of this process, not only the server's: nothing reaches past the roots.
         file_access::confine_process(roots.clone());
-        let show = |root: Option<&Path>| root.map_or_else(|| "none".to_string(), |r| r.display().to_string());
-        eprintln!("vectorcraft-cli: files confined: read root {}, write root {}", show(roots.read_root()), show(roots.write_root()));
+        let show = |root: Option<&Path>| {
+            root.map_or_else(|| "none".to_string(), |r| r.display().to_string())
+        };
+        eprintln!(
+            "vectorcraft-cli: files confined: read root {}, write root {}",
+            show(roots.read_root()),
+            show(roots.write_root())
+        );
         Box::new(Headless::with_document().with_automation_roots(Some(roots)))
     } else if headless {
         Box::new(Headless::with_document())
@@ -202,13 +221,18 @@ fn mcp(args: &[String]) -> Result<(), String> {
             Err(_) => Box::new(Headless::with_document()),
         }
     };
-    eprintln!("vectorcraft-cli: MCP server on stdio ({})", backend.describe());
+    eprintln!(
+        "vectorcraft-cli: MCP server on stdio ({})",
+        backend.describe()
+    );
     // The binary owns the logger, not the library: installing one here keeps an embedder that
     // uses `vectorcraft_mcp` free to bring its own. Silent until a client sends logging/setLevel.
     vectorcraft_mcp::logging::install();
     let stdin = std::io::stdin();
     let stdout = std::io::stdout();
-    Server::new(backend).serve(stdin.lock(), stdout.lock()).map_err(|e| e.to_string())
+    Server::new(backend)
+        .serve(stdin.lock(), stdout.lock())
+        .map_err(|e| e.to_string())
 }
 
 fn commands() -> Result<(), String> {
@@ -226,11 +250,34 @@ fn convert(args: &[String]) -> Result<(), String> {
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
-            "--scale" | "-s" => scale = it.next().and_then(|v| v.parse().ok()).ok_or("--scale needs a number")?,
-            "--artboard" | "-a" => artboard = Some(it.next().and_then(|v| v.parse().ok()).ok_or("--artboard needs an index")?),
-            "--range" | "-r" => range = Some(it.next().cloned().ok_or("--range needs artboards such as 1-3,5")?),
+            "--scale" | "-s" => {
+                scale = it
+                    .next()
+                    .and_then(|v| v.parse().ok())
+                    .ok_or("--scale needs a number")?
+            }
+            "--artboard" | "-a" => {
+                artboard = Some(
+                    it.next()
+                        .and_then(|v| v.parse().ok())
+                        .ok_or("--artboard needs an index")?,
+                )
+            }
+            "--range" | "-r" => {
+                range = Some(
+                    it.next()
+                        .cloned()
+                        .ok_or("--range needs artboards such as 1-3,5")?,
+                )
+            }
             "--outline-text" => outline_text = true,
-            "--decimals" => decimals = Some(it.next().and_then(|v| v.parse::<u64>().ok()).ok_or("--decimals needs a number")?),
+            "--decimals" => {
+                decimals = Some(
+                    it.next()
+                        .and_then(|v| v.parse::<u64>().ok())
+                        .ok_or("--decimals needs a number")?,
+                )
+            }
             "--replace-lossy" => replace_lossy = true,
             "--editing-data" => editing_data = true,
             f => files.push(f.to_string()),
@@ -240,9 +287,14 @@ fn convert(args: &[String]) -> Result<(), String> {
     let mut h = Headless::new();
     let opened = if editing_data {
         let params = json!({"path": input, "editingData": "always"});
-        h.call("engine.execute", json!({"command": "document.open", "params": params})).map_err(|e| format!("open {input}: {e}"))?
+        h.call(
+            "engine.execute",
+            json!({"command": "document.open", "params": params}),
+        )
+        .map_err(|e| format!("open {input}: {e}"))?
     } else {
-        h.call("app.open", json!({"path": input})).map_err(|e| format!("open {input}: {e}"))?
+        h.call("app.open", json!({"path": input}))
+            .map_err(|e| format!("open {input}: {e}"))?
     };
     // A conversion keeps hidden layers and objects, written hidden, where the format can (SVG,
     // PSD).
@@ -250,10 +302,20 @@ fn convert(args: &[String]) -> Result<(), String> {
     if let Some(decimals) = decimals {
         params["decimals"] = json!(decimals);
     }
-    let mut r = h.call("engine.execute", json!({"command": "document.export", "params": params})).map_err(|e| format!("export {output}: {e}"))?;
+    let mut r = h
+        .call(
+            "engine.execute",
+            json!({"command": "document.export", "params": params}),
+        )
+        .map_err(|e| format!("export {output}: {e}"))?;
     // What reading the input left out (a missing linked file, an unsupported filter…) matters as
     // much as what writing the output did.
-    if let (Some(w), Some(out)) = (opened.get("warnings").filter(|w| w.as_array().is_some_and(|a| !a.is_empty())), r.as_object_mut()) {
+    if let (Some(w), Some(out)) = (
+        opened
+            .get("warnings")
+            .filter(|w| w.as_array().is_some_and(|a| !a.is_empty())),
+        r.as_object_mut(),
+    ) {
         out.insert("importWarnings".into(), w.clone());
     }
     outln!("{r}");
@@ -263,12 +325,22 @@ fn convert(args: &[String]) -> Result<(), String> {
 fn info(args: &[String]) -> Result<(), String> {
     let file = args.first().ok_or("info needs a FILE")?;
     let mut h = Headless::new();
-    let opened = h.call("app.open", json!({"path": file})).map_err(|e| format!("open {file}: {e}"))?;
-    let base = h.call("engine.execute", json!({"command": "file.info", "params": {}}))?;
+    let opened = h
+        .call("app.open", json!({"path": file}))
+        .map_err(|e| format!("open {file}: {e}"))?;
+    let base = h.call(
+        "engine.execute",
+        json!({"command": "file.info", "params": {}}),
+    )?;
     let doc = h.session.doc().map_err(|e| e.to_string())?.doc.clone();
     let mut kinds: std::collections::BTreeMap<&'static str, usize> = Default::default();
     doc.walk(|n| *kinds.entry(n.kind_label()).or_default() += 1);
-    let fonts = h.call("engine.execute", json!({"command": "text.fonts", "params": {}})).unwrap_or(Value::Null);
+    let fonts = h
+        .call(
+            "engine.execute",
+            json!({"command": "text.fonts", "params": {}}),
+        )
+        .unwrap_or(Value::Null);
     let artboards: Vec<Value> =
         doc.artboards.iter().map(|a| json!({"name": a.name, "rect": [a.rect.x0, a.rect.y0, a.rect.width(), a.rect.height()]})).collect();
     // What didn't come in as it was (an EPS read from its preview says why).
@@ -288,13 +360,18 @@ fn run(args: &[String]) -> Result<(), String> {
     let mut scale = 1.0;
     let mut it = args.iter();
     while let Some(a) = it.next() {
-        let mut val = |what: &str| it.next().cloned().ok_or_else(|| format!("{a} needs {what}"));
+        let mut val = |what: &str| {
+            it.next()
+                .cloned()
+                .ok_or_else(|| format!("{a} needs {what}"))
+        };
         match a.as_str() {
             "--in" | "-i" => input = Some(val("a file")?),
             "--cmd" | "-c" => steps.push(Step::Cmd(val("a command id")?, json!({}))),
             "--params" | "-p" => {
                 let raw = val("JSON")?;
-                let p: Value = serde_json::from_str(&raw).map_err(|e| format!("--params {raw}: {e}"))?;
+                let p: Value =
+                    serde_json::from_str(&raw).map_err(|e| format!("--params {raw}: {e}"))?;
                 if !p.is_object() {
                     return Err(format!("--params must be a JSON object, got {raw}"));
                 }
@@ -306,7 +383,9 @@ fn run(args: &[String]) -> Result<(), String> {
             "--export" | "-o" => steps.push(Step::Export(val("a file")?)),
             "--scale" | "-s" => {
                 let raw = val("a number")?;
-                scale = raw.parse::<f64>().map_err(|_| format!("--scale {raw}: not a number"))?;
+                scale = raw
+                    .parse::<f64>()
+                    .map_err(|_| format!("--scale {raw}: not a number"))?;
             }
             other => return Err(format!("unknown run option `{other}`")),
         }
@@ -330,7 +409,9 @@ fn run(args: &[String]) -> Result<(), String> {
         }
     };
     if let Some(path) = &input {
-        let r = h.call("app.open", json!({"path": path})).map_err(|e| format!("open {path}: {e}"))?;
+        let r = h
+            .call("app.open", json!({"path": path}))
+            .map_err(|e| format!("open {path}: {e}"))?;
         emit(json!({"step": "open", "path": path, "result": r}))?;
     } else if !matches!(steps.first(), Some(Step::Cmd(id, _)) if id == "file.new") {
         h.ensure_document();
@@ -340,13 +421,18 @@ fn run(args: &[String]) -> Result<(), String> {
     for step in steps {
         let r = match step {
             Step::Cmd(id, params) => {
-                let params = vectorcraft_engine::steps::resolve(&params, &results).map_err(|e| format!("{id}: {e}"))?;
-                let r = h.call("engine.execute", json!({"command": id, "params": params})).map_err(|e| format!("{id}: {e}"))?;
+                let params = vectorcraft_engine::steps::resolve(&params, &results)
+                    .map_err(|e| format!("{id}: {e}"))?;
+                let r = h
+                    .call("engine.execute", json!({"command": id, "params": params}))
+                    .map_err(|e| format!("{id}: {e}"))?;
                 emit(json!({"step": "cmd", "command": id, "result": r}))?;
                 r
             }
             Step::Export(path) => {
-                let r = h.call("app.export", json!({"path": path, "scale": scale})).map_err(|e| format!("export {path}: {e}"))?;
+                let r = h
+                    .call("app.export", json!({"path": path, "scale": scale}))
+                    .map_err(|e| format!("export {path}: {e}"))?;
                 emit(json!({"step": "export", "result": r}))?;
                 r
             }
@@ -368,22 +454,35 @@ fn bench(args: &[String]) -> Result<(), String> {
                 w = a.parse().map_err(|_| "bad width")?;
                 h = b.parse().map_err(|_| "bad height")?;
             }
-            "--iters" => iters = it.next().and_then(|v| v.parse().ok()).ok_or("--iters needs a number")?,
+            "--iters" => {
+                iters = it
+                    .next()
+                    .and_then(|v| v.parse().ok())
+                    .ok_or("--iters needs a number")?
+            }
             f if file.is_none() => file = Some(f.to_string()),
             other => return Err(format!("unknown bench option `{other}`")),
         }
     }
     let file = file.ok_or("bench needs a FILE")?;
     let mut hl = Headless::new();
-    hl.call("app.open", json!({ "path": file })).map_err(|e| format!("open {file}: {e}"))?;
+    hl.call("app.open", json!({ "path": file }))
+        .map_err(|e| format!("open {file}: {e}"))?;
     let doc = hl.session.doc().map_err(|e| e.to_string())?.doc.clone();
-    let b = doc.artboards.first().map(|a| a.rect).ok_or("document has no artboard")?;
+    let b = doc
+        .artboards
+        .first()
+        .map(|a| a.rect)
+        .ok_or("document has no artboard")?;
     let z = (w as f64 / b.width()).min(h as f64 / b.height()) * 0.95;
     let view = vectorcraft_geom::Affine::translate((w as f64 / 2.0, h as f64 / 2.0))
         * vectorcraft_geom::Affine::scale(z)
         * vectorcraft_geom::Affine::translate(-b.center().to_vec2());
     let opts = vectorcraft_render::RenderOptions::default();
-    outln!("{file}: {} nodes, {w}x{h}", doc.layers.iter().map(|l| l.count()).sum::<usize>());
+    outln!(
+        "{file}: {} nodes, {w}x{h}",
+        doc.layers.iter().map(|l| l.count()).sum::<usize>()
+    );
     for threads in [vectorcraft_render::default_threads(), 0] {
         let mut r = vectorcraft_render::Renderer::new();
         r.threads = threads;

@@ -15,13 +15,27 @@ fn tmp(test: &str, name: &str) -> PathBuf {
 /// A one-page PDF with some text, as `--out` would be given it.
 fn fixture(test: &str) -> PathBuf {
     let pdf = tmp(test, "in.pdf");
-    let bytes = pdfcraft_engine::Session::new().create_from_text("Render test", "Hello from PdfCraft").unwrap();
+    let bytes = pdfcraft_engine::Session::new()
+        .create_from_text("Render test", "Hello from PdfCraft")
+        .unwrap();
     std::fs::write(&pdf, bytes.as_slice()).unwrap();
     pdf
 }
 
 fn render(pdf: &std::path::Path, out: &std::path::Path) -> Output {
-    Command::new(BIN).args(["render", pdf.to_str().unwrap(), "--page", "1", "--dpi", "36", "--out", out.to_str().unwrap()]).output().unwrap()
+    Command::new(BIN)
+        .args([
+            "render",
+            pdf.to_str().unwrap(),
+            "--page",
+            "1",
+            "--dpi",
+            "36",
+            "--out",
+            out.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap()
 }
 
 fn be32(b: &[u8]) -> u32 {
@@ -35,7 +49,12 @@ fn a_png_name_gets_a_png() {
     let r = render(&pdf, &out);
     assert!(r.status.success(), "{}", String::from_utf8_lossy(&r.stderr));
     let bytes = std::fs::read(&out).unwrap();
-    assert_eq!(&bytes[..8], b"\x89PNG\r\n\x1a\n", "not a PNG: {:?}", &bytes[..bytes.len().min(16)]);
+    assert_eq!(
+        &bytes[..8],
+        b"\x89PNG\r\n\x1a\n",
+        "not a PNG: {:?}",
+        &bytes[..bytes.len().min(16)]
+    );
     // IHDR: the page is 612×792 pt, rendered at 36 dpi
     assert_eq!(&bytes[12..16], b"IHDR");
     assert_eq!((be32(&bytes[16..20]), be32(&bytes[20..24])), (306, 396));
@@ -53,7 +72,11 @@ fn jpeg_and_tiff_names_get_those_formats() {
     let tif = tmp("jpg", "p1.tif");
     assert!(render(&pdf, &tif).status.success());
     let bytes = std::fs::read(&tif).unwrap();
-    assert!(bytes.starts_with(b"II*\0") || bytes.starts_with(b"MM\0*"), "not a TIFF: {:?}", &bytes[..4]);
+    assert!(
+        bytes.starts_with(b"II*\0") || bytes.starts_with(b"MM\0*"),
+        "not a TIFF: {:?}",
+        &bytes[..4]
+    );
 }
 
 #[test]
@@ -63,7 +86,11 @@ fn a_pam_name_still_gets_the_netpbm_stream() {
     assert!(render(&pdf, &out).status.success());
     let bytes = std::fs::read(&out).unwrap();
     let header = b"P7\nWIDTH 306\nHEIGHT 396\nDEPTH 4\nMAXVAL 255\nTUPLTYPE RGB_ALPHA\nENDHDR\n";
-    assert!(bytes.starts_with(header), "{:?}", String::from_utf8_lossy(&bytes[..bytes.len().min(80)]));
+    assert!(
+        bytes.starts_with(header),
+        "{:?}",
+        String::from_utf8_lossy(&bytes[..bytes.len().min(80)])
+    );
     assert_eq!(bytes.len(), header.len() + 306 * 396 * 4);
 }
 

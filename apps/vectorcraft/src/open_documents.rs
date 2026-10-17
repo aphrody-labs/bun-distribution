@@ -57,7 +57,9 @@ pub fn take() -> Vec<String> {
 
 /// `application:openURLs:` on the application delegate's class.
 fn add_open_urls_method() {
-    let Some(mtm) = MainThreadMarker::new() else { return };
+    let Some(mtm) = MainThreadMarker::new() else {
+        return;
+    };
     let Some(delegate) = NSApplication::sharedApplication(mtm).delegate() else {
         log::warn!("no application delegate; files opened from Finder won't open");
         return;
@@ -68,8 +70,16 @@ fn add_open_urls_method() {
     // it with the arguments the type encoding declares, which match `open_urls`: no return value
     // (`v`), the receiver (`@`), the selector (`:`), the application (`@`) and the URL array (`@`).
     let added = unsafe {
-        let imp = std::mem::transmute::<extern "C-unwind" fn(&AnyObject, Sel, &AnyObject, &NSArray<NSURL>), Imp>(handler);
-        objc2::ffi::class_addMethod(std::ptr::from_ref(class).cast_mut(), sel!(application:openURLs:), imp, c"v@:@@".as_ptr())
+        let imp = std::mem::transmute::<
+            extern "C-unwind" fn(&AnyObject, Sel, &AnyObject, &NSArray<NSURL>),
+            Imp,
+        >(handler);
+        objc2::ffi::class_addMethod(
+            std::ptr::from_ref(class).cast_mut(),
+            sel!(application:openURLs:),
+            imp,
+            c"v@:@@".as_ptr(),
+        )
     };
     if !added.as_bool() {
         log::warn!("the application delegate already handles open-document events");
@@ -77,10 +87,22 @@ fn add_open_urls_method() {
 }
 
 /// Queue the files among `urls` and wake the UI. Never panics: it runs inside AppKit.
-extern "C-unwind" fn open_urls(_delegate: &AnyObject, _cmd: Sel, _app: &AnyObject, urls: &NSArray<NSURL>) {
+extern "C-unwind" fn open_urls(
+    _delegate: &AnyObject,
+    _cmd: Sel,
+    _app: &AnyObject,
+    urls: &NSArray<NSURL>,
+) {
     // Only file URLs: macOS 27 turns an https URL's path into a file path too (#433).
-    let paths = urls.iter().filter(|u| u.isFileURL()).filter_map(|u| u.to_file_path()).map(|p| p.to_string_lossy().into_owned());
-    PENDING.lock().unwrap_or_else(PoisonError::into_inner).extend(paths);
+    let paths = urls
+        .iter()
+        .filter(|u| u.isFileURL())
+        .filter_map(|u| u.to_file_path())
+        .map(|p| p.to_string_lossy().into_owned());
+    PENDING
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .extend(paths);
     if let Some(ctx) = UI.get() {
         ctx.request_repaint();
     }
@@ -97,7 +119,11 @@ mod tests {
     #[test]
     fn opened_files_wait_for_the_ui() {
         let web = NSURL::URLWithString(&NSString::from_str("https://example.com/a.svg")).unwrap();
-        let urls = NSArray::from_retained_slice(&[NSURL::from_file_path("/tmp/a b.pdf").unwrap(), web, NSURL::from_file_path("/tmp/c.ai").unwrap()]);
+        let urls = NSArray::from_retained_slice(&[
+            NSURL::from_file_path("/tmp/a b.pdf").unwrap(),
+            web,
+            NSURL::from_file_path("/tmp/c.ai").unwrap(),
+        ]);
         let any = NSObject::new();
         open_urls(&any, sel!(application:openURLs:), &any, &urls);
         assert_eq!(take(), ["/tmp/a b.pdf", "/tmp/c.ai"]);

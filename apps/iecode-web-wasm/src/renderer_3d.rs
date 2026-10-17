@@ -2,10 +2,10 @@
 
 use aphrody_dust_core::{
     gpu::{
-        SCREEN_HEIGHT, Scanline,
         engine_3d::{
             Polygon, RendererTx, RenderingState as CoreRenderingState, ScreenVertex, SoftRendererRx,
         },
+        Scanline, SCREEN_HEIGHT,
     },
     utils::mem_prelude::*,
 };
@@ -14,8 +14,8 @@ use std::{
     cell::UnsafeCell,
     hint,
     sync::{
-        OnceLock,
         atomic::{AtomicBool, AtomicU8, Ordering},
+        OnceLock,
     },
 };
 use wasm_bindgen::prelude::*;
@@ -76,7 +76,9 @@ impl RendererTx for Tx {
     ) {
         unsafe { &mut *shared_data!().rendering_data.get() }.copy_vram(texture, tex_pal, state);
 
-        shared_data!().processing_scanline.store(u8::MAX, Ordering::Release);
+        shared_data!()
+            .processing_scanline
+            .store(u8::MAX, Ordering::Release);
     }
 
     fn skip_rendering(&mut self) {}

@@ -64,7 +64,9 @@ impl WireJob {
     /// `view`: the slot name, for jobs that keep a stage cache.
     pub fn from_job(job: &RenderJob, thumb_cached: bool, view: &str) -> WireJob {
         let max_edge = match &job.source {
-            SourceRef::Demo { max_edge, .. } | SourceRef::File { max_edge, .. } | SourceRef::Fit { max_edge, .. } => *max_edge,
+            SourceRef::Demo { max_edge, .. }
+            | SourceRef::File { max_edge, .. }
+            | SourceRef::Fit { max_edge, .. } => *max_edge,
             SourceRef::Loaded(img) => img.image.width.max(img.image.height),
             SourceRef::Smart { .. } => 2560,
         };
@@ -109,14 +111,23 @@ impl WireJob {
         RenderRequest {
             max_w: self.max_w,
             max_h: self.max_h,
-            quality: if self.draft { Quality::Draft } else { Quality::Full },
+            quality: if self.draft {
+                Quality::Draft
+            } else {
+                Quality::Full
+            },
             apply_crop: self.apply_crop,
-            overlay: lightcraft_engine::pipeline::Overlay::from_parts(self.overlay.0, self.overlay.1),
+            overlay: lightcraft_engine::pipeline::Overlay::from_parts(
+                self.overlay.0,
+                self.overlay.1,
+            ),
             // workers render previews (exports run in-process)
             space: lightcraft_engine::pipeline::OutputSpace::Srgb,
             depth: lightcraft_engine::pipeline::OutputDepth::U8,
             proof: None,
-            window: self.window.map(|[x, y, w, h]| lightcraft_engine::pipeline::PixelWindow { x, y, w, h }),
+            window: self
+                .window
+                .map(|[x, y, w, h]| lightcraft_engine::pipeline::PixelWindow { x, y, w, h }),
             display: None,
         }
     }
@@ -124,8 +135,14 @@ impl WireJob {
     /// Identifies the decoded source this job needs.
     fn source_key(&self) -> String {
         match &self.origin {
-            Source::File { path } => format!("{}:{:?}:{}:{path}", self.cache_generation, self.source_identity, self.max_edge),
-            Source::Demo { scene } => format!("{}:{:?}:{}:demo:{scene}", self.cache_generation, self.source_identity, self.max_edge),
+            Source::File { path } => format!(
+                "{}:{:?}:{}:{path}",
+                self.cache_generation, self.source_identity, self.max_edge
+            ),
+            Source::Demo { scene } => format!(
+                "{}:{:?}:{}:demo:{scene}",
+                self.cache_generation, self.source_identity, self.max_edge
+            ),
         }
     }
 
@@ -151,7 +168,11 @@ pub struct WorkerCore {
 
 impl Default for WorkerCore {
     fn default() -> Self {
-        WorkerCore { sources: Lru::new(WORKER_SOURCE_BYTES), media: MediaCache::default(), stages: HashMap::new() }
+        WorkerCore {
+            sources: Lru::new(WORKER_SOURCE_BYTES),
+            media: MediaCache::default(),
+            stages: HashMap::new(),
+        }
     }
 }
 
@@ -176,11 +197,16 @@ impl WorkerCore {
             None => {
                 let src = match (&job.origin, original) {
                     (Source::File { .. }, Some(bytes)) => {
-                        let (image, info) = lightcraft_engine::files::load_bytes(bytes, job.max_edge)?;
+                        let (image, info) =
+                            lightcraft_engine::files::load_bytes(bytes, job.max_edge)?;
                         DecodedSource::new(Arc::new(image), Some(info))
                     }
-                    (Source::File { path }, None) => return Err(format!("{path}: original not found in browser storage")),
-                    (origin @ Source::Demo { .. }, _) => self.media.origin_ref(origin, job.max_edge).load_source()?,
+                    (Source::File { path }, None) => {
+                        return Err(format!("{path}: original not found in browser storage"));
+                    }
+                    (origin @ Source::Demo { .. }, _) => {
+                        self.media.origin_ref(origin, job.max_edge).load_source()?
+                    }
                 };
                 let cost = src.image.width * src.image.height * 12 + 64;
                 self.sources.insert(key, src.clone(), cost);
@@ -191,12 +217,28 @@ impl WorkerCore {
         let mut rendered = match &job.stages {
             Some(view) => {
                 let st = self.stages.entry(view.clone()).or_default().clone();
-                lightcraft_engine::pipeline::render_cached(&src.image, &info, &job.settings, &job.request(), &st)
+                lightcraft_engine::pipeline::render_cached(
+                    &src.image,
+                    &info,
+                    &job.settings,
+                    &job.request(),
+                    &st,
+                )
             }
-            None => lightcraft_engine::pipeline::render(&src.image, &info, &job.settings, &job.request()),
+            None => lightcraft_engine::pipeline::render(
+                &src.image,
+                &info,
+                &job.settings,
+                &job.request(),
+            ),
         };
         // an HDR edit's histogram shows its HDR range (as on native)
-        if let Some(h) = lightcraft_engine::pipeline::hdr_histogram(&src.image, &info, &job.settings, &job.request()) {
+        if let Some(h) = lightcraft_engine::pipeline::hdr_histogram(
+            &src.image,
+            &info,
+            &job.settings,
+            &job.request(),
+        ) {
             rendered.histogram = h;
         }
         Ok(rendered)
@@ -228,7 +270,12 @@ impl ThumbIndex {
         if self.namespace == 0 {
             return key.to_string();
         }
-        lightcraft_preview::Hasher128::new().str(&key.to_string()).str("cleared").u64(self.namespace).finish().to_string()
+        lightcraft_preview::Hasher128::new()
+            .str(&key.to_string())
+            .str("cleared")
+            .u64(self.namespace)
+            .finish()
+            .to_string()
     }
 
     pub fn invalidate(&mut self) -> Vec<String> {
@@ -300,7 +347,11 @@ impl ThumbIndex {
             return Vec::new();
         }
         let target = budget / 5 * 4;
-        let mut by_age: Vec<(String, u64, u64)> = self.entries.iter().map(|(k, v)| (k.clone(), v.0, v.1)).collect();
+        let mut by_age: Vec<(String, u64, u64)> = self
+            .entries
+            .iter()
+            .map(|(k, v)| (k.clone(), v.0, v.1))
+            .collect();
         by_age.sort_by_key(|e| e.2);
         let mut out = Vec::new();
         for (k, _, _) in by_age {
@@ -334,10 +385,22 @@ impl CacheWatch {
 
     /// `cache` at `generation` is the active one now. If it was cleared or replaced since the
     /// last observation, invalidate `index` and return the keys whose files should be deleted.
-    pub fn observe(&mut self, cache: &Arc<PreviewCache>, generation: u64, index: &mut ThumbIndex) -> Vec<String> {
-        let changed = self.0.as_ref().is_some_and(|(old, g)| old.as_ptr() != Arc::as_ptr(cache) || *g != generation);
+    pub fn observe(
+        &mut self,
+        cache: &Arc<PreviewCache>,
+        generation: u64,
+        index: &mut ThumbIndex,
+    ) -> Vec<String> {
+        let changed = self
+            .0
+            .as_ref()
+            .is_some_and(|(old, g)| old.as_ptr() != Arc::as_ptr(cache) || *g != generation);
         self.0 = Some((Arc::downgrade(cache), generation));
-        if changed { index.invalidate() } else { Vec::new() }
+        if changed {
+            index.invalidate()
+        } else {
+            Vec::new()
+        }
     }
 }
 
@@ -404,7 +467,12 @@ mod tests {
         use lightcraft_engine::pipeline::PixelWindow;
         let mut s = Session::with_demo();
         let id = s.visible_cloned()[0];
-        let win = PixelWindow { x: 300, y: 200, w: 160, h: 120 };
+        let win = PixelWindow {
+            x: 300,
+            y: 200,
+            w: 160,
+            h: 120,
+        };
         let job = s.region_job(id, 1920, 1280, win, true).unwrap();
         let wire = WireJob::from_job(&job, false, "Region");
         let wire: WireJob = serde_json::from_str(&serde_json::to_string(&wire).unwrap()).unwrap();
@@ -416,8 +484,17 @@ mod tests {
         assert_eq!((b.image.width, b.image.height), (160, 120));
         // the worker renders on the CPU; the engine job uses a GPU when the machine has one, which
         // stays within docs/gpu-pipeline.md's bound (≤ 3 LSB per channel) rather than bit-exact
-        let max = a.image.data.iter().zip(&b.image.data).flat_map(|(p, q)| (0..3).map(move |c| p[c].abs_diff(q[c]))).max();
-        assert!(max.is_some_and(|m| m <= 3), "max channel difference {max:?}");
+        let max = a
+            .image
+            .data
+            .iter()
+            .zip(&b.image.data)
+            .flat_map(|(p, q)| (0..3).map(move |c| p[c].abs_diff(q[c])))
+            .max();
+        assert!(
+            max.is_some_and(|m| m <= 3),
+            "max channel difference {max:?}"
+        );
     }
 
     // a job from before windows existed has none
@@ -436,18 +513,30 @@ mod tests {
     fn wire_job_renders_like_the_engine() {
         let mut s = Session::with_demo();
         let id = s.visible_cloned()[0];
-        s.execute("library.select", &serde_json::json!({"ids": [id.0]})).unwrap();
-        s.execute("develop.set", &serde_json::json!({"control": "light.exposure", "value": 0.7})).unwrap();
+        s.execute("library.select", &serde_json::json!({"ids": [id.0]}))
+            .unwrap();
+        s.execute(
+            "develop.set",
+            &serde_json::json!({"control": "light.exposure", "value": 0.7}),
+        )
+        .unwrap();
         let job = s.thumb_job(id, 128).unwrap();
         let wire = WireJob::from_job(&job, false, "Thumb");
         // through JSON, as it crosses the worker boundary
         let wire: WireJob = serde_json::from_str(&serde_json::to_string(&wire).unwrap()).unwrap();
         assert!(wire.thumb.is_some());
         let mut core = WorkerCore::default();
-        assert_eq!(core.needs_original(&wire), None, "demo scenes are generated");
+        assert_eq!(
+            core.needs_original(&wire),
+            None,
+            "demo scenes are generated"
+        );
         let a = core.render(&wire, None).unwrap();
         let b = job.run().rendered.unwrap();
-        assert_eq!((a.image.width, a.image.height), (b.image.width, b.image.height));
+        assert_eq!(
+            (a.image.width, a.image.height),
+            (b.image.width, b.image.height)
+        );
         assert_eq!(a.image.data, b.image.data);
         assert_eq!(a.histogram, b.histogram);
     }
@@ -456,7 +545,9 @@ mod tests {
     fn worker_reads_originals_once() {
         let bytes = crate::store::png_bytes(64, 48);
         let hash = crate::store::content_hash(&bytes);
-        let origin = Source::File { path: crate::store::original_path(&hash, "a.png") };
+        let origin = Source::File {
+            path: crate::store::original_path(&hash, "a.png"),
+        };
         let job = WireJob {
             cache_generation: 0,
             source_identity: None,
@@ -488,10 +579,18 @@ mod tests {
         assert_eq!(core.needs_original(&job), None, "decoded source is kept");
         let mut reloaded = job.clone();
         reloaded.source_identity = Some("changed content".into());
-        assert_eq!(core.needs_original(&reloaded).as_deref(), Some(hash.as_str()), "content reload must not reuse an old decoded source");
+        assert_eq!(
+            core.needs_original(&reloaded).as_deref(),
+            Some(hash.as_str()),
+            "content reload must not reuse an old decoded source"
+        );
         let mut refreshed = job.clone();
         refreshed.cache_generation = 1;
-        assert_eq!(core.needs_original(&refreshed).as_deref(), Some(hash.as_str()), "explicit refresh must not reuse the old decoded source");
+        assert_eq!(
+            core.needs_original(&refreshed).as_deref(),
+            Some(hash.as_str()),
+            "explicit refresh must not reuse the old decoded source"
+        );
     }
 
     /// The persisted index as a restarted page loads it: one stored thumbnail.
@@ -521,9 +620,15 @@ mod tests {
         // the filter is removed: the first thumbnail request (`Workers::try_start`)
         gone.extend(watch.observe(&cache, cache.generation(), &mut index));
         let disk_key = index.cache_key(key);
-        assert!(!index.touch(&disk_key), "the pre-clear thumbnail must not be read back");
+        assert!(
+            !index.touch(&disk_key),
+            "the pre-clear thumbnail must not be read back"
+        );
         assert_eq!(gone, vec![old.clone()], "the stored file is deleted");
-        assert_ne!(disk_key, old, "a fresh namespace: a late old write can't come back");
+        assert_ne!(
+            disk_key, old,
+            "a fresh namespace: a late old write can't come back"
+        );
         assert!(index.dirty, "the invalidated index is saved");
     }
 
@@ -534,7 +639,10 @@ mod tests {
         let first = Arc::new(PreviewCache::memory(1 << 20));
         let mut watch = CacheWatch::new(&first);
         let other = Arc::new(PreviewCache::memory(1 << 20)); // another library, generation 0 again
-        assert_eq!(watch.observe(&other, other.generation(), &mut index), vec![old]);
+        assert_eq!(
+            watch.observe(&other, other.generation(), &mut index),
+            vec![old]
+        );
     }
 
     #[test]
@@ -544,7 +652,11 @@ mod tests {
         let cache = Arc::new(PreviewCache::memory(1 << 20));
         let mut watch = CacheWatch::new(&cache);
         for _ in 0..3 {
-            assert!(watch.observe(&cache, cache.generation(), &mut index).is_empty());
+            assert!(
+                watch
+                    .observe(&cache, cache.generation(), &mut index)
+                    .is_empty()
+            );
         }
         assert_eq!(index.cache_key(key), old);
         assert!(index.touch(&old), "persisted thumbnails survive a restart");

@@ -1,7 +1,14 @@
 //! `figcraft-cli`: FigCraft without a window. Inspect, export, convert and render documents, run
 //! command scripts, list commands, serve MCP on stdio, publish plugins to a server's plugin
 //! directory and measure performance.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod args;
 mod files;
@@ -77,13 +84,19 @@ pub type CliResult<T> = Result<T, CliError>;
 
 fn run(argv: &[String]) -> CliResult<ExitCode> {
     let system_fonts = !argv.iter().any(|a| a == "--no-system-fonts");
-    let argv: Vec<String> = argv.iter().filter(|a| *a != "--no-system-fonts").cloned().collect();
+    let argv: Vec<String> = argv
+        .iter()
+        .filter(|a| *a != "--no-system-fonts")
+        .cloned()
+        .collect();
     if system_fonts {
         // Text lays out with the installed fonts, like the desktop app, so headless renders and
         // auto layout sizes match what users see.
         figcraft_text::scan_system_fonts_on_demand();
     }
-    let Some((cmd, rest)) = argv.split_first() else { return Err(CliError::Usage("missing subcommand".into())) };
+    let Some((cmd, rest)) = argv.split_first() else {
+        return Err(CliError::Usage("missing subcommand".into()));
+    };
     match cmd.as_str() {
         "help" | "--help" | "-h" => {
             println!("{USAGE}");
@@ -99,11 +112,23 @@ fn run(argv: &[String]) -> CliResult<ExitCode> {
             files::info(&file, a.flag("json"))
         }
         "export" => {
-            let a = Args::parse(rest, &["format", "scale", "page", "node", "o", "out", "bleed"], &["crop-marks", "bleed-marks", "cmyk"])?;
+            let a = Args::parse(
+                rest,
+                &["format", "scale", "page", "node", "o", "out", "bleed"],
+                &["crop-marks", "bleed-marks", "cmyk"],
+            )?;
             let file = a.one_positional("export <file> -o <out>")?;
-            let out = a.value("o").or_else(|| a.value("out")).ok_or_else(|| CliError::Usage("export needs -o <out>".into()))?;
-            let target =
-                files::Target { format: a.value("format"), scale: a.scale()?, page: a.value("page"), node: a.value("node"), print: a.print()? };
+            let out = a
+                .value("o")
+                .or_else(|| a.value("out"))
+                .ok_or_else(|| CliError::Usage("export needs -o <out>".into()))?;
+            let target = files::Target {
+                format: a.value("format"),
+                scale: a.scale()?,
+                page: a.value("page"),
+                node: a.value("node"),
+                print: a.print()?,
+            };
             files::export(&file, &out, &target)
         }
         "convert" => {
@@ -116,7 +141,10 @@ fn run(argv: &[String]) -> CliResult<ExitCode> {
         "render" => {
             let a = Args::parse(rest, &["o", "out", "scale", "page"], &[])?;
             let file = a.one_positional("render <file> -o <out.png>")?;
-            let out = a.value("o").or_else(|| a.value("out")).ok_or_else(|| CliError::Usage("render needs -o <out.png>".into()))?;
+            let out = a
+                .value("o")
+                .or_else(|| a.value("out"))
+                .ok_or_else(|| CliError::Usage("render needs -o <out.png>".into()))?;
             files::render(&file, &out, a.scale()?, a.value("page").as_deref())
         }
         "run" => {
@@ -127,7 +155,9 @@ fn run(argv: &[String]) -> CliResult<ExitCode> {
         "commands" => {
             let a = Args::parse(rest, &["filter"], &["json"])?;
             if !a.positional.is_empty() {
-                return Err(CliError::Usage("commands takes no positional arguments".into()));
+                return Err(CliError::Usage(
+                    "commands takes no positional arguments".into(),
+                ));
             }
             commands(a.flag("json"), a.value("filter").as_deref());
             Ok(ExitCode::SUCCESS)
@@ -143,16 +173,29 @@ fn run(argv: &[String]) -> CliResult<ExitCode> {
             let a = Args::parse(rest, &["server"], &[])?;
             match a.positional.as_slice() {
                 [verb, folder] if verb == "publish" => {
-                    let server = a.value("server").ok_or_else(|| CliError::Usage("plugin publish needs --server ws://host:port/".into()))?;
+                    let server = a.value("server").ok_or_else(|| {
+                        CliError::Usage("plugin publish needs --server ws://host:port/".into())
+                    })?;
                     publish_plugin(folder, &server)
                 }
-                _ => Err(CliError::Usage("expected: plugin publish <folder> --server ws://host:port/".into())),
+                _ => Err(CliError::Usage(
+                    "expected: plugin publish <folder> --server ws://host:port/".into(),
+                )),
             }
         }
         "perf" => {
             let a = Args::parse(rest, &["layers", "instances"], &[])?;
-            let sizes: Vec<usize> = a.usizes("layers", &[1000, 10_000])?.into_iter().map(|n| n.clamp(10, 2_000_000)).collect();
-            let instances: Vec<usize> = a.usizes("instances", &[2000])?.into_iter().filter(|n| *n > 0).map(|n| n.min(100_000)).collect();
+            let sizes: Vec<usize> = a
+                .usizes("layers", &[1000, 10_000])?
+                .into_iter()
+                .map(|n| n.clamp(10, 2_000_000))
+                .collect();
+            let instances: Vec<usize> = a
+                .usizes("instances", &[2000])?
+                .into_iter()
+                .filter(|n| *n > 0)
+                .map(|n| n.min(100_000))
+                .collect();
             perf::run(&sizes, &instances, system_fonts)
         }
         other => Err(CliError::Usage(format!("unknown subcommand `{other}`"))),
@@ -163,7 +206,12 @@ fn commands(as_json: bool, filter: Option<&str>) {
     let f = filter.map(str::to_lowercase).unwrap_or_default();
     let list: Vec<&figcraft_engine::CommandSpec> = figcraft_engine::all_commands()
         .iter()
-        .filter(|c| f.is_empty() || c.id.to_lowercase().contains(&f) || c.label.to_lowercase().contains(&f) || c.params.to_lowercase().contains(&f))
+        .filter(|c| {
+            f.is_empty()
+                || c.id.to_lowercase().contains(&f)
+                || c.label.to_lowercase().contains(&f)
+                || c.params.to_lowercase().contains(&f)
+        })
         .collect();
     let stdout = std::io::stdout();
     let mut out = stdout.lock();
@@ -172,7 +220,11 @@ fn commands(as_json: bool, filter: Option<&str>) {
             .iter()
             .map(|c| json!({"id": c.id, "label": c.label, "params": c.params, "menu": c.menu(), "shortcut": c.shortcut(), "undoable": c.history}))
             .collect();
-        let _ = writeln!(out, "{}", serde_json::to_string_pretty(&v).unwrap_or_default());
+        let _ = writeln!(
+            out,
+            "{}",
+            serde_json::to_string_pretty(&v).unwrap_or_default()
+        );
         return;
     }
     for c in list {
@@ -187,7 +239,9 @@ fn commands(as_json: bool, filter: Option<&str>) {
 fn publish_plugin(folder: &str, server: &str) -> CliResult<ExitCode> {
     let address = server.split('?').next().unwrap_or_default().to_string();
     let server = match std::env::var("FIGCRAFT_SERVER_KEY") {
-        Ok(key) if !server.contains("key=") && !key.trim().is_empty() => format!("{address}?key={}", key.trim()),
+        Ok(key) if !server.contains("key=") && !key.trim().is_empty() => {
+            format!("{address}?key={}", key.trim())
+        }
         _ => server.to_string(),
     };
     let mut h = figcraft_mcp::Headless::new();
@@ -211,7 +265,12 @@ fn mcp(attach: Option<&str>) -> CliResult<ExitCode> {
             let addr = if p.contains(':') {
                 p.to_string()
             } else {
-                format!("127.0.0.1:{}", p.parse::<u16>().map_err(|_| CliError::Usage(format!("--attach needs a port number, got `{p}`")))?)
+                format!(
+                    "127.0.0.1:{}",
+                    p.parse::<u16>().map_err(|_| CliError::Usage(format!(
+                        "--attach needs a port number, got `{p}`"
+                    )))?
+                )
             };
             let b = figcraft_mcp::Attached::connect(&addr)
                 .map_err(|e| format!("can't reach the FigCraft app at {addr}: {e} (start it with `figcraft --control PORT`)"))?;
@@ -223,6 +282,8 @@ fn mcp(attach: Option<&str>) -> CliResult<ExitCode> {
     let mut server = figcraft_mcp::Server::new(backend);
     let stdin = std::io::stdin();
     let stdout = std::io::stdout();
-    server.serve(stdin.lock(), stdout.lock()).map_err(|e| format!("stdio: {e}"))?;
+    server
+        .serve(stdin.lock(), stdout.lock())
+        .map_err(|e| format!("stdio: {e}"))?;
     Ok(ExitCode::SUCCESS)
 }

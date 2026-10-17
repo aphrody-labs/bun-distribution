@@ -2,7 +2,17 @@
 //!
 //! Run `filmcraft-cli help` for the full reference (also in docs/agents.md).
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 /// `println!` that doesn't panic when stdout is closed (`filmcraft-cli commands | head`) with
 /// "failed printing to stdout: Broken pipe (os error 32)". Once stdout has failed, later output is
@@ -131,7 +141,9 @@ fn diag(msg: std::fmt::Arguments) {
 }
 
 fn usage(msg: impl std::fmt::Display) -> ! {
-    diag(format_args!("filmcraft-cli: {msg}\nRun `filmcraft-cli help` for usage."));
+    diag(format_args!(
+        "filmcraft-cli: {msg}\nRun `filmcraft-cli help` for usage."
+    ));
     std::process::exit(2)
 }
 
@@ -150,13 +162,19 @@ impl Backend {
     fn open(a: &Args) -> Self {
         if let Some(addr) = a.opt("--bridge") {
             if a.opt("--project").is_some() || a.flag("--demo") {
-                usage("--bridge drives the running app; open projects there (exec file.open path=…)");
+                usage(
+                    "--bridge drives the running app; open projects there (exec file.open path=…)",
+                );
             }
             return Backend::Bridge(BridgeClient::new(addr).unwrap_or_else(|e| usage(e)));
         }
         let mut s = Session::default();
         // user export presets (and other per-user libraries) from the data directory
-        if let Some(dir) = a.opt("--data-dir").map(std::path::PathBuf::from).or_else(filmcraft_engine::autosave::default_data_dir) {
+        if let Some(dir) = a
+            .opt("--data-dir")
+            .map(std::path::PathBuf::from)
+            .or_else(filmcraft_engine::autosave::default_data_dir)
+        {
             s.export_presets.set_dir(&dir);
         }
         if let Some(p) = a.opt("--project") {
@@ -196,7 +214,11 @@ impl Backend {
 }
 
 fn print(a: &Args, v: &Value) {
-    let s = if a.flag("--compact") { serde_json::to_string(v) } else { serde_json::to_string_pretty(v) };
+    let s = if a.flag("--compact") {
+        serde_json::to_string(v)
+    } else {
+        serde_json::to_string_pretty(v)
+    };
     outln!("{}", s.unwrap_or_default());
 }
 
@@ -240,7 +262,8 @@ impl filmcraft_export::FrameRenderer for GpuFrameRenderer {
 
 fn register_gpu_frame_renderer() {
     filmcraft_export::register_frame_renderer(|| {
-        filmcraft_gpu::ExportRenderer::new().map(|r| Box::new(GpuFrameRenderer(r)) as Box<dyn filmcraft_export::FrameRenderer>)
+        filmcraft_gpu::ExportRenderer::new()
+            .map(|r| Box::new(GpuFrameRenderer(r)) as Box<dyn filmcraft_export::FrameRenderer>)
     });
 }
 
@@ -252,7 +275,10 @@ fn register_hardware_decoders() -> filmcraft_platform::Availability {
 /// `canonicalize`, `std::path::absolute` keeps symlinks and adds no Windows verbatim `\\?\`
 /// prefix (#850). A path it cannot resolve is kept as given.
 fn absolute(path: &str) -> String {
-    std::path::absolute(path).ok().and_then(|p| p.into_os_string().into_string().ok()).unwrap_or_else(|| path.to_string())
+    std::path::absolute(path)
+        .ok()
+        .and_then(|p| p.into_os_string().into_string().ok())
+        .unwrap_or_else(|| path.to_string())
 }
 
 #[tokio::main]
@@ -265,7 +291,11 @@ async fn main() {
 
 async fn cli() {
     // `std::env::args` panics on an argument that is not Unicode (a Linux file name in Latin-1)
-    let a = Args::parse(std::env::args_os().skip(1).map(|a| a.to_string_lossy().into_owned()));
+    let a = Args::parse(
+        std::env::args_os()
+            .skip(1)
+            .map(|a| a.to_string_lossy().into_owned()),
+    );
     // `--help` anywhere (`filmcraft-cli --help`, `filmcraft-cli export --help`) prints the reference:
     // the parser takes it as a flag option, so it never reaches the subcommand match.
     if a.flag("--help") {
@@ -279,12 +309,16 @@ async fn cli() {
     }
     register_hardware_decoders();
     register_gpu_frame_renderer();
-    let Some(cmd) = a.pos(0) else { usage("missing subcommand") };
+    let Some(cmd) = a.pos(0) else {
+        usage("missing subcommand")
+    };
     match cmd {
         "help" | "-h" => out!("{HELP}"),
         "version" => outln!("filmcraft-cli {}", env!("CARGO_PKG_VERSION")),
         "probe" => {
-            let path = a.pos(1).unwrap_or_else(|| usage("probe <media> [--image-sequence]"));
+            let path = a
+                .pos(1)
+                .unwrap_or_else(|| usage("probe <media> [--image-sequence]"));
             match probe::probe(path, a.flag("--image-sequence")) {
                 Ok(v) => print(&a, &v),
                 Err(e) => fail(e),
@@ -292,29 +326,50 @@ async fn cli() {
         }
         "bench-decode" => {
             let path = a.pos(1).unwrap_or_else(|| usage("bench-decode <media>"));
-            let n: i64 = a.opt("--frames").and_then(|v| v.parse().ok()).unwrap_or(120);
-            let src = filmcraft_codecs::open_bytes(path, std::fs::read(path).unwrap_or_else(|e| fail(e)).into()).unwrap_or_else(|e| fail(e));
+            let n: i64 = a
+                .opt("--frames")
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(120);
+            let src = filmcraft_codecs::open_bytes(
+                path,
+                std::fs::read(path).unwrap_or_else(|e| fail(e)).into(),
+            )
+            .unwrap_or_else(|e| fail(e));
             let rate = src.info().frame_rate();
             let t0 = std::time::Instant::now();
             for f in 0..n {
-                src.video_frame(filmcraft_media::FrameRequest::full(rate.tick_of(f))).unwrap_or_else(|e| fail(e));
+                src.video_frame(filmcraft_media::FrameRequest::full(rate.tick_of(f)))
+                    .unwrap_or_else(|e| fail(e));
             }
             let dt = t0.elapsed().as_secs_f64();
-            outln!("{n} frames in {dt:.2}s → {:.1} fps (sequential, via Mp4Source)", n as f64 / dt);
+            outln!(
+                "{n} frames in {dt:.2}s → {:.1} fps (sequential, via Mp4Source)",
+                n as f64 / dt
+            );
             let t1 = std::time::Instant::now();
-            let f = src.video_frame(filmcraft_media::FrameRequest::full(rate.tick_of(n / 2))).unwrap_or_else(|e| fail(e));
+            let f = src
+                .video_frame(filmcraft_media::FrameRequest::full(rate.tick_of(n / 2)))
+                .unwrap_or_else(|e| fail(e));
             let (w, h, _) = f.to_linear_f32_decimated(2);
-            outln!("½-res linear conversion {w}x{h}: {:.1} ms", t1.elapsed().as_secs_f64() * 1000.0);
+            outln!(
+                "½-res linear conversion {w}x{h}: {:.1} ms",
+                t1.elapsed().as_secs_f64() * 1000.0
+            );
         }
         "commands" | "describe" => {
             let mut b = Backend::open(&a);
-            let list = b.exec("command.list", json!({})).await.unwrap_or_else(|e| fail(e));
+            let list = b
+                .exec("command.list", json!({}))
+                .await
+                .unwrap_or_else(|e| fail(e));
             let list = list.as_array().cloned().unwrap_or_default();
             if cmd == "describe" {
                 let id = a.pos(1).unwrap_or_else(|| usage("describe <id>"));
                 match list.iter().find(|c| c["id"] == id) {
                     Some(c) => print(&a, c),
-                    None => fail(format!("unknown command `{id}` (try `filmcraft-cli commands {id}`)")),
+                    None => fail(format!(
+                        "unknown command `{id}` (try `filmcraft-cli commands {id}`)"
+                    )),
                 }
                 return;
             }
@@ -330,12 +385,20 @@ async fn cli() {
             } else {
                 for c in &list {
                     let s = |k: &str| c[k].as_str().unwrap_or("").to_string();
-                    outln!("{:<32} {:<34} {:<14} {}", s("id"), s("label"), s("shortcut"), s("params"));
+                    outln!(
+                        "{:<32} {:<34} {:<14} {}",
+                        s("id"),
+                        s("label"),
+                        s("shortcut"),
+                        s("params")
+                    );
                 }
             }
         }
         "exec" => {
-            let id = a.pos(1).unwrap_or_else(|| usage("exec <id> [key=value ...]"));
+            let id = a
+                .pos(1)
+                .unwrap_or_else(|| usage("exec <id> [key=value ...]"));
             let params = a.params_from(2).unwrap_or_else(|e| usage(e));
             let mut b = Backend::open(&a);
             match b.exec(id, params).await {
@@ -353,13 +416,29 @@ async fn cli() {
             };
             let mut b = Backend::open(&a);
             let mut failed = 0;
-            for (n, line) in text.lines().enumerate().filter(|(_, l)| !l.trim().is_empty() && !l.trim_start().starts_with('#')) {
-                let v: Value = serde_json::from_str(line).unwrap_or_else(|e| usage(format!("line {}: {e}", n + 1)));
-                let id = v["id"].as_str().unwrap_or_else(|| usage(format!("line {}: missing \"id\"", n + 1)));
-                match b.exec(id, v.get("params").cloned().unwrap_or(json!({}))).await {
-                    Ok(r) => outln!("{}", json!({"line": n + 1, "id": id, "ok": true, "result": r})),
+            for (n, line) in text
+                .lines()
+                .enumerate()
+                .filter(|(_, l)| !l.trim().is_empty() && !l.trim_start().starts_with('#'))
+            {
+                let v: Value = serde_json::from_str(line)
+                    .unwrap_or_else(|e| usage(format!("line {}: {e}", n + 1)));
+                let id = v["id"]
+                    .as_str()
+                    .unwrap_or_else(|| usage(format!("line {}: missing \"id\"", n + 1)));
+                match b
+                    .exec(id, v.get("params").cloned().unwrap_or(json!({})))
+                    .await
+                {
+                    Ok(r) => outln!(
+                        "{}",
+                        json!({"line": n + 1, "id": id, "ok": true, "result": r})
+                    ),
                     Err(e) => {
-                        outln!("{}", json!({"line": n + 1, "id": id, "ok": false, "error": e}));
+                        outln!(
+                            "{}",
+                            json!({"line": n + 1, "id": id, "ok": false, "error": e})
+                        );
                         failed += 1;
                         if !a.flag("--keep-going") {
                             std::process::exit(1);
@@ -379,13 +458,21 @@ async fn cli() {
             let v = match what {
                 "project" => get("project.inspect").await,
                 "sequence" => get("sequence.inspect").await,
-                "all" => json!({"project": get("project.inspect").await, "sequence": get("sequence.inspect").await}),
+                "all" => {
+                    json!({"project": get("project.inspect").await, "sequence": get("sequence.inspect").await})
+                }
                 other => usage(format!("inspect: unknown `{other}` (project | sequence)")),
             };
             print(&a, &v);
         }
         "import" => {
-            let paths: Vec<String> = a.positionals.get(1..).unwrap_or_default().iter().map(|p| absolute(p)).collect();
+            let paths: Vec<String> = a
+                .positionals
+                .get(1..)
+                .unwrap_or_default()
+                .iter()
+                .map(|p| absolute(p))
+                .collect();
             if paths.is_empty() {
                 usage("import <file>...");
             }
@@ -406,7 +493,9 @@ async fn cli() {
                 }
                 return;
             }
-            let out = a.pos(1).unwrap_or_else(|| usage("export <out> [--preset name | --format f]"));
+            let out = a
+                .pos(1)
+                .unwrap_or_else(|| usage("export <out> [--preset name | --format f]"));
             let mut p = json!({"path": out, "wait": true});
             match (a.opt("--preset"), a.opt("--format")) {
                 (Some(preset), f) => {
@@ -416,7 +505,9 @@ async fn cli() {
                     }
                 }
                 (None, f) => {
-                    let format = f.or_else(|| format_for(out)).unwrap_or_else(|| usage("export: give --preset or --format (unknown extension)"));
+                    let format = f.or_else(|| format_for(out)).unwrap_or_else(|| {
+                        usage("export: give --preset or --format (unknown extension)")
+                    });
                     p["format"] = json!(format);
                 }
             }
@@ -430,7 +521,8 @@ async fn cli() {
             }
             set_custom_bounds(&mut p, a.opt("--start"), a.opt("--end"));
             if let Some(js) = a.opt("--settings") {
-                p["settings"] = serde_json::from_str(js).unwrap_or_else(|e| usage(format!("--settings: {e}")));
+                p["settings"] =
+                    serde_json::from_str(js).unwrap_or_else(|e| usage(format!("--settings: {e}")));
             }
             if a.flag("--no-audio") {
                 p["audio"] = json!(false);
@@ -444,8 +536,18 @@ async fn cli() {
                 let mut q = p.clone();
                 q["start"] = json!(true);
                 b.exec("export.queue.add", q).await.and_then(|v| {
-                    let failed: Vec<&Value> = v["items"].as_array().map(|i| i.iter().filter(|x| x["status"] != "done").collect()).unwrap_or_default();
-                    if failed.is_empty() { Ok(v) } else { Err(format!("queue: {}", Value::Array(failed.into_iter().cloned().collect()))) }
+                    let failed: Vec<&Value> = v["items"]
+                        .as_array()
+                        .map(|i| i.iter().filter(|x| x["status"] != "done").collect())
+                        .unwrap_or_default();
+                    if failed.is_empty() {
+                        Ok(v)
+                    } else {
+                        Err(format!(
+                            "queue: {}",
+                            Value::Array(failed.into_iter().cloned().collect())
+                        ))
+                    }
                 })
             } else {
                 b.exec("file.exportMedia", p).await
@@ -455,35 +557,61 @@ async fn cli() {
                     print(&a, &v);
                     let written = written_paths(&v, out).join(", ");
                     check_offline(&a, &offline_media(&v), &format!("export: {written}"));
-                    diag(format_args!("exported {written} in {:.1}s", t0.elapsed().as_secs_f64()));
+                    diag(format_args!(
+                        "exported {written} in {:.1}s",
+                        t0.elapsed().as_secs_f64()
+                    ));
                 }
                 Err(e) => fail(format!("export: {e}")),
             }
         }
         "render" => {
             if a.opt("--bridge").is_some() {
-                usage("render is headless; with --bridge use the MCP `render_frame` tool or `exec` ui commands");
+                usage(
+                    "render is headless; with --bridge use the MCP `render_frame` tool or `exec` ui commands",
+                );
             }
-            let Backend::Local(mut s) = Backend::open(&a) else { usage("render is headless") };
-            let secs: f64 = a.opt("--seconds").and_then(|v| v.parse().ok()).unwrap_or(0.0);
+            let Backend::Local(mut s) = Backend::open(&a) else {
+                usage("render is headless")
+            };
+            let secs: f64 = a
+                .opt("--seconds")
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0.0);
             let scale: f32 = a.opt("--scale").and_then(|v| v.parse().ok()).unwrap_or(1.0);
             let out = a.opt("--out").unwrap_or("frame.png");
             s.set_playhead(filmcraft_time::Tick::from_seconds_f64(secs));
             let t0 = std::time::Instant::now();
             let (img, offline) = render_at_playhead(&s, scale).unwrap_or_else(|e| fail(e));
             let dt = t0.elapsed();
-            let png = filmcraft_automation::png_rgba(img.w as u32, img.h as u32, img.over_black_rgba8(), 0).unwrap_or_else(|e| fail(e));
+            let png = filmcraft_automation::png_rgba(
+                img.w as u32,
+                img.h as u32,
+                img.over_black_rgba8(),
+                0,
+            )
+            .unwrap_or_else(|e| fail(e));
             std::fs::write(out, png).unwrap_or_else(|e| fail(format!("{out}: {e}")));
-            let offline: Vec<Value> = offline.iter().filter_map(|o| serde_json::to_value(o).ok()).collect();
+            let offline: Vec<Value> = offline
+                .iter()
+                .filter_map(|o| serde_json::to_value(o).ok())
+                .collect();
             check_offline(&a, &offline, &format!("render: {out}"));
-            diag(format_args!("rendered {}x{} in {:.1} ms → {out}", img.w, img.h, dt.as_secs_f64() * 1000.0));
+            diag(format_args!(
+                "rendered {}x{} in {:.1} ms → {out}",
+                img.w,
+                img.h,
+                dt.as_secs_f64() * 1000.0
+            ));
         }
         "mcp" => {
             if let Some(opt) = a.unknown_opt(&["--bridge", "--project", "--demo", "--data-dir"]) {
                 usage(format!("unknown mcp option `{opt}`"));
             }
             let server = match a.opt("--bridge") {
-                Some(addr) => filmcraft_automation::FilmcraftMcp::bridge(addr).unwrap_or_else(|e| usage(e)),
+                Some(addr) => {
+                    filmcraft_automation::FilmcraftMcp::bridge(addr).unwrap_or_else(|e| usage(e))
+                }
                 None => match Backend::open(&a) {
                     Backend::Local(s) => filmcraft_automation::FilmcraftMcp::headless(*s),
                     Backend::Bridge(_) => usage("mcp: use --bridge ADDR to drive a running app"),
@@ -512,15 +640,28 @@ fn written_paths(result: &Value, requested: &str) -> Vec<String> {
             .map(str::to_string)
             .collect(),
     };
-    if paths.is_empty() { vec![requested.to_string()] } else { paths }
+    if paths.is_empty() {
+        vec![requested.to_string()]
+    } else {
+        paths
+    }
 }
 
 /// The offline items an export result reports (`offlineMedia` of a direct export, or of each
 /// queued item), once each.
 fn offline_media(result: &Value) -> Vec<Value> {
-    let lists = std::iter::once(result).chain(result.get("items").and_then(Value::as_array).into_iter().flatten());
+    let lists = std::iter::once(result).chain(
+        result
+            .get("items")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten(),
+    );
     let mut out: Vec<Value> = Vec::new();
-    for o in lists.filter_map(|r| r.get("offlineMedia").and_then(Value::as_array)).flatten() {
+    for o in lists
+        .filter_map(|r| r.get("offlineMedia").and_then(Value::as_array))
+        .flatten()
+    {
         if !out.iter().any(|x| x.get("item") == o.get("item")) {
             out.push(o.clone());
         }
@@ -531,10 +672,22 @@ fn offline_media(result: &Value) -> Vec<Value> {
 /// One stderr line per offline item that rendered as placeholder frames (#1054).
 fn offline_warning(offline: &[Value]) -> String {
     let s = |o: &Value, k: &str| o.get(k).and_then(Value::as_str).unwrap_or("").to_string();
-    let mut msg = format!("filmcraft-cli: warning: {} offline media item(s) rendered as placeholder frames:", offline.len());
+    let mut msg = format!(
+        "filmcraft-cli: warning: {} offline media item(s) rendered as placeholder frames:",
+        offline.len()
+    );
     for o in offline {
-        let id = o.get("item").and_then(Value::as_u64).map(|i| i.to_string()).unwrap_or_default();
-        msg.push_str(&format!("\n  item {id} {} ({}): {}", s(o, "name"), s(o, "status"), s(o, "path")));
+        let id = o
+            .get("item")
+            .and_then(Value::as_u64)
+            .map(|i| i.to_string())
+            .unwrap_or_default();
+        msg.push_str(&format!(
+            "\n  item {id} {} ({}): {}",
+            s(o, "name"),
+            s(o, "status"),
+            s(o, "path")
+        ));
     }
     msg
 }
@@ -547,14 +700,26 @@ fn check_offline(a: &Args, offline: &[Value], what: &str) {
     }
     diag(format_args!("{}", offline_warning(offline)));
     if !a.flag("--allow-offline") {
-        fail(format!("{what} has placeholder frames for offline media; relink it (exec media.relink …) or pass --allow-offline"));
+        fail(format!(
+            "{what} has placeholder frames for offline media; relink it (exec media.relink …) or pass --allow-offline"
+        ));
     }
 }
 
 /// The active sequence at the playhead with the offline items it drew, or the reason it cannot be
 /// rendered (no sequence, bad scale).
-fn render_at_playhead(s: &Session, scale: f32) -> Result<(filmcraft_engine::render::Image, Vec<filmcraft_engine::media_pool::OfflineMedia>), String> {
-    s.try_render_program_with_offline_at(scale, s.playhead()).map_err(|e| e.to_string())
+fn render_at_playhead(
+    s: &Session,
+    scale: f32,
+) -> Result<
+    (
+        filmcraft_engine::render::Image,
+        Vec<filmcraft_engine::media_pool::OfflineMedia>,
+    ),
+    String,
+> {
+    s.try_render_program_with_offline_at(scale, s.playhead())
+        .map_err(|e| e.to_string())
 }
 
 /// `--start` / `--end` ask for a custom range. A lone bound is forwarded too, so the engine reports the missing one
@@ -577,8 +742,16 @@ mod format_tests {
     #[test]
     fn render_reports_the_real_reason() {
         let mut s = filmcraft_engine::Session::default();
-        assert!(super::render_at_playhead(&s, 0.5).unwrap_err().contains("sequence"));
-        s.execute("file.newSequence", serde_json::json!({"width": 16, "height": 16})).unwrap();
+        assert!(
+            super::render_at_playhead(&s, 0.5)
+                .unwrap_err()
+                .contains("sequence")
+        );
+        s.execute(
+            "file.newSequence",
+            serde_json::json!({"width": 16, "height": 16}),
+        )
+        .unwrap();
         for scale in [0.0, -1.0, f32::NAN] {
             let e = super::render_at_playhead(&s, scale).unwrap_err();
             assert!(e.contains("finite and positive"), "{e}");
@@ -593,7 +766,8 @@ mod format_tests {
         let hardware = super::register_hardware_decoders();
         // always on macOS and Windows; on Linux when a VA-API driver or NVIDIA's driver (NVDEC) is there
         let expected = cfg!(any(target_os = "macos", target_os = "windows"))
-            || (cfg!(target_os = "linux") && matches!(hardware, filmcraft_platform::Availability::Available(_)));
+            || (cfg!(target_os = "linux")
+                && matches!(hardware, filmcraft_platform::Availability::Available(_)));
         assert_eq!(filmcraft_platform::registered(), expected, "{hardware:?}");
     }
 
@@ -617,12 +791,22 @@ mod format_tests {
     #[test]
     fn export_message_names_the_written_files() {
         use serde_json::json;
-        let direct = json!({"job": 1, "path": "out-apv.mp4.mov", "result": {"path": "out-apv.mp4.mov"}});
-        assert_eq!(super::written_paths(&direct, "out-apv.mp4"), ["out-apv.mp4.mov"]);
+        let direct =
+            json!({"job": 1, "path": "out-apv.mp4.mov", "result": {"path": "out-apv.mp4.mov"}});
+        assert_eq!(
+            super::written_paths(&direct, "out-apv.mp4"),
+            ["out-apv.mp4.mov"]
+        );
         let queued = json!({"added": [1, 2], "items": [{"path": "a.mp4.mov"}, {"path": "b.wav"}]});
-        assert_eq!(super::written_paths(&queued, "a.mp4"), ["a.mp4.mov", "b.wav"]);
+        assert_eq!(
+            super::written_paths(&queued, "a.mp4"),
+            ["a.mp4.mov", "b.wav"]
+        );
         assert_eq!(super::written_paths(&json!({}), "x.mov"), ["x.mov"]);
-        assert_eq!(super::written_paths(&json!({"items": []}), "x.mov"), ["x.mov"]);
+        assert_eq!(
+            super::written_paths(&json!({"items": []}), "x.mov"),
+            ["x.mov"]
+        );
     }
 
     #[test]
@@ -630,12 +814,20 @@ mod format_tests {
         use serde_json::json;
         let a = json!({"item": 8, "name": "a.mp4", "path": "/m/a.mp4", "status": "missing", "error": ""});
         let b = json!({"item": 9, "name": "b.mov", "path": "/m/b.mov", "status": "offline", "error": ""});
-        assert_eq!(super::offline_media(&json!({"path": "x.mp4", "offlineMedia": [a]})), std::slice::from_ref(&a));
+        assert_eq!(
+            super::offline_media(&json!({"path": "x.mp4", "offlineMedia": [a]})),
+            std::slice::from_ref(&a)
+        );
         let queued = json!({"items": [{"offlineMedia": [a, b]}, {"offlineMedia": [a]}, {"offlineMedia": []}]});
         assert_eq!(super::offline_media(&queued), [a.clone(), b.clone()]);
         assert!(super::offline_media(&json!({"path": "x.mp4"})).is_empty());
         let w = super::offline_warning(&[a, b]);
-        assert!(w.contains("2 offline media item(s)") && w.contains("item 8 a.mp4 (missing): /m/a.mp4") && w.contains("item 9 b.mov (offline)"), "{w}");
+        assert!(
+            w.contains("2 offline media item(s)")
+                && w.contains("item 8 a.mp4 (missing): /m/a.mp4")
+                && w.contains("item 9 b.mov (offline)"),
+            "{w}"
+        );
     }
 
     #[test]
@@ -660,18 +852,25 @@ mod format_tests {
     #[test]
     fn imported_paths_are_absolute_without_resolving_links() {
         let cwd = std::env::current_dir().unwrap();
-        assert_eq!(super::absolute("clip.mov"), cwd.join("clip.mov").to_string_lossy());
+        assert_eq!(
+            super::absolute("clip.mov"),
+            cwd.join("clip.mov").to_string_lossy()
+        );
         assert!(!super::absolute("clip.mov").starts_with(r"\\?\"));
         assert_eq!(super::absolute(""), "");
         #[cfg(unix)]
         {
-            let dir = std::env::temp_dir().join(format!("filmcraft-cli-abs-{}", std::process::id()));
+            let dir =
+                std::env::temp_dir().join(format!("filmcraft-cli-abs-{}", std::process::id()));
             std::fs::create_dir_all(&dir).unwrap();
             std::fs::write(dir.join("real.mov"), b"x").unwrap();
             let link = dir.join("link.mov");
             let _ = std::fs::remove_file(&link);
             std::os::unix::fs::symlink(dir.join("real.mov"), &link).unwrap();
-            assert_eq!(super::absolute(&link.to_string_lossy()), link.to_string_lossy());
+            assert_eq!(
+                super::absolute(&link.to_string_lossy()),
+                link.to_string_lossy()
+            );
             std::fs::remove_dir_all(&dir).unwrap();
         }
     }

@@ -43,12 +43,25 @@ fn hex(bytes: &[u8]) -> String {
 impl Key {
     /// Stretch `code` (its symbols, as [`code::normalize`] gives them).
     pub fn new(code: &str) -> Key {
-        let mut k: [u8; 32] = Sha256::new().chain_update(b"figcraft join code\0").chain_update(code.as_bytes()).finalize().into();
+        let mut k: [u8; 32] = Sha256::new()
+            .chain_update(b"figcraft join code\0")
+            .chain_update(code.as_bytes())
+            .finalize()
+            .into();
         for _ in 0..STRETCH {
             k = Sha256::digest(k).into();
         }
-        let part = |what: &[u8]| -> [u8; 32] { Sha256::new().chain_update(what).chain_update(k).finalize().into() };
-        Key { hash: hex(&part(b"find\0")), pad: part(b"wrap\0") }
+        let part = |what: &[u8]| -> [u8; 32] {
+            Sha256::new()
+                .chain_update(what)
+                .chain_update(k)
+                .finalize()
+                .into()
+        };
+        Key {
+            hash: hex(&part(b"find\0")),
+            pad: part(b"wrap\0"),
+        }
     }
 
     /// What a link with this code keeps as [`Sealed::hash`].
@@ -66,7 +79,10 @@ impl Key {
         if token.len() > MAX_TOKEN {
             return Err("this link's token is too long for a join code".into());
         }
-        Ok(Sealed { hash: self.hash.clone(), token: hex(&self.wrap(token.as_bytes())) })
+        Ok(Sealed {
+            hash: self.hash.clone(),
+            token: hex(&self.wrap(token.as_bytes())),
+        })
     }
 
     /// The token `sealed` keeps, when this is its code (compared in constant time).
@@ -74,8 +90,14 @@ impl Key {
         if !same_secret(&self.hash, &sealed.hash) || sealed.token.len() > 2 * MAX_TOKEN {
             return None;
         }
-        let wrapped: Option<Vec<u8>> =
-            (0..sealed.token.len() / 2).map(|i| sealed.token.get(2 * i..2 * i + 2).and_then(|h| u8::from_str_radix(h, 16).ok())).collect();
+        let wrapped: Option<Vec<u8>> = (0..sealed.token.len() / 2)
+            .map(|i| {
+                sealed
+                    .token
+                    .get(2 * i..2 * i + 2)
+                    .and_then(|h| u8::from_str_radix(h, 16).ok())
+            })
+            .collect();
         String::from_utf8(self.wrap(&wrapped?)).ok()
     }
 }

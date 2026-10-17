@@ -11,7 +11,9 @@
 pub fn raise_without_focus() -> bool {
     #[cfg(target_os = "macos")]
     {
-        let Some(mtm) = objc2::MainThreadMarker::new() else { return false };
+        let Some(mtm) = objc2::MainThreadMarker::new() else {
+            return false;
+        };
         let app = objc2_app_kit::NSApplication::sharedApplication(mtm);
         let windows = app.windows();
         for w in windows.iter() {

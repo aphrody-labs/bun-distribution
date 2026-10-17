@@ -106,18 +106,28 @@ impl Default for Config {
 impl Config {
     /// Read a TOML file's settings (unknown keys are errors).
     pub fn load(path: &Path) -> Result<Config, String> {
-        let text = std::fs::read_to_string(path).map_err(|e| format!("can't read {}: {e}", path.display()))?;
+        let text = std::fs::read_to_string(path)
+            .map_err(|e| format!("can't read {}: {e}", path.display()))?;
         toml::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))
     }
 
     /// The listen address.
     pub fn addr(&self) -> Result<SocketAddr, String> {
-        self.listen.trim().parse().map_err(|_| format!("`listen` must be an address with a port, like 0.0.0.0:{DEFAULT_PORT}"))
+        self.listen.trim().parse().map_err(|_| {
+            format!("`listen` must be an address with a port, like 0.0.0.0:{DEFAULT_PORT}")
+        })
     }
 
     /// The public URL, when set: a `ws://` or `wss://` address without a query.
     pub fn public(&self) -> Result<Option<Endpoint>, String> {
-        let Some(url) = self.public_url.as_deref().map(str::trim).filter(|u| !u.is_empty()) else { return Ok(None) };
+        let Some(url) = self
+            .public_url
+            .as_deref()
+            .map(str::trim)
+            .filter(|u| !u.is_empty())
+        else {
+            return Ok(None);
+        };
         let (e, query) = Endpoint::parse(url).map_err(|e| format!("`public_url`: {e}"))?;
         if !query.is_empty() {
             return Err("`public_url` can't have a query (no keys or tokens in it)".into());
@@ -128,7 +138,8 @@ impl Config {
     /// The largest file in MiB: as set, else 64, or 16 on a server open to the public (strangers'
     /// files stay small unless the operator says otherwise).
     pub fn file_mb(&self) -> u64 {
-        self.max_file_mb.unwrap_or(if self.open_publish { 16 } else { 64 })
+        self.max_file_mb
+            .unwrap_or(if self.open_publish { 16 } else { 64 })
     }
 
     /// What an operator should hear about these settings at startup (a public server without an
@@ -141,8 +152,14 @@ impl Config {
         if self.operator_contact.trim().is_empty() {
             out.push("open_publish is on but operator_contact is empty: people can't reach you about abuse; set it (and terms_url)".into());
         }
-        let behind_proxy = self.public().ok().flatten().is_some_and(|e| e.secure) || self.addr().is_ok_and(|a| a.ip().is_loopback());
-        if behind_proxy && self.trusted_proxy.as_deref().is_none_or(|p| p.trim().is_empty()) {
+        let behind_proxy = self.public().ok().flatten().is_some_and(|e| e.secure)
+            || self.addr().is_ok_and(|a| a.ip().is_loopback());
+        if behind_proxy
+            && self
+                .trusted_proxy
+                .as_deref()
+                .is_none_or(|p| p.trim().is_empty())
+        {
             out.push(
                 "open_publish is on without trusted_proxy: behind a reverse proxy every client counts as the proxy's address, so one person's limits stop everyone; set trusted_proxy = \"127.0.0.1\"".into(),
             );
@@ -155,8 +172,17 @@ impl Config {
 
     /// The trusted proxy's address, when set.
     pub fn proxy(&self) -> Result<Option<IpAddr>, String> {
-        let Some(p) = self.trusted_proxy.as_deref().map(str::trim).filter(|p| !p.is_empty()) else { return Ok(None) };
-        p.parse().map(Some).map_err(|_| "`trusted_proxy` must be an IP address, like 127.0.0.1".to_string())
+        let Some(p) = self
+            .trusted_proxy
+            .as_deref()
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+        else {
+            return Ok(None);
+        };
+        p.parse()
+            .map(Some)
+            .map_err(|_| "`trusted_proxy` must be an IP address, like 127.0.0.1".to_string())
     }
 
     /// Check everything (before starting).
@@ -168,10 +194,15 @@ impl Config {
             return Err("`idle_days` must be from 0 to 3650".into());
         }
         let terms = self.terms_url.trim();
-        if !terms.is_empty() && !(terms.starts_with("https://") || terms.starts_with("http://")) || terms.contains(char::is_whitespace) {
+        if !terms.is_empty() && !(terms.starts_with("https://") || terms.starts_with("http://"))
+            || terms.contains(char::is_whitespace)
+        {
             return Err("`terms_url` must be a web address (https://…)".into());
         }
-        if self.operator_contact.chars().count() > 120 || self.operator_contact.chars().any(char::is_control) || terms.len() > 500 {
+        if self.operator_contact.chars().count() > 120
+            || self.operator_contact.chars().any(char::is_control)
+            || terms.len() > 500
+        {
             return Err("`operator_contact` is at most 120 characters and `terms_url` at most 500, on one line".into());
         }
         for (name, v) in [
@@ -210,7 +241,9 @@ impl Config {
             return Err("`max_plugin_mb` is at most 32".into());
         }
         if self.max_plugins > 10_000 || self.max_plugins_mb > 1 << 20 {
-            return Err("`max_plugins` is at most 10000 and `max_plugins_mb` at most 1048576".into());
+            return Err(
+                "`max_plugins` is at most 10000 and `max_plugins_mb` at most 1048576".into(),
+            );
         }
         Ok(())
     }
@@ -256,20 +289,33 @@ impl Config {
     /// Largest message a client may send when open to the public: a whole file (or plugin bundle)
     /// and a margin, not the core's 64 MiB.
     fn open_message(&self) -> usize {
-        usize::try_from(self.file_mb().max(self.max_plugin_mb).saturating_add(1).saturating_mul(1 << 20)).unwrap_or(usize::MAX)
+        usize::try_from(
+            self.file_mb()
+                .max(self.max_plugin_mb)
+                .saturating_add(1)
+                .saturating_mul(1 << 20),
+        )
+        .unwrap_or(usize::MAX)
     }
 
     /// The collaboration core's part: when open, messages as large as a file at most, and the
     /// batches kept for reconnecting clients (in memory, and in the file's snapshot) at most a
     /// quarter of a file's bytes (256 KiB at least).
     fn core(&self) -> figcraft_collab::Limits {
-        let base = figcraft_collab::Limits { max_peers: self.max_people, ..figcraft_collab::Limits::default() };
+        let base = figcraft_collab::Limits {
+            max_peers: self.max_people,
+            ..figcraft_collab::Limits::default()
+        };
         if !self.open_publish {
             return base;
         }
         let max = self.open_message().min(base.max_message_bytes);
         let file = usize::try_from(self.file_mb().saturating_mul(1 << 20)).unwrap_or(usize::MAX);
-        figcraft_collab::Limits { max_message_bytes: max, max_log_bytes: (file / 4).max(256 << 10), ..base }
+        figcraft_collab::Limits {
+            max_message_bytes: max,
+            max_log_bytes: (file / 4).max(256 << 10),
+            ..base
+        }
     }
 
     /// The transport's part. A private server keeps the defaults; open to the public, connections
@@ -277,7 +323,11 @@ impl Config {
     /// client and for everyone and those waiting for the hub are bounded, one-shot requests leave
     /// an eighth of the connections to sessions and are dropped after 20 idle seconds.
     pub fn net(&self) -> NetLimits {
-        let base = NetLimits { max_connections: self.max_connections, trusted_proxy: self.proxy().ok().flatten(), ..NetLimits::default() };
+        let base = NetLimits {
+            max_connections: self.max_connections,
+            trusted_proxy: self.proxy().ok().flatten(),
+            ..NetLimits::default()
+        };
         if !self.open_publish {
             return base;
         }

@@ -38,7 +38,10 @@ const REFRESH: std::time::Duration = std::time::Duration::from_secs(1);
 
 /// `read`, asked at most once per `every` and answered from memory in between.
 #[cfg(any(target_os = "windows", target_os = "macos", test))]
-fn remembered(read: impl Fn() -> Option<bool>, every: std::time::Duration) -> impl Fn() -> Option<bool> {
+fn remembered(
+    read: impl Fn() -> Option<bool>,
+    every: std::time::Duration,
+) -> impl Fn() -> Option<bool> {
     let last = std::cell::Cell::new(None::<(std::time::Instant, Option<bool>)>);
     move || {
         if let Some((at, answer)) = last.get()
@@ -84,9 +87,16 @@ mod tests {
             system.get()
         };
         let kept = remembered(read, Duration::from_secs(3600));
-        assert_eq!((kept(), kept(), kept()), (Some(false), Some(false), Some(false)));
+        assert_eq!(
+            (kept(), kept(), kept()),
+            (Some(false), Some(false), Some(false))
+        );
         system.set(Some(true));
-        assert_eq!(kept(), Some(false), "within the interval the remembered answer stands");
+        assert_eq!(
+            kept(),
+            Some(false),
+            "within the interval the remembered answer stands"
+        );
         assert_eq!(asked.get(), 1);
 
         // Once the interval has passed (here: at once) the system is asked again.

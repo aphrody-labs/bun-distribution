@@ -37,23 +37,44 @@ fn rejects_with_env(args: &[&str], env: &[(&str, &str)], message: &str) {
         std::thread::sleep(Duration::from_millis(10));
     };
     let out = child.wait_with_output().unwrap();
-    assert!(!timed_out, "{args:?}: desktop started or did not exit promptly");
+    assert!(
+        !timed_out,
+        "{args:?}: desktop started or did not exit promptly"
+    );
     assert!(!out.status.success(), "{args:?}");
     assert!(out.stdout.is_empty(), "{args:?}: {:?}", out.stdout);
     // Exact stderr excludes unrelated startup warnings or display errors that could otherwise
     // make a malformed invocation fail for an unrelated reason.
-    assert_eq!(String::from_utf8(out.stderr).unwrap(), format!("vectorcraft: {message}\n"), "{args:?}");
+    assert_eq!(
+        String::from_utf8(out.stderr).unwrap(),
+        format!("vectorcraft: {message}\n"),
+        "{args:?}"
+    );
 }
 
 #[test]
 fn missing_empty_or_option_operands_fail_before_startup() {
     for flag in ["--automation-read-root", "--automation-write-root"] {
-        rejects(&["--control", "7979", flag], &format!("{flag} needs a folder"));
+        rejects(
+            &["--control", "7979", flag],
+            &format!("{flag} needs a folder"),
+        );
         rejects(&[flag], &format!("{flag} needs a folder"));
-        rejects(&["--control", "7979", &format!("{flag}=")], &format!("{flag} needs a non-empty folder"));
+        rejects(
+            &["--control", "7979", &format!("{flag}=")],
+            &format!("{flag} needs a non-empty folder"),
+        );
         rejects(&[flag, ""], &format!("{flag} needs a non-empty folder"));
-        for next in ["--version", "--control", "--automation-write-root", "-folder"] {
-            rejects(&[flag, next], &format!("{flag} needs a folder; use {flag}=<dir> for a folder starting with '-'"));
+        for next in [
+            "--version",
+            "--control",
+            "--automation-write-root",
+            "-folder",
+        ] {
+            rejects(
+                &[flag, next],
+                &format!("{flag} needs a folder; use {flag}=<dir> for a folder starting with '-'"),
+            );
         }
     }
 }
@@ -61,16 +82,37 @@ fn missing_empty_or_option_operands_fail_before_startup() {
 #[test]
 fn duplicate_roots_fail_for_both_spellings() {
     for flag in ["--automation-read-root", "--automation-write-root"] {
-        rejects(&[flag, ".", &format!("{flag}=.")], &format!("{flag} given twice"));
-        rejects(&[&format!("{flag}=."), flag, "."], &format!("{flag} given twice"));
+        rejects(
+            &[flag, ".", &format!("{flag}=.")],
+            &format!("{flag} given twice"),
+        );
+        rejects(
+            &[&format!("{flag}=."), flag, "."],
+            &format!("{flag} given twice"),
+        );
     }
 }
 
 #[test]
 fn explicit_dash_folder_does_not_consume_version() {
-    let out = Command::new(BIN).args(["--automation-read-root=-folder", "--automation-write-root", "./-folder", "--version"]).output().unwrap();
-    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
-    assert_eq!(String::from_utf8(out.stdout).unwrap(), format!("vectorcraft {}\n", env!("CARGO_PKG_VERSION")));
+    let out = Command::new(BIN)
+        .args([
+            "--automation-read-root=-folder",
+            "--automation-write-root",
+            "./-folder",
+            "--version",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(
+        String::from_utf8(out.stdout).unwrap(),
+        format!("vectorcraft {}\n", env!("CARGO_PKG_VERSION"))
+    );
     assert!(out.stderr.is_empty());
 }
 
@@ -79,18 +121,45 @@ fn explicit_dash_folder_does_not_consume_version() {
 #[test]
 fn control_without_a_valid_port_fails_before_startup() {
     let need = "--control needs a port number from 1 to 65535";
-    rejects(&["--control", "--automation-read-root", ".", "--automation-write-root", "."], &format!("{need}, not `--automation-read-root`"));
+    rejects(
+        &[
+            "--control",
+            "--automation-read-root",
+            ".",
+            "--automation-write-root",
+            ".",
+        ],
+        &format!("{need}, not `--automation-read-root`"),
+    );
     rejects(&["--control"], need);
     rejects(&["--control", "abc"], &format!("{need}, not `abc`"));
     rejects(&["--control=0"], &format!("{need}, not `0`"));
     rejects(&["--control="], &format!("{need}, not ``"));
-    rejects(&["--control", "7979", "--control", "7980"], "--control given twice");
-    rejects_with_env(&[], &[("VECTORCRAFT_CONTROL_PORT", "abc")], "VECTORCRAFT_CONTROL_PORT needs a port number from 1 to 65535, not `abc`");
+    rejects(
+        &["--control", "7979", "--control", "7980"],
+        "--control given twice",
+    );
+    rejects_with_env(
+        &[],
+        &[("VECTORCRAFT_CONTROL_PORT", "abc")],
+        "VECTORCRAFT_CONTROL_PORT needs a port number from 1 to 65535, not `abc`",
+    );
 }
 
 #[test]
 fn version_wins_over_a_bad_control_port_variable() {
-    let out = Command::new(BIN).arg("--version").env("VECTORCRAFT_CONTROL_PORT", "abc").output().unwrap();
-    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
-    assert_eq!(String::from_utf8(out.stdout).unwrap(), format!("vectorcraft {}\n", env!("CARGO_PKG_VERSION")));
+    let out = Command::new(BIN)
+        .arg("--version")
+        .env("VECTORCRAFT_CONTROL_PORT", "abc")
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(
+        String::from_utf8(out.stdout).unwrap(),
+        format!("vectorcraft {}\n", env!("CARGO_PKG_VERSION"))
+    );
 }

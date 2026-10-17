@@ -15,9 +15,13 @@ use wayland_client::protocol::wl_registry::{self, WlRegistry};
 #[cfg(target_os = "linux")]
 use wayland_client::{Connection, Dispatch, QueueHandle};
 #[cfg(target_os = "linux")]
-use wayland_protocols::wp::linux_dmabuf::zv1::client::zwp_linux_dmabuf_feedback_v1::{self, ZwpLinuxDmabufFeedbackV1};
+use wayland_protocols::wp::linux_dmabuf::zv1::client::zwp_linux_dmabuf_feedback_v1::{
+    self, ZwpLinuxDmabufFeedbackV1,
+};
 #[cfg(target_os = "linux")]
-use wayland_protocols::wp::linux_dmabuf::zv1::client::zwp_linux_dmabuf_v1::{self, ZwpLinuxDmabufV1};
+use wayland_protocols::wp::linux_dmabuf::zv1::client::zwp_linux_dmabuf_v1::{
+    self, ZwpLinuxDmabufV1,
+};
 
 /// PCI `(vendor, device)` ids of the GPU the Wayland compositor draws with. `None` outside a
 /// Wayland session, when the compositor doesn't say (linux-dmabuf older than version 4), when its
@@ -34,7 +38,10 @@ pub(crate) fn compositor_gpu() -> Option<(u32, u32)> {
     let pci = pci_ids(std::path::Path::new("/sys/dev/char"), device);
     match pci {
         Some((vendor, id)) => log::info!("the compositor draws with {vendor:04x}:{id:04x}"),
-        None => log::debug!("the compositor's device {:?} has no PCI ids", major_minor(device)),
+        None => log::debug!(
+            "the compositor's device {:?} has no PCI ids",
+            major_minor(device)
+        ),
     }
     pci
 }
@@ -52,7 +59,9 @@ fn main_device() -> Result<u64, String> {
     let (globals, mut queue) = registry_queue_init::<Feedback>(&conn).map_err(|e| e.to_string())?;
     let qh = queue.handle();
     // Version 4 brought the feedback; older compositors only list formats.
-    let dmabuf: ZwpLinuxDmabufV1 = globals.bind(&qh, 4..=4, ()).map_err(|e| format!("linux-dmabuf version 4: {e}"))?;
+    let dmabuf: ZwpLinuxDmabufV1 = globals
+        .bind(&qh, 4..=4, ())
+        .map_err(|e| format!("linux-dmabuf version 4: {e}"))?;
     let _feedback = dmabuf.get_default_feedback(&qh, ());
     let mut state = Feedback::default();
     // The compositor sends the whole feedback, ending with `done`, in reply; the bound only keeps
@@ -64,9 +73,13 @@ fn main_device() -> Result<u64, String> {
         queue.roundtrip(&mut state).map_err(|e| e.to_string())?;
     }
     // Dropping the connection releases the objects.
-    let device = state.main_device.ok_or("the compositor named no main device")?;
+    let device = state
+        .main_device
+        .ok_or("the compositor named no main device")?;
     // A `dev_t`, in this machine's byte order.
-    let device: [u8; 8] = device.try_into().map_err(|d: Vec<u8>| format!("a {}-byte device number", d.len()))?;
+    let device: [u8; 8] = device
+        .try_into()
+        .map_err(|d: Vec<u8>| format!("a {}-byte device number", d.len()))?;
     Ok(u64::from_ne_bytes(device))
 }
 
@@ -80,13 +93,29 @@ struct Feedback {
 
 #[cfg(target_os = "linux")]
 impl Dispatch<WlRegistry, GlobalListContents> for Feedback {
-    fn event(_: &mut Self, _: &WlRegistry, _: wl_registry::Event, _: &GlobalListContents, _: &Connection, _: &QueueHandle<Self>) {}
+    fn event(
+        _: &mut Self,
+        _: &WlRegistry,
+        _: wl_registry::Event,
+        _: &GlobalListContents,
+        _: &Connection,
+        _: &QueueHandle<Self>,
+    ) {
+    }
 }
 
 #[cfg(target_os = "linux")]
 impl Dispatch<ZwpLinuxDmabufV1, ()> for Feedback {
     // Version 4 sends no format or modifier events: the feedback replaces them.
-    fn event(_: &mut Self, _: &ZwpLinuxDmabufV1, _: zwp_linux_dmabuf_v1::Event, _: &(), _: &Connection, _: &QueueHandle<Self>) {}
+    fn event(
+        _: &mut Self,
+        _: &ZwpLinuxDmabufV1,
+        _: zwp_linux_dmabuf_v1::Event,
+        _: &(),
+        _: &Connection,
+        _: &QueueHandle<Self>,
+    ) {
+    }
 }
 
 #[cfg(target_os = "linux")]
@@ -100,7 +129,9 @@ impl Dispatch<ZwpLinuxDmabufFeedbackV1, ()> for Feedback {
         _: &QueueHandle<Self>,
     ) {
         match event {
-            zwp_linux_dmabuf_feedback_v1::Event::MainDevice { device } => state.main_device = Some(device),
+            zwp_linux_dmabuf_feedback_v1::Event::MainDevice { device } => {
+                state.main_device = Some(device)
+            }
             zwp_linux_dmabuf_feedback_v1::Event::Done => state.done = true,
             _ => {}
         }
@@ -133,7 +164,10 @@ fn pci_ids(sys_dev_char: &std::path::Path, device: u64) -> Option<(u32, u32)> {
 mod tests {
     /// glibc's `makedev()`.
     fn makedev(major: u64, minor: u64) -> u64 {
-        ((major & 0x0000_0fff) << 8) | ((major & 0xffff_f000) << 32) | (minor & 0x0000_00ff) | ((minor & 0xffff_ff00) << 12)
+        ((major & 0x0000_0fff) << 8)
+            | ((major & 0xffff_f000) << 32)
+            | (minor & 0x0000_00ff)
+            | ((minor & 0xffff_ff00) << 12)
     }
 
     #[test]
@@ -141,7 +175,14 @@ mod tests {
         // DRM nodes: card1 is 226:1, renderD128 is 226:128.
         assert_eq!(super::major_minor(0xe201), (226, 1));
         assert_eq!(super::major_minor(0xe280), (226, 128));
-        for (major, minor) in [(0, 0), (226, 129), (511, 1_048_575), (0xfff, 0xff), (0x1000, 0x100), (0xffff_ffff, 0xffff_ffff)] {
+        for (major, minor) in [
+            (0, 0),
+            (226, 129),
+            (511, 1_048_575),
+            (0xfff, 0xff),
+            (0x1000, 0x100),
+            (0xffff_ffff, 0xffff_ffff),
+        ] {
             assert_eq!(super::major_minor(makedev(major, minor)), (major, minor));
         }
     }

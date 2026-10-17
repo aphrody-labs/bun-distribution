@@ -75,7 +75,9 @@ impl ModelHub {
     /// A hub over an explicit store root (the folder chosen in onboarding).
     #[must_use]
     pub fn with_root(root: impl Into<PathBuf>) -> Self {
-        Self { root: Some(root.into()) }
+        Self {
+            root: Some(root.into()),
+        }
     }
 
     /// The store, created on first use.
@@ -121,10 +123,15 @@ impl ModelHub {
     /// Unknown task, or the registry cannot be read.
     pub fn installed(&self, task: Option<&str>) -> Result<Value, HubError> {
         let store = self.store()?;
-        let mut installed = store.list().map_err(HubError::model("read model registry"))?;
+        let mut installed = store
+            .list()
+            .map_err(HubError::model("read model registry"))?;
         if let Some(task) = task.map(parse_task).transpose()? {
-            let ids: Vec<&str> =
-                Catalog::builtin().by_task(task).into_iter().map(|e| e.id.as_str()).collect();
+            let ids: Vec<&str> = Catalog::builtin()
+                .by_task(task)
+                .into_iter()
+                .map(|e| e.id.as_str())
+                .collect();
             installed.retain(|m| m.catalog_id.as_deref().is_some_and(|id| ids.contains(&id)));
         }
         let total: u64 = installed.iter().map(|m| m.bytes).sum();
@@ -248,11 +255,14 @@ impl ModelHub {
         let outcomes = match select(pin!(transfer), pin!(cancel)).await {
             Either::Left((result, _)) => {
                 result.map_err(HubError::model(format!("pull `{spec}`")))?
-            },
+            }
             Either::Right(((), _)) => return Err(HubError::Cancelled(spec.to_owned())),
         };
-        let transferred: u64 =
-            outcomes.iter().filter(|o| o.transferred()).map(|o| o.model().bytes).sum();
+        let transferred: u64 = outcomes
+            .iter()
+            .filter(|o| o.transferred())
+            .map(|o| o.model().bytes)
+            .sum();
         let total: u64 = outcomes.iter().map(|o| o.model().bytes).sum();
         Ok(json!({
             "spec": spec,
@@ -283,15 +293,23 @@ const fn outcome_label(outcome: &PullOutcome) -> &'static str {
 }
 
 fn resolve_refs(spec: &str) -> Result<Vec<ModelRef>, HubError> {
-    let resolved =
-        Catalog::builtin().resolve(spec).map_err(HubError::model(format!("resolve `{spec}`")))?;
-    Ok(resolved.artifacts().into_iter().map(|(reference, _)| reference).collect())
+    let resolved = Catalog::builtin()
+        .resolve(spec)
+        .map_err(HubError::model(format!("resolve `{spec}`")))?;
+    Ok(resolved
+        .artifacts()
+        .into_iter()
+        .map(|(reference, _)| reference)
+        .collect())
 }
 
 fn parse_task(raw: &str) -> Result<ModelTask, HubError> {
     ModelTask::from_str_opt(raw).ok_or_else(|| {
         let valid: Vec<&str> = ModelTask::all().iter().map(|t| t.as_str()).collect();
-        HubError::Invalid(format!("unknown task `{raw}` (expected one of: {})", valid.join(", ")))
+        HubError::Invalid(format!(
+            "unknown task `{raw}` (expected one of: {})",
+            valid.join(", ")
+        ))
     })
 }
 

@@ -17,17 +17,23 @@ type Answer = Pin<Box<dyn Future<Output = Vec<String>> + Send>>;
 /// closes, then wake the UI.
 pub fn show(dialog: FileDialog, done: DialogDone, ctx: egui::Context) {
     let answer = open(dialog);
-    let spawned = std::thread::Builder::new().name("ec-file-dialog".into()).spawn(move || {
-        done(pollster::block_on(answer));
-        ctx.request_repaint();
-    });
+    let spawned = std::thread::Builder::new()
+        .name("ec-file-dialog".into())
+        .spawn(move || {
+            done(pollster::block_on(answer));
+            ctx.request_repaint();
+        });
     if let Err(e) = spawned {
         log::error!("file dialog: {e}");
     }
 }
 
 fn paths(files: Option<Vec<FileHandle>>) -> Vec<String> {
-    files.unwrap_or_default().into_iter().map(|f| f.path().to_string_lossy().to_string()).collect()
+    files
+        .unwrap_or_default()
+        .into_iter()
+        .map(|f| f.path().to_string_lossy().to_string())
+        .collect()
 }
 
 fn path(file: Option<FileHandle>) -> Vec<String> {
@@ -48,16 +54,25 @@ fn open(dialog: FileDialog) -> Answer {
             }
         }
         FileDialog::OpenProject => {
-            let f = AsyncFileDialog::new().add_filter("EffectCraft Project", &["ecproj", "ecprojx"]).pick_file();
+            let f = AsyncFileDialog::new()
+                .add_filter("EffectCraft Project", &["ecproj", "ecprojx"])
+                .pick_file();
             Box::pin(async move { path(f.await) })
         }
         FileDialog::Folder => {
             let f = AsyncFileDialog::new().pick_folder();
             Box::pin(async move { path(f.await) })
         }
-        FileDialog::Save { default, ext, project } => {
+        FileDialog::Save {
+            default,
+            ext,
+            project,
+        } => {
             let at = std::path::Path::new(&default);
-            let name = at.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+            let name = at
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default();
             let mut d = if project {
                 AsyncFileDialog::new().add_filter("EffectCraft Project", &["ecproj"])
             } else if ext.is_empty() {

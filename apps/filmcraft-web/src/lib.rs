@@ -16,7 +16,17 @@
 //!
 //! Everything here is `wasm32`-only; on other targets the crate is empty.
 #![cfg(target_arch = "wasm32")]
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 pub mod api;
 pub mod audio;
@@ -102,7 +112,11 @@ impl eframe::App for WebApp {
         self.app.logic(ctx, frame);
         api::poll_replies();
         // exports advance between frames (no threads)
-        if self.app.session.pump_jobs(std::time::Duration::from_millis(30)) {
+        if self
+            .app
+            .session
+            .pump_jobs(std::time::Duration::from_millis(30))
+        {
             ctx.request_repaint();
         }
         if let Some(a) = &self.audio {
@@ -117,7 +131,10 @@ impl eframe::App for WebApp {
 }
 
 fn query_flag(name: &str) -> bool {
-    web_sys::window().and_then(|w| w.location().search().ok()).and_then(|s| web_sys::UrlSearchParams::new_with_str(&s).ok()).is_some_and(|p| p.has(name))
+    web_sys::window()
+        .and_then(|w| w.location().search().ok())
+        .and_then(|s| web_sys::UrlSearchParams::new_with_str(&s).ok())
+        .is_some_and(|p| p.has(name))
 }
 
 /// Entry point (called by the page's bootstrap script once the wasm module is instantiated).
@@ -125,10 +142,18 @@ fn query_flag(name: &str) -> bool {
 pub async fn start(canvas_id: String) -> Result<(), JsValue> {
     eframe::WebLogger::init(log::LevelFilter::Info).ok();
     let t0 = web_time::Instant::now();
-    let doc = web_sys::window().and_then(|w| w.document()).ok_or("no document")?;
-    let canvas: web_sys::HtmlCanvasElement = doc.get_element_by_id(&canvas_id).ok_or("no canvas")?.dyn_into()?;
+    let doc = web_sys::window()
+        .and_then(|w| w.document())
+        .ok_or("no document")?;
+    let canvas: web_sys::HtmlCanvasElement = doc
+        .get_element_by_id(&canvas_id)
+        .ok_or("no canvas")?
+        .dyn_into()?;
 
-    let isolated = js_sys::Reflect::get(&js_sys::global(), &"crossOriginIsolated".into()).ok().and_then(|v| v.as_bool()).unwrap_or(false);
+    let isolated = js_sys::Reflect::get(&js_sys::global(), &"crossOriginIsolated".into())
+        .ok()
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
     // Frame rendering runs cooperatively on this thread. wasm threads need a cross-origin
     // isolated page *and* a build with atomics (nightly `build-std`); this build has none.
     set_info("crossOriginIsolated", json!(isolated));
@@ -137,8 +162,16 @@ pub async fn start(canvas_id: String) -> Result<(), JsValue> {
     set_info("opfs", json!(opfs::available()));
 
     // Media kept in OPFS by earlier sessions come back under their paths (recovery).
-    let restored = if opfs::available() && !query_flag("fresh") { recovery::restore_media().await } else { 0 };
-    let recovered = if query_flag("fresh") || query_flag("norecover") { None } else { recovery::load_snapshot().await };
+    let restored = if opfs::available() && !query_flag("fresh") {
+        recovery::restore_media().await
+    } else {
+        0
+    };
+    let recovered = if query_flag("fresh") || query_flag("norecover") {
+        None
+    } else {
+        recovery::load_snapshot().await
+    };
     webcodecs::probe().await;
 
     api::install()?;
@@ -187,15 +220,27 @@ pub async fn start(canvas_id: String) -> Result<(), JsValue> {
                 let mut app = FilmcraftApp::new(session);
                 import::install_hooks(&mut app);
                 // Settings ▸ General ▸ Interface Language ▸ System Language (#218): the browser's languages.
-                app.hooks.system_languages =
-                    Some(Box::new(|| web_sys::window().map(|w| w.navigator().languages().iter().filter_map(|v| v.as_string()).collect()).unwrap_or_default()));
+                app.hooks.system_languages = Some(Box::new(|| {
+                    web_sys::window()
+                        .map(|w| {
+                            w.navigator()
+                                .languages()
+                                .iter()
+                                .filter_map(|v| v.as_string())
+                                .collect()
+                        })
+                        .unwrap_or_default()
+                }));
                 let (tx, rx) = std::sync::mpsc::channel();
                 api::set_sender(tx);
                 app = app.with_control(rx);
                 if let Some(t) = toast {
                     app.status(t);
                 }
-                let backend = cc.wgpu_render_state.as_ref().map(|rs| rs.adapter.get_info().backend);
+                let backend = cc
+                    .wgpu_render_state
+                    .as_ref()
+                    .map(|rs| rs.adapter.get_info().backend);
                 set_info("backend", json!(backend.map(|b| format!("{b:?}"))));
                 // The GPU compositor needs float render targets everywhere: WebGPU only (WebGL2
                 // composites on the CPU).
@@ -214,7 +259,11 @@ pub async fn start(canvas_id: String) -> Result<(), JsValue> {
                 }
                 set_info("audio", json!(audio.is_some()));
                 set_info("restoredMedia", json!(restored));
-                Ok(Box::new(WebApp { app, audio, autosave: recovery::Autosave::default() }))
+                Ok(Box::new(WebApp {
+                    app,
+                    audio,
+                    autosave: recovery::Autosave::default(),
+                }))
             }),
         )
         .await?;

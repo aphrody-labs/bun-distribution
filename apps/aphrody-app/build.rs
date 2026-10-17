@@ -67,7 +67,10 @@ fn stamp_build_identity() {
         command_output("git", &["rev-parse", "HEAD"])
     );
     let rustc = env::var("RUSTC").unwrap_or_else(|_| "rustc".into());
-    println!("cargo:rustc-env=YOLO_DESKTOP_RUSTC={}", command_output(&rustc, &["--version"]));
+    println!(
+        "cargo:rustc-env=YOLO_DESKTOP_RUSTC={}",
+        command_output(&rustc, &["--version"])
+    );
     for name in ["HEAD", "packed-refs"] {
         println!(
             "cargo:rerun-if-changed={}",
@@ -121,7 +124,10 @@ fn stage_ui_dist_assets() {
             missing.len(),
             shown.join("; ")
         );
-        assert!(env::var_os("CARGO_FEATURE_CUSTOM_PROTOCOL").is_none(), "{message}");
+        assert!(
+            env::var_os("CARGO_FEATURE_CUSTOM_PROTOCOL").is_none(),
+            "{message}"
+        );
         println!("cargo:warning={message}");
     }
 }

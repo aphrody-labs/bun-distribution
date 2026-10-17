@@ -18,7 +18,11 @@ pub fn install_hook() {
 
 /// Run `f`; a panic inside it becomes an `Err` naming `what`.
 pub fn guard<T>(what: &str, f: impl FnOnce() -> Result<T, String>) -> Result<T, String> {
-    catch_unwind(AssertUnwindSafe(f)).unwrap_or_else(|_| Err(format!("{what} failed with an internal error (logged); your open documents are unchanged")))
+    catch_unwind(AssertUnwindSafe(f)).unwrap_or_else(|_| {
+        Err(format!(
+            "{what} failed with an internal error (logged); your open documents are unchanged"
+        ))
+    })
 }
 
 #[cfg(test)]
@@ -30,6 +34,9 @@ mod tests {
         let r: Result<(), String> = guard("Open", || panic!("boom"));
         assert!(r.unwrap_err().contains("Open failed"));
         assert_eq!(guard("Open", || Ok(3)), Ok(3));
-        assert_eq!(guard::<()>("Open", || Err("bad file".into())), Err("bad file".into()));
+        assert_eq!(
+            guard::<()>("Open", || Err("bad file".into())),
+            Err("bad file".into())
+        );
     }
 }

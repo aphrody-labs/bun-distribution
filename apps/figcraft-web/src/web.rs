@@ -14,7 +14,10 @@ pub fn start() {
             log::error!("no document");
             return;
         };
-        let Some(canvas) = document.get_element_by_id(CANVAS_ID).and_then(|e| e.dyn_into::<web_sys::HtmlCanvasElement>().ok()) else {
+        let Some(canvas) = document
+            .get_element_by_id(CANVAS_ID)
+            .and_then(|e| e.dyn_into::<web_sys::HtmlCanvasElement>().ok())
+        else {
             log::error!("missing <canvas id=\"{CANVAS_ID}\">");
             return;
         };
@@ -22,7 +25,8 @@ pub fn start() {
         // `?webgl`: force the WebGL2 backend (troubleshooting, and headless browsers whose WebGPU
         // adapter request returns nothing).
         if query().contains("webgl")
-            && let eframe::egui_wgpu::WgpuSetup::CreateNew(create) = &mut options.wgpu_options.wgpu_setup
+            && let eframe::egui_wgpu::WgpuSetup::CreateNew(create) =
+                &mut options.wgpu_options.wgpu_setup
         {
             create.instance_descriptor.backends = eframe::wgpu::Backends::GL;
         }
@@ -32,14 +36,25 @@ pub fn start() {
                 options,
                 Box::new(|cc| {
                     if let Some(rs) = &cc.wgpu_render_state {
-                        log::info!("figcraft-web: wgpu backend {:?}", rs.adapter.get_info().backend);
+                        log::info!(
+                            "figcraft-web: wgpu backend {:?}",
+                            rs.adapter.get_info().backend
+                        );
                     }
-                    let reduce_motion = web_sys::window().and_then(|w| w.match_media("(prefers-reduced-motion: reduce)").ok().flatten());
+                    let reduce_motion = web_sys::window().and_then(|w| {
+                        w.match_media("(prefers-reduced-motion: reduce)")
+                            .ok()
+                            .flatten()
+                    });
                     let mut session = Session::new();
                     // Live sessions: the browser joins sessions a desktop app hosts; whatever arrives
                     // on the socket wakes the page for a frame.
                     let ctx = cc.egui_ctx.clone();
-                    session.live.install(Box::new(figcraft_collab_net::NetLink::new(std::sync::Arc::new(move || ctx.request_repaint()))));
+                    session
+                        .live
+                        .install(Box::new(figcraft_collab_net::NetLink::new(
+                            std::sync::Arc::new(move || ctx.request_repaint()),
+                        )));
                     let fig = FigApp::new(session, Box::new(WebServices { reduce_motion }));
                     Ok(Box::new(WebShell { fig }))
                 }),
@@ -55,7 +70,9 @@ pub fn start() {
 }
 
 fn query() -> String {
-    web_sys::window().and_then(|w| w.location().search().ok()).unwrap_or_default()
+    web_sys::window()
+        .and_then(|w| w.location().search().ok())
+        .unwrap_or_default()
 }
 
 struct WebShell {
@@ -78,13 +95,17 @@ struct WebServices {
 
 impl Services for WebServices {
     fn open_url(&mut self, url: &str) {
-        let Some(window) = web_sys::window() else { return };
+        let Some(window) = web_sys::window() else {
+            return;
+        };
         if let Err(e) = window.open_with_url_and_target(url, "_blank") {
             log::error!("couldn't open {url}: {e:?}");
         }
     }
     fn reduce_motion(&self) -> bool {
-        self.reduce_motion.as_ref().is_some_and(web_sys::MediaQueryList::matches)
+        self.reduce_motion
+            .as_ref()
+            .is_some_and(web_sys::MediaQueryList::matches)
     }
     /// The browser's language (`navigator.language`).
     fn system_language(&self) -> Option<String> {
@@ -93,14 +114,21 @@ impl Services for WebServices {
     /// The Gamepad API's controllers with the standard mapping (its button order is the layout's;
     /// others are skipped). Browsers list controllers once one of their buttons is pressed.
     fn gamepad_held(&mut self) -> u32 {
-        let Some(pads) = web_sys::window().and_then(|w| w.navigator().get_gamepads().ok()) else { return 0 };
+        let Some(pads) = web_sys::window().and_then(|w| w.navigator().get_gamepads().ok()) else {
+            return 0;
+        };
         let mut held = 0;
-        for pad in pads.iter().filter_map(|p| p.dyn_into::<web_sys::Gamepad>().ok()) {
+        for pad in pads
+            .iter()
+            .filter_map(|p| p.dyn_into::<web_sys::Gamepad>().ok())
+        {
             if pad.mapping() != web_sys::GamepadMappingType::Standard {
                 continue;
             }
             for (i, b) in pad.buttons().iter().take(32).enumerate() {
-                if b.dyn_into::<web_sys::GamepadButton>().is_ok_and(|b| b.pressed()) {
+                if b.dyn_into::<web_sys::GamepadButton>()
+                    .is_ok_and(|b| b.pressed())
+                {
                     held |= 1 << i;
                 }
             }

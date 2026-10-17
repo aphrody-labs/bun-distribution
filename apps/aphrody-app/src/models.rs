@@ -28,7 +28,9 @@ pub struct Pulls(std::sync::Mutex<HashMap<String, oneshot::Sender<()>>>);
 
 impl Pulls {
     fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<String, oneshot::Sender<()>>> {
-        self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+        self.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 }
 
@@ -174,21 +176,29 @@ pub async fn aphrody_model_pull(
 /// Stop the pull of `id`. Returns whether one was running.
 #[tauri::command]
 pub fn aphrody_model_cancel(pulls: State<'_, Pulls>, id: String) -> bool {
-    pulls.lock().remove(&id).is_some_and(|cancel| cancel.send(()).is_ok())
+    pulls
+        .lock()
+        .remove(&id)
+        .is_some_and(|cancel| cancel.send(()).is_ok())
 }
 
 /// A probed figure, `null` when the platform reported nothing (the probe's `0`).
 fn known(value: u32) -> Value {
-    if value == 0 { Value::Null } else { json!(value) }
+    if value == 0 {
+        Value::Null
+    } else {
+        json!(value)
+    }
 }
 
 /// Host hardware for the Models hub: RAM, AVX2 and CUDA VRAM from the `aphrody-native`
 /// topology probe, GPU names and VRAM from the in-process `aphrody-models` accelerator probe.
 #[tauri::command]
 pub async fn aphrody_hardware_telemetry(app: AppHandle) -> Result<Value, String> {
-    let topology = tauri::async_runtime::spawn_blocking(aphrody_native::NativePlatform::get_topology)
-        .await
-        .map_err(|error| format!("hardware probe: {error}"))?;
+    let topology =
+        tauri::async_runtime::spawn_blocking(aphrody_native::NativePlatform::get_topology)
+            .await
+            .map_err(|error| format!("hardware probe: {error}"))?;
     let hub = hub(&app);
     let profile = tauri::async_runtime::spawn_blocking(move || hub.hardware())
         .await
@@ -248,11 +258,18 @@ pub async fn aphrody_model_scan_external(
             std::env::var("OLLAMA_MODELS").ok().map(PathBuf::from),
             vec![".ollama", "models"],
         ),
-        ("lm-studio", "LM Studio", None, vec![".cache", "lm-studio", "models"]),
+        (
+            "lm-studio",
+            "LM Studio",
+            None,
+            vec![".cache", "lm-studio", "models"],
+        ),
         (
             "huggingface",
             "HuggingFace",
-            std::env::var("HF_HOME").ok().map(|p| PathBuf::from(p).join("hub")),
+            std::env::var("HF_HOME")
+                .ok()
+                .map(|p| PathBuf::from(p).join("hub")),
             vec![".cache", "huggingface", "hub"],
         ),
     ];

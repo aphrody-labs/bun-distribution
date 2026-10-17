@@ -35,7 +35,11 @@ pub struct Dx12Adapter {
 /// and the process exits before the first frame. Compute pipelines use the older API and succeed,
 /// which is why startup gets as far as the egui pipeline and then quits. OpenGL does not use that
 /// stream.
-pub fn choose_backends(backend_override: Option<Backends>, dx12_adapters: &[Dx12Adapter], dx12_graphics: bool) -> Backends {
+pub fn choose_backends(
+    backend_override: Option<Backends>,
+    dx12_adapters: &[Dx12Adapter],
+    dx12_graphics: bool,
+) -> Backends {
     if let Some(backends) = backend_override {
         return backends;
     }
@@ -43,7 +47,11 @@ pub fn choose_backends(backend_override: Option<Backends>, dx12_adapters: &[Dx12
         return Backends::GL;
     }
     let hardware = |a: &&Dx12Adapter| a.device_type != DeviceType::Cpu;
-    if dx12_adapters.iter().filter(hardware).any(|a| a.meets_limits) {
+    if dx12_adapters
+        .iter()
+        .filter(hardware)
+        .any(|a| a.meets_limits)
+    {
         Backends::DX12
     } else if !dx12_adapters.is_empty() && !dx12_adapters.iter().any(|a| hardware(&a)) {
         Backends::DX12 | Backends::GL
@@ -75,7 +83,9 @@ pub fn configure_backends(options: &mut NativeOptions, backends: Backends) {
 /// error, its own indirect-validation pipeline fails, the device is lost and eframe exits before
 /// the first frame. FXC is always there and compiles everything egui's shaders need.
 pub fn dx12_compiler(env: Option<&str>) -> Dx12Compiler {
-    let Some(value) = env else { return Dx12Compiler::Fxc };
+    let Some(value) = env else {
+        return Dx12Compiler::Fxc;
+    };
     value.parse().unwrap_or_else(|e| {
         log::warn!("graphics: WGPU_DX12_COMPILER={value:?} ignored ({e}), using FXC");
         Dx12Compiler::Fxc
@@ -85,7 +95,11 @@ pub fn dx12_compiler(env: Option<&str>) -> Dx12Compiler {
 /// Makes the wgpu instance eframe creates compile DirectX 12 shaders with `compiler`.
 pub fn configure_dx12_compiler(options: &mut NativeOptions, compiler: Dx12Compiler) {
     if let WgpuSetup::CreateNew(create) = &mut options.wgpu_options.wgpu_setup {
-        create.instance_descriptor.backend_options.dx12.shader_compiler = compiler;
+        create
+            .instance_descriptor
+            .backend_options
+            .dx12
+            .shader_compiler = compiler;
     }
 }
 
@@ -107,12 +121,21 @@ pub fn configure(options: &mut NativeOptions, backend_override: Option<Backends>
             // 32-bit: skip the DirectX 12 probe. A capable GPU would be selected, then
             // CreatePipelineState fails and the app exits with no window.
             let dx12_graphics = cfg!(not(target_arch = "x86"));
-            let adapters = if dx12_graphics { probe_dx12(options) } else { Vec::new() };
+            let adapters = if dx12_graphics {
+                probe_dx12(options)
+            } else {
+                Vec::new()
+            };
             let backends = choose_backends(None, &adapters, dx12_graphics);
             if dx12_graphics {
-                log::info!("graphics: {} DirectX 12 adapter(s) {adapters:?}, backends {backends:?}", adapters.len());
+                log::info!(
+                    "graphics: {} DirectX 12 adapter(s) {adapters:?}, backends {backends:?}",
+                    adapters.len()
+                );
             } else {
-                log::info!("graphics: 32-bit Windows uses OpenGL; DirectX 12 graphics pipeline creation fails");
+                log::info!(
+                    "graphics: 32-bit Windows uses OpenGL; DirectX 12 graphics pipeline creation fails"
+                );
             }
             backends
         }
@@ -143,8 +166,16 @@ fn probe_dx12(options: &NativeOptions) -> Vec<Dx12Adapter> {
             let info = adapter.get_info();
             let required = (create.device_descriptor)(adapter).required_limits;
             let meets_limits = required.check_limits(&adapter.limits());
-            log::info!("graphics: DirectX 12 adapter {:?} ({:?}, driver {:?}), limits ok: {meets_limits}", info.name, info.device_type, info.driver);
-            Dx12Adapter { device_type: info.device_type, meets_limits }
+            log::info!(
+                "graphics: DirectX 12 adapter {:?} ({:?}, driver {:?}), limits ok: {meets_limits}",
+                info.name,
+                info.device_type,
+                info.driver
+            );
+            Dx12Adapter {
+                device_type: info.device_type,
+                meets_limits,
+            }
         })
         .collect()
 }
@@ -163,24 +194,42 @@ mod tests {
     }
 
     const fn adapter(device_type: DeviceType, meets_limits: bool) -> Dx12Adapter {
-        Dx12Adapter { device_type, meets_limits }
+        Dx12Adapter {
+            device_type,
+            meets_limits,
+        }
     }
 
     #[test]
     fn windows_default_initializes_only_dx12() {
         // eframe's own default (PRIMARY | GL) would initialize OpenGL as well.
-        let WgpuSetup::CreateNew(eframe_default) = NativeOptions::default().wgpu_options.wgpu_setup else {
+        let WgpuSetup::CreateNew(eframe_default) = NativeOptions::default().wgpu_options.wgpu_setup
+        else {
             panic!("default native options must create a wgpu instance");
         };
-        assert!(eframe_default.instance_descriptor.backends.contains(Backends::GL));
+        assert!(
+            eframe_default
+                .instance_descriptor
+                .backends
+                .contains(Backends::GL)
+        );
         let gpu = [adapter(DeviceType::IntegratedGpu, true)];
-        assert_eq!(configured_backends(choose_backends(None, &gpu, true)), Backends::DX12);
+        assert_eq!(
+            configured_backends(choose_backends(None, &gpu, true)),
+            Backends::DX12
+        );
     }
 
     #[test]
     fn explicit_backend_override_is_preserved() {
         let warp_only = [adapter(DeviceType::Cpu, true)];
-        for backends in [Backends::VULKAN, Backends::GL, Backends::DX12, Backends::VULKAN | Backends::DX12, Backends::empty()] {
+        for backends in [
+            Backends::VULKAN,
+            Backends::GL,
+            Backends::DX12,
+            Backends::VULKAN | Backends::DX12,
+            Backends::empty(),
+        ] {
             // Whatever the probe would have found, the override wins (the probe doesn't run then).
             assert_eq!(choose_backends(Some(backends), &[], true), backends);
             assert_eq!(choose_backends(Some(backends), &warp_only, true), backends);
@@ -195,27 +244,47 @@ mod tests {
         assert!(matches!(dx12_compiler(None), Dx12Compiler::Fxc));
         assert!(matches!(dx12_compiler(Some("bogus")), Dx12Compiler::Fxc));
         assert!(matches!(dx12_compiler(Some("FXC")), Dx12Compiler::Fxc));
-        assert!(matches!(dx12_compiler(Some("dxc")), Dx12Compiler::DynamicDxc { .. }));
+        assert!(matches!(
+            dx12_compiler(Some("dxc")),
+            Dx12Compiler::DynamicDxc { .. }
+        ));
         assert!(matches!(dx12_compiler(Some("auto")), Dx12Compiler::Auto));
         let mut options = NativeOptions::default();
         configure_dx12_compiler(&mut options, dx12_compiler(None));
         let WgpuSetup::CreateNew(create) = options.wgpu_options.wgpu_setup else {
             panic!("default native options must create a wgpu instance");
         };
-        assert!(matches!(create.instance_descriptor.backend_options.dx12.shader_compiler, Dx12Compiler::Fxc));
+        assert!(matches!(
+            create
+                .instance_descriptor
+                .backend_options
+                .dx12
+                .shader_compiler,
+            Dx12Compiler::Fxc
+        ));
     }
 
     #[test]
     fn gl_when_dx12_has_no_usable_gpu() {
         // #316: no DirectX 12 driver, so DirectX 12 offers only WARP (or nothing) and lags.
         let warp_only = [adapter(DeviceType::Cpu, true)];
-        assert_eq!(choose_backends(None, &warp_only, true), Backends::GL | Backends::DX12);
+        assert_eq!(
+            choose_backends(None, &warp_only, true),
+            Backends::GL | Backends::DX12
+        );
         assert_eq!(choose_backends(None, &[], true), Backends::GL);
         // A GPU that can't create eframe's device: GL alone, so it isn't picked over the GL one.
-        let weak_gpu = [adapter(DeviceType::IntegratedGpu, false), adapter(DeviceType::Cpu, true)];
+        let weak_gpu = [
+            adapter(DeviceType::IntegratedGpu, false),
+            adapter(DeviceType::Cpu, true),
+        ];
         assert_eq!(choose_backends(None, &weak_gpu, true), Backends::GL);
         // Any usable GPU keeps DirectX 12 only, next to WARP or a weaker GPU.
-        let mixed = [adapter(DeviceType::Cpu, true), adapter(DeviceType::IntegratedGpu, false), adapter(DeviceType::DiscreteGpu, true)];
+        let mixed = [
+            adapter(DeviceType::Cpu, true),
+            adapter(DeviceType::IntegratedGpu, false),
+            adapter(DeviceType::DiscreteGpu, true),
+        ];
         assert_eq!(choose_backends(None, &mixed, true), Backends::DX12);
     }
 
@@ -224,8 +293,17 @@ mod tests {
     fn x86_uses_opengl_even_with_a_usable_gpu() {
         let gpu = [adapter(DeviceType::IntegratedGpu, true)];
         assert_eq!(choose_backends(None, &gpu, false), Backends::GL);
-        assert_eq!(choose_backends(Some(Backends::DX12), &gpu, false), Backends::DX12);
-        assert_eq!(choose_backends(Some(Backends::VULKAN), &[], false), Backends::VULKAN);
-        assert_eq!(configured_backends(choose_backends(None, &gpu, false)), Backends::GL);
+        assert_eq!(
+            choose_backends(Some(Backends::DX12), &gpu, false),
+            Backends::DX12
+        );
+        assert_eq!(
+            choose_backends(Some(Backends::VULKAN), &[], false),
+            Backends::VULKAN
+        );
+        assert_eq!(
+            configured_backends(choose_backends(None, &gpu, false)),
+            Backends::GL
+        );
     }
 }

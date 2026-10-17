@@ -102,12 +102,20 @@ fn bucket(n: f64, period: f64) -> Bucket {
 impl Abuse {
     pub fn new(cfg: AbuseConfig) -> Self {
         let publishes = bucket(f64::from(cfg.publishes_per_hour) * PUBLISHES_ALL, 3600.0);
-        Self { cfg, table: HashMap::new(), publishes, wrong_codes: bucket(WRONG_CODES_PER_HOUR, 3600.0) }
+        Self {
+            cfg,
+            table: HashMap::new(),
+            publishes,
+            wrong_codes: bucket(WRONG_CODES_PER_HOUR, 3600.0),
+        }
     }
 
     /// How long `ip` is still locked out of join codes (in any block it is in), if it is.
     pub fn code_locked(&self, ip: IpAddr, now: Instant) -> Option<Duration> {
-        let until = ip_blocks(ip).into_iter().filter_map(|(k, _)| self.table.get(&k)?.locked).max()?;
+        let until = ip_blocks(ip)
+            .into_iter()
+            .filter_map(|(k, _)| self.table.get(&k)?.locked)
+            .max()?;
         Some(until.saturating_duration_since(now)).filter(|d| !d.is_zero())
     }
 
@@ -144,12 +152,23 @@ impl Abuse {
 
     /// Whether `ip` may do `what` now (counting it, in every block it is in, when it may).
     pub fn allow(&mut self, ip: IpAddr, what: Action, now: Instant) -> bool {
-        if !self.cfg.open && matches!(what, Action::Connect | Action::Publish | Action::Message | Action::Presence) {
+        if !self.cfg.open
+            && matches!(
+                what,
+                Action::Connect | Action::Publish | Action::Message | Action::Presence
+            )
+        {
             return true;
         }
-        let keys: Vec<(Block, f64)> = ip_blocks(ip).into_iter().map(|(k, times)| (k, f64::from(times))).collect();
+        let keys: Vec<(Block, f64)> = ip_blocks(ip)
+            .into_iter()
+            .map(|(k, times)| (k, f64::from(times)))
+            .collect();
         // Every block must have room before any is charged.
-        if !keys.iter().all(|&(k, times)| self.room(k, times, what, now)) {
+        if !keys
+            .iter()
+            .all(|&(k, times)| self.room(k, times, what, now))
+        {
             return false;
         }
         if what == Action::Publish && !self.publishes.take(now) {
@@ -172,8 +191,14 @@ impl Abuse {
             connects: bucket(f64::from(c.connects_per_minute) * times, 60.0),
             publishes: bucket(f64::from(c.publishes_per_hour) * times, 3600.0),
             // A burst of four seconds' worth (a big paste, a quick drag).
-            messages: Bucket::new(f64::from(c.messages_per_second) * times, f64::from(c.messages_per_second) * times * 4.0),
-            presence: Bucket::new(f64::from(c.messages_per_second) * times * 2.0, f64::from(c.messages_per_second) * times * 8.0),
+            messages: Bucket::new(
+                f64::from(c.messages_per_second) * times,
+                f64::from(c.messages_per_second) * times * 4.0,
+            ),
+            presence: Bucket::new(
+                f64::from(c.messages_per_second) * times * 2.0,
+                f64::from(c.messages_per_second) * times * 8.0,
+            ),
             reports: bucket(REPORTS_PER_HOUR * times, 3600.0),
             downloads: Bucket::new(DOWNLOAD_RATE * times, DOWNLOAD_BURST * times),
             codes: bucket(CODES_PER_MINUTE * times, 60.0),
@@ -221,7 +246,9 @@ impl Abuse {
     fn forget_oldest_half(&mut self) {
         let mut used: Vec<Instant> = self.table.values().map(|a| a.used).collect();
         used.sort_unstable();
-        let Some(&cut) = used.get(used.len() / 2) else { return };
+        let Some(&cut) = used.get(used.len() / 2) else {
+            return;
+        };
         self.table.retain(|_, a| a.used > cut);
     }
 }

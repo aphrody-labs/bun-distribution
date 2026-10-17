@@ -16,27 +16,42 @@ fn js(e: JsValue) -> String {
 
 /// Wait for an IndexedDB request; its result.
 async fn done(req: &IdbRequest) -> Result<JsValue, String> {
-    let promise = js_sys::Promise::new(&mut |resolve: js_sys::Function, reject: js_sys::Function| {
-        let ok_req = req.clone();
-        let ok = Closure::once_into_js(move || {
-            let _ = resolve.call1(&JsValue::NULL, &ok_req.result().unwrap_or(JsValue::UNDEFINED));
+    let promise =
+        js_sys::Promise::new(&mut |resolve: js_sys::Function, reject: js_sys::Function| {
+            let ok_req = req.clone();
+            let ok = Closure::once_into_js(move || {
+                let _ = resolve.call1(
+                    &JsValue::NULL,
+                    &ok_req.result().unwrap_or(JsValue::UNDEFINED),
+                );
+            });
+            let err = Closure::once_into_js(move || {
+                let _ = reject.call1(
+                    &JsValue::NULL,
+                    &JsValue::from_str("IndexedDB request failed"),
+                );
+            });
+            req.set_onsuccess(Some(ok.unchecked_ref()));
+            req.set_onerror(Some(err.unchecked_ref()));
         });
-        let err = Closure::once_into_js(move || {
-            let _ = reject.call1(&JsValue::NULL, &JsValue::from_str("IndexedDB request failed"));
-        });
-        req.set_onsuccess(Some(ok.unchecked_ref()));
-        req.set_onerror(Some(err.unchecked_ref()));
-    });
-    wasm_bindgen_futures::JsFuture::from(promise).await.map_err(js)
+    wasm_bindgen_futures::JsFuture::from(promise)
+        .await
+        .map_err(js)
 }
 
 /// The database, with its font store made on first use.
 async fn open() -> Result<IdbDatabase, String> {
-    let factory = web_sys::window().ok_or("no window")?.indexed_db().map_err(js)?.ok_or("IndexedDB is unavailable")?;
+    let factory = web_sys::window()
+        .ok_or("no window")?
+        .indexed_db()
+        .map_err(js)?
+        .ok_or("IndexedDB is unavailable")?;
     let req = factory.open_with_u32(DB_NAME, 1).map_err(js)?;
     let upgrade_req = req.clone();
     let upgrade = Closure::<dyn FnMut()>::new(move || {
-        if let Ok(db) = upgrade_req.result().and_then(|r| r.dyn_into::<IdbDatabase>().map_err(JsValue::from))
+        if let Ok(db) = upgrade_req
+            .result()
+            .and_then(|r| r.dyn_into::<IdbDatabase>().map_err(JsValue::from))
             && !db.object_store_names().contains(STORE)
             && let Err(e) = db.create_object_store(STORE)
         {
@@ -52,14 +67,27 @@ async fn open() -> Result<IdbDatabase, String> {
 
 async fn store_async(name: String, bytes: Vec<u8>) -> Result<(), String> {
     let db = open().await?;
-    let store = db.transaction_with_str_and_mode(STORE, IdbTransactionMode::Readwrite).map_err(js)?.object_store(STORE).map_err(js)?;
-    let req = store.put_with_key(&js_sys::Uint8Array::from(bytes.as_slice()), &JsValue::from_str(&name)).map_err(js)?;
+    let store = db
+        .transaction_with_str_and_mode(STORE, IdbTransactionMode::Readwrite)
+        .map_err(js)?
+        .object_store(STORE)
+        .map_err(js)?;
+    let req = store
+        .put_with_key(
+            &js_sys::Uint8Array::from(bytes.as_slice()),
+            &JsValue::from_str(&name),
+        )
+        .map_err(js)?;
     done(&req).await.map(|_| ())
 }
 
 async fn forget_async(name: String) -> Result<(), String> {
     let db = open().await?;
-    let store = db.transaction_with_str_and_mode(STORE, IdbTransactionMode::Readwrite).map_err(js)?.object_store(STORE).map_err(js)?;
+    let store = db
+        .transaction_with_str_and_mode(STORE, IdbTransactionMode::Readwrite)
+        .map_err(js)?
+        .object_store(STORE)
+        .map_err(js)?;
     let req = store.delete(&JsValue::from_str(&name)).map_err(js)?;
     done(&req).await.map(|_| ())
 }
@@ -90,18 +118,28 @@ pub fn load_all(ctx: egui::Context) {
     wasm_bindgen_futures::spawn_local(async move {
         let r: Result<(), String> = async {
             let db = open().await?;
-            let store = db.transaction_with_str(STORE).map_err(js)?.object_store(STORE).map_err(js)?;
+            let store = db
+                .transaction_with_str(STORE)
+                .map_err(js)?
+                .object_store(STORE)
+                .map_err(js)?;
             let keys = done(&store.get_all_keys().map_err(js)?).await?;
             let values = done(&store.get_all().map_err(js)?).await?;
             let (keys, values) = (js_sys::Array::from(&keys), js_sys::Array::from(&values));
             for i in 0..keys.length().min(values.length()) {
-                let Some(name) = keys.get(i).as_string() else { continue };
-                let Ok(bytes) = values.get(i).dyn_into::<js_sys::Uint8Array>() else { continue };
+                let Some(name) = keys.get(i).as_string() else {
+                    continue;
+                };
+                let Ok(bytes) = values.get(i).dyn_into::<js_sys::Uint8Array>() else {
+                    continue;
+                };
                 if bytes.length() as usize > wordcraft_fonts::MAX_FONT_FILE_BYTES {
                     log::warn!("stored font {name} is too large; skipped");
                     continue;
                 }
-                if let Err(e) = wordcraft_fonts::FontDb::global().install_font(&name, &bytes.to_vec()) {
+                if let Err(e) =
+                    wordcraft_fonts::FontDb::global().install_font(&name, &bytes.to_vec())
+                {
                     log::warn!("stored font {name} skipped: {e}");
                 }
             }

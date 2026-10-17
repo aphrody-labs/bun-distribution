@@ -84,7 +84,7 @@ async fn start_kernel(app: tauri::AppHandle) {
             Err(error) => {
                 log::error!("Aphrody Web MCP: {error}");
                 None
-            },
+            }
         };
     for subsystem in [
         Arc::new(web_subsystem::WebSubsystem::new(provider)) as Arc<dyn SystemSubsystem>,
@@ -124,7 +124,11 @@ async fn aphrody_rpc(
         broker.reply(request).await?;
         return Ok(serde_json::json!({ "acknowledged": true }));
     }
-    if request.get("method").and_then(serde_json::Value::as_str).is_none() {
+    if request
+        .get("method")
+        .and_then(serde_json::Value::as_str)
+        .is_none()
+    {
         return Err("aphrody_rpc expects a JSON-RPC object with a string `method` or a reply with `id` and `result`/`error`".into());
     }
     broker.call(request).await
@@ -302,37 +306,43 @@ impl SystemSubsystem for TauriWebviewSubsystem {
         arguments: serde_json::Value,
     ) -> Result<serde_json::Value, aphrody_subsystem::SubsystemError> {
         if tool == "tauri_driver_session" {
-            let action =
-                arguments.get("action").and_then(serde_json::Value::as_str).unwrap_or("status");
+            let action = arguments
+                .get("action")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("status");
             let active = match action {
                 "start" => {
                     TAURI_DRIVER_SESSION.store(true, Ordering::Release);
                     true
-                },
+                }
                 "stop" => {
                     TAURI_DRIVER_SESSION.store(false, Ordering::Release);
                     false
-                },
+                }
                 "status" => TAURI_DRIVER_SESSION.load(Ordering::Acquire),
                 _ => {
                     return Err(aphrody_subsystem::SubsystemError::InvalidArguments(
                         "action must be start, stop or status".into(),
                     ));
-                },
+                }
             };
             return Ok(
                 serde_json::json!({"active":active,"transport":"aphrody-kernel","persistent":true}),
             );
         }
         if tool == "tauri_manage_window" {
-            let action =
-                arguments.get("action").and_then(serde_json::Value::as_str).unwrap_or("list");
+            let action = arguments
+                .get("action")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("list");
             if action == "list" {
                 let windows: Vec<_> = self.app.webview_windows().values().map(|window| serde_json::json!({"label":window.label(),"title":window.title().unwrap_or_default(),"visible":window.is_visible().unwrap_or(false),"focused":window.is_focused().unwrap_or(false)})).collect();
                 return Ok(serde_json::json!({"windows":windows}));
             }
-            let label =
-                arguments.get("window_id").and_then(serde_json::Value::as_str).unwrap_or("main");
+            let label = arguments
+                .get("window_id")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("main");
             let window = self.app.get_webview_window(label).ok_or_else(|| {
                 aphrody_subsystem::SubsystemError::Unavailable(format!(
                     "Aphrody window {label:?} is unavailable"
@@ -357,9 +367,11 @@ impl SystemSubsystem for TauriWebviewSubsystem {
                             "height must be between 1 and 10000".into(),
                         )
                     })? as u32;
-                window.set_size(tauri::Size::Physical(PhysicalSize { width, height })).map_err(
-                    |error| aphrody_subsystem::SubsystemError::Failed(error.to_string()),
-                )?;
+                window
+                    .set_size(tauri::Size::Physical(PhysicalSize { width, height }))
+                    .map_err(|error| {
+                        aphrody_subsystem::SubsystemError::Failed(error.to_string())
+                    })?;
             } else if action != "info" {
                 return Err(aphrody_subsystem::SubsystemError::InvalidArguments(
                     "action must be list, info or resize".into(),
@@ -391,17 +403,25 @@ impl SystemSubsystem for TauriWebviewSubsystem {
             return webview_eval(&window, "JSON.stringify({source:'console',entries:Array.isArray(window.__APHRODY_MCP_LOGS__)?window.__APHRODY_MCP_LOGS__.slice(-500):[]})".into()).await;
         }
         if tool == "webview_get_pointed_element" {
-            let x = arguments.get("x").and_then(serde_json::Value::as_f64).ok_or_else(|| {
-                aphrody_subsystem::SubsystemError::InvalidArguments("x is required".into())
-            })?;
-            let y = arguments.get("y").and_then(serde_json::Value::as_f64).ok_or_else(|| {
-                aphrody_subsystem::SubsystemError::InvalidArguments("y is required".into())
-            })?;
+            let x = arguments
+                .get("x")
+                .and_then(serde_json::Value::as_f64)
+                .ok_or_else(|| {
+                    aphrody_subsystem::SubsystemError::InvalidArguments("x is required".into())
+                })?;
+            let y = arguments
+                .get("y")
+                .and_then(serde_json::Value::as_f64)
+                .ok_or_else(|| {
+                    aphrody_subsystem::SubsystemError::InvalidArguments("y is required".into())
+                })?;
             return webview_eval(&window, format!("(()=>{{const e=document.elementFromPoint({x},{y});if(!e)return JSON.stringify({{element:null}});const r=e.getBoundingClientRect();return JSON.stringify({{element:{{tag:e.tagName.toLowerCase(),id:e.id||null,classes:e.className&&String(e.className)||null,text:(e.innerText||e.value||'').slice(0,1000),selector:e.id?('#'+CSS.escape(e.id)):e.tagName.toLowerCase(),rect:{{x:r.x,y:r.y,width:r.width,height:r.height}}}}}})}})()" )).await;
         }
         if tool == "webview_select_element" {
-            let selector =
-                arguments.get("selector").and_then(serde_json::Value::as_str).ok_or_else(|| {
+            let selector = arguments
+                .get("selector")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| {
                     aphrody_subsystem::SubsystemError::InvalidArguments(
                         "selector is required".into(),
                     )
@@ -496,8 +516,10 @@ async fn webview_eval(
     let send = Arc::new(std::sync::Mutex::new(Some(send)));
     window
         .eval_with_callback(script, move |value| {
-            if let Some(send) =
-                send.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take()
+            if let Some(send) = send
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .take()
             {
                 let _ = send.send(value);
             }
@@ -689,29 +711,34 @@ fn aphrody_shell_window(
         ShellWindowAction::State => Ok(()),
         ShellWindowAction::Close => {
             window.close().map_err(|error| error.to_string())?;
-            return Ok(ShellWindowControlResult { closed: true, state: None });
-        },
+            return Ok(ShellWindowControlResult {
+                closed: true,
+                state: None,
+            });
+        }
         ShellWindowAction::Minimize => window.minimize(),
         ShellWindowAction::Maximize => window.maximize(),
-        ShellWindowAction::Restore => {
-            window.unmaximize().and_then(|()| window.unminimize()).and_then(|()| window.show())
-        },
+        ShellWindowAction::Restore => window
+            .unmaximize()
+            .and_then(|()| window.unminimize())
+            .and_then(|()| window.show()),
         ShellWindowAction::ToggleMaximize => {
             if window.is_maximized().map_err(|error| error.to_string())? {
                 window.unmaximize()
             } else {
                 window.maximize()
             }
-        },
-        ShellWindowAction::Focus => {
-            window.show().and_then(|()| window.unminimize()).and_then(|()| window.set_focus())
-        },
+        }
+        ShellWindowAction::Focus => window
+            .show()
+            .and_then(|()| window.unminimize())
+            .and_then(|()| window.set_focus()),
         ShellWindowAction::StartDragging => window.start_dragging(),
         ShellWindowAction::Fullscreen { fullscreen } => window.set_fullscreen(fullscreen),
         ShellWindowAction::ToggleFullscreen => {
             let current = window.is_fullscreen().map_err(|error| error.to_string())?;
             window.set_fullscreen(!current)
-        },
+        }
         ShellWindowAction::SetTheme { theme } => window.set_theme(match theme {
             ShellTheme::System => None,
             ShellTheme::Light => Some(tauri::Theme::Light),
@@ -719,7 +746,10 @@ fn aphrody_shell_window(
         }),
     }
     .map_err(|error| error.to_string())?;
-    Ok(ShellWindowControlResult { closed: false, state: Some(shell_window_state(&window)?) })
+    Ok(ShellWindowControlResult {
+        closed: false,
+        state: Some(shell_window_state(&window)?),
+    })
 }
 
 /// Execute a quick ask bar action for the invoking window (the `quickbar` window only).
@@ -753,9 +783,11 @@ pub fn run() {
         .runtime(cef::runtime())
         // single-instance must be the first plugin: a second launch focuses this window.
         // Its callback forwards the second launch's files and `aphrody://` links to this window.
-        .plugin(tauri_plugin_aphrody::single_instance::init(|app, args, cwd| {
-            integration::on_second_instance(app, &args, &cwd);
-        }))
+        .plugin(tauri_plugin_aphrody::single_instance::init(
+            |app, args, cwd| {
+                integration::on_second_instance(app, &args, &cwd);
+            },
+        ))
         .plugin(tauri_plugin_aphrody::deep_link::init())
         .plugin(
             tauri_plugin_aphrody::window_state::Builder::default()
@@ -790,7 +822,9 @@ pub fn run() {
         .plugin(tauri_plugin_aphrody::opener::init())
         .plugin(tauri_plugin_aphrody::fs::init())
         .plugin(
-            tauri_plugin_aphrody::autostart::Builder::new().arg(integration::AUTOSTART_FLAG).build(),
+            tauri_plugin_aphrody::autostart::Builder::new()
+                .arg(integration::AUTOSTART_FLAG)
+                .build(),
         )
         // Endpoints and the minisign public key come from `plugins.updater` in the Tauri
         // config, injected at bundle time by aphrody-ops tauri; a build without them reports
@@ -814,43 +848,46 @@ pub fn run() {
             }
             Ok(())
         })
-        .on_menu_event(|app, event| {
-            match event.id().as_ref() {
-                "menu_new_session" => {
-                    let _ = app.emit_to(integration::MAIN, "aphrody://menu/new-session", ());
-                },
-                "menu_open_file" => {
-                    let _ = app.emit_to(integration::MAIN, "aphrody://menu/open-file", ());
-                },
-                "menu_open_folder" => {
-                    let _ = app.emit_to(integration::MAIN, "aphrody://menu/open-folder", ());
-                },
-                "menu_quick_ask" => {
-                    quickbar::toggle(app);
-                },
-                "menu_toggle_pet" => {
-                    integration::set_pet(app, !integration::load_prefs(app).pet);
-                },
-                "menu_toggle_widget" => {
-                    integration::set_widget(app, !integration::load_prefs(app).widget);
-                },
-                "menu_docs" => {
-                    let _ = tauri_plugin_aphrody::opener::OpenerExt::opener(app)
-                        .open_url("https://aphrody.dev/docs", None::<&str>);
-                },
-                "menu_showcase" => {
-                    showcase::open(app);
-                },
-                "menu_updates" => {
-                    tauri::async_runtime::spawn(integration::check_updates(app.clone()));
-                },
-                _ => {},
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "menu_new_session" => {
+                let _ = app.emit_to(integration::MAIN, "aphrody://menu/new-session", ());
             }
+            "menu_open_file" => {
+                let _ = app.emit_to(integration::MAIN, "aphrody://menu/open-file", ());
+            }
+            "menu_open_folder" => {
+                let _ = app.emit_to(integration::MAIN, "aphrody://menu/open-folder", ());
+            }
+            "menu_quick_ask" => {
+                quickbar::toggle(app);
+            }
+            "menu_toggle_pet" => {
+                integration::set_pet(app, !integration::load_prefs(app).pet);
+            }
+            "menu_toggle_widget" => {
+                integration::set_widget(app, !integration::load_prefs(app).widget);
+            }
+            "menu_docs" => {
+                let _ = tauri_plugin_aphrody::opener::OpenerExt::opener(app)
+                    .open_url("https://aphrody.dev/docs", None::<&str>);
+            }
+            "menu_showcase" => {
+                showcase::open(app);
+            }
+            "menu_updates" => {
+                tauri::async_runtime::spawn(integration::check_updates(app.clone()));
+            }
+            _ => {}
         })
         .on_page_load(|webview, payload| parking::hide_when_loaded(webview, &payload.event()))
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Moved(position) = event {
-                integration::note_moved(window.app_handle(), window.label(), position.x, position.y);
+                integration::note_moved(
+                    window.app_handle(),
+                    window.label(),
+                    position.x,
+                    position.y,
+                );
             }
             if window.label() == integration::MAIN
                 && let tauri::WindowEvent::CloseRequested { api, .. } = event
@@ -882,60 +919,60 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
-                studio::studio_native_ai_status,
-                studio::studio_native_chat,
-                studio::studio_google_drive_authorize,
-                studio::studio_a2a_fleet_status,
-                studio::studio_a2a_send_envelope,
-                studio::studio_mcp_tools_list,
-                aphrody_meta,
-                aphrody_rpc,
-                aphrody_reply,
-                aphrody_session_stream,
-                aphrody_session_unstream,
-                aphrody_runtime_layout,
-                aphrody_capture_primary,
-                aphrody_windows_host_status,
-                aphrody_windows_host_windows,
-                aphrody_windows_host_observe,
-                aphrody_system_cwd,
-                aphrody_shell_window,
-                aphrody_quickbar,
-                aphrody_system_stats,
-                aphrody_benchmark,
-                aphrody_showcase_open,
-                integration::aphrody_app_ready,
-                integration::aphrody_take_open_requests,
-                integration::aphrody_desktop_integration,
-                integration::aphrody_pet,
-                integration::aphrody_widget,
-                integration::aphrody_check_update,
-                integration::aphrody_install_update,
-                kits::aphrody_kit_start,
-                kits::aphrody_kit_answer,
-                kits::aphrody_kit_cancel,
-                aphrody_fs_read_dir,
-                aphrody_fs_read_text,
-                explorer::aphrody_explorer_index_build,
-                explorer::aphrody_explorer_search,
-                explorer::aphrody_explorer_tree,
-                models::aphrody_hardware_telemetry,
-                models::aphrody_model_catalog,
-                models::aphrody_model_list,
-                models::aphrody_model_recommend,
-                models::aphrody_model_verify,
-                models::aphrody_model_remove,
-                models::aphrody_model_store_root,
-                models::aphrody_model_pull,
-                models::aphrody_model_cancel,
-                models::aphrody_model_scan_external,
-                identity::aphrody_pet_etat,
-                identity::aphrody_pet_frame_png_b64,
-                identity::aphrody_pixel_mesurer,
-                identity::aphrody_pixel_tokens_css,
-                identity::aphrody_pixel_comparer,
-                identity::aphrody_pixel_vectoriser,
-                identity::aphrody_pixel_planche,
+            studio::studio_native_ai_status,
+            studio::studio_native_chat,
+            studio::studio_google_drive_authorize,
+            studio::studio_a2a_fleet_status,
+            studio::studio_a2a_send_envelope,
+            studio::studio_mcp_tools_list,
+            aphrody_meta,
+            aphrody_rpc,
+            aphrody_reply,
+            aphrody_session_stream,
+            aphrody_session_unstream,
+            aphrody_runtime_layout,
+            aphrody_capture_primary,
+            aphrody_windows_host_status,
+            aphrody_windows_host_windows,
+            aphrody_windows_host_observe,
+            aphrody_system_cwd,
+            aphrody_shell_window,
+            aphrody_quickbar,
+            aphrody_system_stats,
+            aphrody_benchmark,
+            aphrody_showcase_open,
+            integration::aphrody_app_ready,
+            integration::aphrody_take_open_requests,
+            integration::aphrody_desktop_integration,
+            integration::aphrody_pet,
+            integration::aphrody_widget,
+            integration::aphrody_check_update,
+            integration::aphrody_install_update,
+            kits::aphrody_kit_start,
+            kits::aphrody_kit_answer,
+            kits::aphrody_kit_cancel,
+            aphrody_fs_read_dir,
+            aphrody_fs_read_text,
+            explorer::aphrody_explorer_index_build,
+            explorer::aphrody_explorer_search,
+            explorer::aphrody_explorer_tree,
+            models::aphrody_hardware_telemetry,
+            models::aphrody_model_catalog,
+            models::aphrody_model_list,
+            models::aphrody_model_recommend,
+            models::aphrody_model_verify,
+            models::aphrody_model_remove,
+            models::aphrody_model_store_root,
+            models::aphrody_model_pull,
+            models::aphrody_model_cancel,
+            models::aphrody_model_scan_external,
+            identity::aphrody_pet_etat,
+            identity::aphrody_pet_frame_png_b64,
+            identity::aphrody_pixel_mesurer,
+            identity::aphrody_pixel_tokens_css,
+            identity::aphrody_pixel_comparer,
+            identity::aphrody_pixel_vectoriser,
+            identity::aphrody_pixel_planche,
         ])
         .build(context())
         .expect("aphrody desktop: fatal error while building the Tauri application")
@@ -964,7 +1001,12 @@ mod tests {
         let action: ShellWindowAction =
             serde_json::from_str(r#"{"action":"set_theme","theme":"dark"}"#)
                 .expect("set_theme action must deserialize");
-        assert!(matches!(action, ShellWindowAction::SetTheme { theme: ShellTheme::Dark }));
+        assert!(matches!(
+            action,
+            ShellWindowAction::SetTheme {
+                theme: ShellTheme::Dark
+            }
+        ));
 
         for action in [
             "state",
@@ -986,7 +1028,10 @@ mod tests {
         let action: ShellWindowAction =
             serde_json::from_str(r#"{"action":"fullscreen","fullscreen":true}"#)
                 .expect("fullscreen action must deserialize");
-        assert!(matches!(action, ShellWindowAction::Fullscreen { fullscreen: true }));
+        assert!(matches!(
+            action,
+            ShellWindowAction::Fullscreen { fullscreen: true }
+        ));
     }
 
     #[test]

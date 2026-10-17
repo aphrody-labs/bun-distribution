@@ -39,8 +39,14 @@ const ACCEPT_LANGUAGES: &str = "fr-FR,fr,en-US,en";
 /// Anything that is not a port Chromium accepts (1024..=65535) leaves the server off.
 #[must_use]
 pub fn remote_debugging(value: Option<&str>) -> RemoteDebugging {
-    match value.map(str::trim).and_then(|port| port.parse::<u16>().ok()) {
-        Some(port) if port >= 1024 => RemoteDebugging::Port { port, allowed_origins: Vec::new() },
+    match value
+        .map(str::trim)
+        .and_then(|port| port.parse::<u16>().ok())
+    {
+        Some(port) if port >= 1024 => RemoteDebugging::Port {
+            port,
+            allowed_origins: Vec::new(),
+        },
         _ => RemoteDebugging::Disabled,
     }
 }
@@ -48,7 +54,11 @@ pub fn remote_debugging(value: Option<&str>) -> RemoteDebugging {
 /// The sandbox policy for the value of [`NO_SANDBOX_ENV`].
 #[must_use]
 pub fn sandbox(value: Option<&str>) -> SandboxPolicy {
-    if value.map(str::trim) == Some("1") { SandboxPolicy::Disabled } else { SandboxPolicy::Auto }
+    if value.map(str::trim) == Some("1") {
+        SandboxPolicy::Disabled
+    } else {
+        SandboxPolicy::Auto
+    }
 }
 
 fn profile(remote_debugging_value: Option<&str>, no_sandbox_value: Option<&str>) -> Cef {
@@ -115,15 +125,25 @@ mod tests {
     fn the_devtools_server_is_off_unless_a_valid_port_is_named() {
         assert_eq!(remote_debugging(None), RemoteDebugging::Disabled);
         for refused in ["", "0", "80", "1023", "65536", "abc", "9222x", "-1"] {
-            assert_eq!(remote_debugging(Some(refused)), RemoteDebugging::Disabled, "{refused}");
+            assert_eq!(
+                remote_debugging(Some(refused)),
+                RemoteDebugging::Disabled,
+                "{refused}"
+            );
         }
         assert_eq!(
             remote_debugging(Some(" 9222 ")),
-            RemoteDebugging::Port { port: 9222, allowed_origins: Vec::new() }
+            RemoteDebugging::Port {
+                port: 9222,
+                allowed_origins: Vec::new()
+            }
         );
         assert_eq!(
             remote_debugging(Some("65535")),
-            RemoteDebugging::Port { port: 65535, allowed_origins: Vec::new() }
+            RemoteDebugging::Port {
+                port: 65535,
+                allowed_origins: Vec::new()
+            }
         );
     }
 
@@ -145,7 +165,10 @@ mod tests {
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt as _;
-            assert_eq!(std::fs::metadata(&dir).unwrap().permissions().mode() & 0o777, 0o700);
+            assert_eq!(
+                std::fs::metadata(&dir).unwrap().permissions().mode() & 0o777,
+                0o700
+            );
         }
         std::fs::remove_dir_all(&dir).expect("cleanup");
         assert!(session_dir().to_string_lossy().contains("yolo-desktop-"));

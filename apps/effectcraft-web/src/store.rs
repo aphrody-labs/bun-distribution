@@ -69,13 +69,29 @@ impl Mirror {
     /// An entry read from the browser's storage at startup (nothing to flush).
     pub fn load(&mut self, key: &str, data: Arc<[u8]>, modified: f64) {
         let version = self.next_version();
-        self.entries.insert(key.to_string(), Entry { data, modified, persist: true, version });
+        self.entries.insert(
+            key.to_string(),
+            Entry {
+                data,
+                modified,
+                persist: true,
+                version,
+            },
+        );
     }
 
     pub fn put(&mut self, key: &str, data: Arc<[u8]>, modified: f64, persist: bool) {
         let was_persisted = self.entries.get(key).is_some_and(|e| e.persist);
         let version = self.next_version();
-        self.entries.insert(key.to_string(), Entry { data, modified, persist, version });
+        self.entries.insert(
+            key.to_string(),
+            Entry {
+                data,
+                modified,
+                persist,
+                version,
+            },
+        );
         if persist || was_persisted {
             self.touch(key);
         }
@@ -128,8 +144,16 @@ impl Mirror {
         std::mem::take(&mut self.dirty)
             .into_iter()
             .map(|key| match self.entries.get(&key) {
-                Some(e) if e.persist => Pending { data: Some(e.data.clone()), modified: e.modified, key },
-                _ => Pending { key, data: None, modified: 0.0 },
+                Some(e) if e.persist => Pending {
+                    data: Some(e.data.clone()),
+                    modified: e.modified,
+                    key,
+                },
+                _ => Pending {
+                    key,
+                    data: None,
+                    modified: 0.0,
+                },
             })
             .collect()
     }
@@ -141,7 +165,11 @@ impl Mirror {
 
 /// The key of a file-table path (`/a/b.mov` → `files/a/b.mov`).
 pub fn file_key(path: &str) -> String {
-    if path.starts_with('/') { format!("{FILES}{path}") } else { format!("{FILES}/{path}") }
+    if path.starts_with('/') {
+        format!("{FILES}{path}")
+    } else {
+        format!("{FILES}/{path}")
+    }
 }
 
 /// The path of a file-table key.
@@ -191,7 +219,9 @@ impl Store {
 
     /// The file under `path` with its [`Entry::version`].
     pub fn file_versioned(&self, path: &str) -> Option<(Arc<[u8]>, u64)> {
-        self.lock().get(&file_key(path)).map(|e| (e.data.clone(), e.version))
+        self.lock()
+            .get(&file_key(path))
+            .map(|e| (e.data.clone(), e.version))
     }
 
     pub fn remove_file(&self, path: &str) -> bool {
@@ -202,7 +232,11 @@ impl Store {
 
     /// Every file: (path, size, modified ms, persisted).
     pub fn files(&self) -> Vec<(String, usize, f64, bool)> {
-        self.lock().list(FILES).into_iter().filter_map(|(k, n, m, p)| Some((key_path(&k)?.to_string(), n, m, p))).collect()
+        self.lock()
+            .list(FILES)
+            .into_iter()
+            .filter_map(|(k, n, m, p)| Some((key_path(&k)?.to_string(), n, m, p)))
+            .collect()
     }
 
     /// Stored (persisted) files by kind: `{projects, media, autoSaves}`, each `{count, bytes}`
@@ -217,7 +251,10 @@ impl Store {
                     bytes += n as u64;
                 }
             }
-            out.insert(k.name().into(), serde_json::json!({"count": count, "bytes": bytes}));
+            out.insert(
+                k.name().into(),
+                serde_json::json!({"count": count, "bytes": bytes}),
+            );
         }
         out.into()
     }
@@ -257,7 +294,11 @@ impl FileKind {
             return FileKind::Media;
         }
         let name = lower.rsplit('/').next().unwrap_or(&lower);
-        if lower.contains("/effectcraft auto-save/") || name.contains(" auto-save ") { FileKind::AutoSave } else { FileKind::Project }
+        if lower.contains("/effectcraft auto-save/") || name.contains(" auto-save ") {
+            FileKind::AutoSave
+        } else {
+            FileKind::Project
+        }
     }
 
     /// `storage.clear` / `storage.info` name.
@@ -270,7 +311,9 @@ impl FileKind {
     }
 
     pub fn from_name(n: &str) -> Option<FileKind> {
-        [FileKind::Project, FileKind::Media, FileKind::AutoSave].into_iter().find(|k| k.name() == n)
+        [FileKind::Project, FileKind::Media, FileKind::AutoSave]
+            .into_iter()
+            .find(|k| k.name() == n)
     }
 }
 
@@ -283,7 +326,10 @@ pub struct WebConfig {
 
 impl WebConfig {
     pub fn new(store: Arc<Store>) -> WebConfig {
-        WebConfig { files: WebFiles(store.clone()), store }
+        WebConfig {
+            files: WebFiles(store.clone()),
+            store,
+        }
     }
 }
 
@@ -293,11 +339,17 @@ pub struct WebFiles(pub Arc<Store>);
 impl ConfigStore for WebConfig {
     fn read(&self, name: &str) -> Option<String> {
         let m = self.store.lock();
-        m.get(&format!("{CONFIG}{name}")).map(|e| String::from_utf8_lossy(&e.data).into_owned())
+        m.get(&format!("{CONFIG}{name}"))
+            .map(|e| String::from_utf8_lossy(&e.data).into_owned())
     }
     fn write(&self, name: &str, data: &str) -> std::io::Result<()> {
         let now = self.store.now();
-        self.store.lock().put(&format!("{CONFIG}{name}"), data.as_bytes().into(), now, true);
+        self.store.lock().put(
+            &format!("{CONFIG}{name}"),
+            data.as_bytes().into(),
+            now,
+            true,
+        );
         self.store.changed();
         Ok(())
     }
@@ -313,7 +365,11 @@ impl ConfigStore for WebConfig {
             .lock()
             .list(&pre)
             .into_iter()
-            .filter_map(|(k, ..)| k.strip_prefix(&pre).filter(|n| !n.is_empty() && !n.contains('/')).map(str::to_string))
+            .filter_map(|(k, ..)| {
+                k.strip_prefix(&pre)
+                    .filter(|n| !n.is_empty() && !n.contains('/'))
+                    .map(str::to_string)
+            })
             .collect();
         v.sort();
         v
@@ -339,7 +395,13 @@ impl FileOps for WebFiles {
             .into_iter()
             .filter_map(|(p, _, m, _)| {
                 let (parent, name) = p.rsplit_once('/')?;
-                (parent == dir).then(|| (name.to_string(), std::time::UNIX_EPOCH + std::time::Duration::from_secs_f64(m.max(0.0) / 1000.0)))
+                (parent == dir).then(|| {
+                    (
+                        name.to_string(),
+                        std::time::UNIX_EPOCH
+                            + std::time::Duration::from_secs_f64(m.max(0.0) / 1000.0),
+                    )
+                })
             })
             .collect()
     }
@@ -348,7 +410,14 @@ impl FileOps for WebFiles {
         Ok(())
     }
     fn remove(&self, path: &Path) -> std::io::Result<()> {
-        if self.0.remove_file(&path_str(path)) { Ok(()) } else { Err(std::io::Error::new(std::io::ErrorKind::NotFound, path_str(path))) }
+        if self.0.remove_file(&path_str(path)) {
+            Ok(())
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                path_str(path),
+            ))
+        }
     }
     fn is_file(&self, path: &Path) -> bool {
         self.0.file(&path_str(path)).is_some()
@@ -385,19 +454,41 @@ mod tests {
         s.put_file("/a.ecproj", Arc::from(&b"proj"[..]), true);
         s.put_file("/clip.mp4", Arc::from(&b"0123456789"[..]), true);
         s.put_file("/still.png", Arc::from(&b"px"[..]), true);
-        s.put_file("/EffectCraft Auto-Save/a auto-save 1.ecproj", Arc::from(&b"auto"[..]), true);
+        s.put_file(
+            "/EffectCraft Auto-Save/a auto-save 1.ecproj",
+            Arc::from(&b"auto"[..]),
+            true,
+        );
         s.put_file("/render.gif", Arc::from(&b"out"[..]), false);
         let u = s.usage();
         assert_eq!(u["projects"], serde_json::json!({"count": 1, "bytes": 4}));
-        assert_eq!(u["media"], serde_json::json!({"count": 2, "bytes": 12}), "render outputs are not stored");
+        assert_eq!(
+            u["media"],
+            serde_json::json!({"count": 2, "bytes": 12}),
+            "render outputs are not stored"
+        );
         assert_eq!(u["autoSaves"], serde_json::json!({"count": 1, "bytes": 4}));
         assert_eq!(FileKind::from_name("autoSaves"), Some(FileKind::AutoSave));
         assert_eq!(FileKind::of("/x/My auto-save 3.ecproj"), FileKind::AutoSave);
         s.lock().take_pending();
         assert_eq!(s.clear_kind(FileKind::Media), (2, 12));
-        assert!(s.file("/clip.mp4").is_none() && s.file("/a.ecproj").is_some() && s.file("/render.gif").is_some());
-        let deleted: Vec<String> = s.lock().take_pending().into_iter().filter(|p| p.data.is_none()).map(|p| p.key).collect();
-        assert_eq!(deleted.len(), 2, "the deletions are flushed to browser storage");
+        assert!(
+            s.file("/clip.mp4").is_none()
+                && s.file("/a.ecproj").is_some()
+                && s.file("/render.gif").is_some()
+        );
+        let deleted: Vec<String> = s
+            .lock()
+            .take_pending()
+            .into_iter()
+            .filter(|p| p.data.is_none())
+            .map(|p| p.key)
+            .collect();
+        assert_eq!(
+            deleted.len(),
+            2,
+            "the deletions are flushed to browser storage"
+        );
         assert_eq!(s.usage()["media"]["count"], 0);
     }
 
@@ -409,14 +500,24 @@ mod tests {
         m.put("config/a", Arc::from(&b"2"[..]), 3.0, true);
         let p = m.take_pending();
         assert_eq!(p.len(), 2);
-        assert_eq!((p[0].key.as_str(), p[0].data.as_deref()), ("config/a", Some(&b"2"[..])));
+        assert_eq!(
+            (p[0].key.as_str(), p[0].data.as_deref()),
+            ("config/a", Some(&b"2"[..]))
+        );
         assert_eq!(p[0].modified, 3.0);
         assert_eq!(p[1].key, "files/x.png");
         assert!(!m.has_pending() && m.take_pending().is_empty());
         // Delete after put: one delete.
         m.put("files/y", Arc::from(&b"y"[..]), 4.0, true);
         m.remove("files/y");
-        assert_eq!(m.take_pending(), vec![Pending { key: "files/y".into(), data: None, modified: 0.0 }]);
+        assert_eq!(
+            m.take_pending(),
+            vec![Pending {
+                key: "files/y".into(),
+                data: None,
+                modified: 0.0
+            }]
+        );
     }
 
     #[test]
@@ -445,7 +546,11 @@ mod tests {
         let (data, b) = s.file_versioned("/collision.png").unwrap();
         assert_ne!(a, b);
         assert_eq!(&data[..], b"blue");
-        assert_eq!(s.file_versioned("/collision.png").map(|f| f.1), Some(b), "reading doesn't change it");
+        assert_eq!(
+            s.file_versioned("/collision.png").map(|f| f.1),
+            Some(b),
+            "reading doesn't change it"
+        );
     }
 
     /// A write that failed is flushed again with the key's latest state (#215).
@@ -463,7 +568,10 @@ mod tests {
         m.retry("files/collision.png");
         m.put("files/collision.png", Arc::from(&b"gold"[..]), 2.0, true);
         let again = m.take_pending();
-        assert_eq!((again.len(), again[0].data.as_deref()), (1, Some(&b"gold"[..])));
+        assert_eq!(
+            (again.len(), again[0].data.as_deref()),
+            (1, Some(&b"gold"[..]))
+        );
     }
 
     #[test]
@@ -476,7 +584,13 @@ mod tests {
         s.put_file("/clip.mp4", Arc::from(&b"abc"[..]), true);
         s.put_file("/out.gif", Arc::from(&b"g"[..]), false);
         let f = s.files();
-        assert_eq!(f, vec![("/clip.mp4".to_string(), 3, 1000.0, true), ("/out.gif".to_string(), 1, 1000.0, false)]);
+        assert_eq!(
+            f,
+            vec![
+                ("/clip.mp4".to_string(), 3, 1000.0, true),
+                ("/out.gif".to_string(), 1, 1000.0, false)
+            ]
+        );
         assert_eq!(s.file("/clip.mp4").as_deref(), Some(&b"abc"[..]));
     }
 
@@ -493,10 +607,22 @@ mod tests {
         c.write("session.lock", "{}").unwrap();
         assert!(s.files().is_empty());
         let fs = c.files();
-        fs.write(Path::new("/EffectCraft Auto-Save/P auto-save 1.ecproj"), b"{}").unwrap();
-        fs.write(Path::new("/EffectCraft Auto-Save/P auto-save 2.ecproj"), b"{}").unwrap();
+        fs.write(
+            Path::new("/EffectCraft Auto-Save/P auto-save 1.ecproj"),
+            b"{}",
+        )
+        .unwrap();
+        fs.write(
+            Path::new("/EffectCraft Auto-Save/P auto-save 2.ecproj"),
+            b"{}",
+        )
+        .unwrap();
         fs.write(Path::new("/other.ecproj"), b"{}").unwrap();
-        let mut names: Vec<String> = fs.list(Path::new("/EffectCraft Auto-Save")).into_iter().map(|e| e.0).collect();
+        let mut names: Vec<String> = fs
+            .list(Path::new("/EffectCraft Auto-Save"))
+            .into_iter()
+            .map(|e| e.0)
+            .collect();
         names.sort();
         assert_eq!(names, ["P auto-save 1.ecproj", "P auto-save 2.ecproj"]);
         assert!(fs.is_file(Path::new("/other.ecproj")));
@@ -524,32 +650,51 @@ mod tests {
         use effectcraft_engine::Session;
         use serde_json::json;
         let s = store();
-        let mut a = Session { config: Some(Arc::new(WebConfig::new(s.clone()))), ..Default::default() };
+        let mut a = Session {
+            config: Some(Arc::new(WebConfig::new(s.clone()))),
+            ..Default::default()
+        };
         a.load_settings();
         assert!(a.begin_recovery().is_none());
         a.execute("file.newProject", json!({})).unwrap();
         a.execute("comp.new", json!({"name": "C"})).unwrap();
         // Untitled: the auto-save lands in the store's file table.
         let p = a.autosave_now().unwrap();
-        assert_eq!(Path::new(&p), Path::new("/EffectCraft Auto-Save/Untitled Project auto-save 1.ecproj"));
+        assert_eq!(
+            Path::new(&p),
+            Path::new("/EffectCraft Auto-Save/Untitled Project auto-save 1.ecproj")
+        );
         assert!(s.file(&path_str(Path::new(&p))).is_some());
         // The tab closes without a clean exit: the next visit offers the auto-save.
-        let mut b = Session { config: Some(Arc::new(WebConfig::new(s.clone()))), ..Default::default() };
+        let mut b = Session {
+            config: Some(Arc::new(WebConfig::new(s.clone()))),
+            ..Default::default()
+        };
         b.load_settings();
         let r = b.begin_recovery().expect("recovery");
         assert!(r.autosave.is_some());
         // Increment and Save sees the store's files.
         let fs = WebConfig::new(s.clone());
         fs.files().write(Path::new("/A.ecproj"), b"{}").unwrap();
-        let next = effectcraft_engine::autosave::increment_path("/A.ecproj", |p| fs.files().is_file(Path::new(p)));
+        let next = effectcraft_engine::autosave::increment_path("/A.ecproj", |p| {
+            fs.files().is_file(Path::new(p))
+        });
         assert_eq!(next, "/A 2.ecproj");
     }
 
     #[test]
     fn snapshot_meta_round_trips() {
-        let m = SnapshotMeta { path: Some("/p.ecproj".into()), dirty: true, state: Some(serde_json::json!({"activeComp": 3})), saved: 12.5 };
+        let m = SnapshotMeta {
+            path: Some("/p.ecproj".into()),
+            dirty: true,
+            state: Some(serde_json::json!({"activeComp": 3})),
+            saved: 12.5,
+        };
         let t = serde_json::to_string(&m).unwrap();
         assert_eq!(serde_json::from_str::<SnapshotMeta>(&t).unwrap(), m);
-        assert_eq!(serde_json::from_str::<SnapshotMeta>("{}").unwrap(), SnapshotMeta::default());
+        assert_eq!(
+            serde_json::from_str::<SnapshotMeta>("{}").unwrap(),
+            SnapshotMeta::default()
+        );
     }
 }

@@ -43,19 +43,29 @@ pub fn get_versioned(path: &str) -> Option<(Arc<[u8]>, u64)> {
 
 /// `(path, size)` of every file in the table.
 pub fn list() -> Vec<(String, usize)> {
-    STORE.files().into_iter().map(|(p, n, _, _)| (p, n)).collect()
+    STORE
+        .files()
+        .into_iter()
+        .map(|(p, n, _, _)| (p, n))
+        .collect()
 }
 
 /// The next write of `path` goes to browser storage only (no download).
 pub fn save_quietly(path: &str) {
-    QUIET.lock().unwrap_or_else(|e| e.into_inner()).push(path.to_string());
+    QUIET
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .push(path.to_string());
 }
 
 /// A rendered file (from the page's exporter or a worker): kept in the table unpersisted and
 /// downloaded at the next [`flush_downloads`].
 pub fn add_output(path: &str, data: Arc<[u8]>) {
     STORE.put_file(path, data, false);
-    OUTPUTS.lock().unwrap_or_else(|e| e.into_inner()).push(path.to_string());
+    OUTPUTS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .push(path.to_string());
 }
 
 /// The table path for a picked/dropped file name.
@@ -65,11 +75,20 @@ pub fn path_for(name: &str) -> String {
 }
 
 fn file_name(path: &str) -> &str {
-    path.rsplit('/').next().filter(|n| !n.is_empty()).unwrap_or("effectcraft-output")
+    path.rsplit('/')
+        .next()
+        .filter(|n| !n.is_empty())
+        .unwrap_or("effectcraft-output")
 }
 
 fn mime(name: &str) -> &'static str {
-    match name.rsplit('.').next().unwrap_or("").to_ascii_lowercase().as_str() {
+    match name
+        .rsplit('.')
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase()
+        .as_str()
+    {
         "png" => "image/png",
         "jpg" | "jpeg" => "image/jpeg",
         "gif" => "image/gif",
@@ -84,7 +103,9 @@ fn mime(name: &str) -> &'static str {
 
 /// Offer `data` as a download named `name`.
 pub fn download(name: &str, data: &[u8]) -> Result<(), JsValue> {
-    let doc = web_sys::window().and_then(|w| w.document()).ok_or("no document")?;
+    let doc = web_sys::window()
+        .and_then(|w| w.document())
+        .ok_or("no document")?;
     let parts = js_sys::Array::of1(&js_sys::Uint8Array::from(data));
     let bag = web_sys::BlobPropertyBag::new();
     bag.set_type(mime(name));
@@ -102,7 +123,8 @@ pub fn download(name: &str, data: &[u8]) -> Result<(), JsValue> {
         let _ = web_sys::Url::revoke_object_url(&url);
     });
     if let Some(w) = web_sys::window() {
-        let _ = w.set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), 60_000);
+        let _ =
+            w.set_timeout_with_callback_and_timeout_and_arguments_0(revoke.unchecked_ref(), 60_000);
     }
     Ok(())
 }
@@ -113,9 +135,12 @@ pub struct WebServices;
 
 impl Services for WebServices {
     fn read_file(&self, path: &str) -> std::io::Result<Vec<u8>> {
-        get(path)
-            .map(|d| d.to_vec())
-            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, format!("{path}: open it with File ▸ Open (or drop it on the page)")))
+        get(path).map(|d| d.to_vec()).ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{path}: open it with File ▸ Open (or drop it on the page)"),
+            )
+        })
     }
     fn write_file(&self, path: &str, data: &[u8]) -> std::io::Result<()> {
         put(path, data.into());
@@ -128,7 +153,8 @@ impl Services for WebServices {
         if quiet || crate::is_worker() {
             return Ok(());
         }
-        download(file_name(path), data).map_err(|e| std::io::Error::other(format!("download failed: {e:?}")))
+        download(file_name(path), data)
+            .map_err(|e| std::io::Error::other(format!("download failed: {e:?}")))
     }
     fn store_file(&self, path: &str, data: &[u8]) -> std::io::Result<()> {
         put(path, data.into());
@@ -142,7 +168,11 @@ impl Services for WebServices {
     /// numbered file finds the other frames of its image sequence loaded before.
     fn list_dir(&self, dir: &str) -> Vec<String> {
         let dir = dir.trim_end_matches('/');
-        list().into_iter().map(|(p, _)| p).filter(|p| p.rsplit_once('/').is_some_and(|(d, _)| d == dir)).collect()
+        list()
+            .into_iter()
+            .map(|(p, _)| p)
+            .filter(|p| p.rsplit_once('/').is_some_and(|(d, _)| d == dir))
+            .collect()
     }
     fn is_dir(&self, _path: &str) -> bool {
         false
@@ -156,12 +186,15 @@ pub struct WebImporter {
 
 impl effectcraft_engine::Importer for WebImporter {
     fn probe(&self, path: &str) -> Result<Footage, String> {
-        let bytes = get(path).ok_or_else(|| format!("{path}: not loaded (import it with File ▸ Import or drop it on the page)"))?;
+        let bytes = get(path).ok_or_else(|| {
+            format!("{path}: not loaded (import it with File ▸ Import or drop it on the page)")
+        })?;
         self.pool.add_bytes(path, bytes.clone());
         effectcraft_media::probe_bytes(path, bytes).map_err(|e| e.to_string())
     }
     fn register(&self, path: &str, data: &[u8]) {
-        self.pool.add_bytes(path, get(path).unwrap_or_else(|| data.into()));
+        self.pool
+            .add_bytes(path, get(path).unwrap_or_else(|| data.into()));
     }
     fn add_frames(&self, paths: &[String]) {
         for p in paths {
@@ -181,7 +214,10 @@ pub fn export_sink() -> Arc<effectcraft_export::Sink> {
 /// Download the render outputs written since the last call.
 pub fn flush_downloads() {
     let paths = std::mem::take(&mut *OUTPUTS.lock().unwrap_or_else(|e| e.into_inner()));
-    let mut out: Vec<(String, Arc<[u8]>)> = paths.into_iter().filter_map(|p| get(&p).map(|d| (file_name(&p).to_string(), d))).collect();
+    let mut out: Vec<(String, Arc<[u8]>)> = paths
+        .into_iter()
+        .filter_map(|p| get(&p).map(|d| (file_name(&p).to_string(), d)))
+        .collect();
     out.sort_by(|a, b| a.0.cmp(&b.0));
     out.dedup_by(|a, b| a.0 == b.0);
     let r = match out.len() {
@@ -189,7 +225,10 @@ pub fn flush_downloads() {
         1 => download(&out[0].0, &out[0].1),
         n => {
             let first = &out[0].0;
-            let stem = first.rsplit_once('.').map_or(first.as_str(), |(s, _)| s).trim_end_matches(|c: char| c.is_ascii_digit() || c == '_');
+            let stem = first
+                .rsplit_once('.')
+                .map_or(first.as_str(), |(s, _)| s)
+                .trim_end_matches(|c: char| c.is_ascii_digit() || c == '_');
             let stem = if stem.is_empty() { "render" } else { stem };
             log::info!("render: {n} files → {stem}.zip");
             download(&format!("{stem}.zip"), &zip_store(&out))
@@ -208,7 +247,11 @@ pub fn zip_store(entries: &[(String, Arc<[u8]>)]) -> Vec<u8> {
         for &b in d {
             c ^= b as u32;
             for _ in 0..8 {
-                c = if c & 1 != 0 { 0xEDB8_8320 ^ (c >> 1) } else { c >> 1 };
+                c = if c & 1 != 0 {
+                    0xEDB8_8320 ^ (c >> 1)
+                } else {
+                    c >> 1
+                };
             }
         }
         !c
@@ -254,8 +297,14 @@ pub fn zip_store(entries: &[(String, Arc<[u8]>)]) -> Vec<u8> {
 }
 
 /// Show the browser's file picker; `then` gets the picked files' table paths once they are read.
-pub fn pick(accept: &str, multiple: bool, then: impl FnOnce(Vec<String>) + 'static) -> Result<(), JsValue> {
-    let doc = web_sys::window().and_then(|w| w.document()).ok_or("no document")?;
+pub fn pick(
+    accept: &str,
+    multiple: bool,
+    then: impl FnOnce(Vec<String>) + 'static,
+) -> Result<(), JsValue> {
+    let doc = web_sys::window()
+        .and_then(|w| w.document())
+        .ok_or("no document")?;
     let input: web_sys::HtmlInputElement = doc.create_element("input")?.dyn_into()?;
     input.set_type("file");
     input.set_accept(accept);
@@ -263,7 +312,10 @@ pub fn pick(accept: &str, multiple: bool, then: impl FnOnce(Vec<String>) + 'stat
     let inp = input.clone();
     let on_change = Closure::once_into_js(move || {
         let Some(list) = inp.files() else { return };
-        read_files((0..list.length()).filter_map(|i| list.get(i)).collect(), then);
+        read_files(
+            (0..list.length()).filter_map(|i| list.get(i)).collect(),
+            then,
+        );
     });
     input.add_event_listener_with_callback("change", on_change.unchecked_ref())?;
     input.click();

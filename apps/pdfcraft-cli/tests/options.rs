@@ -20,10 +20,16 @@ fn non_edit_commands_reject_unknown_options_before_io() {
         vec!["run", "doc_open", "--roto", "/tmp"],
         vec!["ui", "--contro", "control.json", "state"],
     ] {
-        let unknown = args.iter().find(|arg| arg.starts_with("--")).expect("test option");
+        let unknown = args
+            .iter()
+            .find(|arg| arg.starts_with("--"))
+            .expect("test option");
         let out = Command::new(BIN).args(&args).output().expect("run cli");
         let stderr = String::from_utf8_lossy(&out.stderr);
         assert!(!out.status.success(), "{args:?} unexpectedly succeeded");
-        assert!(stderr.contains("unknown option") && stderr.contains(unknown), "{args:?}: {stderr}");
+        assert!(
+            stderr.contains("unknown option") && stderr.contains(unknown),
+            "{args:?}: {stderr}"
+        );
     }
 }

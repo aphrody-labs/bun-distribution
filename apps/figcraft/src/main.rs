@@ -6,8 +6,18 @@
 //! `--control <port>` (or `FIGCRAFT_CONTROL_PORT`) starts a localhost JSON-lines control server:
 //! `{"id":1,"method":"engine.execute","params":{"command":"shape.rectangle","params":{"x":0,"y":0,"width":100,"height":100}}}`
 //! → `{"id":1,"ok":true,"result":{…}}`. Methods: `figcraft_ui_egui::control`.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
-#![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
+#![cfg_attr(
+    all(target_os = "windows", not(debug_assertions)),
+    windows_subsystem = "windows"
+)]
 
 mod args;
 mod control_server;
@@ -45,13 +55,19 @@ struct App {
 impl eframe::App for App {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         {
-            let mut slot = self.ctx_slot.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let mut slot = self
+                .ctx_slot
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             if slot.is_none() {
                 *slot = Some(ctx.clone());
             }
         }
         let title = with_app(|fig| {
-            let mut q = self.queue.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let mut q = self
+                .queue
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             fig.control_queue.extend(q.drain(..));
             drop(q);
             // Closing the window asks about unsaved changes (and keeps the app running while other
@@ -67,7 +83,13 @@ impl eframe::App for App {
             self.title = title;
         }
         let now = ctx.input(|i| i.time);
-        if let Some(wait) = with_app(|fig| recovery::lock(&self.recovery).as_mut().and_then(|r| r.tick(&fig.session, now))).flatten() {
+        if let Some(wait) = with_app(|fig| {
+            recovery::lock(&self.recovery)
+                .as_mut()
+                .and_then(|r| r.tick(&fig.session, now))
+        })
+        .flatten()
+        {
             ctx.request_repaint_after(std::time::Duration::from_secs_f64(wait));
         }
     }
@@ -75,7 +97,9 @@ impl eframe::App for App {
     fn raw_input_hook(&mut self, _ctx: &egui::Context, raw_input: &mut egui::RawInput) {
         // Pointer and key events sent over the control channel (`ui.input`), for the window
         // about to draw.
-        if let Some(events) = with_app(|fig| figcraft_ui_egui::windows::take_input(fig, raw_input.viewport_id)) {
+        if let Some(events) =
+            with_app(|fig| figcraft_ui_egui::windows::take_input(fig, raw_input.viewport_id))
+        {
             raw_input.events.extend(events);
         }
     }
@@ -100,30 +124,49 @@ fn main() -> eframe::Result {
         println!(
             "FigCraft {}{}",
             env!("CARGO_PKG_VERSION"),
-            option_env!("FIGCRAFT_BUILD_SHA").filter(|s| !s.is_empty()).map(|s| format!(" ({s})")).unwrap_or_default()
+            option_env!("FIGCRAFT_BUILD_SHA")
+                .filter(|s| !s.is_empty())
+                .map(|s| format!(" ({s})"))
+                .unwrap_or_default()
         );
         return Ok(());
     }
     let args = args::parse(&args);
-    let port = args.control.or_else(|| std::env::var("FIGCRAFT_CONTROL_PORT").ok().and_then(|p| p.parse().ok()));
+    let port = args.control.or_else(|| {
+        std::env::var("FIGCRAFT_CONTROL_PORT")
+            .ok()
+            .and_then(|p| p.parse().ok())
+    });
     // System fonts: index them in the background, then wake the UI (an idle window draws no frames)
     // to lay text out again with them.
     let ctx_slot: Arc<Mutex<Option<egui::Context>>> = Arc::new(Mutex::new(None));
     let fonts_slot = ctx_slot.clone();
     std::thread::spawn(move || {
         figcraft_text::scan_system_fonts();
-        if let Some(c) = fonts_slot.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_ref() {
+        if let Some(c) = fonts_slot
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_ref()
+        {
             c.request_repaint();
         }
     });
     let mut session = Session::empty();
     // Live sessions: the network threads wake the window when something arrives.
     let wake_slot = ctx_slot.clone();
-    session.live.install(Box::new(figcraft_collab_net::NetLink::new(Arc::new(move || {
-        if let Some(c) = wake_slot.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_ref() {
-            c.request_repaint();
-        }
-    }))));
+    session
+        .live
+        .install(Box::new(figcraft_collab_net::NetLink::new(Arc::new(
+            move || {
+                if let Some(c) = wake_slot
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .as_ref()
+                {
+                    c.request_repaint();
+                }
+            },
+        ))));
     for f in &args.files {
         if let Err(e) = session.execute("file.open", &json!({"path": f})) {
             log::error!("{f}: {e}");
@@ -137,7 +180,10 @@ fn main() -> eframe::Result {
     if let Some(prefs) = svc.prefs.clone() {
         session.prefs = prefs;
     }
-    let recovered = recovery_root.as_deref().map(|r| recovery::recover_all(r, &mut session)).unwrap_or_default();
+    let recovered = recovery_root
+        .as_deref()
+        .map(|r| recovery::recover_all(r, &mut session))
+        .unwrap_or_default();
     let mut copies = recovery_root.as_deref().and_then(recovery::Recovery::start);
     // Copies of online files stay until their files arrive from their servers.
     if let Some(r) = copies.as_mut() {
@@ -175,7 +221,10 @@ fn main() -> eframe::Result {
     // The tab strip is the title bar: macOS keeps its window buttons inset into it; elsewhere the
     // window is frameless and FigCraft draws the buttons and resize edges.
     if cfg!(target_os = "macos") {
-        viewport = viewport.with_fullsize_content_view(true).with_titlebar_shown(false).with_title_shown(false);
+        viewport = viewport
+            .with_fullsize_content_view(true)
+            .with_titlebar_shown(false)
+            .with_title_shown(false);
         fig.ui.title_bar = figcraft_ui_egui::TitleBar::Inset;
     } else {
         viewport = viewport.with_decorations(false);
@@ -184,7 +233,22 @@ fn main() -> eframe::Result {
     if let Some(icon) = icon {
         viewport = viewport.with_icon(icon);
     }
-    let options = eframe::NativeOptions { viewport, renderer: eframe::Renderer::Wgpu, ..Default::default() };
+    let options = eframe::NativeOptions {
+        viewport,
+        renderer: eframe::Renderer::Wgpu,
+        ..Default::default()
+    };
     figcraft_ui_egui::windows::install(fig);
-    eframe::run_native("FigCraft", options, Box::new(move |_cc| Ok(Box::new(App { queue, ctx_slot, title: String::new(), recovery }))))
+    eframe::run_native(
+        "FigCraft",
+        options,
+        Box::new(move |_cc| {
+            Ok(Box::new(App {
+                queue,
+                ctx_slot,
+                title: String::new(),
+                recovery,
+            }))
+        }),
+    )
 }

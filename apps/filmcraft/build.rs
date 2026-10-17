@@ -22,7 +22,10 @@ mod windows {
         res.set_icon("../../assets/filmcraft/app-icon/filmcraft.ico")
             .set("ProductName", "FilmCraft")
             .set("FileDescription", "FilmCraft video editor")
-            .set("LegalCopyright", "Copyright (c) the FilmCraft contributors. MIT OR Apache-2.0.")
+            .set(
+                "LegalCopyright",
+                "Copyright (c) the FilmCraft contributors. MIT OR Apache-2.0.",
+            )
             .set("OriginalFilename", "filmcraft.exe")
             .set("InternalName", "filmcraft");
         if let Err(e) = res.compile() {
@@ -38,6 +41,8 @@ mod windows {
 #[cfg(not(windows))]
 mod windows {
     pub fn embed_resources() {
-        println!("cargo:warning=filmcraft.exe built without icon/version resources (cross-compiled from a non-Windows host)");
+        println!(
+            "cargo:warning=filmcraft.exe built without icon/version resources (cross-compiled from a non-Windows host)"
+        );
     }
 }

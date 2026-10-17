@@ -26,7 +26,9 @@ use std::sync::{Arc, Mutex};
 
 use filmcraft_frame::{AudioBuffer, VideoFrame};
 use filmcraft_isobmff::{CodecConfig, Mp4File, TrackKind};
-use filmcraft_media::{FrameRequest, MediaError, MediaInfo, MediaSource, SharedReader, SharedSource};
+use filmcraft_media::{
+    FrameRequest, MediaError, MediaInfo, MediaSource, SharedReader, SharedSource,
+};
 use filmcraft_time::Tick;
 use serde_json::json;
 use wasm_bindgen::JsCast;
@@ -98,9 +100,19 @@ fn obj(pairs: &[(&str, JsValue)]) -> JsValue {
 }
 
 /// WebCodecs codec string and decoder `description` for a sample entry.
-pub fn codec_string(c: &CodecConfig, fourcc: &str) -> Option<(&'static str, String, Option<Vec<u8>>)> {
+pub fn codec_string(
+    c: &CodecConfig,
+    fourcc: &str,
+) -> Option<(&'static str, String, Option<Vec<u8>>)> {
     match c {
-        CodecConfig::Avc(a) => Some(("avc", format!("avc1.{:02x}{:02x}{:02x}", a.profile, a.compatibility, a.level), Some(a.to_bytes()))),
+        CodecConfig::Avc(a) => Some((
+            "avc",
+            format!(
+                "avc1.{:02x}{:02x}{:02x}",
+                a.profile, a.compatibility, a.level
+            ),
+            Some(a.to_bytes()),
+        )),
         CodecConfig::Hevc(h) => {
             let space = ["", "A", "B", "C"][(h.general_profile_space & 3) as usize];
             let compat = h.general_profile_compatibility_flags.reverse_bits();
@@ -121,7 +133,16 @@ pub fn codec_string(c: &CodecConfig, fourcc: &str) -> Option<(&'static str, Stri
             }
             Some(("hevc", s, Some(h.to_bytes())))
         }
-        CodecConfig::Vp9(v) => Some(("vp9", format!("vp09.{:02}.{:02}.{:02}", v.profile, v.level, v.bit_depth.max(8)), None)),
+        CodecConfig::Vp9(v) => Some((
+            "vp9",
+            format!(
+                "vp09.{:02}.{:02}.{:02}",
+                v.profile,
+                v.level,
+                v.bit_depth.max(8)
+            ),
+            None,
+        )),
         CodecConfig::Av1(a) => {
             let depth = if a.twelve_bit {
                 12
@@ -130,7 +151,16 @@ pub fn codec_string(c: &CodecConfig, fourcc: &str) -> Option<(&'static str, Stri
             } else {
                 8
             };
-            Some(("av1", format!("av01.{}.{:02}{}.{depth:02}", a.seq_profile, a.seq_level_idx_0, if a.seq_tier_0 { 'H' } else { 'M' }), Some(a.to_bytes())))
+            Some((
+                "av1",
+                format!(
+                    "av01.{}.{:02}{}.{depth:02}",
+                    a.seq_profile,
+                    a.seq_level_idx_0,
+                    if a.seq_tier_0 { 'H' } else { 'M' }
+                ),
+                Some(a.to_bytes()),
+            ))
         }
         _ => None,
     }
@@ -142,14 +172,30 @@ pub async fn probe() {
         crate::set_info("webcodecs", json!(false));
         return;
     };
-    if web_sys::window().and_then(|w| w.location().search().ok()).is_some_and(|s| s.contains("nowebcodecs")) {
+    if web_sys::window()
+        .and_then(|w| w.location().search().ok())
+        .is_some_and(|s| s.contains("nowebcodecs"))
+    {
         crate::set_info("webcodecs", json!("disabled"));
         return;
     }
     let mut ok = Vec::new();
-    for (family, codec) in [("avc", "avc1.640028"), ("hevc", "hvc1.1.6.L120.90"), ("vp9", "vp09.00.40.08"), ("av1", "av01.0.08M.08")] {
-        let cfg = obj(&[("codec", codec.into()), ("codedWidth", 1920.into()), ("codedHeight", 1080.into())]);
-        let Ok(p) = call(&vd, "isConfigSupported", &[&cfg]).and_then(|p| p.dyn_into::<js_sys::Promise>()) else { continue };
+    for (family, codec) in [
+        ("avc", "avc1.640028"),
+        ("hevc", "hvc1.1.6.L120.90"),
+        ("vp9", "vp09.00.40.08"),
+        ("av1", "av01.0.08M.08"),
+    ] {
+        let cfg = obj(&[
+            ("codec", codec.into()),
+            ("codedWidth", 1920.into()),
+            ("codedHeight", 1080.into()),
+        ]);
+        let Ok(p) =
+            call(&vd, "isConfigSupported", &[&cfg]).and_then(|p| p.dyn_into::<js_sys::Promise>())
+        else {
+            continue;
+        };
         if let Ok(r) = JsFuture::from(p).await
             && get(&r, "supported").as_bool() == Some(true)
         {
@@ -198,7 +244,11 @@ impl filmcraft_isobmff::ByteSource for ReaderSrc {
 }
 
 /// MP4/MOV with a WebCodecs-decodable video track → [`WcSource`].
-pub fn reader_opener(name: &str, head: &[u8], reader: &SharedReader) -> Option<Result<SharedSource, MediaError>> {
+pub fn reader_opener(
+    name: &str,
+    head: &[u8],
+    reader: &SharedReader,
+) -> Option<Result<SharedSource, MediaError>> {
     if !filmcraft_codecs::mp4::sniff(head) {
         return None;
     }
@@ -210,17 +260,37 @@ pub fn reader_opener(name: &str, head: &[u8], reader: &SharedReader) -> Option<R
         Ok(f) => f,
         Err(_) => return Some(Ok(inner)),
     };
-    let Some(track) = file.tracks.iter().position(|t| t.kind == TrackKind::Video && !t.samples.is_empty()) else { return Some(Ok(inner)) };
-    let Some(entry) = file.tracks[track].entries.first() else { return Some(Ok(inner)) };
+    let Some(track) = file
+        .tracks
+        .iter()
+        .position(|t| t.kind == TrackKind::Video && !t.samples.is_empty())
+    else {
+        return Some(Ok(inner));
+    };
+    let Some(entry) = file.tracks[track].entries.first() else {
+        return Some(Ok(inner));
+    };
     let fourcc = entry.format.to_string();
-    let Some((family, codec, description)) = codec_string(&entry.codec, &fourcc) else { return Some(Ok(inner)) };
+    let Some((family, codec, description)) = codec_string(&entry.codec, &fourcc) else {
+        return Some(Ok(inner));
+    };
     if !SUPPORTED.with(|s| s.borrow().contains(&family)) {
         return Some(Ok(inner));
     }
     let info = inner.info().clone();
     // the decoder wants the coded size; `info` reports the display size after the track's rotation
     let rotation = file.tracks[track].display_rotation().unwrap_or(0);
-    let (w, h) = info.video.as_ref().map(|v| if rotation % 2 == 1 { (v.height, v.width) } else { (v.width, v.height) }).unwrap_or((0, 0));
+    let (w, h) = info
+        .video
+        .as_ref()
+        .map(|v| {
+            if rotation % 2 == 1 {
+                (v.height, v.width)
+            } else {
+                (v.width, v.height)
+            }
+        })
+        .unwrap_or((0, 0));
     let id = NEXT_ID.with(|n| {
         let id = n.get();
         n.set(id + 1);
@@ -237,7 +307,15 @@ pub fn reader_opener(name: &str, head: &[u8], reader: &SharedReader) -> Option<R
         file,
         track,
         id,
-        config: Config { codec, description, width: w, height: h, rotation, color, par },
+        config: Config {
+            codec,
+            description,
+            width: w,
+            height: h,
+            rotation,
+            color,
+            par,
+        },
         state: Mutex::new(Cache::default()),
     })))
 }
@@ -291,7 +369,11 @@ fn to_rgba(frame: &JsValue) -> Option<VideoFrame> {
         if c.is_none() {
             let canvas = web_sys::OffscreenCanvas::new(w.max(1), h.max(1)).ok()?;
             let opts = obj(&[("willReadFrequently", true.into())]);
-            let ctx = canvas.get_context_with_context_options("2d", &opts).ok()??.dyn_into::<web_sys::OffscreenCanvasRenderingContext2d>().ok()?;
+            let ctx = canvas
+                .get_context_with_context_options("2d", &opts)
+                .ok()??
+                .dyn_into::<web_sys::OffscreenCanvasRenderingContext2d>()
+                .ok()?;
             *c = Some((canvas, ctx));
         }
         let (canvas, ctx) = c.as_ref()?;
@@ -299,7 +381,12 @@ fn to_rgba(frame: &JsValue) -> Option<VideoFrame> {
             canvas.set_width(w);
             canvas.set_height(h);
         }
-        call(ctx, "drawImage", &[frame, &0.into(), &0.into(), &w.into(), &h.into()]).ok()?;
+        call(
+            ctx,
+            "drawImage",
+            &[frame, &0.into(), &0.into(), &w.into(), &h.into()],
+        )
+        .ok()?;
         let img = ctx.get_image_data(0.0, 0.0, w as f64, h as f64).ok()?;
         Some(VideoFrame::rgba8(w, h, img.data().0))
     })
@@ -316,12 +403,26 @@ impl Session {
         let generation = Rc::new(Cell::new(0u64));
         let alive = Rc::new(Cell::new(true));
         let (o, lo, om) = (out.clone(), last_output.clone(), out_max.clone());
-        let (copies, epoch, active, config, errors) = (copying.clone(), generation.clone(), alive.clone(), cfg.clone(), errored.clone());
+        let (copies, epoch, active, config, errors) = (
+            copying.clone(),
+            generation.clone(),
+            alive.clone(),
+            cfg.clone(),
+            errored.clone(),
+        );
         let on_output = Closure::<dyn FnMut(JsValue)>::new(move |frame: JsValue| {
             let ts = get(&frame, "timestamp").as_f64().unwrap_or(0.0) as i64;
             let expected = epoch.get();
-            let (o, lo, om, copies, epoch, active, config, errors) =
-                (o.clone(), lo.clone(), om.clone(), copies.clone(), epoch.clone(), active.clone(), config.clone(), errors.clone());
+            let (o, lo, om, copies, epoch, active, config, errors) = (
+                o.clone(),
+                lo.clone(),
+                om.clone(),
+                copies.clone(),
+                epoch.clone(),
+                active.clone(),
+                config.clone(),
+                errors.clone(),
+            );
             copies.set(copies.get().saturating_add(1));
             wasm_bindgen_futures::spawn_local(async move {
                 let begin = now_ms();
@@ -378,7 +479,10 @@ impl Session {
             e.set(true);
             crate::repaint();
         });
-        let init = obj(&[("output", on_output.as_ref().clone()), ("error", on_error.as_ref().clone())]);
+        let init = obj(&[
+            ("output", on_output.as_ref().clone()),
+            ("error", on_error.as_ref().clone()),
+        ]);
         let decoder = js_sys::Reflect::construct(&vd, &js_sys::Array::of1(&init))?;
         let s = Session {
             decoder,
@@ -414,7 +518,9 @@ impl Session {
     }
 
     fn queue(&self) -> u32 {
-        get(&self.decoder, "decodeQueueSize").as_f64().unwrap_or(0.0) as u32
+        get(&self.decoder, "decodeQueueSize")
+            .as_f64()
+            .unwrap_or(0.0) as u32
     }
 }
 
@@ -471,12 +577,17 @@ impl WcSource {
             let key = t.sync_sample_before(i);
             // The session reaches the frame by feeding on: it has not output it yet (a frame it
             // already output but the cache dropped needs a restart).
-            let covers = !s.needs_key && s.start <= i && key <= s.next && (i >= s.next || want > s.out_max.get());
+            let covers = !s.needs_key
+                && s.start <= i
+                && key <= s.next
+                && (i >= s.next || want > s.out_max.get());
             if !covers {
                 // Don't interrupt a session that is still working towards its own frame, unless it
                 // has gone quiet for STALE_MS (a copyTo that never settles must not wedge it).
                 let fresh = now_ms() - s.last_output.get() < STALE_MS;
-                let busy = fresh && (s.copying.get() > 0 || (!s.needs_key && s.target != i64::MIN && s.out_max.get() < s.target));
+                let busy = fresh
+                    && (s.copying.get() > 0
+                        || (!s.needs_key && s.target != i64::MIN && s.out_max.get() < s.target));
                 if busy {
                     return Drive::Waiting;
                 }
@@ -507,14 +618,27 @@ impl WcSource {
                     Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => return Drive::Waiting,
                     Err(_) => return Drive::Failed,
                 }
-                let Some(chunk_ctor) = ctor("EncodedVideoChunk") else { return Drive::Failed };
+                let Some(chunk_ctor) = ctor("EncodedVideoChunk") else {
+                    return Drive::Failed;
+                };
                 let init = obj(&[
-                    ("type", (if smp.is_sync || s.next == s.start { "key" } else { "delta" }).into()),
+                    (
+                        "type",
+                        (if smp.is_sync || s.next == s.start {
+                            "key"
+                        } else {
+                            "delta"
+                        })
+                        .into(),
+                    ),
                     ("timestamp", (smp.pts as f64).into()),
                     ("duration", (smp.duration as f64).into()),
                     ("data", js_sys::Uint8Array::from(&data[..]).into()),
                 ]);
-                let Ok(chunk) = js_sys::Reflect::construct(&chunk_ctor, &js_sys::Array::of1(&init)) else { return Drive::Failed };
+                let Ok(chunk) = js_sys::Reflect::construct(&chunk_ctor, &js_sys::Array::of1(&init))
+                else {
+                    return Drive::Failed;
+                };
                 if call(&s.decoder, "decode", &[&chunk]).is_err() {
                     return Drive::Failed;
                 }
@@ -524,7 +648,9 @@ impl WcSource {
             if s.next >= n && s.queue() == 0 {
                 s.flushing.set(true);
                 s.needs_key = true;
-                if let Ok(p) = call(&s.decoder, "flush", &[]).and_then(|p| p.dyn_into::<js_sys::Promise>()) {
+                if let Ok(p) =
+                    call(&s.decoder, "flush", &[]).and_then(|p| p.dyn_into::<js_sys::Promise>())
+                {
                     let f = s.flushing.clone();
                     wasm_bindgen_futures::spawn_local(async move {
                         let _ = JsFuture::from(p).await;
@@ -543,15 +669,23 @@ impl WcSource {
     fn collect(&self, c: &mut Cache, want: i64) {
         let out = SESSIONS.with(|ss| {
             let ss = ss.borrow();
-            let Some(s) = ss.get(&self.id) else { return Vec::new() };
+            let Some(s) = ss.get(&self.id) else {
+                return Vec::new();
+            };
             std::mem::take(&mut *s.out.borrow_mut())
         });
         for (pts, f) in out {
-            let f = if self.config.rotation != 0 { f.rotated(self.config.rotation) } else { f };
+            let f = if self.config.rotation != 0 {
+                f.rotated(self.config.rotation)
+            } else {
+                f
+            };
             c.frames.insert(pts, Arc::new(f));
         }
         while c.frames.len() > CACHE_FRAMES {
-            let Some(far) = c.frames.keys().copied().max_by_key(|p| (p - want).abs()) else { break };
+            let Some(far) = c.frames.keys().copied().max_by_key(|p| (p - want).abs()) else {
+                break;
+            };
             c.frames.remove(&far);
         }
         // the session's own frame came out: other requests may restart it now
@@ -589,8 +723,14 @@ impl MediaSource for WcSource {
         let t = &self.file.tracks[self.track];
         let n = t.samples.len();
         // nearest, as `Mp4Source` looks frames up (sample times are rounded to the timescale)
-        let target = req.time.max(Tick::ZERO).to_rational_round(1, t.timescale.max(1) as i64);
-        let i = t.sample_at_presentation_time(target).unwrap_or(n - 1).min(n - 1);
+        let target = req
+            .time
+            .max(Tick::ZERO)
+            .to_rational_round(1, t.timescale.max(1) as i64);
+        let i = t
+            .sample_at_presentation_time(target)
+            .unwrap_or(n - 1)
+            .min(n - 1);
         let want = t.samples[i].pts;
         self.collect(&mut c, want);
         if let Some(f) = c.frames.get(&want) {
@@ -606,7 +746,10 @@ impl MediaSource for WcSource {
                 Err(MediaError::Decode("WebCodecs: decoding".into()))
             }
             Drive::Failed => {
-                log::warn!("{}: WebCodecs failed, using FilmCraft's decoder", self.info.name);
+                log::warn!(
+                    "{}: WebCodecs failed, using FilmCraft's decoder",
+                    self.info.name
+                );
                 FALLBACKS.with(|f| f.set(f.get() + 1));
                 c.failed = true;
                 drop(c);
@@ -615,10 +758,21 @@ impl MediaSource for WcSource {
         }
     }
 
-    fn audio(&self, start: i64, frames: usize, sample_rate: u32) -> Result<AudioBuffer, MediaError> {
+    fn audio(
+        &self,
+        start: i64,
+        frames: usize,
+        sample_rate: u32,
+    ) -> Result<AudioBuffer, MediaError> {
         self.inner.audio(start, frames, sample_rate)
     }
-    fn audio_stream(&self, stream: usize, start: i64, frames: usize, sample_rate: u32) -> Result<AudioBuffer, MediaError> {
+    fn audio_stream(
+        &self,
+        stream: usize,
+        start: i64,
+        frames: usize,
+        sample_rate: u32,
+    ) -> Result<AudioBuffer, MediaError> {
         self.inner.audio_stream(stream, start, frames, sample_rate)
     }
 }

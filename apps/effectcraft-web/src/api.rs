@@ -40,7 +40,11 @@ fn from_js(v: &JsValue) -> Value {
     if v.is_undefined() || v.is_null() {
         return json!({});
     }
-    js_sys::JSON::stringify(v).ok().and_then(|s| s.as_string()).and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(json!({}))
+    js_sys::JSON::stringify(v)
+        .ok()
+        .and_then(|s| s.as_string())
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or(json!({}))
 }
 
 /// Send a control request to the app; the promise resolves with its `result` or rejects with its
@@ -52,7 +56,10 @@ pub fn request(method: String, params: JsValue) -> js_sys::Promise {
         let (req, rx) = ControlRequest::new(method.clone(), params.clone());
         let sent = TX.with(|t| t.borrow().as_ref().is_some_and(|tx| tx.send(req).is_ok()));
         if !sent {
-            let _ = reject.call1(&JsValue::NULL, &JsValue::from_str("EffectCraft is not running yet"));
+            let _ = reject.call1(
+                &JsValue::NULL,
+                &JsValue::from_str("EffectCraft is not running yet"),
+            );
             return;
         }
         PENDING.with(|p| p.borrow_mut().push((rx, resolve, reject)));
@@ -63,13 +70,20 @@ pub fn request(method: String, params: JsValue) -> js_sys::Promise {
 /// Files in the in-memory file table: `[{path, size}]` (picked, dropped, saved and rendered files).
 #[wasm_bindgen]
 pub fn files() -> JsValue {
-    to_js(&Value::Array(crate::files::list().into_iter().map(|(path, size)| json!({"path": path, "size": size})).collect()))
+    to_js(&Value::Array(
+        crate::files::list()
+            .into_iter()
+            .map(|(path, size)| json!({"path": path, "size": size}))
+            .collect(),
+    ))
 }
 
 /// A file's bytes from the table (e.g. a render), or `undefined`.
 #[wasm_bindgen(js_name = readFile)]
 pub fn read_file(path: String) -> JsValue {
-    crate::files::get(&path).map(|d| js_sys::Uint8Array::from(&d[..]).into()).unwrap_or(JsValue::UNDEFINED)
+    crate::files::get(&path)
+        .map(|d| js_sys::Uint8Array::from(&d[..]).into())
+        .unwrap_or(JsValue::UNDEFINED)
 }
 
 /// Put bytes into the file table under `/<name>` and open (`.ecproj`) or import them. Resolves
@@ -107,8 +121,14 @@ pub fn save_to_browser(path: Option<String>) -> js_sys::Promise {
     js_sys::Promise::new(&mut |resolve, reject| {
         let path = path.clone();
         crate::post(move |app| {
-            let p = path.or_else(|| app.session.path.clone()).unwrap_or_else(|| format!("/{}.ecproj", app.session.project_name()));
-            let p = if p.starts_with('/') { p } else { format!("/{p}") };
+            let p = path
+                .or_else(|| app.session.path.clone())
+                .unwrap_or_else(|| format!("/{}.ecproj", app.session.project_name()));
+            let p = if p.starts_with('/') {
+                p
+            } else {
+                format!("/{p}")
+            };
             crate::files::save_quietly(&p);
             match app.session.execute("file.saveAs", json!({"path": p})) {
                 Ok(v) => {
@@ -126,15 +146,22 @@ pub fn save_to_browser(path: Option<String>) -> js_sys::Promise {
 /// modified}], config: [name]}` (render outputs, which are not stored, are left out).
 #[wasm_bindgen(js_name = listStored)]
 pub async fn list_stored() -> JsValue {
-    let est = wasm_bindgen_futures::JsFuture::from(crate::persist::store_estimate()).await.map(|v| from_js(&v)).unwrap_or(json!({}));
+    let est = wasm_bindgen_futures::JsFuture::from(crate::persist::store_estimate())
+        .await
+        .map(|v| from_js(&v))
+        .unwrap_or(json!({}));
     let files: Vec<Value> = crate::files::STORE
         .files()
         .into_iter()
         .filter(|f| f.3)
         .map(|(path, size, modified, _)| json!({"path": path, "size": size, "modified": modified}))
         .collect();
-    let config: Vec<Value> =
-        crate::files::STORE.lock().list(crate::store::CONFIG).into_iter().map(|(k, ..)| json!(k.trim_start_matches(crate::store::CONFIG))).collect();
+    let config: Vec<Value> = crate::files::STORE
+        .lock()
+        .list(crate::store::CONFIG)
+        .into_iter()
+        .map(|(k, ..)| json!(k.trim_start_matches(crate::store::CONFIG)))
+        .collect();
     let mut v = est;
     v["files"] = json!(files);
     v["config"] = json!(config);
@@ -158,21 +185,25 @@ pub fn flush() -> js_sys::Promise {
 /// Settle the promises whose replies arrived (called every frame).
 pub(crate) fn poll_replies() {
     PENDING.with(|p| {
-        p.borrow_mut().retain(|(rx, resolve, reject)| match rx.try_recv() {
-            Ok(v) => {
-                if v["ok"].as_bool() == Some(true) {
-                    let _ = resolve.call1(&JsValue::NULL, &to_js(&v["result"]));
-                } else {
-                    let msg = v["error"].as_str().map(str::to_string).unwrap_or_else(|| v.to_string());
-                    let _ = reject.call1(&JsValue::NULL, &JsValue::from_str(&msg));
+        p.borrow_mut()
+            .retain(|(rx, resolve, reject)| match rx.try_recv() {
+                Ok(v) => {
+                    if v["ok"].as_bool() == Some(true) {
+                        let _ = resolve.call1(&JsValue::NULL, &to_js(&v["result"]));
+                    } else {
+                        let msg = v["error"]
+                            .as_str()
+                            .map(str::to_string)
+                            .unwrap_or_else(|| v.to_string());
+                        let _ = reject.call1(&JsValue::NULL, &JsValue::from_str(&msg));
+                    }
+                    false
                 }
-                false
-            }
-            Err(std::sync::mpsc::TryRecvError::Empty) => true,
-            Err(std::sync::mpsc::TryRecvError::Disconnected) => {
-                let _ = reject.call1(&JsValue::NULL, &JsValue::from_str("request dropped"));
-                false
-            }
-        });
+                Err(std::sync::mpsc::TryRecvError::Empty) => true,
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    let _ = reject.call1(&JsValue::NULL, &JsValue::from_str("request dropped"));
+                    false
+                }
+            });
     });
 }
