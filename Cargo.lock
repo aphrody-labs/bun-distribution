@@ -1608,7 +1608,7 @@ dependencies = [
  "ort",
  "rayon",
  "rustls",
- "safetensors",
+ "safetensors 0.8.0",
  "serde",
  "serde_json",
  "sha2 0.11.1",
@@ -8085,6 +8085,7 @@ dependencies = [
  "fast-float2",
  "futures-concurrency",
  "futures-lite",
+ "getrandom 0.4.3",
  "hashbrown 0.17.1",
  "icu_normalizer",
  "indexmap 2.14.2",
@@ -8110,6 +8111,7 @@ dependencies = [
  "thin-vec",
  "thiserror 2.0.21",
  "time",
+ "web-time",
 ]
 
 [[package]]
@@ -9919,6 +9921,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ecb245093b0f791b89d3420c3df9c6d49c60ab63ba54db896bf8a3baf486706"
 dependencies = [
  "byteorder",
+ "candle-metal-kernels",
+ "candle-ug",
  "float8",
  "gemm 0.19.0",
  "half",
@@ -9927,15 +9931,33 @@ dependencies = [
  "memmap2 0.9.11",
  "num-traits",
  "num_cpus",
+ "objc2-foundation 0.3.2",
+ "objc2-metal 0.3.2",
  "rand 0.9.5",
  "rand_distr 0.5.1",
  "rayon",
- "safetensors",
+ "safetensors 0.8.0",
  "thiserror 2.0.21",
  "tokenizers 0.22.2",
- "yoke",
+ "yoke 0.8.3",
  "zerocopy 0.8.63",
  "zip 8.6.0",
+]
+
+[[package]]
+name = "candle-metal-kernels"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "242e83c6acf639bb273c929d73c67a882bb4dd08a140f121096e19ba2f213d3e"
+dependencies = [
+ "block2 0.6.2",
+ "half",
+ "objc2 0.6.5",
+ "objc2-foundation 0.3.2",
+ "objc2-metal 0.3.2",
+ "once_cell",
+ "thiserror 2.0.21",
+ "tracing",
 ]
 
 [[package]]
@@ -9945,11 +9967,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eaa10b6ccc365b33210ce404fbf45e60d3e0bdac1004463cf1052e6ee1c1739a"
 dependencies = [
  "candle-core",
+ "candle-metal-kernels",
  "half",
  "libc",
  "num-traits",
+ "objc2-metal 0.3.2",
  "rayon",
- "safetensors",
+ "safetensors 0.8.0",
  "serde",
  "thiserror 2.0.21",
 ]
@@ -9971,6 +9995,16 @@ dependencies = [
  "serde_json",
  "serde_plain",
  "tracing",
+]
+
+[[package]]
+name = "candle-ug"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "257411c33abf7d898a31ac20d80813dfe96ff09e23a73039e22ab293aea9b871"
+dependencies = [
+ "ug",
+ "ug-metal",
 ]
 
 [[package]]
@@ -10835,6 +10869,12 @@ checksum = "faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34"
 dependencies = [
  "windows-sys 0.61.2",
 ]
+
+[[package]]
+name = "com-scrape-types"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ce183b975b8fc736a20919c4002717255fbd867df575c792aeefa9a56a73ad0"
 
 [[package]]
 name = "combine"
@@ -13213,6 +13253,7 @@ dependencies = [
 name = "deckcraft-text"
 version = "0.6.1"
 dependencies = [
+ "chrono",
  "deckcraft-color",
  "deckcraft-fonts",
  "deckcraft-geom",
@@ -13237,6 +13278,7 @@ dependencies = [
  "deckcraft-text",
  "egui",
  "egui_kittest",
+ "js-sys",
  "log",
  "serde",
  "serde_json",
@@ -13800,7 +13842,9 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror 2.0.21",
+ "wasm-bindgen-test",
  "zip 8.6.0",
 ]
 
@@ -16323,7 +16367,7 @@ dependencies = [
  "hf-hub 0.5.0",
  "ndarray",
  "ort",
- "safetensors",
+ "safetensors 0.8.0",
  "serde",
  "serde_json",
  "tokenizers 0.22.2",
@@ -16475,13 +16519,23 @@ dependencies = [
 name = "figcraft-collab-net"
 version = "0.5.1"
 dependencies = [
+ "base64 0.23.1",
  "figcraft-collab",
  "figcraft-doc",
  "figcraft-engine",
+ "getrandom 0.4.3",
+ "js-sys",
  "log",
  "proptest",
+ "rustls",
+ "rustls-pki-types",
  "serde_json",
+ "tungstenite 0.30.0",
+ "wasm-bindgen",
+ "web-sys",
  "web-time",
+ "webpki-roots 1.0.9",
+ "windows-registry 0.6.1",
 ]
 
 [[package]]
@@ -18506,6 +18560,26 @@ dependencies = [
 
 [[package]]
 name = "gemm"
+version = "0.18.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab96b703d31950f1aeddded248bc95543c9efc7ac9c4a21fda8703a83ee35451"
+dependencies = [
+ "dyn-stack 0.13.2",
+ "gemm-c32 0.18.2",
+ "gemm-c64 0.18.2",
+ "gemm-common 0.18.2",
+ "gemm-f16 0.18.2",
+ "gemm-f32 0.18.2",
+ "gemm-f64 0.18.2",
+ "num-complex",
+ "num-traits",
+ "paste",
+ "raw-cpuid 11.6.0",
+ "seq-macro",
+]
+
+[[package]]
+name = "gemm"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa0673db364b12263d103b68337a68fbecc541d6f6b61ba72fe438654709eacb"
@@ -18541,6 +18615,21 @@ dependencies = [
 
 [[package]]
 name = "gemm-c32"
+version = "0.18.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6db9fd9f40421d00eea9dd0770045a5603b8d684654816637732463f4073847"
+dependencies = [
+ "dyn-stack 0.13.2",
+ "gemm-common 0.18.2",
+ "num-complex",
+ "num-traits",
+ "paste",
+ "raw-cpuid 11.6.0",
+ "seq-macro",
+]
+
+[[package]]
+name = "gemm-c32"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "086936dbdcb99e37aad81d320f98f670e53c1e55a98bee70573e83f95beb128c"
@@ -18566,6 +18655,21 @@ dependencies = [
  "num-traits",
  "paste",
  "raw-cpuid 10.7.0",
+ "seq-macro",
+]
+
+[[package]]
+name = "gemm-c64"
+version = "0.18.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dfcad8a3d35a43758330b635d02edad980c1e143dc2f21e6fd25f9e4eada8edf"
+dependencies = [
+ "dyn-stack 0.13.2",
+ "gemm-common 0.18.2",
+ "num-complex",
+ "num-traits",
+ "paste",
+ "raw-cpuid 11.6.0",
  "seq-macro",
 ]
 
@@ -18601,6 +18705,27 @@ dependencies = [
  "raw-cpuid 10.7.0",
  "seq-macro",
  "sysctl 0.5.5",
+]
+
+[[package]]
+name = "gemm-common"
+version = "0.18.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a352d4a69cbe938b9e2a9cb7a3a63b7e72f9349174a2752a558a8a563510d0f3"
+dependencies = [
+ "bytemuck",
+ "dyn-stack 0.13.2",
+ "half",
+ "libm",
+ "num-complex",
+ "num-traits",
+ "once_cell",
+ "paste",
+ "pulp 0.21.5",
+ "raw-cpuid 11.6.0",
+ "rayon",
+ "seq-macro",
+ "sysctl 0.6.0",
 ]
 
 [[package]]
@@ -18643,6 +18768,24 @@ dependencies = [
 
 [[package]]
 name = "gemm-f16"
+version = "0.18.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cff95ae3259432f3c3410eaa919033cd03791d81cebd18018393dc147952e109"
+dependencies = [
+ "dyn-stack 0.13.2",
+ "gemm-common 0.18.2",
+ "gemm-f32 0.18.2",
+ "half",
+ "num-complex",
+ "num-traits",
+ "paste",
+ "raw-cpuid 11.6.0",
+ "rayon",
+ "seq-macro",
+]
+
+[[package]]
+name = "gemm-f16"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3df7a55202e6cd6739d82ae3399c8e0c7e1402859b30e4cb780e61525d9486e"
@@ -18676,6 +18819,21 @@ dependencies = [
 
 [[package]]
 name = "gemm-f32"
+version = "0.18.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc8d3d4385393304f407392f754cd2dc4b315d05063f62cf09f47b58de276864"
+dependencies = [
+ "dyn-stack 0.13.2",
+ "gemm-common 0.18.2",
+ "num-complex",
+ "num-traits",
+ "paste",
+ "raw-cpuid 11.6.0",
+ "seq-macro",
+]
+
+[[package]]
+name = "gemm-f32"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "02e0b8c9da1fbec6e3e3ab2ce6bc259ef18eb5f6f0d3e4edf54b75f9fd41a81c"
@@ -18701,6 +18859,21 @@ dependencies = [
  "num-traits",
  "paste",
  "raw-cpuid 10.7.0",
+ "seq-macro",
+]
+
+[[package]]
+name = "gemm-f64"
+version = "0.18.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "35b2a4f76ce4b8b16eadc11ccf2e083252d8237c1b589558a49b0183545015bd"
+dependencies = [
+ "dyn-stack 0.13.2",
+ "gemm-common 0.18.2",
+ "num-complex",
+ "num-traits",
+ "paste",
+ "raw-cpuid 11.6.0",
  "seq-macro",
 ]
 
@@ -20841,6 +21014,7 @@ dependencies = [
 name = "gridcraft-core"
 version = "0.6.1"
 dependencies = [
+ "js-sys",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
@@ -20932,7 +21106,10 @@ dependencies = [
  "serde",
  "serde_json",
  "skrifa 0.44.0",
+ "sys-locale",
  "toml 1.1.8+spec-1.1.0",
+ "web-sys",
+ "zbus",
 ]
 
 [[package]]
@@ -21432,7 +21609,7 @@ dependencies = [
  "siphasher 1.0.4",
  "skrifa 0.47.0",
  "smallvec 1.16.3",
- "yoke",
+ "yoke 0.8.3",
 ]
 
 [[package]]
@@ -21552,6 +21729,9 @@ name = "heic-rs"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8883c3bfa6b4ff19a40e52a6dc051c5612cbe21bf408fc6d4875e8dfd777cb66"
+dependencies = [
+ "rayon",
+]
 
 [[package]]
 name = "hermit-abi"
@@ -22540,7 +22720,7 @@ dependencies = [
  "displaydoc",
  "potential_utf",
  "utf8_iter",
- "yoke",
+ "yoke 0.8.3",
  "zerofrom",
  "zerovec",
 ]
@@ -22739,7 +22919,7 @@ dependencies = [
  "serde",
  "stable_deref_trait",
  "writeable",
- "yoke",
+ "yoke 0.8.3",
  "zerofrom",
  "zerotrie",
  "zerovec",
@@ -24055,6 +24235,8 @@ version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "25f15eb830aa77a7f21148d72e153562a26bfe570139bd4922eab1908dd499d3"
 dependencies = [
+ "rayon",
+ "rayon-core",
  "tracing",
 ]
 
@@ -24298,7 +24480,7 @@ dependencies = [
  "subsetter",
  "tiny-skia-path 0.12.0",
  "xmp-writer",
- "yoke",
+ "yoke 0.8.3",
  "zune-jpeg 0.5.15",
 ]
 
@@ -24966,6 +25148,7 @@ dependencies = [
  "lightcraft-denoise-core",
  "lightcraft-develop",
  "lightcraft-faces",
+ "lightcraft-fetch",
  "lightcraft-geocode",
  "lightcraft-geom",
  "lightcraft-gpu",
@@ -25007,6 +25190,13 @@ dependencies = [
 [[package]]
 name = "lightcraft-fetch"
 version = "0.7.1"
+dependencies = [
+ "log",
+ "rustls",
+ "rustls-rustcrypto",
+ "sha2 0.10.9",
+ "webpki-roots 1.0.9",
+]
 
 [[package]]
 name = "lightcraft-geocode"
@@ -25028,6 +25218,7 @@ dependencies = [
 name = "lightcraft-gpu"
 version = "0.7.1"
 dependencies = [
+ "bytemuck",
  "lightcraft-color",
  "lightcraft-denoise",
  "lightcraft-develop",
@@ -25037,6 +25228,8 @@ dependencies = [
  "lightcraft-raw",
  "lightcraft-scenes",
  "log",
+ "pollster 1.0.1",
+ "wgpu 30.0.1",
 ]
 
 [[package]]
@@ -25044,11 +25237,15 @@ name = "lightcraft-heif"
 version = "0.7.1"
 dependencies = [
  "heic-rs",
+ "rayon",
 ]
 
 [[package]]
 name = "lightcraft-inpaint"
 version = "0.7.1"
+dependencies = [
+ "rayon",
+]
 
 [[package]]
 name = "lightcraft-lensdb"
@@ -25177,6 +25374,9 @@ dependencies = [
 name = "lightcraft-segment"
 version = "0.7.1"
 dependencies = [
+ "candle-core",
+ "candle-nn",
+ "lightcraft-fetch",
  "log",
  "serde",
  "serde_json",
@@ -26059,6 +26259,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "memory-stats"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c73f5c649995a115e1a0220b35e4df0a1294500477f97a91d0660fb5abeb574a"
+dependencies = [
+ "libc",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "memsec"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -26074,6 +26284,21 @@ dependencies = [
  "cc",
  "float-cmp 0.10.0",
  "thiserror 2.0.21",
+]
+
+[[package]]
+name = "metal"
+version = "0.29.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ecfd3296f8c56b7c1f6fbac3c71cefa9d78ce009850c45000015f206dc7fa21"
+dependencies = [
+ "bitflags 2.13.2",
+ "block",
+ "core-graphics-types 0.1.3",
+ "foreign-types 0.5.0",
+ "log",
+ "objc",
+ "paste",
 ]
 
 [[package]]
@@ -26225,6 +26450,16 @@ dependencies = [
  "proc-macro2",
  "quote 1.0.47",
  "syn 2.0.119",
+]
+
+[[package]]
+name = "minicov"
+version = "0.3.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4869b6a491569605d66d3952bcdf03df789e5b536e5f0cf7758a7f08a55ae24d"
+dependencies = [
+ "cc",
+ "walkdir",
 ]
 
 [[package]]
@@ -27695,7 +27930,9 @@ checksum = "a0125f776a10d00af4152d74616409f0d4a2053a6f57fa5b7d6aa2854ac04794"
 dependencies = [
  "bitflags 2.13.2",
  "block2 0.6.2",
+ "dispatch2",
  "objc2 0.6.5",
+ "objc2-core-foundation",
  "objc2-foundation 0.3.2",
 ]
 
@@ -28343,6 +28580,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01f140a738f180203d7912dfd369936fff2fb0ad6f426c0aa007ed3e2b443e6b"
 dependencies = [
  "libredox",
+]
+
+[[package]]
+name = "ordered-channel"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95be4d57809897b5a7539fc15a7dfe0e84141bc3dfaa2e9b1b27caa90acf61ab"
+dependencies = [
+ "crossbeam-channel",
 ]
 
 [[package]]
@@ -29547,6 +29793,7 @@ dependencies = [
 name = "pdfcraft-engine"
 version = "0.7.1"
 dependencies = [
+ "chrono",
  "icu_properties",
  "idna",
  "image",
@@ -29729,6 +29976,7 @@ version = "0.7.1"
 dependencies = [
  "bytemuck",
  "flate2",
+ "getrandom 0.4.3",
  "hayro",
  "hayro-syntax",
  "kurbo 0.13.1",
@@ -29746,6 +29994,7 @@ name = "pdfcraft-sign"
 version = "0.7.1"
 dependencies = [
  "aes 0.9.3",
+ "aws-lc-rs",
  "base64 0.22.1",
  "bp256",
  "bp384",
@@ -29754,6 +30003,7 @@ dependencies = [
  "des 0.9.0",
  "ecdsa 0.17.0",
  "ed25519-dalek 3.0.0",
+ "getrandom 0.4.3",
  "hmac 0.13.0",
  "p256 0.14.0",
  "p384 0.14.0",
@@ -29765,6 +30015,8 @@ dependencies = [
  "rc2 0.9.0",
  "ripemd 0.2.0",
  "rsa 0.10.0-rc.19",
+ "rustls-cng",
+ "security-framework 3.7.0",
  "sha1 0.11.0",
  "sha2 0.11.1",
  "sha3 0.12.0",
@@ -29775,6 +30027,7 @@ dependencies = [
 name = "pdfcraft-ui-egui"
 version = "0.7.1"
 dependencies = [
+ "arboard",
  "base64 0.22.1",
  "bytemuck",
  "craft-ui",
@@ -29782,8 +30035,13 @@ dependencies = [
  "egui",
  "egui_extras",
  "egui_kittest",
+ "getrandom 0.4.3",
  "image",
+ "js-sys",
  "log",
+ "objc2 0.6.5",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
  "pdfcraft-cos",
  "pdfcraft-engine",
  "pdfcraft-fonts",
@@ -29792,12 +30050,19 @@ dependencies = [
  "pdfcraft-render",
  "pdfcraft-xfa",
  "png 0.18.1",
+ "pollster 1.0.1",
  "rfd 0.17.2",
+ "rustix 1.1.5",
  "serde",
  "serde_json",
  "skrifa 0.44.0",
+ "sys-locale",
  "toml 1.1.8+spec-1.1.0",
  "unicode-bidi",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "winsafe 0.0.29",
 ]
 
 [[package]]
@@ -30315,6 +30580,7 @@ dependencies = [
  "photocraft-color",
  "photocraft-geom",
  "photocraft-raster",
+ "rayon",
  "rustfft",
  "serde",
  "serde_json",
@@ -30377,6 +30643,7 @@ dependencies = [
  "photocraft-heif",
  "png 0.18.1",
  "proptest",
+ "rayon",
  "serde_json",
  "thiserror 2.0.21",
  "tiff",
@@ -30404,6 +30671,7 @@ dependencies = [
  "photocraft-raster",
  "photocraft-vector",
  "proptest",
+ "rayon",
 ]
 
 [[package]]
@@ -30447,6 +30715,7 @@ dependencies = [
  "roxmltree 0.20.0",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror 2.0.21",
  "wat",
 ]
@@ -30464,6 +30733,7 @@ dependencies = [
  "photocraft-geom",
  "photocraft-raster",
  "proptest",
+ "rustix 1.1.5",
  "ruzstd 0.9.1",
  "serde",
  "serde_json",
@@ -30490,6 +30760,7 @@ dependencies = [
  "photocraft-raster",
  "photocraft-vector",
  "pollster 1.0.1",
+ "rayon",
  "wgpu 30.0.1",
 ]
 
@@ -30523,6 +30794,7 @@ dependencies = [
  "photocraft-text",
  "photocraft-vector",
  "proptest",
+ "resvg 0.45.1",
  "roxmltree 0.20.0",
  "serde_json",
  "thiserror 2.0.21",
@@ -30553,6 +30825,7 @@ dependencies = [
  "photocraft-color",
  "photocraft-geom",
  "photocraft-raster",
+ "rayon",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
@@ -30587,8 +30860,10 @@ version = "0.8.2"
 dependencies = [
  "flate2",
  "image",
+ "jxl-oxide",
  "photocraft-raw",
  "png 0.18.1",
+ "rayon",
  "zune-core 0.5.3",
  "zune-jpeg 0.5.15",
  "zune-jpegxl",
@@ -30610,6 +30885,7 @@ dependencies = [
 name = "photocraft-testkit"
 version = "0.8.2"
 dependencies = [
+ "memory-stats",
  "photocraft-color",
  "photocraft-geom",
  "photocraft-raster",
@@ -30662,9 +30938,12 @@ dependencies = [
  "photocraft-testkit",
  "photocraft-text",
  "photocraft-vector",
+ "rayon",
  "serde",
  "serde_json",
+ "sys-locale",
  "toml 1.1.8+spec-1.1.0",
+ "winsafe 0.0.29",
 ]
 
 [[package]]
@@ -30675,6 +30954,7 @@ dependencies = [
  "photocraft-doc",
  "photocraft-geom",
  "photocraft-raster",
+ "rayon",
 ]
 
 [[package]]
@@ -31827,6 +32107,20 @@ dependencies = [
 
 [[package]]
 name = "pulp"
+version = "0.21.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96b86df24f0a7ddd5e4b95c94fc9ed8a98f1ca94d3b01bdce2824097e7835907"
+dependencies = [
+ "bytemuck",
+ "cfg-if 1.0.5",
+ "libm",
+ "num-complex",
+ "reborrow",
+ "version_check",
+]
+
+[[package]]
+name = "pulp"
 version = "0.22.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "046aa45b989642ec2e4717c8e72d677b13edd831a4d3b6cf37d9a3e54912496a"
@@ -32683,7 +32977,7 @@ dependencies = [
  "bytemuck",
  "font-types 0.12.6",
  "once_cell",
- "yoke",
+ "yoke 0.8.3",
 ]
 
 [[package]]
@@ -34157,6 +34451,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustls-cng"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3eeed9c3e96253f36d1cfdd593388ecca775b532b6ff0c649a3010f6af60fe70"
+dependencies = [
+ "bitflags 2.13.2",
+ "rustls",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "rustls-native-certs"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -34503,6 +34808,16 @@ dependencies = [
  "bytes",
  "paste",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "safetensors"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "44560c11236a6130a46ce36c836a62936dc81ebf8c36a37947423571be0e55b6"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -36477,6 +36792,7 @@ name = "soundcraft-mix"
 version = "0.6.1"
 dependencies = [
  "log",
+ "rayon",
  "soundcraft-au-host",
  "soundcraft-audio-io",
  "soundcraft-clap-host",
@@ -36504,6 +36820,7 @@ dependencies = [
 name = "soundcraft-playback"
 version = "0.6.1"
 dependencies = [
+ "cpal 0.16.0",
  "log",
  "soundcraft-audio-io",
  "soundcraft-dsp",
@@ -36565,10 +36882,15 @@ dependencies = [
 name = "soundcraft-vst3-host"
 version = "0.6.1"
 dependencies = [
+ "libloading 0.8.9",
  "log",
+ "objc2 0.6.5",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
  "serde",
  "soundcraft-dsp",
  "thiserror 2.0.21",
+ "vst3",
 ]
 
 [[package]]
@@ -39839,6 +40161,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "ug"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "76b761acf8af3494640d826a8609e2265e19778fb43306c7f15379c78c9b05b0"
+dependencies = [
+ "gemm 0.18.2",
+ "half",
+ "libloading 0.8.9",
+ "memmap2 0.9.11",
+ "num",
+ "num-traits",
+ "num_cpus",
+ "rayon",
+ "safetensors 0.4.5",
+ "serde",
+ "thiserror 1.0.69",
+ "tracing",
+ "yoke 0.7.5",
+]
+
+[[package]]
+name = "ug-metal"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f7adf545a99a086d362efc739e7cf4317c18cbeda22706000fd434d70ea3d95"
+dependencies = [
+ "half",
+ "metal 0.29.0",
+ "objc",
+ "serde",
+ "thiserror 1.0.69",
+ "ug",
+]
+
+[[package]]
 name = "ui_test"
 version = "0.30.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -42490,6 +42847,7 @@ version = "0.10.0"
 dependencies = [
  "flate2",
  "proptest",
+ "rustix 1.1.5",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
@@ -42882,9 +43240,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ace506ca414548966fcf3c283be94eb1cad8254de488791ee698bf438b0890a9"
 dependencies = [
  "bytemuck",
+ "crossbeam-channel",
  "glifo 0.3.0",
  "hashbrown 0.17.1",
+ "ordered-channel",
  "png 0.18.1",
+ "rayon",
+ "thread_local",
  "vello_common 0.2.0",
 ]
 
@@ -43010,6 +43372,15 @@ name = "vsimd"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c3082ca00d5a5ef149bb8b555a72ae84c9c59f7250f013ac822ac2e49b19c64"
+
+[[package]]
+name = "vst3"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e31e3fe7a6f028ded8c5a9984cf283319e6dc63572c9b71da1d4ee9d71d3b6bf"
+dependencies = [
+ "com-scrape-types",
+]
 
 [[package]]
 name = "vswhom"
@@ -43212,6 +43583,45 @@ checksum = "23f0c9c52aa7cd7d77769a4cfe2a9adb1b331f489a41d912ce14513d5ab995c6"
 dependencies = [
  "unicode-ident",
 ]
+
+[[package]]
+name = "wasm-bindgen-test"
+version = "0.3.79"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae7499dfd45780a0a91d7ee6bb9ac51970a4479a41a89da443fdda5a39547d42"
+dependencies = [
+ "async-trait",
+ "cast",
+ "js-sys",
+ "libm",
+ "minicov",
+ "nu-ansi-term",
+ "num-traits",
+ "oorandom",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-bindgen-test-macro",
+ "wasm-bindgen-test-shared",
+]
+
+[[package]]
+name = "wasm-bindgen-test-macro"
+version = "0.3.79"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b84b5ac638bfb168196a1a461fcc8f46a294a18b1b6be52133b4e0db122cc9f"
+dependencies = [
+ "proc-macro2",
+ "quote 1.0.47",
+ "syn 3.0.9",
+]
+
+[[package]]
+name = "wasm-bindgen-test-shared"
+version = "0.2.129"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f692aa943ccd88363733b77063f32cfed5bc6cbea8e6e8b251b302f881606fe"
 
 [[package]]
 name = "wasm-encoder"
@@ -44356,7 +44766,7 @@ dependencies = [
  "libc",
  "libloading 0.8.9",
  "log",
- "metal",
+ "metal 0.33.0",
  "naga 28.0.0",
  "ndk-sys 0.6.0+11769913",
  "objc",
@@ -45942,6 +46352,7 @@ dependencies = [
  "base64 0.22.1",
  "cfb 0.15.0",
  "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "hmac 0.13.0",
  "image",
  "log",
@@ -45961,6 +46372,7 @@ name = "wordcraft-engine"
 version = "0.6.1"
 dependencies = [
  "image",
+ "js-sys",
  "log",
  "regex",
  "regex-automata",
@@ -46019,6 +46431,7 @@ name = "wordcraft-layout"
 version = "0.6.1"
 dependencies = [
  "image",
+ "js-sys",
  "kurbo 0.13.1",
  "log",
  "serde",
@@ -46053,6 +46466,7 @@ dependencies = [
  "hayro-interpret",
  "hayro-syntax",
  "image",
+ "js-sys",
  "krilla",
  "kurbo 0.13.1",
  "log",
@@ -46094,6 +46508,7 @@ dependencies = [
  "egui",
  "egui_kittest",
  "image",
+ "js-sys",
  "log",
  "serde",
  "serde_json",
@@ -46106,6 +46521,7 @@ dependencies = [
  "wordcraft-layout",
  "wordcraft-render",
  "wordcraft-zotero",
+ "zbus",
  "zip 8.6.0",
 ]
 
@@ -46986,13 +47402,37 @@ dependencies = [
 
 [[package]]
 name = "yoke"
+version = "0.7.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "120e6aef9aa629e3d4f52dc8cc43a015c7724194c97dfaf45180d2daf2b77f40"
+dependencies = [
+ "serde",
+ "stable_deref_trait",
+ "yoke-derive 0.7.5",
+ "zerofrom",
+]
+
+[[package]]
+name = "yoke"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "709fe23a0424b6a435d82152b1bd3fdfb0833487d5fa90d05d42762a9891fef5"
 dependencies = [
  "stable_deref_trait",
- "yoke-derive",
+ "yoke-derive 0.8.4",
  "zerofrom",
+]
+
+[[package]]
+name = "yoke-derive"
+version = "0.7.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2380878cad4ac9aac1e2435f3eb4020e8374b5f13c296cb75b4620ff8e229154"
+dependencies = [
+ "proc-macro2",
+ "quote 1.0.47",
+ "syn 2.0.119",
+ "synstructure 0.13.2",
 ]
 
 [[package]]
@@ -47341,7 +47781,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ea269c3bd32f0a32c321907a2ae912ba6f4649bb0fc764a15627e99a7095a3f"
 dependencies = [
  "displaydoc",
- "yoke",
+ "yoke 0.8.3",
  "zerofrom",
  "zerovec",
 ]
@@ -47353,7 +47793,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bb0464e17806c1d976d5cba29399c7f08e516e279e2ba493f63123b5fca67dd8"
 dependencies = [
  "serde",
- "yoke",
+ "yoke 0.8.3",
  "zerofrom",
  "zerovec-derive",
 ]
