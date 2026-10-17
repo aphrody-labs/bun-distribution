@@ -13,7 +13,7 @@
     "data",
     "happydom.ts",
     "next.config.ts",
-    "postcss.config.ts",
+    "postcss.config.mjs",
     "public",
     "scripts",
     "sentry.client.config.ts",
