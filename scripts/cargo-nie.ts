@@ -6,7 +6,7 @@
 //
 // bun scripts/cargo-nie.ts [--install <dir>] [--web-out <dir>] [-- <extra cargo arguments>]
 import { loadConfig, runNative, runNativeResult } from "@aphrody/bun-workspace";
-import { chmod, copyFile, mkdir } from "node:fs/promises";
+import { chmod, copyFile, mkdir, rename } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 const root = resolve(import.meta.dir, "..");
@@ -109,8 +109,11 @@ if (installDir) {
     for (const target of pkg.targets.filter(target => target.kind.includes("bin"))) {
       const built = join(root, "target", "release", target.name + executable);
       if (!(await Bun.file(built).exists())) continue;
-      await copyFile(built, join(destination, target.name + executable));
-      await chmod(join(destination, target.name + executable), 0o755);
+      // Rename over the old file so a running service keeps its executable (no ETXTBSY).
+      const installed = join(destination, target.name + executable);
+      await copyFile(built, installed + ".new");
+      await chmod(installed + ".new", 0o755);
+      await rename(installed + ".new", installed);
       console.log(`installed ${pkg.name}: ${target.name}`);
     }
   }
