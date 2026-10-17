@@ -16,8 +16,7 @@ import { basename, extname, join, relative, resolve, sep } from "node:path";
 import * as windows from "bun:windows";
 
 const SCHEMA = "aphrody.winclean.local.v1";
-const PROCESS_FILTER =
-  /bun|rust|cargo|docker|claude|agy|vnc|wireguard|ssh|aphrody/i;
+const PROCESS_FILTER = /bun|rust|cargo|docker|claude|agy|vnc|wireguard|ssh|aphrody/i;
 const PROTECTED_NAME =
   /cookie|session|credential|secret|token|identity|known_hosts|wireguard|ssh|vnc|docker|claude|agy|\.db(?:$|[.-])|\.sqlite/i;
 const CACHE_DISPOSITION = "inventory only; retained";
@@ -63,26 +62,18 @@ function parseOptions(args: string[]): Options {
     throw new Error(`Unknown argument: ${arg}`);
   }
   if (result.apply && !/^[a-f0-9]{64}$/i.test(result.confirm ?? ""))
-    throw new Error(
-      "--apply requires --confirm <64-character SHA-256 from the current dry-run>",
-    );
-  if (!result.apply && result.confirm)
-    throw new Error("--confirm is valid only with --apply");
+    throw new Error("--apply requires --confirm <64-character SHA-256 from the current dry-run>");
+  if (!result.apply && result.confirm) throw new Error("--confirm is valid only with --apply");
   return result;
 }
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
-  if (!value)
-    throw new Error(`Required Windows environment variable ${name} is unset`);
+  if (!value) throw new Error(`Required Windows environment variable ${name} is unset`);
   return value;
 }
 
-async function collectCandidates(
-  tempRoot: string,
-  ageDays: number,
-  now = Date.now(),
-): Promise<Candidate[]> {
+async function collectCandidates(tempRoot: string, ageDays: number, now = Date.now()): Promise<Candidate[]> {
   const cutoff = now - ageDays * 24 * 60 * 60 * 1000;
   const candidates: Candidate[] = [];
   // Use Bun's native globber only at this exact directory level. The prebuilt
@@ -95,7 +86,7 @@ async function collectCandidates(
     dot: true,
   });
   await Promise.all(
-    Array.from(paths, async (path) => {
+    Array.from(paths, async path => {
       const name = basename(path);
       if (PROTECTED_NAME.test(name)) return;
       try {
@@ -111,12 +102,7 @@ async function collectCandidates(
   return candidates.toSorted((a, b) => a.path.localeCompare(b.path, "en-US"));
 }
 
-function planDigest(
-  machine: string,
-  tempRoot: string,
-  ageDays: number,
-  candidates: Candidate[],
-): string {
+function planDigest(machine: string, tempRoot: string, ageDays: number, candidates: Candidate[]): string {
   const payload = JSON.stringify({
     schema: SCHEMA,
     machine: machine.toUpperCase(),
@@ -148,9 +134,7 @@ async function cacheInventory(profile: string, localAppData: string) {
     { name: "Cargo git database", path: join(profile, ".cargo", "git") },
     {
       name: "sccache",
-      path:
-        process.env.SCCACHE_DIR ??
-        join(localAppData, "Mozilla", "sccache", "cache"),
+      path: process.env.SCCACHE_DIR ?? join(localAppData, "Mozilla", "sccache", "cache"),
     },
     { name: "Docker data", path: join(localAppData, "Docker") },
     { name: "Claude provider store", path: join(profile, ".claude") },
@@ -165,12 +149,7 @@ async function cacheInventory(profile: string, localAppData: string) {
     },
     {
       name: "WireGuard configuration store",
-      path: join(
-        process.env.ProgramFiles ?? "C:\\Program Files",
-        "WireGuard",
-        "Data",
-        "Configurations",
-      ),
+      path: join(process.env.ProgramFiles ?? "C:\\Program Files", "WireGuard", "Data", "Configurations"),
     },
     { name: "SSH store", path: join(profile, ".ssh") },
   ];
@@ -196,18 +175,12 @@ async function cacheInventory(profile: string, localAppData: string) {
 }
 
 function localProfile(machine: string): Record<string, unknown> {
-  const result = Bun.spawnSync(
-    ["aphrody", "winclean", "call", "get_os_info", "--json"],
-    {
-      windowsHide: true,
-      stdout: "pipe",
-      stderr: "pipe",
-    },
-  );
-  if (result.exitCode !== 0)
-    throw new Error(
-      `Local WinClean get_os_info failed (exit ${result.exitCode})`,
-    );
+  const result = Bun.spawnSync(["aphrody", "winclean", "call", "get_os_info", "--json"], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  if (result.exitCode !== 0) throw new Error(`Local WinClean get_os_info failed (exit ${result.exitCode})`);
   let payload: any;
   try {
     payload = JSON.parse(result.stdout.toString("utf8"));
@@ -216,9 +189,7 @@ function localProfile(machine: string): Record<string, unknown> {
   }
   const os = payload?.structuredContent;
   if (!os || String(os.MachineName).toUpperCase() !== machine.toUpperCase())
-    throw new Error(
-      "WinClean CLI and bun:windows report different machines; refusing cleanup",
-    );
+    throw new Error("WinClean CLI and bun:windows report different machines; refusing cleanup");
   return os as Record<string, unknown>;
 }
 
@@ -234,26 +205,14 @@ async function applyCandidates(
     try {
       const fullPath = resolve(candidate.path);
       const rel = relative(root, fullPath);
-      if (
-        !rel ||
-        rel === ".." ||
-        rel.startsWith(`..${sep}`) ||
-        resolve(root, rel) !== fullPath
-      )
+      if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || resolve(root, rel) !== fullPath)
         throw new Error("path is outside TEMP");
-      if (
-        basename(fullPath) !== basename(candidate.path) ||
-        !/\.(?:tmp|temp)$/i.test(extname(fullPath))
-      )
+      if (basename(fullPath) !== basename(candidate.path) || !/\.(?:tmp|temp)$/i.test(extname(fullPath)))
         throw new Error("path no longer matches the temporary-file allowlist");
       const file = Bun.file(fullPath);
       // eslint-disable-next-line no-await-in-loop -- re-stat immediately before unlink
       const stat = await file.stat();
-      if (
-        !stat.isFile() ||
-        stat.size !== candidate.size ||
-        stat.mtimeMs !== candidate.mtimeMs
-      )
+      if (!stat.isFile() || stat.size !== candidate.size || stat.mtimeMs !== candidate.mtimeMs)
         throw new Error("file changed since the confirmed plan");
       // The exact validated leaf is unlinked through Bun's native file API.
       // Keep deletes serialized so each result is verified before continuing.
@@ -264,17 +223,11 @@ async function applyCandidates(
         await file.stat();
         throw new Error("Bun returned but the file still exists");
       } catch (error) {
-        if (
-          error instanceof Error &&
-          error.message === "Bun returned but the file still exists"
-        )
-          throw error;
+        if (error instanceof Error && error.message === "Bun returned but the file still exists") throw error;
       }
       removed.push(candidate);
     } catch (error) {
-      errors.push(
-        `${candidate.path}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      errors.push(`${candidate.path}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   return { removed, errors };
@@ -282,9 +235,7 @@ async function applyCandidates(
 
 async function main(): Promise<void> {
   if (process.platform !== "win32" || !windows.isSupported)
-    throw new Error(
-      "This script requires the supported native Windows bun:windows runtime",
-    );
+    throw new Error("This script requires the supported native Windows bun:windows runtime");
 
   const options = parseOptions(process.argv.slice(2));
   const system = windows.systemInfo();
@@ -294,23 +245,19 @@ async function main(): Promise<void> {
   const tempEnvPath = resolve(requiredEnv("TEMP"));
   const expectedTempPath = resolve(localAppData, "Temp");
   if (tempEnvPath.toUpperCase() !== expectedTempPath.toUpperCase())
-    throw new Error(
-      "TEMP must resolve to the current user's LocalAppData\\Temp folder",
-    );
+    throw new Error("TEMP must resolve to the current user's LocalAppData\\Temp folder");
   const tempRoot = tempEnvPath;
-  if (!(await Bun.file(tempRoot).stat()).isDirectory())
-    throw new Error("TEMP is not a directory");
-  if (tempRoot.toUpperCase() === resolve(tempRoot, "..").toUpperCase())
-    throw new Error("Refusing an unsafe TEMP root");
+  if (!(await Bun.file(tempRoot).stat()).isDirectory()) throw new Error("TEMP is not a directory");
+  if (tempRoot.toUpperCase() === resolve(tempRoot, "..").toUpperCase()) throw new Error("Refusing an unsafe TEMP root");
 
   const processes = windows.processes
     .list()
-    .filter((item) => PROCESS_FILTER.test(String(item.name)))
-    .map((item) => ({ pid: item.pid, name: item.name }));
+    .filter(item => PROCESS_FILTER.test(String(item.name)))
+    .map(item => ({ pid: item.pid, name: item.name }));
   const services = windows.services
     .list()
-    .filter((item) => PROCESS_FILTER.test(`${item.name} ${item.displayName}`))
-    .map((item) => ({
+    .filter(item => PROCESS_FILTER.test(`${item.name} ${item.displayName}`))
+    .map(item => ({
       name: item.name,
       displayName: item.displayName,
       state: item.state,
@@ -329,18 +276,9 @@ async function main(): Promise<void> {
       elevated: windows.isElevated(),
     },
     system: { ...system, memory, drives: disk },
-    installedTools: [
-      "bun",
-      "cargo",
-      "rustc",
-      "docker",
-      "claude",
-      "agy",
-      "vncviewer",
-      "wg",
-      "ssh",
-      "sshfs",
-    ].map((name) => ({ name, path: Bun.which(name) ?? null })),
+    installedTools: ["bun", "cargo", "rustc", "docker", "claude", "agy", "vncviewer", "wg", "ssh", "sshfs"].map(
+      name => ({ name, path: Bun.which(name) ?? null }),
+    ),
     processes,
     services,
     filesystemIndex: {
@@ -372,19 +310,14 @@ async function main(): Promise<void> {
   console.log(JSON.stringify(report, null, 2));
   if (!options.apply) return;
   if (options.confirm?.toLowerCase() !== digest)
-    throw new Error(
-      `Plan changed; the supplied digest does not match this inventory (${digest})`,
-    );
-  if (candidates.length > 1000)
-    throw new Error("Refusing to apply a plan containing more than 1000 files");
+    throw new Error(`Plan changed; the supplied digest does not match this inventory (${digest})`);
+  if (candidates.length > 1000) throw new Error("Refusing to apply a plan containing more than 1000 files");
 
   const os = localProfile(machine);
   if (String(os.MachineName).toUpperCase() !== machine.toUpperCase())
     throw new Error("WinClean target identity changed; refusing cleanup");
   const result = await applyCandidates(tempRoot, candidates);
-  console.log(
-    JSON.stringify({ applied: result.removed, errors: result.errors }, null, 2),
-  );
+  console.log(JSON.stringify({ applied: result.removed, errors: result.errors }, null, 2));
   if (result.errors.length > 0) process.exitCode = 1;
 }
 

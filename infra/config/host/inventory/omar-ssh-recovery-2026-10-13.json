@@ -4,12 +4,18 @@
   "host": "omar-pc",
   "address": "10.200.77.10",
   "user": "omara",
-  "initial": {"directSSH": "refused", "reverseSSH": "reachable", "sshListener": "127.0.0.1:22"},
-  "service": {"name": "sshd", "state": "Running", "startup": "Automatic", "recoverySeconds": [10, 30, 60]},
+  "initial": { "directSSH": "refused", "reverseSSH": "reachable", "sshListener": "127.0.0.1:22" },
+  "service": { "name": "sshd", "state": "Running", "startup": "Automatic", "recoverySeconds": [10, 30, 60] },
   "listener": "0.0.0.0:22",
   "sshFirewallLocalAddress": "10.200.77.10",
   "sshFirewallSources": ["10.200.77.4", "existing 10.200.77.0/24 mesh"],
   "nativeWGTask": "Aphrody WG omar",
   "reverseTask": "Aphrody Omar tunnel",
-  "validation": {"sshdConfigValid": true, "directAliases": ["omar", "omar-pc"], "reverseAlias": "omar-rt", "directAfterTunnelRestart": true, "fullRebootTested": false}
+  "validation": {
+    "sshdConfigValid": true,
+    "directAliases": ["omar", "omar-pc"],
+    "reverseAlias": "omar-rt",
+    "directAfterTunnelRestart": true,
+    "fullRebootTested": false
+  }
 }

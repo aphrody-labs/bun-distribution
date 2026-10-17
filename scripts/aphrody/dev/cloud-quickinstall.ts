@@ -20,9 +20,9 @@ async function versions(name: string): Promise<string[]> {
   const rows = (await res.text())
     .trim()
     .split("\n")
-    .map((line) => JSON.parse(line) as { vers: string; yanked: boolean })
-    .filter((r) => !r.yanked && !r.vers.includes("-"))
-    .map((r) => r.vers);
+    .map(line => JSON.parse(line) as { vers: string; yanked: boolean })
+    .filter(r => !r.yanked && !r.vers.includes("-"))
+    .map(r => r.vers);
   return rows.reverse();
 }
 
@@ -43,12 +43,9 @@ for (const name of crates) {
     const archive = join(dir, "a.tar.gz");
     await Bun.write(archive, await res.arrayBuffer());
     await mkdir(BIN, { recursive: true });
-    const tar = Bun.spawnSync(
-      ["tar", "-xzf", archive, "-C", BIN, "--no-same-owner"],
-      {
-        windowsHide: true,
-      },
-    );
+    const tar = Bun.spawnSync(["tar", "-xzf", archive, "-C", BIN, "--no-same-owner"], {
+      windowsHide: true,
+    });
     await rm(dir, { recursive: true, force: true });
     if (tar.exitCode === 0) {
       console.log(`ok   ${name} ${v}`);
@@ -59,6 +56,5 @@ for (const name of crates) {
     break;
   }
   if (!done && !vs.length) console.log(`FAIL ${name}: no version`);
-  else if (!done)
-    console.log(`FAIL ${name}: no prebuilt among the 8 latest versions`);
+  else if (!done) console.log(`FAIL ${name}: no prebuilt among the 8 latest versions`);
 }

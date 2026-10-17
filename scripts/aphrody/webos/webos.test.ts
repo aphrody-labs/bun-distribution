@@ -39,9 +39,7 @@ describe("Bun fork host access boundary", () => {
   });
 
   test("only explicit same-origin loopback host access is allowed", async () => {
-    const { hostAccessProblem, isLoopbackHost } = await import(
-      webosOwnerModule("src/server/guard.ts")
-    );
+    const { hostAccessProblem, isLoopbackHost } = await import(webosOwnerModule("src/server/guard.ts"));
     const server = { hostname: "127.0.0.1", port: 3001, requestIP: () => ({ address: "127.0.0.1" }) };
     const request = new Request("http://127.0.0.1:3001/api/shell");
     expect(isLoopbackHost("localhost")).toBe(true);
@@ -49,14 +47,12 @@ describe("Bun fork host access boundary", () => {
     expect(hostAccessProblem(request, server, { enabled: false })).toContain("disabled");
     expect(hostAccessProblem(request, server, { enabled: true })).toBeNull();
     expect(
-      hostAccessProblem(
-        new Request(request, { headers: { origin: "https://example.com" } }),
-        server,
-        { enabled: true },
-      ),
+      hostAccessProblem(new Request(request, { headers: { origin: "https://example.com" } }), server, {
+        enabled: true,
+      }),
     ).toContain("origin");
-    expect(
-      hostAccessProblem(request, { ...server, hostname: "0.0.0.0" }, { enabled: true }),
-    ).toContain("loopback listener");
+    expect(hostAccessProblem(request, { ...server, hostname: "0.0.0.0" }, { enabled: true })).toContain(
+      "loopback listener",
+    );
   });
 });

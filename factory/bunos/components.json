@@ -25,13 +25,7 @@
   ],
   "compositionPackages": {
     "server": ["aphrody"],
-    "cosmic": [
-      "aphrody",
-      "bun-video-native",
-      "bun-os-fonts",
-      "material-design-icons-bunos",
-      "bun-os-webapps"
-    ],
+    "cosmic": ["aphrody", "bun-video-native", "bun-os-fonts", "material-design-icons-bunos", "bun-os-webapps"],
     "gaming": ["aphrody", "bun-video-native", "bun-os-fonts", "bun-engine"]
   },
   "components": [
@@ -455,6 +449,15 @@
       "build": "bun run build per app; static dist served on 127.0.0.1 by bunos-webapp, one .desktop per app",
       "remainingApps": "Next.js apps (azalee-web, rg-website), rg-bot and iecode-web need a server or wasm launcher contract"
     },
-    {"id":"bun-engine","path":"crates/bun-engine-core","size":"crates/bun-engine-core and its in-tree cores (dust, rdynarmic)","origin":"aphrody-labs/bun-distribution","kind":"binary","integration":{"mode":"pacman-bunos","package":"bun-engine"},"build":"cargo-serial build --release -p bun-engine --bin bun-engine","license":"crates/bun-engine-core/LICENSE"}
+    {
+      "id": "bun-engine",
+      "path": "crates/bun-engine-core",
+      "size": "crates/bun-engine-core and its in-tree cores (dust, rdynarmic)",
+      "origin": "aphrody-labs/bun-distribution",
+      "kind": "binary",
+      "integration": { "mode": "pacman-bunos", "package": "bun-engine" },
+      "build": "cargo-serial build --release -p bun-engine --bin bun-engine",
+      "license": "crates/bun-engine-core/LICENSE"
+    }
   ]
 }

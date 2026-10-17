@@ -4,14 +4,14 @@ Consigne du propriétaire : tout fusionner dans UN SEUL home par hôte. Plus de 
 
 ## Home unique : `/home/ubuntu` sur chaque hôte
 
-| Chemin | Contenu | Remplace |
-| --- | --- | --- |
-| `~/src/<repo>` | UNE seule copie git par dépôt : `aphrody`, `bun`, `shenron`, `forks/<nom>` | release/aphrody, aphrody-root, bun-src, yolo/src/*, shenron-docker, shenron-release, /srv/aphrody-build/workspaces/*, /srv/aphrody/shared/agent-workspaces/*, /home/omar/src/* |
-| `~/apps/<app>/` | runtime d'un service : `compose.yaml`, `.env`, `data/` (bind mounts), `releases/` (la courante seulement, aucun lien `previous`, aucune copie `.bak`/`.prev`/`.pre-layout`) | /srv/aphrody*, /srv/shenron*, /srv/app, /etc/aphrody/container, /opt/aphrody-discord-sync |
-| `~/apps/compose.yaml` | UN seul projet compose par hôte (nom `aphrody`) qui fait `include:` de chaque `~/apps/<app>/compose.yaml` | les projets `aphrody`, `aphrody-bun`, `shenron` (2 fichiers de release) |
-| `~/build/` | espace de build, caches et artefacts (vps seulement) | /srv/aphrody-build |
-| `~/archive/` | données froides (vps seulement, dont les archives venues de dbfr) | /srv/archive, sauvegardes froides de dbfr |
-| `~/.aphrody/` | état Aphrody (APHRODY_HOME), inchangé | — |
+| Chemin                | Contenu                                                                                                                                                                     | Remplace                                                                                                                                                                       |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `~/src/<repo>`        | UNE seule copie git par dépôt : `aphrody`, `bun`, `shenron`, `forks/<nom>`                                                                                                  | release/aphrody, aphrody-root, bun-src, yolo/src/_, shenron-docker, shenron-release, /srv/aphrody-build/workspaces/_, /srv/aphrody/shared/agent-workspaces/_, /home/omar/src/_ |
+| `~/apps/<app>/`       | runtime d'un service : `compose.yaml`, `.env`, `data/` (bind mounts), `releases/` (la courante seulement, aucun lien `previous`, aucune copie `.bak`/`.prev`/`.pre-layout`) | /srv/aphrody*, /srv/shenron*, /srv/app, /etc/aphrody/container, /opt/aphrody-discord-sync                                                                                      |
+| `~/apps/compose.yaml` | UN seul projet compose par hôte (nom `aphrody`) qui fait `include:` de chaque `~/apps/<app>/compose.yaml`                                                                   | les projets `aphrody`, `aphrody-bun`, `shenron` (2 fichiers de release)                                                                                                        |
+| `~/build/`            | espace de build, caches et artefacts (vps seulement)                                                                                                                        | /srv/aphrody-build                                                                                                                                                             |
+| `~/archive/`          | données froides (vps seulement, dont les archives venues de dbfr)                                                                                                           | /srv/archive, sauvegardes froides de dbfr                                                                                                                                      |
+| `~/.aphrody/`         | état Aphrody (APHRODY_HOME), inchangé                                                                                                                                       | —                                                                                                                                                                              |
 
 ## Règles
 
@@ -35,7 +35,7 @@ Consigne du propriétaire : tout fusionner dans UN SEUL home par hôte. Plus de 
   - aucun volume, aucune base ni aucune donnée unique supprimés sans copie vérifiée ;
   - avant de déplacer une base : `pg_dump` / `redis BGSAVE` vers `~/archive/` ;
   - les déplacements sur le même système de fichiers se font par `mv` (renommage instantané, pas d'espace en plus).
-- **Dédoublonnage agressif** : `jdupes -r -L` (hardlinks) sur `~/apps`, `~/archive`, `~/src` (hors .git) et les données site/wiki/assets. Les caches régénérables sont supprimés (node_modules d'anciennes releases, target/, .next/, __pycache__, caches uv/pip/npm des comptes).
+- **Dédoublonnage agressif** : `jdupes -r -L` (hardlinks) sur `~/apps`, `~/archive`, `~/src` (hors .git) et les données site/wiki/assets. Les caches régénérables sont supprimés (node_modules d'anciennes releases, target/, .next/, **pycache**, caches uv/pip/npm des comptes).
 - **dbfr ≤ 50 %**, dans cet ordre :
   1. doublons de checkouts et de releases ;
   2. images Docker non utilisées ;
@@ -53,6 +53,7 @@ On ne garde que la version courante de tout. Aucune release N-1, aucun binaire `
 Garde-fous : après chaque étape, aphrody.com et `https://cdn.aphrody.com/s/manifest.json` répondent 200, `systemctl --failed` est vide et `bun scripts/aphrody/docker-doctor.ts dbfr vps` (dépôt bun) affiche 7/7. Ne pas supprimer `alpine:3.24` : docker-doctor l'utilise.
 
 Sur dbfr, inventaire fait, suppressions à exécuter :
+
 - CDN : `rm -rf ~/apps/cdn/releases/946758212b4e ~/apps/cdn/src.prev` (en service : `7a1d7777796f`).
 - Site : dans `~/apps/downloads/site/releases`, tout sauf la cible de `current`.
 - Discord : dans `~/apps/discord/releases`, tout sauf `4cf6332cdc66b3ec9c0f2b0c288f0a3024acf808`.
@@ -65,6 +66,7 @@ Sur dbfr, inventaire fait, suppressions à exécuter :
 - Docker : rien à purger (cache de build vide, aucun conteneur arrêté).
 
 Sur le vps, l'inventaire reste à faire (`du` lancé dans `~/build/tmp/purge/du.txt`). Cibles :
+
 - `~/build/archive/{vps,dbfr-archive,k-archive}` et `~/build/archive/dbfr` (sauf le dernier backup des bases prod) ;
 - `~/build/archive/rescue` : pousser d'abord les patchs et le bundle sur des branches `rescue/*` ;
 - les liens `~/{archive,dbfr-archive,k-archive}` ;
@@ -74,6 +76,7 @@ Sur le vps, l'inventaire reste à faire (`du` lancé dans `~/build/tmp/purge/du.
 ### Bascule finale /srv (agent code, interrompue le 2026-10-09 à 17:40 UTC)
 
 État :
+
 - vps : bascule faite. `/srv` est supprimé, il reste un seul projet compose (`aphrody`) et `systemctl --failed` est vide. aphrody.com répond 200 et docker-doctor donne 7/7.
   - Il reste du texte `/srv` dans `~/apps` : la release figée `~/apps/shenron/releases/5a8740d3…` (code source, non exécuté ; `shenron-cdn-sync` n'en lit que `apps/site/public`), `~/apps/shenron-cdn-state/last-report.json` (régénéré à chaque passage) et le journal `~/apps/shenron/shared/coord/a2a-tasks.jsonl`.
   - Pour l'effacer, déployer une release shenron construite depuis origin/main (0 référence /srv).
@@ -84,6 +87,7 @@ Sur le vps, l'inventaire reste à faire (`du` lancé dans `~/build/tmp/purge/du.
   - `~/src/bun` signale « dubious ownership » (propriétaire root).
 
 Étapes suivantes sur dbfr, une fois le marqueur écrit :
+
 1. `sudo chown -R ubuntu:aphrody ~/src/bun`, puis `git -C ~/src/aphrody pull --ff-only` et `git -C ~/src/bun pull --ff-only`.
 2. Dans ~/src/aphrody : `bun scripts/tools/infra/host-apps.ts --host dbfr`, puis la même commande avec `--apply`.
 3. Pour chaque unité du dépôt : `bun packages/engine/core/src/host/cli.ts compose-unit <unité>`, installation dans /etc/systemd/system, puis `daemon-reload` et `restart` (aphrody-fonts-proxy, aphrody-discord-dev, aphrody-downloads, shenron-compute, shenron-embed). Vérifier ensuite que les unités répondent.

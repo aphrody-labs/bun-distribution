@@ -17,9 +17,7 @@ if (import.meta.main) {
       help: { type: "boolean" },
     },
   });
-  const args = values.help
-    ? ["--help"]
-    : ["--port", values.port!, "--host", values.host!];
+  const args = values.help ? ["--help"] : ["--port", values.port!, "--host", values.host!];
   if (values.backend) args.push("--backend", values.backend);
   process.exitCode = await main(["start", ...args]);
 }

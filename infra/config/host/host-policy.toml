@@ -59,9 +59,39 @@ releases_keep = 2
 
 [services]
 # Never stopped or disabled. Globs match the unit name without ".service".
-keep = ["ssh", "nginx", "fail2ban", "aphrody-*", "yolo-*", "shenron-*", "cron", "docker", "containerd", "postgresql*", "redis*", "certbot*"]
+keep = [
+  "ssh",
+  "nginx",
+  "fail2ban",
+  "aphrody-*",
+  "yolo-*",
+  "shenron-*",
+  "cron",
+  "docker",
+  "containerd",
+  "postgresql*",
+  "redis*",
+  "certbot*",
+]
 # Proposed for stopping by `yolo host services` (still needs --apply, and never overrides the keep list).
-stop = ["snapd", "ModemManager", "multipathd", "udisks2", "packagekit", "apport*", "motd-news", "ubuntu-advantage*", "esm-cache", "lxd*", "lxcfs", "irqbalance", "bluetooth", "cups*", "avahi-daemon", "wpa_supplicant"]
+stop = [
+  "snapd",
+  "ModemManager",
+  "multipathd",
+  "udisks2",
+  "packagekit",
+  "apport*",
+  "motd-news",
+  "ubuntu-advantage*",
+  "esm-cache",
+  "lxd*",
+  "lxcfs",
+  "irqbalance",
+  "bluetooth",
+  "cups*",
+  "avahi-daemon",
+  "wpa_supplicant",
+]
 
 [locks]
 # No mutation while one of these files is flock-held (the Aphrody build factory heavy lock is added for its host).

@@ -5,14 +5,7 @@
 // incremental by content hash) so `aphrody home query` and the MCP `aphrody_rag_search` see them. Cards are only
 // rewritten when their text changes and removed when their node disappears.
 import type { SQL } from "bun";
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { aphrodyBin, RECORD_VERSION, type Config } from "./config.ts";
 
@@ -20,27 +13,16 @@ export const RAG_LABEL = "windex";
 export const DIR_DEPTH = { graph: 4, other: 2 };
 
 const safe = (s: string) => s.replace(/[^A-Za-z0-9._-]+/g, "_").slice(0, 80);
-const short = (s: string) =>
-  new Bun.CryptoHasher("sha256")
-    .update(s.toLowerCase())
-    .digest("hex")
-    .slice(0, 12);
+const short = (s: string) => new Bun.CryptoHasher("sha256").update(s.toLowerCase()).digest("hex").slice(0, 12);
 
 /** Card file of a node: `<kind>/<2 hex>/<name>-<hash>.md` (flat, far below MAX_PATH). */
-export function cardPath(
-  root: string,
-  kind: "pe" | "dir" | "svc",
-  key: string,
-  name: string,
-): string {
+export function cardPath(root: string, kind: "pe" | "dir" | "svc", key: string, name: string): string {
   const h = short(key);
   return join(root, kind, h.slice(0, 2), `${safe(name) || "root"}-${h}.md`);
 }
 
 const line = (label: string, value: unknown) =>
-  value === null || value === undefined || value === ""
-    ? ""
-    : `- ${label}: ${value}\n`;
+  value === null || value === undefined || value === "" ? "" : `- ${label}: ${value}\n`;
 
 const list = (items: string[] | null | undefined, max: number) => {
   if (!items?.length) return null;
@@ -96,35 +78,19 @@ export function peCardText(r: PeCard): string {
     line("Original filename", r.original_filename) +
     line(
       "Signature",
-      [
-        r.signature,
-        r.signer,
-        r.signer_issuer && `issued by ${r.signer_issuer}`,
-        r.catalog && `catalog ${r.catalog}`,
-      ]
+      [r.signature, r.signer, r.signer_issuer && `issued by ${r.signer_issuer}`, r.catalog && `catalog ${r.catalog}`]
         .filter(Boolean)
         .join(", "),
     ) +
     line("Size", `${r.size} bytes`) +
-    line(
-      "Modified",
-      r.modified_at ? new Date(r.modified_at).toISOString() : null,
-    ) +
+    line("Modified", r.modified_at ? new Date(r.modified_at).toISOString() : null) +
     line("SHA-256", r.sha256) +
     line("Imported modules", list(r.modules, 120)) +
     line("Imports resolve to", list(r.resolved, 120)) +
     line("Imported functions", r.n_imports) +
-    line(
-      "Imported by",
-      r.n_importers
-        ? `${r.n_importers} images: ${list(r.importers, 40)}`
-        : null,
-    ) +
+    line("Imported by", r.n_importers ? `${r.n_importers} images: ${list(r.importers, 40)}` : null) +
     line("Export name", r.export_name) +
-    line(
-      "Exports",
-      r.n_exports ? `${r.n_exports}: ${list(r.exports, 150)}` : null,
-    ) +
+    line("Exports", r.n_exports ? `${r.n_exports}: ${list(r.exports, 150)}` : null) +
     line("Hosts services", list(r.services, 40))
   );
 }
@@ -147,10 +113,7 @@ export function dirCardText(r: DirCard): string {
     line("Files", r.n_files) +
     line("PE images", r.n_pe) +
     line("Bytes (direct files)", r.bytes) +
-    line(
-      "Modified",
-      r.modified_at ? new Date(r.modified_at).toISOString() : null,
-    ) +
+    line("Modified", r.modified_at ? new Date(r.modified_at).toISOString() : null) +
     line("Entries", list(r.children, 300))
   );
 }
@@ -179,10 +142,7 @@ export function svcCardText(r: SvcCard): string {
     line("Start", r.start_mode) +
     line("Group", r.grp) +
     line("Account", r.object_name) +
-    line(
-      "Description",
-      r.description && !r.description.startsWith("@") ? r.description : null,
-    ) +
+    line("Description", r.description && !r.description.startsWith("@") ? r.description : null) +
     line("Image path", r.image_path) +
     line("Image file", r.image) +
     line("Service DLL", r.service_dll) +
@@ -200,12 +160,7 @@ export type RagStats = {
   ms: number;
 };
 
-function writeCard(
-  file: string,
-  text: string,
-  keep: Set<string>,
-  stats: RagStats,
-): void {
+function writeCard(file: string, text: string, keep: Set<string>, stats: RagStats): void {
   keep.add(file);
   stats.cards++;
   if (existsSync(file) && readFileSync(file, "utf8") === text) {
@@ -227,11 +182,7 @@ function* files(dir: string): Generator<string> {
 }
 
 /** Regenerates the cards of every registered root; returns the card directory and counts. */
-export async function buildCards(
-  sql: SQL,
-  cfg: Config,
-  page = 2000,
-): Promise<{ dir: string } & RagStats> {
+export async function buildCards(sql: SQL, cfg: Config, page = 2000): Promise<{ dir: string } & RagStats> {
   const t0 = performance.now();
   const dir = join(cfg.dir, "rag");
   const stats: RagStats = {
@@ -246,8 +197,7 @@ export async function buildCards(
   // PE images: every image below a graph root, executables and drivers elsewhere.
   let after = 0;
   for (;;) {
-    const rows: PeCard[] =
-      await sql`SELECT f.id::text AS id, f.path, f.name, f.size::text AS size, f.sha256,
+    const rows: PeCard[] = await sql`SELECT f.id::text AS id, f.path, f.name, f.size::text AS size, f.sha256,
         f.modified_at, p.kind, p.machine, p.bits, p.subsystem, p.is_dotnet, p.file_version, p.product_version,
         p.company, p.description, p.product, p.original_filename, p.signature, p.signer, p.signer_issuer, p.catalog,
         p.n_imports, p.n_exports, p.export_name,
@@ -269,13 +219,7 @@ export async function buildCards(
         -- WinSxS holds component-store copies (mostly hard links) of the live images: carded once, live.
         AND position('\\winsxs\\' IN f.path_lc) = 0
       ORDER BY p.node_id LIMIT ${page}`;
-    for (const r of rows)
-      writeCard(
-        cardPath(dir, "pe", r.path, r.name),
-        peCardText(r),
-        keep,
-        stats,
-      );
+    for (const r of rows) writeCard(cardPath(dir, "pe", r.path, r.name), peCardText(r), keep, stats);
     if (rows.length < page) break;
     after = Number(rows.at(-1)!.id);
   }
@@ -283,14 +227,11 @@ export async function buildCards(
   // Directories down to a bounded depth below each root (deeper below graph roots).
   for (const root of await sql`SELECT path, path_lc, graph FROM windex.root`) {
     const depth = root.graph ? DIR_DEPTH.graph : DIR_DEPTH.other;
-    const base = root.path_lc.endsWith("\\")
-      ? root.path_lc
-      : `${root.path_lc}\\`;
+    const base = root.path_lc.endsWith("\\") ? root.path_lc : `${root.path_lc}\\`;
     const baseDepth = base.split("\\").length - 1;
     let last = "";
     for (;;) {
-      const rows: (DirCard & { path_lc: string })[] =
-        await sql`SELECT d.path, d.path_lc, d.name, d.modified_at,
+      const rows: (DirCard & { path_lc: string })[] = await sql`SELECT d.path, d.path_lc, d.name, d.modified_at,
           (SELECT count(*)::int FROM windex.fs_node c WHERE c.parent_id = d.id AND c.is_dir) AS n_dirs,
           (SELECT count(*)::int FROM windex.fs_node c WHERE c.parent_id = d.id AND NOT c.is_dir) AS n_files,
           (SELECT count(*)::int FROM windex.fs_node c JOIN windex.pe p ON p.node_id = c.id WHERE c.parent_id = d.id) AS n_pe,
@@ -305,33 +246,20 @@ export async function buildCards(
           AND (d.parent_id IS NULL OR d.path_lc = ${root.path_lc} OR
                (SELECT count(*) FROM windex.fs_node s WHERE s.parent_id = d.parent_id AND s.is_dir) <= 500)
         ORDER BY d.path_lc LIMIT ${page}`;
-      for (const r of rows)
-        writeCard(
-          cardPath(dir, "dir", r.path, r.name),
-          dirCardText(r),
-          keep,
-          stats,
-        );
+      for (const r of rows) writeCard(cardPath(dir, "dir", r.path, r.name), dirCardText(r), keep, stats);
       if (rows.length < page) break;
       last = rows.at(-1)!.path_lc;
     }
   }
 
   // Services and drivers.
-  const svcs: SvcCard[] =
-    await sql`SELECT s.name, s.display_name, s.description, s.kind, s.start_mode, s.grp,
+  const svcs: SvcCard[] = await sql`SELECT s.name, s.display_name, s.description, s.kind, s.start_mode, s.grp,
       s.image_path, s.service_dll, s.object_name, s.depend_on_service, s.depend_on_group,
       (SELECT f.path FROM windex.fs_node f WHERE f.path_lc = s.image_lc) AS image,
       (SELECT array_agg(d.name ORDER BY d.name) FROM windex.edge e JOIN windex.service d ON d.id = e.src
          WHERE e.dst = s.id AND e.kind = 'depends_on') AS dependents
     FROM windex.service s ORDER BY s.name`;
-  for (const r of svcs)
-    writeCard(
-      cardPath(dir, "svc", r.name, r.name),
-      svcCardText(r),
-      keep,
-      stats,
-    );
+  for (const r of svcs) writeCard(cardPath(dir, "svc", r.name, r.name), svcCardText(r), keep, stats);
 
   for (const f of files(dir)) {
     if (!keep.has(f)) {
@@ -344,54 +272,25 @@ export async function buildCards(
 }
 
 /** Runs the home pipeline on the card directory (`aphrody-home index <dir> --label windex --state <home>`). */
-export async function indexCards(
-  cfg: Config,
-  dir: string,
-): Promise<{ code: number; out: string }> {
+export async function indexCards(cfg: Config, dir: string): Promise<{ code: number; out: string }> {
   const bin = aphrodyBin(cfg.home, "aphrody-home");
-  const proc = Bun.spawn(
-    [bin, "--state", cfg.home, "index", dir, "--label", RAG_LABEL],
-    {
-      stdout: "pipe",
-      stderr: "pipe",
-      windowsHide: true,
-    },
-  );
-  const [out, err] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-  ]);
+  const proc = Bun.spawn([bin, "--state", cfg.home, "index", dir, "--label", RAG_LABEL], {
+    stdout: "pipe",
+    stderr: "pipe",
+    windowsHide: true,
+  });
+  const [out, err] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
   return { code: await proc.exited, out: `${out}${err}`.trim() };
 }
 
 /** `aphrody-home query` restricted to nothing but the home store (cards are chunks labelled `windex`). */
-export async function queryHome(
-  cfg: Config,
-  text: string,
-  limit = 5,
-): Promise<{ code: number; out: string }> {
+export async function queryHome(cfg: Config, text: string, limit = 5): Promise<{ code: number; out: string }> {
   const bin = aphrodyBin(cfg.home, "aphrody-home");
-  const proc = Bun.spawn(
-    [
-      bin,
-      "--state",
-      cfg.home,
-      "query",
-      text,
-      "--limit",
-      String(limit),
-      "--kind",
-      "chunk",
-    ],
-    {
-      stdout: "pipe",
-      stderr: "pipe",
-      windowsHide: true,
-    },
-  );
-  const [out, err] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-  ]);
+  const proc = Bun.spawn([bin, "--state", cfg.home, "query", text, "--limit", String(limit), "--kind", "chunk"], {
+    stdout: "pipe",
+    stderr: "pipe",
+    windowsHide: true,
+  });
+  const [out, err] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
   return { code: await proc.exited, out: `${out}${err}`.trim() };
 }

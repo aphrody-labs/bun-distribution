@@ -97,7 +97,7 @@ Remaining on the VPS (paused: the host is reserved for game downloads and Steam 
    documents host networking; its listeners are hard-coded to `0.0.0.0`, which is why the ports
    are published on the wg1 address instead), Moonlight Qt pairing
    (`Moonlight.exe pair 10.200.77.1 --pin <pin>`, then `stream 10.200.77.1 "Gamescope glxgears (CPU)"
---video-codec H.264 --resolution 1280x720 --fps 60`). Choose H.264: Wolf also offers software
+   --video-codec H.264 --resolution 1280x720 --fps 60`). Choose H.264: Wolf also offers software
    x265, too slow on this CPU.
 4. `wolf-app` mode: gamescope `--backend wayland` nested in Wolf's software compositor; if it
    needs dmabuf, set `GAMESTREAM_WOLF_GAMESCOPE=0` and use Wayland clients (`vkcube --wsi wayland`).

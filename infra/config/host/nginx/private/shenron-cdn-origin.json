@@ -10,7 +10,17 @@
   "publicRoot": "/home/ubuntu/apps/shenron-cdn",
   "protectedStores": false,
   "methods": ["GET", "HEAD"],
-  "publicPrefixes": ["/assets/manga/", "/assets/ext/", "/assets/dragonballcn/", "/assets/wiki/banners/", "/assets/wiki/databooks/", "/wiki/databooks/", "/wiki/banners/", "/banners/", "/_next/static/"],
+  "publicPrefixes": [
+    "/assets/manga/",
+    "/assets/ext/",
+    "/assets/dragonballcn/",
+    "/assets/wiki/banners/",
+    "/assets/wiki/databooks/",
+    "/wiki/databooks/",
+    "/wiki/banners/",
+    "/banners/",
+    "/_next/static/"
+  ],
   "consumer": "dbfr gateway fallback after local public disk and R2 Worker",
   "activation": "nginx -t then systemctl reload nginx"
 }

@@ -25,10 +25,7 @@ module.exports = {
         "newlines-between": "always",
       },
     ],
-    "no-unused-vars": [
-      "error",
-      { argsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_" },
-    ],
+    "no-unused-vars": ["error", { argsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_" }],
     "jsdoc/require-returns-check": "off",
     "jsdoc/require-param-description": "off",
     "jsdoc/require-returns-description": "off",

@@ -5,8 +5,5 @@ import { runToolHost } from "@aphrody/yolo-core/tool-host";
 import { findCheckout } from "@aphrody/yolo-core/src/vfs/home.ts";
 
 if (import.meta.main) {
-  process.exitCode = await runToolHost(
-    Bun.argv.slice(2),
-    findCheckout() ?? process.cwd(),
-  );
+  process.exitCode = await runToolHost(Bun.argv.slice(2), findCheckout() ?? process.cwd());
 }

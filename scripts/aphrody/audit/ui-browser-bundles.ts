@@ -14,8 +14,7 @@ export const SERVER_ONLY: Readonly<Record<string, string>> = {
   "m3-config/tsup.ts": "build tooling",
   "m3-config/bun-build.ts": "Bun build preset",
   "m3-config/cache-db.ts": "Bun SQLite cache (bun:sqlite)",
-  "m3-icons/src/index.ts":
-    "renders through the Bun FFI; browsers use ./browser and ./browser/lit",
+  "m3-icons/src/index.ts": "renders through the Bun FFI; browsers use ./browser and ./browser/lit",
   "m3-icons/src/codegen.ts": "build-time generator (Bun FFI)",
   "m3-icons/src/plugin.ts": "Bun build plugin (Bun FFI)",
   "m3-next/src/server.tsx": "server entry (node:url)",
@@ -29,10 +28,7 @@ const FFI_MARKERS = /bun_rs_|dlopen\(|aphrody-ffi native library/;
 const NON_CODE = /\.(css|json|d\.ts|scss|woff2?|ttf)$/;
 
 /** Collect string leaves of an `exports` map, ignoring `types` conditions. */
-export function exportTargets(
-  exportsField: unknown,
-  out = new Set<string>(),
-): Set<string> {
+export function exportTargets(exportsField: unknown, out = new Set<string>()): Set<string> {
   if (typeof exportsField === "string") out.add(exportsField);
   else if (exportsField && typeof exportsField === "object") {
     for (const [key, value] of Object.entries(exportsField)) {
@@ -43,10 +39,7 @@ export function exportTargets(
 }
 
 /** Resolve a package export target to a source (preferred) or built file that exists. */
-export function resolveEntry(
-  packageDir: string,
-  target: string,
-): string | undefined {
+export function resolveEntry(packageDir: string, target: string): string | undefined {
   if (!target.startsWith(".") || NON_CODE.test(target)) return undefined;
   const clean = target.replace(/^\.\//, "");
   const stem = clean.replace(/^dist\//, "src/").replace(/\.[^./]+$/, "");
@@ -56,18 +49,9 @@ export function resolveEntry(
   return existsSync(join(packageDir, clean)) ? clean : undefined;
 }
 
-export type Verdict =
-  | "ok"
-  | "server-only"
-  | "native-in-bundle"
-  | "unexpected-failure"
-  | "stale-allowlist";
+export type Verdict = "ok" | "server-only" | "native-in-bundle" | "unexpected-failure" | "stale-allowlist";
 
-export function classify(
-  entry: string,
-  bundled: boolean,
-  nativeMarker: boolean,
-): Verdict {
+export function classify(entry: string, bundled: boolean, nativeMarker: boolean): Verdict {
   if (bundled && nativeMarker) return "native-in-bundle";
   if (bundled) return entry in SERVER_ONLY ? "stale-allowlist" : "ok";
   return entry in SERVER_ONLY ? "server-only" : "unexpected-failure";
@@ -79,17 +63,10 @@ export function discoverEntries(uiRoot: string): string[] {
     const packageDir = join(uiRoot, name.name);
     const manifest = join(packageDir, "package.json");
     if (!name.isDirectory() || !existsSync(manifest)) continue;
-    const pkg = JSON.parse(readFileSync(manifest, "utf8")) as Record<
-      string,
-      unknown
-    >;
+    const pkg = JSON.parse(readFileSync(manifest, "utf8")) as Record<string, unknown>;
     const targets = pkg.exports
       ? exportTargets(pkg.exports)
-      : new Set(
-          [pkg.module, pkg.main].filter(
-            (v): v is string => typeof v === "string",
-          ),
-        );
+      : new Set([pkg.module, pkg.main].filter((v): v is string => typeof v === "string"));
     for (const target of targets) {
       const entry = resolveEntry(packageDir, target);
       if (entry) entries.add(`${name.name}/${entry}`);
@@ -102,15 +79,12 @@ export function discoverEntries(uiRoot: string): string[] {
 const assetUrlPlugin: import("bun").BunPlugin = {
   name: "asset-url",
   setup(build) {
-    build.onResolve({ filter: /\?url$/ }, (args) => {
-      const path = resolve(
-        dirname(args.importer),
-        args.path.replace(/\?url$/, ""),
-      );
+    build.onResolve({ filter: /\?url$/ }, args => {
+      const path = resolve(dirname(args.importer), args.path.replace(/\?url$/, ""));
       if (!existsSync(path)) throw new Error(`missing asset: ${args.path}`);
       return { path, namespace: "asset-url" };
     });
-    build.onLoad({ filter: /.*/, namespace: "asset-url" }, (args) => ({
+    build.onLoad({ filter: /.*/, namespace: "asset-url" }, args => ({
       contents: `export default ${JSON.stringify(args.path)};`,
       loader: "js",
     }));
@@ -142,32 +116,21 @@ if (import.meta.main) {
       outputs: [],
     }));
     if (!result.success) {
-      const detail = (result.logs as { message?: string }[])
-        .map((l) => l.message ?? String(l))[0]
-        ?.slice(0, 140);
+      const detail = (result.logs as { message?: string }[]).map(l => l.message ?? String(l))[0]?.slice(0, 140);
       rows.push({ entry, verdict: classify(entry, false, false), detail });
       continue;
     }
-    const text = (await Promise.all(result.outputs.map((o) => o.text()))).join(
-      "\n",
-    );
+    const text = (await Promise.all(result.outputs.map(o => o.text()))).join("\n");
     rows.push({
       entry,
       verdict: classify(entry, true, FFI_MARKERS.test(text)),
     });
   }
-  const failed = rows.filter(
-    (r) =>
-      r.verdict === "unexpected-failure" || r.verdict === "native-in-bundle",
-  );
-  if (json)
-    console.log(JSON.stringify({ rows, failed: failed.length }, null, 2));
+  const failed = rows.filter(r => r.verdict === "unexpected-failure" || r.verdict === "native-in-bundle");
+  if (json) console.log(JSON.stringify({ rows, failed: failed.length }, null, 2));
   else {
-    for (const r of rows)
-      console.log(
-        `${r.verdict.padEnd(19)} ${r.entry}${r.detail ? `  -> ${r.detail}` : ""}`,
-      );
-    const count = (v: Verdict) => rows.filter((r) => r.verdict === v).length;
+    for (const r of rows) console.log(`${r.verdict.padEnd(19)} ${r.entry}${r.detail ? `  -> ${r.detail}` : ""}`);
+    const count = (v: Verdict) => rows.filter(r => r.verdict === v).length;
     console.log(
       `\n${count("ok")} ok, ${count("server-only")} server-only, ${count("stale-allowlist")} stale allowlist, ${failed.length} failing`,
     );

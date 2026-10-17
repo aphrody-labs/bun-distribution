@@ -7,8 +7,7 @@ import { assertConsumerFile } from "./shenron-cdn-origin-consumer";
 const CONFIG = "/etc/aphrody/cloudflare/origin-cdn.json";
 const CODE = "/etc/aphrody/cloudflare/cli/cdn-origin.mjs";
 const UNIT = "/etc/systemd/system/shenron-cdn-origin.service";
-const hash = (bytes: Uint8Array | string) =>
-  new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+const hash = (bytes: Uint8Array | string) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 const SHA = /^[a-f0-9]{64}$/;
 type Json = Record<string, unknown>;
 export interface OriginPreparationInput {
@@ -30,15 +29,8 @@ export interface OriginPreparationPorts {
     stateSha256: string;
   }>;
   qualify(input: OriginPreparationInput): Promise<void>;
-  attest(snapshot: {
-    config: Json;
-    configSha256: string;
-    state: Json;
-    stateSha256: string;
-  }): Promise<void>;
-  backup(
-    bytesSha256: string,
-  ): Promise<{ backupPath: string; snapshotSha256: string; verified: boolean }>;
+  attest(snapshot: { config: Json; configSha256: string; state: Json; stateSha256: string }): Promise<void>;
+  backup(bytesSha256: string): Promise<{ backupPath: string; snapshotSha256: string; verified: boolean }>;
   receipt(value: Json): Promise<{ path: string; sha256: string }>;
   store(value: Json): Promise<void>;
 }
@@ -69,60 +61,29 @@ export async function prepareOriginPublication(
     "expectedConsumerCodeSha256",
     "expectedUnitSha256",
   ];
-  if (
-    Object.keys(input).length !== names.length ||
-    Object.keys(input).some((name) => !names.includes(name))
-  )
+  if (Object.keys(input).length !== names.length || Object.keys(input).some(name => !names.includes(name)))
     throw Error("Exact typed preparation input required");
-  for (const name of [
-    "job",
-    "stateDirectory",
-    "inventoryRoot",
-    "activationModulePath",
-  ] as const)
+  for (const name of ["job", "stateDirectory", "inventoryRoot", "activationModulePath"] as const)
     if (!isAbsolute(input[name])) throw Error("Absolute owner paths required");
-  for (const name of [
-    "activationModuleSha256",
-    "expectedConsumerCodeSha256",
-    "expectedUnitSha256",
-  ] as const)
-    if (!SHA.test(input[name]))
-      throw Error("Complete preparation SHA pins required");
+  for (const name of ["activationModuleSha256", "expectedConsumerCodeSha256", "expectedUnitSha256"] as const)
+    if (!SHA.test(input[name])) throw Error("Complete preparation SHA pins required");
   const inputSha256 = hash(JSON.stringify(input));
   return ports.lock(async () => {
     const stored = await ports.stored();
     if (stored) {
-      if (
-        stored.inputSha256 !== inputSha256 ||
-        stored.schema !== "aphrody-origin-publication-preparation/v1"
-      )
+      if (stored.inputSha256 !== inputSha256 || stored.schema !== "aphrody-origin-publication-preparation/v1")
         throw Error("Immutable preparation input changed");
       if (
         !stored.configuration ||
-        hash(JSON.stringify(stored.configuration)) !==
-          stored.configurationSha256 ||
+        hash(JSON.stringify(stored.configuration)) !== stored.configurationSha256 ||
         !SHA.test(String(stored.stateSha256))
       )
         throw Error("Stored preparation integrity differs");
-      for (const name of [
-        "previousInventory",
-        "expectedPrefix",
-        "expectedDeployment",
-        "preparationPath",
-      ])
-        if (typeof stored[name] !== "string")
-          throw Error("Stored preparation shape differs");
-      for (const name of [
-        "previousInventorySha256",
-        "expectedCodeSha256",
-        "moduleSha256",
-      ])
-        if (!SHA.test(String(stored[name])))
-          throw Error("Stored preparation SHA differs");
-      if (
-        stored.modulePath !== input.activationModulePath ||
-        stored.moduleSha256 !== input.activationModuleSha256
-      )
+      for (const name of ["previousInventory", "expectedPrefix", "expectedDeployment", "preparationPath"])
+        if (typeof stored[name] !== "string") throw Error("Stored preparation shape differs");
+      for (const name of ["previousInventorySha256", "expectedCodeSha256", "moduleSha256"])
+        if (!SHA.test(String(stored[name]))) throw Error("Stored preparation SHA differs");
+      if (stored.modulePath !== input.activationModulePath || stored.moduleSha256 !== input.activationModuleSha256)
         throw Error("Stored preparation module differs");
       return { ...stored, replay: true } as PreparedOriginPublication;
     }
@@ -142,17 +103,10 @@ export async function prepareOriginPublication(
       throw Error("Current origin and canonical publication state differ");
     await ports.attest(before);
     const backup = await ports.backup(before.configSha256);
-    if (
-      backup.verified !== true ||
-      backup.snapshotSha256 !== before.configSha256 ||
-      !isAbsolute(backup.backupPath)
-    )
+    if (backup.verified !== true || backup.snapshotSha256 !== before.configSha256 || !isAbsolute(backup.backupPath))
       throw Error("Fresh off-host backup is unqualified");
     const after = await ports.snapshot();
-    if (
-      after.configSha256 !== before.configSha256 ||
-      after.stateSha256 !== before.stateSha256
-    )
+    if (after.configSha256 !== before.configSha256 || after.stateSha256 !== before.stateSha256)
       throw Error("Origin or publication state changed during backup");
     const receipt = await ports.receipt({
       schema: "aphrody-off-host-snapshot/v1",
@@ -201,8 +155,7 @@ async function privateWrite(path: string, value: Json) {
   const bytes = JSON.stringify(value);
   try {
     const stored = await guarded(path);
-    if (hash(stored) !== hash(bytes))
-      throw Error("Immutable preparation receipt changed");
+    if (hash(stored) !== hash(bytes)) throw Error("Immutable preparation receipt changed");
     return { path, sha256: hash(stored) };
   } catch (error) {
     if ((error as { code?: string }).code !== "ENOENT") throw error;
@@ -223,19 +176,7 @@ async function scoped(root: string, path: string) {
 }
 async function ssh(command: string, stdin?: Uint8Array) {
   const child = Bun.spawn(
-    [
-      "sudo",
-      "-n",
-      "-u",
-      "ubuntu",
-      "ssh",
-      "-o",
-      "BatchMode=yes",
-      "-o",
-      "ConnectTimeout=10",
-      "vps",
-      command,
-    ],
+    ["sudo", "-n", "-u", "ubuntu", "ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "vps", command],
     {
       stdin: stdin ? new Blob([new Uint8Array(stdin)]) : "ignore",
       stdout: "pipe",
@@ -243,10 +184,7 @@ async function ssh(command: string, stdin?: Uint8Array) {
       timeout: 25000,
     },
   );
-  const [output, exit] = await Promise.all([
-    new Response(child.stdout).text(),
-    child.exited,
-  ]);
+  const [output, exit] = await Promise.all([new Response(child.stdout).text(), child.exited]);
   if (exit !== 0) throw Error("Existing off-host backup transport failed");
   return output.trim();
 }
@@ -260,30 +198,17 @@ export function assertPreparationDirectory(
   },
   rootOwned: boolean,
 ) {
-  if (
-    !info.isDirectory() ||
-    info.isSymbolicLink() ||
-    (rootOwned && info.uid !== 0) ||
-    info.mode & 0o077
-  )
-    throw Error(
-      "Private preparation directory required; writable job and state must be root-owned",
-    );
+  if (!info.isDirectory() || info.isSymbolicLink() || (rootOwned && info.uid !== 0) || info.mode & 0o077)
+    throw Error("Private preparation directory required; writable job and state must be root-owned");
 }
 /** This capability executes on DBFR root only; credentials remain in their existing stores. */
-export async function prepareNativeOriginPublication(
-  input: OriginPreparationInput,
-) {
-  if (process.platform !== "linux" || process.getuid?.() !== 0)
-    throw Error("DBFR root preparation context required");
+export async function prepareNativeOriginPublication(input: OriginPreparationInput) {
+  if (process.platform !== "linux" || process.getuid?.() !== 0) throw Error("DBFR root preparation context required");
   await scoped(input.inventoryRoot, input.job);
   await scoped(input.inventoryRoot, input.stateDirectory);
   await Promise.all(
-    [input.inventoryRoot, input.job, input.stateDirectory].map(async (path) =>
-      assertPreparationDirectory(
-        await lstat(path),
-        path !== input.inventoryRoot,
-      ),
+    [input.inventoryRoot, input.job, input.stateDirectory].map(async path =>
+      assertPreparationDirectory(await lstat(path), path !== input.inventoryRoot),
     ),
   );
   const statePath = join(input.stateDirectory, "current-inventory.json");
@@ -309,15 +234,12 @@ export async function prepareNativeOriginPublication(
     },
     async qualify(value) {
       if (
-        hash(await guarded(value.activationModulePath, 1024 * 1024)) !==
-          value.activationModuleSha256 ||
-        hash(await guarded(CODE, 1024 * 1024)) !==
-          value.expectedConsumerCodeSha256
+        hash(await guarded(value.activationModulePath, 1024 * 1024)) !== value.activationModuleSha256 ||
+        hash(await guarded(CODE, 1024 * 1024)) !== value.expectedConsumerCodeSha256
       )
         throw Error("Installed native module changed");
       assertConsumerFile(await lstat(UNIT), false);
-      if (hash(await Bun.file(UNIT).bytes()) !== value.expectedUnitSha256)
-        throw Error("Origin unit changed");
+      if (hash(await Bun.file(UNIT).bytes()) !== value.expectedUnitSha256) throw Error("Origin unit changed");
     },
     async snapshot() {
       configBytes = await guarded(CONFIG);
@@ -334,14 +256,12 @@ export async function prepareNativeOriginPublication(
         "manifestPrefix",
       ]);
       if (
-        Object.keys(config).some((key) => !allowed.has(key)) ||
+        Object.keys(config).some(key => !allowed.has(key)) ||
         ["manifest", "profile", "sdkModule", "inventoryPath"].some(
-          (key) => typeof config[key] !== "string" || !isAbsolute(config[key]),
+          key => typeof config[key] !== "string" || !isAbsolute(config[key]),
         )
       )
-        throw Error(
-          "Origin backup may contain only declared references and public metadata",
-        );
+        throw Error("Origin backup may contain only declared references and public metadata");
       return {
         config,
         configSha256: hash(configBytes),
@@ -350,9 +270,7 @@ export async function prepareNativeOriginPublication(
       };
     },
     async attest(before) {
-      const activation = await import(
-        Bun.pathToFileURL(input.activationModulePath).href
-      );
+      const activation = await import(Bun.pathToFileURL(input.activationModulePath).href);
       const replay = await activation
         .createOriginInventoryActivation({
           configSha256: before.configSha256,
@@ -368,36 +286,20 @@ export async function prepareNativeOriginPublication(
           manifestPrefix: before.state.prefix,
           publisherLock: lockPath,
         });
-      if (
-        replay.applied !== false ||
-        replay.replay !== true ||
-        replay.writes !== 0
-      )
-        throw Error(
-          "Preparation requires current native-origin replay with zero writes",
-        );
+      if (replay.applied !== false || replay.replay !== true || replay.writes !== 0)
+        throw Error("Preparation requires current native-origin replay with zero writes");
     },
     async backup(expected) {
-      const path =
-        "/home/ubuntu/.aphrody/protected-backups/shenron-origin-pointer-current/origin-cdn.json";
+      const path = "/home/ubuntu/.aphrody/protected-backups/shenron-origin-pointer-current/origin-cdn.json";
       const script = `import{mkdir,open,rename,lstat,realpath}from"node:fs/promises";const p=${JSON.stringify(path)},dir=p.slice(0,p.lastIndexOf("/"));await mkdir(dir,{recursive:true,mode:448});const s=await lstat(dir);if(!s.isDirectory()||s.isSymbolicLink()||(s.mode&63)||s.uid!==process.getuid()||await realpath(dir)!==dir)throw Error("guard");const bytes=new Uint8Array(await Bun.stdin.arrayBuffer());if(bytes.length>16384)throw Error("bound");const h=new Bun.CryptoHasher("sha256").update(bytes).digest("hex");if(h!==${JSON.stringify(expected)})throw Error("sha");const f=await open(p+".next","wx",384);try{await f.writeFile(bytes);await f.sync()}finally{await f.close()}await rename(p+".next",p);console.log(h);`;
-      if (
-        (await ssh(
-          "/home/ubuntu/.bun/bin/bun-1.4.4 -e " + quote(script),
-          configBytes!,
-        )) !== expected
-      )
+      if ((await ssh("/home/ubuntu/.bun/bin/bun-1.4.4 -e " + quote(script), configBytes!)) !== expected)
         throw Error("Off-host backup write differs");
       const verify = `import{lstat}from"node:fs/promises";const p=${JSON.stringify(path)};const s=await lstat(p);if(!s.isFile()||s.isSymbolicLink()||(s.mode&63))throw Error("guard");console.log(new Bun.CryptoHasher("sha256").update(await Bun.file(p).bytes()).digest("hex"));`;
-      if (
-        (await ssh("/home/ubuntu/.bun/bin/bun-1.4.4 -e " + quote(verify))) !==
-        expected
-      )
+      if ((await ssh("/home/ubuntu/.bun/bin/bun-1.4.4 -e " + quote(verify))) !== expected)
         throw Error("Independent off-host readback differs");
       return { backupPath: path, snapshotSha256: expected, verified: true };
     },
-    receipt: (value) =>
-      privateWrite(join(input.job, "origin-backup-receipt.json"), value),
+    receipt: value => privateWrite(join(input.job, "origin-backup-receipt.json"), value),
     async store(value) {
       await privateWrite(join(input.job, "origin-preparation.json"), value);
     },

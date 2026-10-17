@@ -33,16 +33,13 @@ export interface WorkspaceGraph {
 export function loadCargoMetadata<P = CargoPackage>(
   dir: string,
 ): { packages: P[]; workspace_members: string[] } | { error: string } {
-  const result = Bun.spawnSync(
-    ["cargo", "metadata", "--format-version", "1", "--no-deps", "--offline"],
-    {
-      windowsHide: true,
-      cwd: dir,
-      env: process.env,
-      stdout: "pipe",
-      stderr: "pipe",
-    },
-  );
+  const result = Bun.spawnSync(["cargo", "metadata", "--format-version", "1", "--no-deps", "--offline"], {
+    windowsHide: true,
+    cwd: dir,
+    env: process.env,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   if (result.exitCode !== 0) {
     return {
       error: `cargo metadata failed: ${result.stderr.toString().trim().split("\n").slice(-3).join(" | ")}`,
@@ -72,10 +69,8 @@ export function graphFromMetadata(
   const errors: string[] = [];
   const members = new Set(metadata.workspace_members);
   const byDirectory = new Map<string, string>();
-  const packages = metadata.packages.filter((pkg) =>
-    pkg.id === undefined
-      ? inside(root, pkg.manifest_path)
-      : members.has(pkg.id),
+  const packages = metadata.packages.filter(pkg =>
+    pkg.id === undefined ? inside(root, pkg.manifest_path) : members.has(pkg.id),
   );
   for (const pkg of packages) {
     if (!inside(root, pkg.manifest_path)) {
@@ -84,8 +79,7 @@ export function graphFromMetadata(
     }
     const dir = resolve(dirname(pkg.manifest_path));
     const node = relative(root, dir).split(sep).join("/");
-    if (byDirectory.has(dir))
-      errors.push(`duplicate workspace directory: ${node}`);
+    if (byDirectory.has(dir)) errors.push(`duplicate workspace directory: ${node}`);
     byDirectory.set(dir, node);
   }
   const edges: Edge[] = [];
@@ -106,9 +100,7 @@ export function graphFromMetadata(
           evidence: `${pkg.name} -> ${dep.name}`,
         });
       } else if (inside(root, directory) && !to) {
-        errors.push(
-          `workspace path dependency not indexed: ${from} -> ${dep.name} (${directory})`,
-        );
+        errors.push(`workspace path dependency not indexed: ${from} -> ${dep.name} (${directory})`);
       } else if (!inside(root, directory)) {
         externalPaths.add(relative(root, directory).split(sep).join("/"));
       }
@@ -117,10 +109,7 @@ export function graphFromMetadata(
   return {
     nodes: [...byDirectory.values()].toSorted(),
     edges: edges.toSorted(
-      (a, b) =>
-        a.from.localeCompare(b.from) ||
-        a.to.localeCompare(b.to) ||
-        a.evidence.localeCompare(b.evidence),
+      (a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to) || a.evidence.localeCompare(b.evidence),
     ),
     externalPaths: [...externalPaths].toSorted(),
     errors: errors.toSorted(),
@@ -141,13 +130,8 @@ export function collectEdges(root: string): WorkspaceGraph {
 }
 
 /** Strongly connected components with more than one crate (Tarjan). */
-export function cycles(
-  nodes: readonly string[],
-  edges: readonly Edge[],
-): string[][] {
-  const next = new Map<string, Set<string>>(
-    nodes.map((node) => [node, new Set<string>()]),
-  );
+export function cycles(nodes: readonly string[], edges: readonly Edge[]): string[][] {
+  const next = new Map<string, Set<string>>(nodes.map(node => [node, new Set<string>()]));
   for (const edge of edges) next.get(edge.from)?.add(edge.to);
   let index = 0;
   const order = new Map<string, number>();
@@ -178,8 +162,7 @@ export function cycles(
         onStack.delete(member);
         component.push(member);
       } while (member !== node);
-      if (component.length > 1 || (next.get(node)?.has(node) ?? false))
-        found.push(component.toSorted());
+      if (component.length > 1 || (next.get(node)?.has(node) ?? false)) found.push(component.toSorted());
     }
   };
   for (const node of nodes) if (!order.has(node)) visit(node);

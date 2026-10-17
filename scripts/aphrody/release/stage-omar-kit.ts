@@ -8,8 +8,5 @@ export { guideHtml } from "@aphrody/product/admin/guide";
 if (import.meta.main) {
   const args = Bun.argv.slice(2);
   const at = args.indexOf("--out");
-  await stageSetup(
-    resolve(at >= 0 ? (args[at + 1] ?? "") : "packages/infra/product/dist"),
-    args.includes("--smoke"),
-  );
+  await stageSetup(resolve(at >= 0 ? (args[at + 1] ?? "") : "packages/infra/product/dist"), args.includes("--smoke"));
 }

@@ -36,8 +36,7 @@ export type PackageAudit = {
 
 function strings(value: unknown): string[] {
   if (typeof value === "string") return [value];
-  if (value && typeof value === "object")
-    return Object.values(value).flatMap(strings);
+  if (value && typeof value === "object") return Object.values(value).flatMap(strings);
   return [];
 }
 
@@ -57,27 +56,18 @@ export function auditPayload(manifest: Manifest, files: string[]): string[] {
   for (const entry of entries) {
     if (entry === null || entry.startsWith("node:")) continue;
     const path = entry.replace(/^\.\//, "");
-    if (!files.some((file) => new Bun.Glob(path).match(file)))
-      errors.push(`missing entry: ${entry}`);
+    if (!files.some(file => new Bun.Glob(path).match(file))) errors.push(`missing entry: ${entry}`);
   }
-  for (const section of [
-    "dependencies",
-    "optionalDependencies",
-    "peerDependencies",
-    "devDependencies",
-  ] as const) {
+  for (const section of ["dependencies", "optionalDependencies", "peerDependencies", "devDependencies"] as const) {
     for (const [name, spec] of Object.entries(manifest[section] ?? {})) {
-      if (/^(workspace|catalog|file|link):/.test(spec))
-        errors.push(`local dependency: ${name}=${spec}`);
+      if (/^(workspace|catalog|file|link):/.test(spec)) errors.push(`local dependency: ${name}=${spec}`);
     }
   }
   for (const file of files) {
     if (
       file.startsWith("/") ||
       file.split("/").includes("..") ||
-      /(^|\/)(\.env(?:\.[^/]+)?|\.npmrc|\.git|node_modules)(\/|$)|\.(sqlite(?:3)?|db|pem|key)$/.test(
-        file,
-      )
+      /(^|\/)(\.env(?:\.[^/]+)?|\.npmrc|\.git|node_modules)(\/|$)|\.(sqlite(?:3)?|db|pem|key)$/.test(file)
     ) {
       errors.push(`protected filename: ${file}`);
     }
@@ -97,25 +87,17 @@ async function checked(command: string[], cwd: string): Promise<string> {
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
-  if (code !== 0)
-    throw new Error(`${command[0]} failed (${code}): ${stderr.slice(-2000)}`);
+  if (code !== 0) throw new Error(`${command[0]} failed (${code}): ${stderr.slice(-2000)}`);
   return stdout;
 }
 
-export async function auditPackages(
-  root: string,
-  output: string,
-  only?: string[],
-): Promise<PackageAudit[]> {
+export async function auditPackages(root: string, output: string, only?: string[]): Promise<PackageAudit[]> {
   await mkdir(output, { recursive: true });
   const audits: PackageAudit[] = [];
   for (const path of await firstPartyManifests(root)) {
     const manifest: Manifest = await Bun.file(join(root, path)).json();
     if (manifest.private || (only && !only.includes(manifest.name))) continue;
-    const archive = join(
-      output,
-      `${manifest.name.replace(/^@/, "").replaceAll("/", "-")}-${manifest.version}.tgz`,
-    );
+    const archive = join(output, `${manifest.name.replace(/^@/, "").replaceAll("/", "-")}-${manifest.version}.tgz`);
     const row: PackageAudit = {
       path,
       name: manifest.name,
@@ -127,26 +109,18 @@ export async function auditPackages(
     };
     try {
       // Lifecycle scripts run: a failing prepack is a release failure.
-      await checked(
-        ["bun", "pm", "pack", "--filename", archive, "--quiet"],
-        dirname(join(root, path)),
-      );
+      await checked(["bun", "pm", "pack", "--filename", archive, "--quiet"], dirname(join(root, path)));
       // Bun.Archive rather than tar: GNU tar reads a "C:\..." archive path as a remote host.
-      const entries = await new Bun.Archive(
-        await Bun.file(archive).bytes(),
-      ).files();
+      const entries = await new Bun.Archive(await Bun.file(archive).bytes()).files();
       const names = [...entries.keys()];
-      if (names.some((name) => !name.startsWith("package/")))
-        throw new Error("archive contains paths outside package/");
-      const packed: Manifest = JSON.parse(
-        await entries.get("package/package.json")!.text(),
-      );
+      if (names.some(name => !name.startsWith("package/"))) throw new Error("archive contains paths outside package/");
+      const packed: Manifest = JSON.parse(await entries.get("package/package.json")!.text());
       row.files = names.length;
       row.errors = auditPayload(
         packed,
-        names.map((name) => name.slice("package/".length)),
+        names.map(name => name.slice("package/".length)),
       );
-      const files = names.map((name) => name.slice("package/".length));
+      const files = names.map(name => name.slice("package/".length));
       for (const file of files) {
         if (
           !/\.[cm]?[jt]sx?$/.test(file) ||
@@ -155,13 +129,7 @@ export async function auditPackages(
         )
           continue;
         const source = await entries.get(`package/${file}`)!.text();
-        const loader = file.endsWith("tsx")
-          ? "tsx"
-          : file.endsWith("jsx")
-            ? "jsx"
-            : file.endsWith(".ts")
-              ? "ts"
-              : "js";
+        const loader = file.endsWith("tsx") ? "tsx" : file.endsWith("jsx") ? "jsx" : file.endsWith(".ts") ? "ts" : "js";
         let imports;
         try {
           imports = new Bun.Transpiler({ loader }).scan(source).imports;
@@ -170,9 +138,7 @@ export async function auditPackages(
         }
         for (const { path: specifier } of imports) {
           if (!specifier.startsWith(".")) continue;
-          const target = posix.normalize(
-            posix.join(posix.dirname(file), specifier.split("?")[0]!),
-          );
+          const target = posix.normalize(posix.join(posix.dirname(file), specifier.split("?")[0]!));
           const candidates = [
             target,
             `${target}.ts`,
@@ -184,13 +150,11 @@ export async function auditPackages(
             target.replace(/\.js$/, ".ts"),
             target.replace(/\.js$/, ".tsx"),
           ];
-          if (!candidates.some((candidate) => files.includes(candidate)))
+          if (!candidates.some(candidate => files.includes(candidate)))
             row.errors.push(`unpacked import: ${file} -> ${specifier}`);
         }
       }
-      row.sha256 = new Bun.CryptoHasher("sha256")
-        .update(await Bun.file(archive).arrayBuffer())
-        .digest("hex");
+      row.sha256 = new Bun.CryptoHasher("sha256").update(await Bun.file(archive).arrayBuffer()).digest("hex");
     } catch (error) {
       row.errors = [String(error)];
     }
@@ -201,35 +165,24 @@ export async function auditPackages(
   }
   if (only)
     for (const name of only)
-      if (!audits.some((row) => row.name === name))
-        throw new Error(`unknown or private package: ${name}`);
-  await Bun.write(
-    join(output, "audit.json"),
-    `${JSON.stringify(audits, null, 2)}\n`,
-  );
+      if (!audits.some(row => row.name === name)) throw new Error(`unknown or private package: ${name}`);
+  await Bun.write(join(output, "audit.json"), `${JSON.stringify(audits, null, 2)}\n`);
   return audits;
 }
 
 if (import.meta.main) {
   const command = Bun.argv[2] ?? "audit";
-  if (command !== "audit")
-    throw new Error(
-      "usage: bun run packages:audit [--only name,name] [--out directory]",
-    );
+  if (command !== "audit") throw new Error("usage: bun run packages:audit [--only name,name] [--out directory]");
   const root = resolve(import.meta.dir, "../../../docs/aphrody");
   const outIndex = Bun.argv.indexOf("--out");
   const onlyIndex = Bun.argv.indexOf("--only");
-  const output =
-    outIndex >= 0
-      ? resolve(Bun.argv[outIndex + 1]!)
-      : await mkdtemp(join(tmpdir(), "aphrody-npm-audit-"));
+  const output = outIndex >= 0 ? resolve(Bun.argv[outIndex + 1]!) : await mkdtemp(join(tmpdir(), "aphrody-npm-audit-"));
   const only = onlyIndex >= 0 ? Bun.argv[onlyIndex + 1]!.split(",") : undefined;
   const rows = await auditPackages(root, output, only);
   console.log(
-    `${rows.length} archives, ${rows.filter((row) => row.errors.length).length} failures. Receipt: ${join(output, "audit.json")}`,
+    `${rows.length} archives, ${rows.filter(row => row.errors.length).length} failures. Receipt: ${join(output, "audit.json")}`,
   );
   // Do not retain an unsafe archive that could be published by mistake.
-  for (const row of rows)
-    if (row.errors.length) await rm(row.archive, { force: true });
-  process.exitCode = rows.some((row) => row.errors.length) ? 1 : 0;
+  for (const row of rows) if (row.errors.length) await rm(row.archive, { force: true });
+  process.exitCode = rows.some(row => row.errors.length) ? 1 : 0;
 }

@@ -41,11 +41,7 @@ export function parseArgs(argv: string[]): {
     const flag = rest[i];
     const value = rest[i + 1];
     const known =
-      (flag === "--on" ||
-        flag === "--release" ||
-        flag === "--host" ||
-        flag === "--ref") &&
-      value !== undefined;
+      (flag === "--on" || flag === "--release" || flag === "--host" || flag === "--ref") && value !== undefined;
     if (!known) throw new Error(`unknown or incomplete option: `);
     if (flag === "--on") options.on = value;
     else if (flag === "--release") options.release = value;
@@ -59,16 +55,11 @@ export function parseArgs(argv: string[]): {
 /** Immutable tag: the explicit release id, else the short commit of this checkout. */
 export function releaseTag(explicit: string, commit: string): string {
   const tag = explicit || commit.trim();
-  if (!/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(tag))
-    throw new Error(`invalid image tag: ${tag}`);
+  if (!/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(tag)) throw new Error(`invalid image tag: ${tag}`);
   return tag;
 }
 
-export function buildArgs(
-  tag: string,
-  release: string,
-  context = ".",
-): string[] {
+export function buildArgs(tag: string, release: string, context = "."): string[] {
   return [
     "build",
     "-f",
@@ -90,8 +81,7 @@ function run(cmd: string[]): void {
     stdout: "inherit",
     stderr: "inherit",
   });
-  if (r.exitCode !== 0)
-    throw new Error(`${cmd.join(" ")} failed (${r.exitCode})`);
+  if (r.exitCode !== 0) throw new Error(`${cmd.join(" ")} failed (${r.exitCode})`);
 }
 
 function imageTag(options: Options): string {
@@ -102,8 +92,7 @@ function imageTag(options: Options): string {
 }
 
 function ship(host: string, t: string, from?: string): void {
-  for (const h of [host, from ?? host])
-    if (!/^[A-Za-z0-9_.-]+$/.test(h)) throw new Error(`invalid host: ${h}`);
+  for (const h of [host, from ?? host]) if (!/^[A-Za-z0-9_.-]+$/.test(h)) throw new Error(`invalid host: ${h}`);
   const load = `ssh ${host} 'gunzip | docker load && docker tag aphrody:${t} aphrody:runtime'`;
   const pipeline = `docker save aphrody:${t} | gzip -1 | ${load}`;
   run(["sh", "-c", from ? `ssh ${from} "${pipeline}"` : pipeline]);
@@ -113,13 +102,9 @@ function ship(host: string, t: string, from?: string): void {
 function buildOn(host: string, t: string, release: string): void {
   if (!/^[A-Za-z0-9_.-]+$/.test(host)) throw new Error(`invalid host: ${host}`);
   const args = buildArgs(t, release, "-")
-    .map((a) => `'${a}'`)
+    .map(a => `'${a}'`)
     .join(" ");
-  run([
-    "sh",
-    "-c",
-    `tar -cf - ${RUNTIME_CONTEXT.join(" ")} | ssh ${host} 'docker ${args}'`,
-  ]);
+  run(["sh", "-c", `tar -cf - ${RUNTIME_CONTEXT.join(" ")} | ssh ${host} 'docker ${args}'`]);
 }
 
 function push(ref: string, t: string): void {
@@ -136,11 +121,8 @@ if (import.meta.main) {
     if (options.on) buildOn(options.on, t, options.release);
     else run(["docker", ...buildArgs(t, options.release)]);
   }
-  if (command === "ship" || command === "release")
-    for (const host of options.hosts) ship(host, t, options.on);
-  if ((command === "push" || command === "release") && options.ref)
-    push(options.ref, t);
-  if (!["build", "ship", "push", "release"].includes(command))
-    throw new Error(`unknown command: ${command}`);
+  if (command === "ship" || command === "release") for (const host of options.hosts) ship(host, t, options.on);
+  if ((command === "push" || command === "release") && options.ref) push(options.ref, t);
+  if (!["build", "ship", "push", "release"].includes(command)) throw new Error(`unknown command: ${command}`);
   console.log(`aphrody:${t}`);
 }

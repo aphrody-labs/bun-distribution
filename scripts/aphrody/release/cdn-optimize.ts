@@ -26,37 +26,13 @@
  */
 // oxlint-disable no-await-in-loop -- sequential by design: header walks, candidate proofs, dedup links.
 import { Database } from "bun:sqlite";
-import {
-  link,
-  lstat,
-  mkdir,
-  readlink,
-  rename,
-  rm,
-  stat,
-  symlink,
-  unlink,
-  utimes,
-} from "node:fs/promises";
+import { link, lstat, mkdir, readlink, rename, rm, stat, symlink, unlink, utimes } from "node:fs/promises";
 import { availableParallelism } from "node:os";
 import { dirname, extname, join, resolve, sep } from "node:path";
-import {
-  brotliCompressSync,
-  brotliDecompressSync,
-  constants as zlib,
-  gunzipSync,
-} from "node:zlib";
+import { brotliCompressSync, brotliDecompressSync, constants as zlib, gunzipSync } from "node:zlib";
 
 type Kind = "jpeg" | "png" | "gif" | "webp" | "mp4" | "text" | "other";
-const KINDS: readonly Kind[] = [
-  "jpeg",
-  "png",
-  "gif",
-  "webp",
-  "mp4",
-  "text",
-  "other",
-];
+const KINDS: readonly Kind[] = ["jpeg", "png", "gif", "webp", "mp4", "text", "other"];
 
 const TEXT_EXT = new Set([
   ".js",
@@ -190,18 +166,12 @@ async function run(cmd: string[]): Promise<RunResult> {
     stderr: "pipe",
     stdin: "ignore",
   });
-  const [code, stderr] = await Promise.all([
-    proc.exited,
-    new Response(proc.stderr).text(),
-  ]);
+  const [code, stderr] = await Promise.all([proc.exited, new Response(proc.stderr).text()]);
   return { code, stderr: stderr.slice(0, 2000) };
 }
 
 /** SHA-256 of a command's stdout, streamed (decoded pixel buffers can be hundreds of MB). */
-async function hashStdout(
-  cmd: string[],
-  filter?: (chunk: string) => string,
-): Promise<string | null> {
+async function hashStdout(cmd: string[], filter?: (chunk: string) => string): Promise<string | null> {
   const proc = Bun.spawn(cmd, {
     windowsHide: true,
     stdout: "pipe",
@@ -228,8 +198,7 @@ async function head(path: string, bytes: number): Promise<Uint8Array> {
   return await Bun.file(path).slice(0, bytes).bytes();
 }
 
-const ascii = (b: Uint8Array, at: number, n: number): string =>
-  String.fromCharCode(...b.subarray(at, at + n));
+const ascii = (b: Uint8Array, at: number, n: number): string => String.fromCharCode(...b.subarray(at, at + n));
 
 // ---------------------------------------------------------------- detection
 
@@ -264,11 +233,7 @@ async function pngIsAnimated(path: string): Promise<boolean> {
   const b = await head(path, 1024 * 1024);
   let i = 8;
   while (i + 8 <= b.length) {
-    const len =
-      (((b[i] ?? 0) << 24) >>> 0) +
-      ((b[i + 1] ?? 0) << 16) +
-      ((b[i + 2] ?? 0) << 8) +
-      (b[i + 3] ?? 0);
+    const len = (((b[i] ?? 0) << 24) >>> 0) + ((b[i + 1] ?? 0) << 16) + ((b[i + 2] ?? 0) << 8) + (b[i + 3] ?? 0);
     const type = ascii(b, i + 4, 4);
     if (type === "acTL") return true;
     if (type === "IDAT" || type === "IEND") return false;
@@ -299,11 +264,7 @@ async function webpInfo(path: string): Promise<WebpInfo> {
   while (at + 8 <= size) {
     const h = await file.slice(at, at + 21).bytes();
     const type = ascii(h, 0, 4);
-    const len =
-      (h[4] ?? 0) |
-      ((h[5] ?? 0) << 8) |
-      ((h[6] ?? 0) << 16) |
-      (((h[7] ?? 0) << 24) >>> 0);
+    const len = (h[4] ?? 0) | ((h[5] ?? 0) << 8) | ((h[6] ?? 0) << 16) | (((h[7] ?? 0) << 24) >>> 0);
     if (type === "VP8L") info.lossless = true;
     if (type === "ANIM" || type === "ANMF") info.animated = true;
     if (type === "ICCP") info.icc = true;
@@ -321,11 +282,7 @@ async function mp4NeedsFaststart(path: string): Promise<boolean> {
   let sawMdat = false;
   while (at + 8 <= file.size) {
     const h = await file.slice(at, at + 16).bytes();
-    let len =
-      (((h[0] ?? 0) << 24) >>> 0) +
-      ((h[1] ?? 0) << 16) +
-      ((h[2] ?? 0) << 8) +
-      (h[3] ?? 0);
+    let len = (((h[0] ?? 0) << 24) >>> 0) + ((h[1] ?? 0) << 16) + ((h[2] ?? 0) << 8) + (h[3] ?? 0);
     const type = ascii(h, 4, 4);
     if (len === 1) {
       len = Number(new DataView(h.buffer, h.byteOffset + 8, 8).getBigUint64(0));
@@ -347,60 +304,23 @@ async function decodedHash(kind: Kind, path: string): Promise<string | null> {
     case "jpeg":
       return tools.djpeg ? await hashStdout([tools.djpeg, "-pnm", path]) : null;
     case "png":
-      return tools.magick
-        ? await hashStdout([
-            tools.magick,
-            `png:${path}`,
-            "-depth",
-            "16",
-            "RGBA:-",
-          ])
-        : null;
+      return tools.magick ? await hashStdout([tools.magick, `png:${path}`, "-depth", "16", "RGBA:-"]) : null;
     case "gif": {
       if (!tools.magick) return null;
-      const pixels = await hashStdout([
-        tools.magick,
-        `gif:${path}`,
-        "-coalesce",
-        "-depth",
-        "8",
-        "RGBA:-",
-      ]);
-      const delays = await hashStdout([
-        tools.magick,
-        `gif:${path}`,
-        "-coalesce",
-        "-format",
-        "%T;%w;%h|",
-        "info:",
-      ]);
+      const pixels = await hashStdout([tools.magick, `gif:${path}`, "-coalesce", "-depth", "8", "RGBA:-"]);
+      const delays = await hashStdout([tools.magick, `gif:${path}`, "-coalesce", "-format", "%T;%w;%h|", "info:"]);
       return pixels && delays ? `${pixels}:${delays}` : null;
     }
     case "webp":
-      return tools.dwebp
-        ? await hashStdout([tools.dwebp, "-quiet", path, "-pam", "-o", "-"])
-        : null;
+      return tools.dwebp ? await hashStdout([tools.dwebp, "-quiet", path, "-pam", "-o", "-"]) : null;
     case "mp4":
       return tools.ffmpeg
         ? await hashStdout(
-            [
-              tools.ffmpeg,
-              "-v",
-              "error",
-              "-i",
-              path,
-              "-map",
-              "0",
-              "-c",
-              "copy",
-              "-f",
-              "framemd5",
-              "-",
-            ],
-            (t) =>
+            [tools.ffmpeg, "-v", "error", "-i", path, "-map", "0", "-c", "copy", "-f", "framemd5", "-"],
+            t =>
               t
                 .split("\n")
-                .filter((l) => l && !l.startsWith("#"))
+                .filter(l => l && !l.startsWith("#"))
                 .join("\n"),
           )
         : null;
@@ -424,21 +344,11 @@ class Workspace {
   }
 }
 
-async function optimize(
-  kind: Kind,
-  src: string,
-  ext: string,
-  ws: Workspace,
-): Promise<Candidate[]> {
+async function optimize(kind: Kind, src: string, ext: string, ws: Workspace): Promise<Candidate[]> {
   const out: Candidate[] = [];
-  const attempt = async (
-    tool: string,
-    path: string,
-    cmd: string[],
-  ): Promise<void> => {
+  const attempt = async (tool: string, path: string, cmd: string[]): Promise<void> => {
     const r = await run(cmd);
-    if (r.code === 0 && (await Bun.file(path).exists()))
-      out.push({ path, tool });
+    if (r.code === 0 && (await Bun.file(path).exists())) out.push({ path, tool });
     else await rm(path, { force: true });
   };
   switch (kind) {
@@ -457,15 +367,7 @@ async function optimize(
         progressive,
         src,
       ]);
-      await attempt("jpegtran", baseline, [
-        tools.jpegtran,
-        "-copy",
-        copy,
-        "-optimize",
-        "-outfile",
-        baseline,
-        src,
-      ]);
+      await attempt("jpegtran", baseline, [tools.jpegtran, "-copy", copy, "-optimize", "-outfile", baseline, src]);
       break;
     }
     case "png": {
@@ -473,17 +375,7 @@ async function optimize(
       const size = Bun.file(src).size;
       if (tools.oxipng) {
         const o = ws.file(".png");
-        await attempt("oxipng", o, [
-          tools.oxipng,
-          "-q",
-          "-o",
-          "max",
-          "--strip",
-          "safe",
-          "--out",
-          o,
-          src,
-        ]);
+        await attempt("oxipng", o, [tools.oxipng, "-q", "-o", "max", "--strip", "safe", "--out", o, src]);
       }
       if (tools.zopflipng && size <= 8 * 1024 * 1024) {
         const z = ws.file(".png");
@@ -511,10 +403,7 @@ async function optimize(
       if (info.lossless && !info.animated) {
         const pam = ws.file(".pam");
         const enc = ws.file(".webp");
-        if (
-          (await run([tools.dwebp, "-quiet", src, "-pam", "-o", pam])).code ===
-          0
-        ) {
+        if ((await run([tools.dwebp, "-quiet", src, "-pam", "-o", pam])).code === 0) {
           const r = await run([
             tools.cwebp,
             "-quiet",
@@ -538,37 +427,18 @@ async function optimize(
             const blob = ws.file(`.${chunk}`);
             const next = ws.file(".webp");
             const ok =
-              (await run([tools.webpmux, "-get", chunk, src, "-o", blob]))
-                .code === 0 &&
-              (
-                await run([
-                  tools.webpmux,
-                  "-set",
-                  chunk,
-                  blob,
-                  result,
-                  "-o",
-                  next,
-                ])
-              ).code === 0;
+              (await run([tools.webpmux, "-get", chunk, src, "-o", blob])).code === 0 &&
+              (await run([tools.webpmux, "-set", chunk, blob, result, "-o", next])).code === 0;
             await rm(blob, { force: true });
             await rm(result, { force: true });
             result = ok ? next : null;
           }
-          if (result)
-            out.push({ path: result, tool: "cwebp -lossless -z 9 -exact" });
+          if (result) out.push({ path: result, tool: "cwebp -lossless -z 9 -exact" });
         }
         await rm(pam, { force: true });
       } else if (info.xmp) {
         const s = ws.file(".webp");
-        await attempt("webpmux -strip xmp", s, [
-          tools.webpmux,
-          "-strip",
-          "xmp",
-          src,
-          "-o",
-          s,
-        ]);
+        await attempt("webpmux -strip xmp", s, [tools.webpmux, "-strip", "xmp", src, "-o", s]);
       }
       break;
     }
@@ -613,20 +483,15 @@ async function choose(
   // A fast-start remux may grow by a few bytes; it is kept for streaming, not for size.
   const limit = kind === "mp4" ? srcSize * 1.001 : srcSize - 1;
   const sorted = candidates
-    .filter((c) => Bun.file(c.path).size <= limit)
+    .filter(c => Bun.file(c.path).size <= limit)
     .toSorted((a, b) => Bun.file(a.path).size - Bun.file(b.path).size);
-  for (const c of candidates)
-    if (!sorted.includes(c)) await rm(c.path, { force: true });
+  for (const c of candidates) if (!sorted.includes(c)) await rm(c.path, { force: true });
   let rejected = 0;
   let best: Candidate | null = null;
   if (sorted.length) {
     const reference = await decodedHash(kind, src);
     for (const c of sorted) {
-      if (
-        !best &&
-        reference &&
-        (await decodedHash(kind, c.path)) === reference
-      ) {
+      if (!best && reference && (await decodedHash(kind, c.path)) === reference) {
         best = c;
         continue;
       }
@@ -644,18 +509,13 @@ function brotli(bytes: Uint8Array, font: boolean): Uint8Array {
     params: {
       [zlib.BROTLI_PARAM_QUALITY]: zlib.BROTLI_MAX_QUALITY,
       [zlib.BROTLI_PARAM_LGWIN]: zlib.BROTLI_MAX_WINDOW_BITS,
-      [zlib.BROTLI_PARAM_MODE]: font
-        ? zlib.BROTLI_MODE_FONT
-        : zlib.BROTLI_MODE_TEXT,
+      [zlib.BROTLI_PARAM_MODE]: font ? zlib.BROTLI_MODE_FONT : zlib.BROTLI_MODE_TEXT,
       [zlib.BROTLI_PARAM_SIZE_HINT]: bytes.length,
     },
   });
 }
 
-async function gzip(
-  src: string,
-  bytes: Uint8Array<ArrayBuffer>,
-): Promise<Uint8Array | null> {
+async function gzip(src: string, bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array | null> {
   if (tools.zopfli) {
     const proc = Bun.spawn([tools.zopfli, "--i15", "-c", src], {
       windowsHide: true,
@@ -686,15 +546,9 @@ async function writeSiblings(
   const variants: [(typeof SIBLINGS)[number], Uint8Array | null][] = [];
   if (bytes.length >= SIBLING_MIN_SOURCE) {
     const br = brotli(bytes, font);
-    variants.push([
-      ".br",
-      Buffer.compare(brotliDecompressSync(br), bytes) === 0 ? br : null,
-    ]);
+    variants.push([".br", Buffer.compare(brotliDecompressSync(br), bytes) === 0 ? br : null]);
     const gz = await gzip(src, bytes);
-    variants.push([
-      ".gz",
-      gz && Buffer.compare(gunzipSync(gz), bytes) === 0 ? gz : null,
-    ]);
+    variants.push([".gz", gz && Buffer.compare(gunzipSync(gz), bytes) === 0 ? gz : null]);
   }
   for (const suffix of SIBLINGS) {
     const data = variants.find(([s]) => s === suffix)?.[1] ?? null;
@@ -735,8 +589,7 @@ async function walk(root: string): Promise<string[]> {
 
 function inside(root: string, rel: string): string {
   const p = resolve(root, rel);
-  if (p !== root && !p.startsWith(root + sep))
-    throw new Error(`path escapes the tree: ${rel}`);
+  if (p !== root && !p.startsWith(root + sep)) throw new Error(`path escapes the tree: ${rel}`);
   return p;
 }
 
@@ -757,11 +610,7 @@ async function install(
   await rename(tmp, outPath);
 }
 
-async function pool<T>(
-  items: readonly T[],
-  jobs: number,
-  fn: (item: T) => Promise<void>,
-): Promise<void> {
+async function pool<T>(items: readonly T[], jobs: number, fn: (item: T) => Promise<void>): Promise<void> {
   let next = 0;
   await Promise.all(
     Array.from({ length: Math.max(1, jobs) }, async () => {
@@ -778,11 +627,7 @@ async function pool<T>(
 async function main(): Promise<void> {
   const opts = parseArgs(Bun.argv.slice(2));
   const t0 = performance.now();
-  if (
-    opts.src === opts.out ||
-    opts.out.startsWith(opts.src + sep) ||
-    opts.src.startsWith(opts.out + sep)
-  ) {
+  if (opts.src === opts.out || opts.out.startsWith(opts.src + sep) || opts.src.startsWith(opts.out + sep)) {
     throw new Error("--src and --out must be distinct, non-nested trees");
   }
   await mkdir(opts.out, { recursive: true });
@@ -790,13 +635,9 @@ async function main(): Promise<void> {
   const ws = new Workspace(join(dirname(opts.state), ".cdn-optimize-tmp"));
   await rm(ws.dir, { recursive: true, force: true });
   await mkdir(ws.dir, { recursive: true });
-  const devs = await Promise.all(
-    [opts.src, opts.out, ws.dir].map(async (p) => (await stat(p)).dev),
-  );
+  const devs = await Promise.all([opts.src, opts.out, ws.dir].map(async p => (await stat(p)).dev));
   if (new Set(devs).size !== 1)
-    throw new Error(
-      "--src, --out and the state directory must share one filesystem (hardlinks, atomic renames)",
-    );
+    throw new Error("--src, --out and the state directory must share one filesystem (hardlinks, atomic renames)");
 
   const db = new Database(opts.dryRun ? ":memory:" : opts.state, {
     create: true,
@@ -813,14 +654,11 @@ async function main(): Promise<void> {
     VALUES ($path, $src_size, $src_mtime_ms, $src_ino, $src_sha256, $kind, $action, $out_size, $out_sha256, $br_size, $gz_size, $note, $updated_at)`);
 
   const sources = await walk(opts.src);
-  if (sources.length === 0)
-    throw new Error(
-      `no file under ${opts.src}: refusing to mirror an empty source`,
-    );
+  if (sources.length === 0) throw new Error(`no file under ${opts.src}: refusing to mirror an empty source`);
   const selected = opts.limit > 0 ? sources.slice(0, opts.limit) : sources;
 
   const stats = Object.fromEntries(
-    KINDS.map((k) => [
+    KINDS.map(k => [
       k,
       {
         files: 0,
@@ -838,7 +676,7 @@ async function main(): Promise<void> {
   let done = 0;
   let lastLog = performance.now();
 
-  await pool(selected, opts.jobs, async (rel) => {
+  await pool(selected, opts.jobs, async rel => {
     const srcPath = inside(opts.src, rel);
     const outPath = inside(opts.out, rel);
     const st = await lstat(srcPath);
@@ -857,10 +695,7 @@ async function main(): Promise<void> {
     s.srcBytes += st.size;
     const previous = getRow.get(rel);
     const unchanged =
-      previous &&
-      previous.src_size === st.size &&
-      previous.src_mtime_ms === st.mtimeMs &&
-      previous.src_ino === st.ino;
+      previous && previous.src_size === st.size && previous.src_mtime_ms === st.mtimeMs && previous.src_ino === st.ino;
     if (unchanged && !opts.force && (await Bun.file(outPath).exists())) {
       s.outBytes += previous.out_size;
       if (previous.br_size !== null) {
@@ -883,9 +718,7 @@ async function main(): Promise<void> {
     try {
       const srcSha = await sha256File(srcPath);
       outSha = srcSha;
-      const candidates = opts.only.has(kind)
-        ? await optimize(kind, srcPath, extname(rel).toLowerCase(), ws)
-        : [];
+      const candidates = opts.only.has(kind) ? await optimize(kind, srcPath, extname(rel).toLowerCase(), ws) : [];
       const { best, rejected } = await choose(kind, srcPath, candidates);
       s.rejected += rejected;
       if (best) {
@@ -922,10 +755,7 @@ async function main(): Promise<void> {
       s.errors++;
       note = e instanceof Error ? e.message : String(e);
       errors.push({ path: rel, error: note.slice(0, 300) });
-      if (!opts.dryRun)
-        await install(ws, { linkTo: srcPath }, outPath, st.mtime).catch(
-          () => undefined,
-        );
+      if (!opts.dryRun) await install(ws, { linkTo: srcPath }, outPath, st.mtime).catch(() => undefined);
     }
     s.outBytes += outSize;
     if (sizes.br !== null) {
@@ -949,15 +779,13 @@ async function main(): Promise<void> {
   if (!opts.dryRun && opts.limit === 0) {
     const keep = new Set(sources);
     const served = await walk(opts.out);
-    const stale = served.filter((rel) => {
+    const stale = served.filter(rel => {
       if (keep.has(rel)) return false;
-      const sibling = SIBLINGS.find((x) => rel.endsWith(x));
+      const sibling = SIBLINGS.find(x => rel.endsWith(x));
       return !(sibling && keep.has(rel.slice(0, -sibling.length)));
     });
     if (stale.length > opts.maxDelete)
-      throw new Error(
-        `${stale.length} stale files exceed --max-delete ${opts.maxDelete}; nothing deleted`,
-      );
+      throw new Error(`${stale.length} stale files exceed --max-delete ${opts.maxDelete}; nothing deleted`);
     for (const rel of stale) {
       await unlink(inside(opts.out, rel));
       deleted++;
@@ -965,7 +793,7 @@ async function main(): Promise<void> {
     const gone = db
       .query<{ path: string }, []>("SELECT path FROM files")
       .all()
-      .filter((r) => !keep.has(r.path));
+      .filter(r => !keep.has(r.path));
     const del = db.query("DELETE FROM files WHERE path = ?");
     for (const r of gone) del.run(r.path);
 
@@ -1013,9 +841,7 @@ async function main(): Promise<void> {
     out: opts.out,
     dryRun: opts.dryRun,
     files: selected.length,
-    tools: Object.fromEntries(
-      Object.entries(tools).map(([k, v]) => [k, v !== null]),
-    ),
+    tools: Object.fromEntries(Object.entries(tools).map(([k, v]) => [k, v !== null])),
     kinds: stats,
     totals: { ...totals, savedBytes: totals.srcBytes - totals.outBytes },
     siblings,
@@ -1031,11 +857,4 @@ async function main(): Promise<void> {
 
 if (import.meta.main) await main();
 
-export {
-  decodedHash,
-  detect,
-  jpegHasExif,
-  mp4NeedsFaststart,
-  pngIsAnimated,
-  webpInfo,
-};
+export { decodedHash, detect, jpegHasExif, mp4NeedsFaststart, pngIsAnimated, webpInfo };

@@ -17,23 +17,13 @@
  */
 
 import { expect } from "bun:test";
-import {
-  collectPageDiagnostics,
-  TestPage,
-  type PageDiagnostics,
-} from "@aphrody/bun-web/testing";
+import { collectPageDiagnostics, TestPage, type PageDiagnostics } from "@aphrody/bun-web/testing";
 
 export { TestPage };
 
-export const RG = (
-  process.env.LIVE_AUDIT_RG_ORIGIN ?? "https://rosegriffon.fr"
-).replace(/\/$/, "");
-export const RG_API = (
-  process.env.LIVE_AUDIT_RG_API ?? "https://api.rosegriffon.fr"
-).replace(/\/$/, "");
-export const APHRODY = (
-  process.env.LIVE_AUDIT_APHRODY ?? "https://aphrody.com"
-).replace(/\/$/, "");
+export const RG = (process.env.LIVE_AUDIT_RG_ORIGIN ?? "https://rosegriffon.fr").replace(/\/$/, "");
+export const RG_API = (process.env.LIVE_AUDIT_RG_API ?? "https://api.rosegriffon.fr").replace(/\/$/, "");
+export const APHRODY = (process.env.LIVE_AUDIT_APHRODY ?? "https://aphrody.com").replace(/\/$/, "");
 export const RG_COOKIE = process.env.LIVE_AUDIT_RG_COOKIE ?? "";
 
 /** Per-test budgets (ms). */
@@ -67,10 +57,7 @@ export async function open(url: string): Promise<TestPage> {
 }
 
 /** Runs `body` with a page opened on `url`, always closing it. */
-export async function withPage<T>(
-  url: string,
-  body: (page: TestPage) => Promise<T>,
-): Promise<T> {
+export async function withPage<T>(url: string, body: (page: TestPage) => Promise<T>): Promise<T> {
   const page = await open(url);
   try {
     return await body(page);
@@ -111,24 +98,17 @@ export async function mainHtml(page: TestPage): Promise<string> {
 }
 
 /** Asserts the document carries no Next.js error boundary / 404 marker. */
-export async function expectNoErrorMarkers(
-  page: TestPage,
-  label = page.url(),
-): Promise<void> {
+export async function expectNoErrorMarkers(page: TestPage, label = page.url()): Promise<void> {
   const text = textOf(await page.content());
   for (const marker of ERROR_MARKERS) {
-    expect(text.includes(marker), `« ${marker} » rendered on ${label}`).toBe(
-      false,
-    );
+    expect(text.includes(marker), `« ${marker} » rendered on ${label}`).toBe(false);
   }
 }
 
 /** Distinct `href`s of `<a>` elements inside `html`, resolved against `base`. */
 export function linksIn(html: string, base: string): string[] {
   const out = new Set<string>();
-  for (const [, href] of visibleHtml(html).matchAll(
-    /<a\b[^>]*\bhref="([^"]+)"/gi,
-  )) {
+  for (const [, href] of visibleHtml(html).matchAll(/<a\b[^>]*\bhref="([^"]+)"/gi)) {
     if (href === undefined) continue;
     const raw = href.replaceAll("&amp;", "&");
     if (/^(mailto:|tel:|javascript:|#)/i.test(raw)) continue;
@@ -147,9 +127,7 @@ export function linksIn(html: string, base: string): string[] {
 /** `src` of `<img>` elements inside `html` (ignores data: URIs). */
 export function imagesIn(html: string, base: string): string[] {
   const out = new Set<string>();
-  for (const [, src] of visibleHtml(html).matchAll(
-    /<img\b[^>]*\bsrc="([^"]+)"/gi,
-  )) {
+  for (const [, src] of visibleHtml(html).matchAll(/<img\b[^>]*\bsrc="([^"]+)"/gi)) {
     if (src === undefined) continue;
     const raw = src.replaceAll("&amp;", "&");
     if (raw.startsWith("data:")) continue;
@@ -174,10 +152,7 @@ export function statusOf(url: string): Promise<number | string> {
   return cached;
 }
 
-async function fetchStatus(
-  url: string,
-  init: RequestInit = {},
-): Promise<number | string> {
+async function fetchStatus(url: string, init: RequestInit = {}): Promise<number | string> {
   if (url.startsWith("invalid:")) return url;
   try {
     let response = await fetch(url, {
@@ -203,10 +178,7 @@ async function fetchStatus(
 }
 
 /** Checks every URL answers < 400 (bounded concurrency); returns the failures. */
-export async function brokenUrls(
-  urls: string[],
-  concurrency = 8,
-): Promise<string[]> {
+export async function brokenUrls(urls: string[], concurrency = 8): Promise<string[]> {
   const queue = [...new Set(urls)];
   const broken: string[] = [];
   await Promise.all(
@@ -214,8 +186,7 @@ export async function brokenUrls(
       while (queue.length) {
         const url = queue.shift() as string;
         const code = await statusOf(url);
-        if (typeof code === "string" || code >= 400)
-          broken.push(`${code} ${url}`);
+        if (typeof code === "string" || code >= 400) broken.push(`${code} ${url}`);
       }
     }),
   );
@@ -249,9 +220,7 @@ export async function getJson<T = unknown>(
 }
 
 /** Engine limitations of libbxc_render that are not page defects. */
-export const RENDER_ENGINE_NOISE = [
-  /Expected document\.currentScript to be a <script> element/,
-];
+export const RENDER_ENGINE_NOISE = [/Expected document\.currentScript to be a <script> element/];
 
 /** JS diagnostics through the native render profile (skips when unavailable). */
 export function jsDiagnostics(url: string): Promise<PageDiagnostics> {

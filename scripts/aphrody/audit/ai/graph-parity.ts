@@ -27,14 +27,11 @@ export type Parity = {
   extra: string[];
 };
 
-export function compare(
-  expected: Iterable<string>,
-  actual: Iterable<string>,
-): Parity {
+export function compare(expected: Iterable<string>, actual: Iterable<string>): Parity {
   const left = new Set(expected);
   const right = new Set(actual);
-  const missing = [...left].filter((item) => !right.has(item)).toSorted();
-  const extra = [...right].filter((item) => !left.has(item)).toSorted();
+  const missing = [...left].filter(item => !right.has(item)).toSorted();
+  const extra = [...right].filter(item => !left.has(item)).toSorted();
   const union = new Set([...left, ...right]).size;
   return {
     expected: left.size,
@@ -46,20 +43,18 @@ export function compare(
 }
 
 function graphSets(graph: GraphJson) {
-  const ids = new Map(graph.nodes.map((node) => [node.id, node]));
+  const ids = new Map(graph.nodes.map(node => [node.id, node]));
   if (ids.size !== graph.nodes.length) {
     throw new Error("invalid graph: duplicate node id");
   }
   const nodes = graph.nodes
-    .filter((node) => node.source_file != null)
-    .map((node) => `${node.source_file}|${node.label}|${node.file_type}`);
-  const edges = graph.links.map((edge) => {
+    .filter(node => node.source_file != null)
+    .map(node => `${node.source_file}|${node.label}|${node.file_type}`);
+  const edges = graph.links.map(edge => {
     const source = ids.get(edge.source)?.label;
     const target = ids.get(edge.target)?.label;
     if (source == null || target == null) {
-      throw new Error(
-        `invalid graph: dangling ${edge.relation} edge ${edge.source} -> ${edge.target}`,
-      );
+      throw new Error(`invalid graph: dangling ${edge.relation} edge ${edge.source} -> ${edge.target}`);
     }
     if (!["EXTRACTED", "INFERRED", "AMBIGUOUS"].includes(edge.confidence)) {
       throw new Error(`invalid graph: unknown confidence ${edge.confidence}`);
@@ -70,7 +65,7 @@ function graphSets(graph: GraphJson) {
 }
 
 function topology(edges: string[]): string[] {
-  return edges.map((edge) => edge.slice(0, edge.lastIndexOf("|")));
+  return edges.map(edge => edge.slice(0, edge.lastIndexOf("|")));
 }
 
 export function report(oracle: Oracle, graph: GraphJson) {
@@ -81,46 +76,26 @@ export function report(oracle: Oracle, graph: GraphJson) {
     nodes: compare(oracle.nodes, actual.nodes),
     edges: compare(oracle.edges, actual.edges),
   };
-  const relations = [
-    ...new Set(
-      [...oracle.edges, ...actual.edges].map((edge) => edge.split("|", 1)[0]),
-    ),
-  ].toSorted();
+  const relations = [...new Set([...oracle.edges, ...actual.edges].map(edge => edge.split("|", 1)[0]))].toSorted();
   const byRelation: Record<string, Parity> = Object.fromEntries(
-    relations.map((relation) => [
+    relations.map(relation => [
       relation,
       compare(
-        oracleTopology.filter((edge) => edge.startsWith(`${relation}|`)),
-        actualTopology.filter((edge) => edge.startsWith(`${relation}|`)),
+        oracleTopology.filter(edge => edge.startsWith(`${relation}|`)),
+        actualTopology.filter(edge => edge.startsWith(`${relation}|`)),
       ),
     ]),
   );
-  const oracleEdges = new Map(
-    oracle.edges.map((edge) => [
-      edge.slice(0, edge.lastIndexOf("|")),
-      edge.split("|").at(-1),
-    ]),
-  );
-  const actualEdges = new Map(
-    actual.edges.map((edge) => [
-      edge.slice(0, edge.lastIndexOf("|")),
-      edge.split("|").at(-1),
-    ]),
-  );
-  const shared = [...oracleEdges.keys()].filter((edge) =>
-    actualEdges.has(edge),
-  );
+  const oracleEdges = new Map(oracle.edges.map(edge => [edge.slice(0, edge.lastIndexOf("|")), edge.split("|").at(-1)]));
+  const actualEdges = new Map(actual.edges.map(edge => [edge.slice(0, edge.lastIndexOf("|")), edge.split("|").at(-1)]));
+  const shared = [...oracleEdges.keys()].filter(edge => actualEdges.has(edge));
   const confidence = {
     compared: shared.length,
-    matching: shared.filter(
-      (edge) => oracleEdges.get(edge) === actualEdges.get(edge),
-    ).length,
+    matching: shared.filter(edge => oracleEdges.get(edge) === actualEdges.get(edge)).length,
     agreement:
       shared.length === 0
         ? 1
-        : shared.filter(
-            (edge) => oracleEdges.get(edge) === actualEdges.get(edge),
-          ).length / shared.length,
+        : shared.filter(edge => oracleEdges.get(edge) === actualEdges.get(edge)).length / shared.length,
   };
   return {
     nodes: overall.nodes,
@@ -145,10 +120,8 @@ const STRUCTURAL_RELATIONS = new Set([
 
 export function failures(result: ReturnType<typeof report>): string[] {
   const failed: string[] = [];
-  if (result.nodes.jaccard < 0.95)
-    failed.push("nodes: Jaccard must be >= 0.95");
-  if (result.topology.jaccard < 0.9)
-    failed.push("edges: topology Jaccard must be >= 0.90");
+  if (result.nodes.jaccard < 0.95) failed.push("nodes: Jaccard must be >= 0.95");
+  if (result.topology.jaccard < 0.9) failed.push("edges: topology Jaccard must be >= 0.90");
   for (const [relation, parity] of Object.entries(result.byRelation)) {
     const minimum = STRUCTURAL_RELATIONS.has(relation) ? 0.95 : 0.9;
     if (parity.jaccard < minimum) {
@@ -163,24 +136,16 @@ export function failures(result: ReturnType<typeof report>): string[] {
 
 async function main(args: string[]) {
   if (args.length !== 2) {
-    throw new Error(
-      "usage: bun scripts/audit/ai/graph-parity.ts <oracle.json> <native-graph.json>",
-    );
+    throw new Error("usage: bun scripts/audit/ai/graph-parity.ts <oracle.json> <native-graph.json>");
   }
   const [oraclePath, graphPath] = args;
   const [oracle, graph] = await Promise.all([
-    readFile(oraclePath!, "utf8").then((text) => JSON.parse(text) as Oracle),
-    readFile(graphPath!, "utf8").then((text) => JSON.parse(text) as GraphJson),
+    readFile(oraclePath!, "utf8").then(text => JSON.parse(text) as Oracle),
+    readFile(graphPath!, "utf8").then(text => JSON.parse(text) as GraphJson),
   ]);
   const result = report(oracle, graph);
   const failed = failures(result);
-  console.log(
-    JSON.stringify(
-      { ...result, passed: failed.length === 0, failures: failed },
-      null,
-      2,
-    ),
-  );
+  console.log(JSON.stringify({ ...result, passed: failed.length === 0, failures: failed }, null, 2));
   if (failed.length > 0) process.exitCode = 1;
 }
 

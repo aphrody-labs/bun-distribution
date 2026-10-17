@@ -35,62 +35,50 @@ const ROOT = resolve(import.meta.dir, "..");
 const execute = process.argv.includes("--yes") || process.argv.includes("-y");
 
 console.log(
-	execute
-		? "🧹 Cleaning repository..."
-		: "🧹 Simulation — rien ne sera supprimé (ajouter --yes pour exécuter)",
+  execute ? "🧹 Cleaning repository..." : "🧹 Simulation — rien ne sera supprimé (ajouter --yes pour exécuter)",
 );
 
 /** Dossiers supprimés à la racine, sans balayage. */
 const roots = ["dist", ".turbo", "node_modules", "coverage"];
 
 /** Motifs balayés dans l'arborescence de travail. */
-const globs = [
-	"**/*.log",
-	"**/tmp",
-	"**/temp",
-	"**/.DS_Store",
-	"screenshots/*.png",
-];
+const globs = ["**/*.log", "**/tmp", "**/temp", "**/.DS_Store", "screenshots/*.png"];
 
 for (const name of roots) {
-	if (!existsSync(join(ROOT, name))) continue;
-	if (!execute) {
-		console.log(`  - ${name}`);
-		continue;
-	}
-	try {
-		rmSync(join(ROOT, name), { recursive: true, force: true });
-		console.log(`  - Removed ${name}`);
-	} catch (err) {
-		console.log(`  ! ${name}: ${err instanceof Error ? err.message : String(err)}`);
-	}
+  if (!existsSync(join(ROOT, name))) continue;
+  if (!execute) {
+    console.log(`  - ${name}`);
+    continue;
+  }
+  try {
+    rmSync(join(ROOT, name), { recursive: true, force: true });
+    console.log(`  - Removed ${name}`);
+  } catch (err) {
+    console.log(`  ! ${name}: ${err instanceof Error ? err.message : String(err)}`);
+  }
 }
 
 for (const pattern of globs) {
-	const glob = new Bun.Glob(pattern);
-	let removed = 0;
-	for (const match of glob.scanSync({
-		cwd: ROOT,
-		onlyFiles: false,
-		followSymlinks: false,
-		dot: true,
-	})) {
-		// Ne jamais descendre dans les dépendances ni dans les sources
-		// vendorisées : elles ne sont pas à nous, et le balayage y coûte cher.
-		if (match.includes("node_modules") || match.startsWith("vendor")) continue;
-		removed++;
-		if (!execute) continue;
-		try {
-			rmSync(join(ROOT, match), { recursive: true, force: true });
-		} catch {
-			// Un fichier disparu entre le balayage et la suppression n'est pas une erreur.
-		}
-	}
-	if (removed) console.log(`  - ${execute ? "Removed " : ""}${removed} × ${pattern}`);
+  const glob = new Bun.Glob(pattern);
+  let removed = 0;
+  for (const match of glob.scanSync({
+    cwd: ROOT,
+    onlyFiles: false,
+    followSymlinks: false,
+    dot: true,
+  })) {
+    // Ne jamais descendre dans les dépendances ni dans les sources
+    // vendorisées : elles ne sont pas à nous, et le balayage y coûte cher.
+    if (match.includes("node_modules") || match.startsWith("vendor")) continue;
+    removed++;
+    if (!execute) continue;
+    try {
+      rmSync(join(ROOT, match), { recursive: true, force: true });
+    } catch {
+      // Un fichier disparu entre le balayage et la suppression n'est pas une erreur.
+    }
+  }
+  if (removed) console.log(`  - ${execute ? "Removed " : ""}${removed} × ${pattern}`);
 }
 
-console.log(
-	execute
-		? "✨ Repository cleaned."
-		: "✨ Rien n'a été supprimé — relancer avec `--yes` pour nettoyer.",
-);
+console.log(execute ? "✨ Repository cleaned." : "✨ Rien n'a été supprimé — relancer avec `--yes` pour nettoyer.");

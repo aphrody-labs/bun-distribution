@@ -4,39 +4,114 @@
   "installer": "cargo-binstall",
   "tools": [
     { "command": "nu", "package": "nu", "role": "interactive shell", "docs": "https://www.nushell.sh/book/" },
-    { "command": "coreutils", "package": "coreutils", "role": "portable core utilities", "docs": "https://uutils.github.io/coreutils/" },
+    {
+      "command": "coreutils",
+      "package": "coreutils",
+      "role": "portable core utilities",
+      "docs": "https://uutils.github.io/coreutils/"
+    },
     { "command": "eza", "package": "eza", "role": "directory listing", "docs": "https://eza.rocks/" },
     { "command": "bat", "package": "bat", "role": "file display", "docs": "https://github.com/sharkdp/bat" },
     { "command": "rg", "package": "ripgrep", "role": "text search", "docs": "https://github.com/BurntSushi/ripgrep" },
     { "command": "fd", "package": "fd-find", "role": "file search", "docs": "https://github.com/sharkdp/fd" },
     { "command": "sd", "package": "sd", "role": "text replacement", "docs": "https://github.com/chmln/sd" },
-    { "command": "choose", "package": "choose", "role": "column selection", "docs": "https://github.com/theryangeary/choose" },
+    {
+      "command": "choose",
+      "package": "choose",
+      "role": "column selection",
+      "docs": "https://github.com/theryangeary/choose"
+    },
     { "command": "dust", "package": "du-dust", "role": "directory size", "docs": "https://github.com/bootandy/dust" },
     { "command": "dysk", "package": "dysk", "role": "filesystem usage", "docs": "https://dystroy.org/dysk/" },
-    { "command": "erd", "package": "erdtree", "role": "directory tree", "docs": "https://github.com/solidiquis/erdtree" },
+    {
+      "command": "erd",
+      "package": "erdtree",
+      "role": "directory tree",
+      "docs": "https://github.com/solidiquis/erdtree"
+    },
     { "command": "procs", "package": "procs", "role": "process listing", "docs": "https://github.com/dalance/procs" },
-    { "command": "btm", "package": "bottom", "role": "system monitor", "docs": "https://clementtsang.github.io/bottom/" },
-    { "command": "zoxide", "package": "zoxide", "role": "directory navigation", "docs": "https://github.com/ajeetdsouza/zoxide" },
-    { "command": "delta", "package": "git-delta", "role": "git diff pager", "docs": "https://dandavison.github.io/delta/" },
+    {
+      "command": "btm",
+      "package": "bottom",
+      "role": "system monitor",
+      "docs": "https://clementtsang.github.io/bottom/"
+    },
+    {
+      "command": "zoxide",
+      "package": "zoxide",
+      "role": "directory navigation",
+      "docs": "https://github.com/ajeetdsouza/zoxide"
+    },
+    {
+      "command": "delta",
+      "package": "git-delta",
+      "role": "git diff pager",
+      "docs": "https://dandavison.github.io/delta/"
+    },
     { "command": "xh", "package": "xh", "role": "HTTP client", "docs": "https://github.com/ducaale/xh" },
-    { "command": "tldr", "package": "tealdeer", "role": "command help pages", "docs": "https://tealdeer-rs.github.io/tealdeer/" },
+    {
+      "command": "tldr",
+      "package": "tealdeer",
+      "role": "command help pages",
+      "docs": "https://tealdeer-rs.github.io/tealdeer/"
+    },
     { "command": "yazi", "package": "yazi-fm", "role": "terminal file manager", "docs": "https://yazi-rs.github.io/" },
-    { "command": "ya", "package": "yazi-cli", "role": "Yazi command-line helper", "docs": "https://yazi-rs.github.io/" },
-    { "command": "gitui", "package": "gitui", "role": "git terminal UI", "docs": "https://github.com/extrawurst/gitui" },
+    {
+      "command": "ya",
+      "package": "yazi-cli",
+      "role": "Yazi command-line helper",
+      "docs": "https://yazi-rs.github.io/"
+    },
+    {
+      "command": "gitui",
+      "package": "gitui",
+      "role": "git terminal UI",
+      "docs": "https://github.com/extrawurst/gitui"
+    },
     { "command": "just", "package": "just", "role": "task runner", "docs": "https://just.systems/man/en/" },
     { "command": "atuin", "package": "atuin", "role": "shell history", "docs": "https://docs.atuin.sh/" },
     { "command": "starship", "package": "starship", "role": "shell prompt", "docs": "https://starship.rs/guide/" },
-    { "command": "zellij", "package": "zellij", "role": "terminal multiplexer", "docs": "https://zellij.dev/documentation/" },
+    {
+      "command": "zellij",
+      "package": "zellij",
+      "role": "terminal multiplexer",
+      "docs": "https://zellij.dev/documentation/"
+    },
     { "command": "hx", "package": "helix-term", "role": "modal editor", "docs": "https://docs.helix-editor.com/" }
   ],
   "nu_plugins": [
-    { "command": "nu_plugin_bigquery", "package": "nu_plugin_bigquery", "plugin": "bigquery", "role": "BigQuery queries" },
-    { "command": "nu_plugin_formats", "package": "nu_plugin_formats", "plugin": "formats", "role": "additional data formats" },
+    {
+      "command": "nu_plugin_bigquery",
+      "package": "nu_plugin_bigquery",
+      "plugin": "bigquery",
+      "role": "BigQuery queries"
+    },
+    {
+      "command": "nu_plugin_formats",
+      "package": "nu_plugin_formats",
+      "plugin": "formats",
+      "role": "additional data formats"
+    },
     { "command": "nu_plugin_gstat", "package": "nu_plugin_gstat", "plugin": "gstat", "role": "Git status values" },
-    { "command": "nu_plugin_highlight", "package": "nu_plugin_highlight", "plugin": "highlight", "role": "syntax highlighting" },
+    {
+      "command": "nu_plugin_highlight",
+      "package": "nu_plugin_highlight",
+      "plugin": "highlight",
+      "role": "syntax highlighting"
+    },
     { "command": "nu_plugin_inc", "package": "nu_plugin_inc", "plugin": "inc", "role": "structured value increments" },
-    { "command": "nu_plugin_json_path", "package": "nu_plugin_json_path", "plugin": "json_path", "role": "JSONPath queries" },
-    { "command": "nu_plugin_polars", "package": "nu_plugin_polars", "plugin": "polars", "role": "dataframe operations" },
+    {
+      "command": "nu_plugin_json_path",
+      "package": "nu_plugin_json_path",
+      "plugin": "json_path",
+      "role": "JSONPath queries"
+    },
+    {
+      "command": "nu_plugin_polars",
+      "package": "nu_plugin_polars",
+      "plugin": "polars",
+      "role": "dataframe operations"
+    },
     { "command": "nu_plugin_query", "package": "nu_plugin_query", "plugin": "query", "role": "HTML/XML/SQL queries" },
     { "command": "nu_plugin_skim", "package": "nu_plugin_skim", "plugin": "skim", "role": "fuzzy selection" },
     { "command": "nu_plugin_zstdsep", "package": "nu_plugin_zstdsep", "plugin": "zstdsep", "role": "zstd compression" }

@@ -36,20 +36,11 @@ function narrow(buffer: Buffer, chars: number): string {
 }
 
 /** Parse `Name_Version_Arch_ResourceId_PublisherId`; `undefined` for other key names. */
-export function parsePackageFullName(
-  fullName: string,
-): Omit<MsixPackage, "installLocation"> | undefined {
+export function parsePackageFullName(fullName: string): Omit<MsixPackage, "installLocation"> | undefined {
   const parts = fullName.split("_");
   if (parts.length !== 5) return undefined;
-  const [name, version, architecture, , publisherId] = parts as [
-    string,
-    string,
-    string,
-    string,
-    string,
-  ];
-  if (!name || !/^\d+(\.\d+){3}$/.test(version) || !publisherId)
-    return undefined;
+  const [name, version, architecture, , publisherId] = parts as [string, string, string, string, string];
+  if (!name || !/^\d+(\.\d+){3}$/.test(version) || !publisherId) return undefined;
   return {
     name,
     version,
@@ -79,42 +70,18 @@ export function listMsixPackages(): MsixPackage[] {
       returns: FFIType.i32,
     },
     RegEnumKeyExW: {
-      args: [
-        FFIType.u64,
-        FFIType.u32,
-        FFIType.ptr,
-        FFIType.ptr,
-        FFIType.ptr,
-        FFIType.ptr,
-        FFIType.ptr,
-        FFIType.ptr,
-      ],
+      args: [FFIType.u64, FFIType.u32, FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr],
       returns: FFIType.i32,
     },
     RegGetValueW: {
-      args: [
-        FFIType.u64,
-        FFIType.ptr,
-        FFIType.ptr,
-        FFIType.u32,
-        FFIType.ptr,
-        FFIType.ptr,
-        FFIType.ptr,
-      ],
+      args: [FFIType.u64, FFIType.ptr, FFIType.ptr, FFIType.u32, FFIType.ptr, FFIType.ptr, FFIType.ptr],
       returns: FFIType.i32,
     },
     RegCloseKey: { args: [FFIType.u64], returns: FFIType.i32 },
   });
-  const { RegOpenKeyExW, RegEnumKeyExW, RegGetValueW, RegCloseKey } =
-    advapi.symbols;
+  const { RegOpenKeyExW, RegEnumKeyExW, RegGetValueW, RegCloseKey } = advapi.symbols;
   const handle = new BigUint64Array(1);
-  const opened = RegOpenKeyExW(
-    HKEY_CURRENT_USER,
-    wide(REPOSITORY),
-    0,
-    KEY_READ,
-    handle,
-  );
+  const opened = RegOpenKeyExW(HKEY_CURRENT_USER, wide(REPOSITORY), 0, KEY_READ, handle);
   if (opened !== ERROR_SUCCESS) {
     advapi.close();
     return [];
@@ -126,16 +93,7 @@ export function listMsixPackages(): MsixPackage[] {
     for (let index = 0; ; index += 1) {
       const name = Buffer.alloc(512 * 2);
       const length = new Uint32Array([512]);
-      const status = RegEnumKeyExW(
-        key,
-        index,
-        name,
-        length,
-        null,
-        null,
-        null,
-        null,
-      );
+      const status = RegEnumKeyExW(key, index, name, length, null, null, null, null);
       if (status === ERROR_NO_MORE_ITEMS) break;
       if (status !== ERROR_SUCCESS) continue;
       const fullName = narrow(name, length[0] as number);
@@ -143,32 +101,14 @@ export function listMsixPackages(): MsixPackage[] {
       if (!identity) continue;
       let size = new Uint32Array([1024]);
       let value = Buffer.alloc(size[0] as number);
-      let read = RegGetValueW(
-        key,
-        wide(fullName),
-        valueName,
-        RRF_RT_REG_SZ,
-        null,
-        value,
-        size,
-      );
+      let read = RegGetValueW(key, wide(fullName), valueName, RRF_RT_REG_SZ, null, value, size);
       if (read === ERROR_MORE_DATA) {
         value = Buffer.alloc(size[0] as number);
         size = new Uint32Array([value.length]);
-        read = RegGetValueW(
-          key,
-          wide(fullName),
-          valueName,
-          RRF_RT_REG_SZ,
-          null,
-          value,
-          size,
-        );
+        read = RegGetValueW(key, wide(fullName), valueName, RRF_RT_REG_SZ, null, value, size);
       }
       if (read !== ERROR_SUCCESS) continue;
-      const installLocation = value
-        .toString("utf16le", 0, (size[0] as number) - 2)
-        .replace(/\0+$/, "");
+      const installLocation = value.toString("utf16le", 0, (size[0] as number) - 2).replace(/\0+$/, "");
       packages.push({ ...identity, installLocation });
     }
   } finally {
@@ -181,6 +121,6 @@ export function listMsixPackages(): MsixPackage[] {
 /** The highest installed version of `name` whose install directory exists, or `undefined`. */
 export function findMsixPackage(name: string): MsixPackage | undefined {
   return listMsixPackages()
-    .filter((pkg) => pkg.name === name && existsSync(pkg.installLocation))
+    .filter(pkg => pkg.name === name && existsSync(pkg.installLocation))
     .toSorted((left, right) => compareVersions(right.version, left.version))[0];
 }

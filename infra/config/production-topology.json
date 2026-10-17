@@ -71,9 +71,9 @@
       "network": {
         "publicPorts": [80],
         "internalOnly": [
-          3004, 3007, 3014, 4000, 4002, 4005, 5006, 5010, 5011, 8083, 8085, 8789, 8790, 8793, 8794,
-          8796, 8797, 8798, 8800, 8801, 8810, 8812, 18804, 29000, 29001, 29002, 29003, 29004, 29005,
-          29006, 29007, 29008, 29009, 29010, 29011, 29012, 29013, 29020, 29021, 29022, 29030
+          3004, 3007, 3014, 4000, 4002, 4005, 5006, 5010, 5011, 8083, 8085, 8789, 8790, 8793, 8794, 8796, 8797, 8798,
+          8800, 8801, 8810, 8812, 18804, 29000, 29001, 29002, 29003, 29004, 29005, 29006, 29007, 29008, 29009, 29010,
+          29011, 29012, 29013, 29020, 29021, 29022, 29030
         ],
         "reservedNoCurrentOwner": [3000, 3005, 3006]
       },
@@ -129,8 +129,7 @@
       "network": {
         "publicPorts": [80, 443],
         "internalOnly": [
-          5432, 6379, 3014, 3599, 4010, 5006, 5010, 5011, 8786, 8788, 8793, 8796, 8797, 8799, 8810,
-          8812, 18803, 20243
+          5432, 6379, 3014, 3599, 4010, 5006, 5010, 5011, 8786, 8788, 8793, 8796, 8797, 8799, 8810, 8812, 18803, 20243
         ]
       },
       "forbidden": ["crawler", "iecode-build"]
@@ -192,13 +191,7 @@
   "developmentPlacement": {
     "requestedAt": "2026-10-09",
     "selection": "current-context-tools-target-resources-and-permissions",
-    "supportedContexts": [
-      "native-windows",
-      "native-linux",
-      "native-macos",
-      "ssh-factory",
-      "docker"
-    ],
+    "supportedContexts": ["native-windows", "native-linux", "native-macos", "ssh-factory", "docker"],
     "currentWorkstation": "windows-local",
     "checkoutResolution": "current workspace or APHRODY_WORKSPACE / APHRODY_BUN_CHECKOUT",
     "homeResolution": "configured Aphrody home or platform user home",

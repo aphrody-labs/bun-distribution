@@ -36,9 +36,7 @@ export function resolveHome(explicit?: string): string {
   return explicit ?? process.env.APHRODY_HOME ?? join(homedir(), ".aphrody");
 }
 
-export function loadConfig(
-  opts: { home?: string; workers?: number } = {},
-): Config {
+export function loadConfig(opts: { home?: string; workers?: number } = {}): Config {
   const home = resolveHome(opts.home);
   const privateDir = join(home, "private", "windex");
   const cpus = navigator.hardwareConcurrency || 4;
@@ -65,9 +63,7 @@ export function loadConfig(
 /** Reads a generated secret; the value is returned to the caller and never logged. */
 export function readSecret(file: string): string {
   if (!existsSync(file)) {
-    throw new Error(
-      `secret absent : ${file} (lancer \`windex up\` pour le générer)`,
-    );
+    throw new Error(`secret absent : ${file} (lancer \`windex up\` pour le générer)`);
   }
   return readFileSync(file, "utf8").trim();
 }

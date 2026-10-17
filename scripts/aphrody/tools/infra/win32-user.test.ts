@@ -16,12 +16,8 @@ import {
 
 describe("owner-only SDDL", () => {
   test("directories inherit, files do not, malformed SIDs are refused", () => {
-    expect(ownerOnlySddl("S-1-5-21-1-2-3-1001", true)).toBe(
-      "D:P(A;OICI;FA;;;S-1-5-21-1-2-3-1001)",
-    );
-    expect(ownerOnlySddl("S-1-5-21-1-2-3-1001", false)).toBe(
-      "D:P(A;;FA;;;S-1-5-21-1-2-3-1001)",
-    );
+    expect(ownerOnlySddl("S-1-5-21-1-2-3-1001", true)).toBe("D:P(A;OICI;FA;;;S-1-5-21-1-2-3-1001)");
+    expect(ownerOnlySddl("S-1-5-21-1-2-3-1001", false)).toBe("D:P(A;;FA;;;S-1-5-21-1-2-3-1001)");
     expect(() => ownerOnlySddl("S-1-5;(A;;FA;;;WD)", true)).toThrow("SID");
   });
 });
@@ -54,9 +50,7 @@ describe.skipIf(process.platform !== "win32")("Win32 user scope", () => {
     mkdirSync(directory);
     writeFileSync(file, "{}");
     const sid = currentUserSid();
-    expect(restrictToCurrentUser(directory, true)).toBe(
-      `D:P(A;OICI;FA;;;${sid})`,
-    );
+    expect(restrictToCurrentUser(directory, true)).toBe(`D:P(A;OICI;FA;;;${sid})`);
     expect(daclSddl(directory)).toBe(`D:PAI(A;OICI;FA;;;${sid})`);
     restrictToCurrentUser(file, false);
     expect(daclSddl(file)).toBe(`D:PAI(A;;FA;;;${sid})`);

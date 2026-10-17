@@ -14,25 +14,14 @@ describe("cookie layout", () => {
       home: join(homedir(), ".aphrody"),
       cookies: resolve(homedir(), ".aphrody", "cookies"),
     });
-    expect(cookieLayout({}, { APHRODY_HOME: "/srv/h" }).cookies).toBe(
-      resolve("/srv/h/cookies"),
-    );
-    expect(cookieLayout({ home: "/a" }, { APHRODY_HOME: "/b" }).home).toBe(
-      "/a",
-    );
+    expect(cookieLayout({}, { APHRODY_HOME: "/srv/h" }).cookies).toBe(resolve("/srv/h/cookies"));
+    expect(cookieLayout({ home: "/a" }, { APHRODY_HOME: "/b" }).home).toBe("/a");
   });
 
   test("an exported BXC_COOKIES_DIR is kept, a conflicting directory is refused", () => {
-    expect(cookieLayout({}, { BXC_COOKIES_DIR: "/x/cookies" }).cookies).toBe(
-      resolve("/x/cookies"),
-    );
-    expect(
-      cookieLayout({ dir: "/x/cookies" }, { BXC_COOKIES_DIR: "/x/cookies/" })
-        .cookies,
-    ).toBe(resolve("/x/cookies"));
-    expect(() =>
-      cookieLayout({ dir: "/y" }, { BXC_COOKIES_DIR: "/x/cookies" }),
-    ).toThrow("ambiguïté");
+    expect(cookieLayout({}, { BXC_COOKIES_DIR: "/x/cookies" }).cookies).toBe(resolve("/x/cookies"));
+    expect(cookieLayout({ dir: "/x/cookies" }, { BXC_COOKIES_DIR: "/x/cookies/" }).cookies).toBe(resolve("/x/cookies"));
+    expect(() => cookieLayout({ dir: "/y" }, { BXC_COOKIES_DIR: "/x/cookies" })).toThrow("ambiguïté");
   });
 
   test("the store is created for the current user only", async () => {

@@ -16,8 +16,7 @@ export function recoveryCompose(options: RecoveryOptions) {
   if (!/^aphrody:toolbox-[a-f0-9]{12}$/.test(options.image))
     throw new Error("An immutable toolbox binary-digest tag is required");
   for (const path of [options.root, options.home, options.envFile]) {
-    if (!path.startsWith("/") || path.includes("\n"))
-      throw new Error("Absolute host paths required");
+    if (!path.startsWith("/") || path.includes("\n")) throw new Error("Absolute host paths required");
   }
   const common = {
     image: options.image,
@@ -82,8 +81,7 @@ async function run(argv: string[], timeoutMs: number) {
   const timer = setTimeout(() => child.kill(), timeoutMs);
   try {
     const code = await child.exited;
-    if (code !== 0)
-      throw new Error(`Recovery phase failed: ${argv[0]} (${code})`);
+    if (code !== 0) throw new Error(`Recovery phase failed: ${argv[0]} (${code})`);
   } finally {
     clearTimeout(timer);
   }
@@ -112,14 +110,8 @@ async function main() {
         image: options.image,
         manifest,
         services: Object.keys(compose.services),
-        model:
-          "intfloat/multilingual-e5-small (native pinned SHA256 verification)",
-        preserved: [
-          "existing containers",
-          "editorial databases",
-          "agent home",
-          "chat model",
-        ],
+        model: "intfloat/multilingual-e5-small (native pinned SHA256 verification)",
+        preserved: ["existing containers", "editorial databases", "agent home", "chat model"],
         rollback: `docker compose -f ${manifest} stop shenron-compute shenron-embed`,
       },
       null,
@@ -127,25 +119,15 @@ async function main() {
     ),
   );
   if (!options.apply) return;
-  if (process.getuid?.() !== 0)
-    throw new Error(
-      "Apply requires root to read the existing protected environment",
-    );
+  if (process.getuid?.() !== 0) throw new Error("Apply requires root to read the existing protected environment");
   if (!existsSync(options.home) || !existsSync(options.envFile))
     throw new Error("Existing home and environment required");
-  if ((statSync(options.envFile).mode & 0o077) !== 0)
-    throw new Error("Compute environment must be private");
-  await run(
-    ["docker", "image", "inspect", "--format", "{{.Id}}", options.image],
-    30_000,
-  );
+  if ((statSync(options.envFile).mode & 0o077) !== 0) throw new Error("Compute environment must be private");
+  await run(["docker", "image", "inspect", "--format", "{{.Id}}", options.image], 30_000);
   // Preserve the existing private stores. Only a new bounded model installation is writable here.
   const models = join(options.root, "models/e5");
   mkdirSync(models, { recursive: true, mode: 0o755 });
-  await run(
-    ["/home/ubuntu/.local/bin/aphrody-embed", "install", "--model-dir", models],
-    20 * 60_000,
-  );
+  await run(["/home/ubuntu/.local/bin/aphrody-embed", "install", "--model-dir", models], 20 * 60_000);
   chmodSync(models, 0o755);
   chownSync(models, 1000, 1000);
   for (const name of ["config.json", "tokenizer.json", "model.safetensors"]) {

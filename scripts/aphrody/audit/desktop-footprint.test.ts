@@ -1,13 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
-import {
-  cpuTicks,
-  processTree,
-  summarize,
-  treePssMiB,
-  treeTicks,
-} from "./desktop-footprint.ts";
+import { cpuTicks, processTree, summarize, treePssMiB, treeTicks } from "./desktop-footprint.ts";
 
 test("summarize reports the median and the range, and ignores missing samples", () => {
   expect(summarize([5, 1, 3])).toEqual({ median: 3, min: 1, max: 5 });

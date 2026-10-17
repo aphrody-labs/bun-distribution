@@ -72,10 +72,10 @@ export function searchRoots(env: NodeJS.ProcessEnv = process.env): string[] {
 function children(dir: string, pattern?: RegExp): string[] {
   try {
     return readdirSync(dir)
-      .filter((name) => !pattern || pattern.test(name))
+      .filter(name => !pattern || pattern.test(name))
       .toSorted()
       .toReversed()
-      .map((name) => join(dir, name))
+      .map(name => join(dir, name))
       .filter(isDir);
   } catch {
     return [];
@@ -102,9 +102,7 @@ function launcherUnder(root: string): string | undefined {
 }
 
 /** The headless launcher path, or `undefined` when Ghidra is not installed. */
-export function findAnalyzeHeadless(
-  env: NodeJS.ProcessEnv = process.env,
-): string | undefined {
+export function findAnalyzeHeadless(env: NodeJS.ProcessEnv = process.env): string | undefined {
   for (const variable of ["GHIDRA_INSTALL_DIR", "GHIDRA_HOME"]) {
     const hit = launcherIn(env[variable]);
     if (hit) return hit;

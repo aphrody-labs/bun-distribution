@@ -8,8 +8,7 @@ const CONFIG = "/etc/aphrody/cloudflare/origin-cdn.json";
 const CODE = "/etc/aphrody/cloudflare/cli/cdn-origin.mjs";
 const UNIT = "/etc/systemd/system/shenron-cdn-origin.service";
 const SERVICE = "shenron-cdn-origin.service";
-const digest = (bytes: Uint8Array | string) =>
-  new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+const digest = (bytes: Uint8Array | string) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 export class OriginNotReadyError extends Error {}
 /** Scheduled retries absorb a cold service socket; integrity errors remain terminal. */
 export async function originReadiness<T>(
@@ -27,13 +26,9 @@ export async function originReadiness<T>(
     try {
       return await probe(signal);
     } catch (error) {
-      if (
-        !(error instanceof OriginNotReadyError) ||
-        signal.aborted ||
-        budgetMs - (now() - started) <= delay
-      )
+      if (!(error instanceof OriginNotReadyError) || signal.aborted || budgetMs - (now() - started) <= delay)
         throw error;
-      await new Promise<void>((complete) => schedule(complete, delay));
+      await new Promise<void>(complete => schedule(complete, delay));
       delay = Math.min(delay * 2, 1500);
       return attempt();
     }
@@ -77,18 +72,14 @@ export async function activateOriginInventory(
     pins.inventorySha256,
     pins.backupReceiptSha256,
   ])
-    if (!/^[a-f0-9]{64}$/.test(hash))
-      throw Error("Complete origin activation pins required");
+    if (!/^[a-f0-9]{64}$/.test(hash)) throw Error("Complete origin activation pins required");
   if (
-    !/^_migration\/manifests\/(?:publication|site)-[a-f0-9]{24}\/$/.test(
-      pins.manifestPrefix,
-    ) ||
+    !/^_migration\/manifests\/(?:publication|site)-[a-f0-9]{24}\/$/.test(pins.manifestPrefix) ||
     !pins.manifestPrefix.includes(pins.inventorySha256.slice(0, 24))
   )
     throw Error("Candidate manifest prefix differs from inventory SHA");
   const inside = relative(resolve(pins.inventoryRoot), resolve(path));
-  if (!inside || inside.startsWith("..") || isAbsolute(inside))
-    throw Error("Candidate inventory outside owner scope");
+  if (!inside || inside.startsWith("..") || isAbsolute(inside)) throw Error("Candidate inventory outside owner scope");
   const before = await ports.readConfig();
   const current = before.config;
   await ports.qualifyInventory(path, pins);
@@ -105,8 +96,7 @@ export async function activateOriginInventory(
       inventorySha256: pins.inventorySha256,
     };
   }
-  if (before.sha256 !== pins.configSha256)
-    throw Error("Concurrent origin configuration changed");
+  if (before.sha256 !== pins.configSha256) throw Error("Concurrent origin configuration changed");
   const candidate = {
     ...current,
     inventoryPath: path,
@@ -135,8 +125,7 @@ export async function activateOriginInventory(
 async function guarded(path: string, expected?: string) {
   assertConsumerFile(await lstat(path), true);
   const bytes = await Bun.file(path).bytes();
-  if (expected && digest(bytes) !== expected)
-    throw Error("Concurrent protected input changed");
+  if (expected && digest(bytes) !== expected) throw Error("Concurrent protected input changed");
   return bytes;
 }
 async function service(args: string[]) {
@@ -145,17 +134,13 @@ async function service(args: string[]) {
     stderr: "pipe",
     timeout: 15000,
   });
-  const [out, exit] = await Promise.all([
-    new Response(p.stdout).text(),
-    p.exited,
-  ]);
+  const [out, exit] = await Promise.all([new Response(p.stdout).text(), p.exited]);
   if (exit !== 0) throw Error("Catalogue service operation failed");
   return out.trim();
 }
 /** Host paths and service identity are fixed by the canonical Infra catalogue. */
 export function nativeOriginInventoryPorts(): OriginInventoryPorts {
-  if (process.platform !== "linux" || process.getuid?.() !== 0)
-    throw Error("Native DBFR root execution required");
+  if (process.platform !== "linux" || process.getuid?.() !== 0) throw Error("Native DBFR root execution required");
   return {
     async readConfig() {
       const bytes = await guarded(CONFIG);
@@ -174,26 +159,19 @@ export function nativeOriginInventoryPorts(): OriginInventoryPorts {
         !pins.publisherLock.endsWith("/publish.lock")
       )
         throw Error("Canonical publisher lock required");
-      const scoped = relative(
-        await realpath(pins.inventoryRoot),
-        await realpath(path),
-      );
-      if (!scoped || scoped.startsWith("..") || isAbsolute(scoped))
-        throw Error("Inventory escaped owner root");
+      const scoped = relative(await realpath(pins.inventoryRoot), await realpath(path));
+      if (!scoped || scoped.startsWith("..") || isAbsolute(scoped)) throw Error("Inventory escaped owner root");
       await guarded(CODE, pins.consumerCodeSha256);
       assertConsumerFile(await lstat(UNIT), false);
       if (
         digest(await Bun.file(UNIT).bytes()) !== pins.unitSha256 ||
-        (await service(["show", SERVICE, "--value", "-p", "FragmentPath"])) !==
-          UNIT
+        (await service(["show", SERVICE, "--value", "-p", "FragmentPath"])) !== UNIT
       )
         throw Error("Catalogue consumer unit changed");
       await guarded(path, pins.inventorySha256);
       const config = await Bun.file(CONFIG).json();
       const manifest = await Bun.file(config.manifest).json();
-      const authorization = new TextDecoder()
-        .decode(await guarded("/etc/aphrody/cloudflare/api-token"))
-        .trim();
+      const authorization = new TextDecoder().decode(await guarded("/etc/aphrody/cloudflare/api-token")).trim();
       const r = await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${manifest.accountId}/workers/scripts/${manifest.worker}/settings`,
         {
@@ -205,17 +183,13 @@ export function nativeOriginInventoryPorts(): OriginInventoryPorts {
       if (!r.ok) throw Error("Worker manifest unavailable");
       const settings = (await r.json()).result;
       if (
-        settings.bindings.find(
-          (b: { name: string; text?: string }) => b.name === "MANIFEST_PREFIX",
-        )?.text !== pins.manifestPrefix
+        settings.bindings.find((b: { name: string; text?: string }) => b.name === "MANIFEST_PREFIX")?.text !==
+        pins.manifestPrefix
       )
         throw Error("Worker candidate pointer differs");
       const publisherModule = "/etc/aphrody/cloudflare/cli/publish-catalog.ts";
       const owner = await import(publisherModule);
-      owner.inventoryMatchesBindings(
-        (await Bun.file(path).json()).entries,
-        settings.bindings,
-      );
+      owner.inventoryMatchesBindings((await Bun.file(path).json()).entries, settings.bindings);
     },
     async qualifyBackup(pins) {
       const bytes = await guarded(pins.backupReceipt, pins.backupReceiptSha256);
@@ -248,17 +222,13 @@ export function nativeOriginInventoryPorts(): OriginInventoryPorts {
     },
     async restart() {
       await service(["restart", SERVICE]);
-      if ((await service(["is-active", SERVICE])) !== "active")
-        throw Error("Native CDN service inactive");
+      if ((await service(["is-active", SERVICE])) !== "active") throw Error("Native CDN service inactive");
     },
     async attest(config) {
       const codeSha256 = digest(await guarded(CODE));
-      await originReadiness(async (signal) =>
+      await originReadiness(async signal =>
         Promise.all(
-          [
-            "https://cdn.dragonballfr.com",
-            "https://origin-cdn.dragonballfr.com",
-          ].map(async (origin) => {
+          ["https://cdn.dragonballfr.com", "https://origin-cdn.dragonballfr.com"].map(async origin => {
             let r: Response;
             try {
               r = await fetch(origin + "/.well-known/shenron-cdn-origin.json", {
@@ -270,8 +240,7 @@ export function nativeOriginInventoryPorts(): OriginInventoryPorts {
             } catch {
               throw new OriginNotReadyError("Native CDN socket is warming");
             }
-            if ([502, 503, 504].includes(r.status))
-              throw new OriginNotReadyError("Native CDN service is warming");
+            if ([502, 503, 504].includes(r.status)) throw new OriginNotReadyError("Native CDN service is warming");
             if (!r.ok) throw Error("Native CDN attestation unavailable");
             const actual = await r.json();
             if (
@@ -311,41 +280,26 @@ export function createOriginInventoryActivation(value: unknown) {
     typeof value !== "object" ||
     Array.isArray(value) ||
     Object.keys(value).length !== keys.length ||
-    !keys.every(
-      (key) =>
-        Object.hasOwn(value, key) &&
-        typeof (value as Record<string, unknown>)[key] === "string",
-    )
+    !keys.every(key => Object.hasOwn(value, key) && typeof (value as Record<string, unknown>)[key] === "string")
   )
     throw Error("Exact origin activation configuration required");
   const config = value as OriginInventoryActivationConfig;
   if (
-    ![
-      config.configSha256,
-      config.consumerCodeSha256,
-      config.unitSha256,
-      config.backupReceiptSha256,
-    ].every((hash) => /^[a-f0-9]{64}$/.test(hash)) ||
+    ![config.configSha256, config.consumerCodeSha256, config.unitSha256, config.backupReceiptSha256].every(hash =>
+      /^[a-f0-9]{64}$/.test(hash),
+    ) ||
     !isAbsolute(config.inventoryRoot) ||
     !isAbsolute(config.backupReceipt)
   )
     throw Error("Qualified origin configuration pins required");
   return {
     async activate(candidate: OriginInventoryCandidate) {
-      const candidateKeys = [
-        "inventoryPath",
-        "inventorySha256",
-        "manifestPrefix",
-        "publisherLock",
-      ];
+      const candidateKeys = ["inventoryPath", "inventorySha256", "manifestPrefix", "publisherLock"];
       if (
         !candidate ||
         Object.keys(candidate).length !== candidateKeys.length ||
         !candidateKeys.every(
-          (key) =>
-            Object.hasOwn(candidate, key) &&
-            typeof candidate[key as keyof OriginInventoryCandidate] ===
-              "string",
+          key => Object.hasOwn(candidate, key) && typeof candidate[key as keyof OriginInventoryCandidate] === "string",
         )
       )
         throw Error("Exact publisher candidate required");

@@ -32,8 +32,6 @@ describe("one-click installers", () => {
     const pwsh = Bun.which("pwsh");
     if (!pwsh) return;
     const script = `$e=$null;[void][System.Management.Automation.Language.Parser]::ParseFile('${join(dir, "install.ps1").replaceAll("'", "''")}',[ref]$null,[ref]$e);exit ($e.Count)`;
-    expect(
-      Bun.spawnSync([pwsh, "-NoProfile", "-Command", script]).exitCode,
-    ).toBe(0);
+    expect(Bun.spawnSync([pwsh, "-NoProfile", "-Command", script]).exitCode).toBe(0);
   });
 });

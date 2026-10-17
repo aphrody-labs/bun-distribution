@@ -33,8 +33,7 @@ export interface Manifest {
 
 export interface Finding {
   level: "error" | "warn";
-  kind:
-    "declared-builtin" | "declared-fork" | "dead-catalog" | "native-regression";
+  kind: "declared-builtin" | "declared-fork" | "dead-catalog" | "native-regression";
   package: string;
   detail: string;
 }
@@ -46,12 +45,7 @@ export interface Report {
   findings: Finding[];
 }
 
-const DEPENDENCY_FIELDS = [
-  "dependencies",
-  "devDependencies",
-  "peerDependencies",
-  "optionalDependencies",
-] as const;
+const DEPENDENCY_FIELDS = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"] as const;
 
 const SPECIFIER =
   /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*|\bimport\s+)["']((?:@[^/"'\s]+\/)?[^./"'\s][^/"'\s]*)(?:\/[^"'\s]*)?["']/g;
@@ -69,8 +63,7 @@ export function declared(json: Record<string, unknown>): Map<string, string> {
   for (const field of DEPENDENCY_FIELDS) {
     const deps = json[field];
     if (deps && typeof deps === "object") {
-      for (const [name, spec] of Object.entries(deps))
-        out.set(name, String(spec));
+      for (const [name, spec] of Object.entries(deps)) out.set(name, String(spec));
     }
   }
   return out;
@@ -134,16 +127,13 @@ export function evaluate(
   }
   return {
     schema: "aphrody.bun-absorb/1",
-    ok: findings.every((finding) => finding.level !== "error"),
+    ok: findings.every(finding => finding.level !== "error"),
     imports,
     findings,
   };
 }
 
-async function workspaceManifests(
-  root: string,
-  patterns: string[],
-): Promise<Manifest[]> {
+async function workspaceManifests(root: string, patterns: string[]): Promise<Manifest[]> {
   const manifests: Manifest[] = [
     {
       path: "package.json",
@@ -151,7 +141,7 @@ async function workspaceManifests(
     },
   ];
   // Negated workspace patterns (packages leaving for another repository) still count as users.
-  for (const pattern of patterns.filter((p) => !p.startsWith("!"))) {
+  for (const pattern of patterns.filter(p => !p.startsWith("!"))) {
     for await (const rawPath of new Bun.Glob(`${pattern}/package.json`).scan({
       cwd: root,
       onlyFiles: true,
@@ -167,17 +157,10 @@ async function workspaceManifests(
   return manifests;
 }
 
-async function countImports(
-  root: string,
-  config: AbsorbConfig,
-): Promise<Record<string, number>> {
-  const tracked = new Set(
-    config.packages
-      .filter((entry) => entry.status !== "builtin")
-      .map((entry) => entry.name),
-  );
+async function countImports(root: string, config: AbsorbConfig): Promise<Record<string, number>> {
+  const tracked = new Set(config.packages.filter(entry => entry.status !== "builtin").map(entry => entry.name));
   const exclude = new RegExp(
-    `(^|/)(${config.scan.exclude.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(/|$)`,
+    `(^|/)(${config.scan.exclude.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(/|$)`,
   );
   const counts: Record<string, number> = {};
   for await (const rawPath of new Bun.Glob(config.scan.include).scan({
@@ -196,38 +179,23 @@ async function countImports(
       if (tracked.has(name)) counts[name] = (counts[name] ?? 0) + 1;
     }
   }
-  return Object.fromEntries(
-    Object.entries(counts).toSorted(([a], [b]) => a.localeCompare(b)),
-  );
+  return Object.fromEntries(Object.entries(counts).toSorted(([a], [b]) => a.localeCompare(b)));
 }
 
 if (import.meta.main) {
   const args = new Set(Bun.argv.slice(2));
   const root = resolve(import.meta.dir, "../../../../docs/aphrody");
-  const config: AbsorbConfig = await Bun.file(
-    resolve(root, "tools/config/bun-absorb.json"),
-  ).json();
+  const config: AbsorbConfig = await Bun.file(resolve(root, "tools/config/bun-absorb.json")).json();
   const rootManifest = await Bun.file(resolve(root, "package.json")).json();
   const baselinePath = resolve(root, "tools/config/bun-absorb.baseline.json");
   const imports = await countImports(root, config);
-  const native = new Set(
-    config.packages
-      .filter((entry) => entry.status === "native")
-      .map((entry) => entry.name),
-  );
+  const native = new Set(config.packages.filter(entry => entry.status === "native").map(entry => entry.name));
   if (args.has("--write-baseline")) {
-    const counts = Object.fromEntries(
-      Object.entries(imports).filter(([name]) => native.has(name)),
-    );
-    await Bun.write(
-      baselinePath,
-      `${JSON.stringify({ schemaVersion: 1, imports: counts }, null, 2)}\n`,
-    );
+    const counts = Object.fromEntries(Object.entries(imports).filter(([name]) => native.has(name)));
+    await Bun.write(baselinePath, `${JSON.stringify({ schemaVersion: 1, imports: counts }, null, 2)}\n`);
   }
   const baselineFile = Bun.file(baselinePath);
-  const baseline: Record<string, number> = (await baselineFile.exists())
-    ? (await baselineFile.json()).imports
-    : {};
+  const baseline: Record<string, number> = (await baselineFile.exists()) ? (await baselineFile.json()).imports : {};
   const report = evaluate(
     config,
     await workspaceManifests(root, rootManifest.workspaces.packages),
@@ -240,17 +208,11 @@ if (import.meta.main) {
     console.log(JSON.stringify(report, null, 2));
   } else {
     for (const [name, count] of Object.entries(report.imports)) {
-      const entry = config.packages.find(
-        (candidate) => candidate.name === name,
-      )!;
-      console.log(
-        `${entry.status.padEnd(7)} ${name.padEnd(30)} ${String(count).padStart(4)}  -> ${entry.bun}`,
-      );
+      const entry = config.packages.find(candidate => candidate.name === name)!;
+      console.log(`${entry.status.padEnd(7)} ${name.padEnd(30)} ${String(count).padStart(4)}  -> ${entry.bun}`);
     }
     for (const finding of report.findings)
-      console.log(
-        `${finding.level} ${finding.kind} ${finding.package}: ${finding.detail}`,
-      );
+      console.log(`${finding.level} ${finding.kind} ${finding.package}: ${finding.detail}`);
     console.log(report.ok ? "bun-absorb: ok" : "bun-absorb: FAILED");
   }
   process.exit(report.ok ? 0 : 1);

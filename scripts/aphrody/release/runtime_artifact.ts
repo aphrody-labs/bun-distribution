@@ -11,16 +11,11 @@ import { libraryFile, Runtime } from "@aphrody/runtime-sdk";
 import { peExports, runtimeCapabilities } from "./runtime-artifact-info.ts";
 
 const root = resolve(import.meta.dir, "../../../docs/aphrody");
-const sha256 = (bytes: Uint8Array) =>
-  new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+const sha256 = (bytes: Uint8Array) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 // A producer packages its build, independently of whichever version the user installed.
-const libraryPath =
-  process.env["YOLO_RUNTIME_LIB"] ||
-  resolve(root, "target/runtime", libraryFile());
+const libraryPath = process.env["YOLO_RUNTIME_LIB"] || resolve(root, "target/runtime", libraryFile());
 if (!(await Bun.file(libraryPath).exists())) {
-  console.error(
-    `Missing ${libraryPath}: run \`just yolo::runtime-build\` first.`,
-  );
+  console.error(`Missing ${libraryPath}: run \`just yolo::runtime-build\` first.`);
   process.exit(1);
 }
 
@@ -51,35 +46,23 @@ interface BuildInfo {
  * the PE export table must carry the whole ABI, the `rustc` and target strings come from the binary itself, and the
  * ABI, version and capabilities come from the crate that produced it (features `browser`, `tooling`).
  */
-async function crossInfo(
-  target: string,
-  path: string,
-): Promise<{ info: BuildInfo; capabilities: string[] }> {
+async function crossInfo(target: string, path: string): Promise<{ info: BuildInfo; capabilities: string[] }> {
   const bytes = new Uint8Array(await Bun.file(path).arrayBuffer());
   const text = new TextDecoder("latin1").decode(bytes);
   const exports = peExports(bytes, target);
   const header = await Bun.file(resolve(root, HEADER_SOURCE)).text();
   const capabilities = runtimeCapabilities(exports, header);
-  if (!text.includes(target))
-    throw new Error(`${path} does not embed the target ${target}`);
-  const rustc = text.match(
-    /rustc \d+\.\d+\.\d+(?:-[a-z]+)? \([0-9a-f]{9} \d{4}-\d{2}-\d{2}\)/,
-  )?.[0];
+  if (!text.includes(target)) throw new Error(`${path} does not embed the target ${target}`);
+  const rustc = text.match(/rustc \d+\.\d+\.\d+(?:-[a-z]+)? \([0-9a-f]{9} \d{4}-\d{2}-\d{2}\)/)?.[0];
   if (!rustc) throw new Error(`${path} embeds no rustc version`);
-  const lib = await Bun.file(
-    resolve(root, "crates/engine/yolo-runtime/src/lib.rs"),
-  ).text();
+  const lib = await Bun.file(resolve(root, "crates/engine/yolo-runtime/src/lib.rs")).text();
   const major = lib.match(/pub const ABI_MAJOR: u32 = (\d+);/)?.[1];
   const minor = lib.match(/pub const ABI_MINOR: u32 = (\d+);/)?.[1];
-  if (!major || !minor)
-    throw new Error("ABI constants not found in yolo-runtime");
+  if (!major || !minor) throw new Error("ABI constants not found in yolo-runtime");
   const workspace = await Bun.file(resolve(root, "Cargo.toml")).text();
-  const version = workspace.match(
-    /\[workspace\.package\][^[]*?\nversion = "([^"]+)"/,
-  )?.[1];
+  const version = workspace.match(/\[workspace\.package\][^[]*?\nversion = "([^"]+)"/)?.[1];
 
-  if (!version || capabilities.length === 0)
-    throw new Error("runtime version or capabilities not found");
+  if (!version || capabilities.length === 0) throw new Error("runtime version or capabilities not found");
   return {
     info: {
       name: "yolo-runtime",
@@ -130,8 +113,7 @@ await Bun.write(resolve(outDir, "yolo_runtime.h"), compatHeader);
 // artifacts may supply their original license explicitly rather than silently relabeling it.
 const licenseId = process.env["YOLO_RUNTIME_LICENSE_ID"] || "Apache-2.0";
 const licensePath =
-  process.env["YOLO_RUNTIME_LICENSE"] ||
-  resolve(root, "crates/tauri/aphrody-tauri-build/LICENSE-APACHE-2.0");
+  process.env["YOLO_RUNTIME_LICENSE"] || resolve(root, "crates/tauri/aphrody-tauri-build/LICENSE-APACHE-2.0");
 const license = new Uint8Array(await Bun.file(licensePath).arrayBuffer());
 await Bun.write(resolve(outDir, "LICENSE"), license);
 
@@ -177,10 +159,5 @@ const manifest = {
   notes:
     "Qualification, installation and activation are separate states; this manifest only identifies the artifact. sources.yolo.rev is the packaging checkout; artifactBuildRevision is reported by the loaded library where available. Cross-built metadata is inferred from source and PE exports, not a native execution probe; optional GPU backends require native negotiation.",
 };
-await Bun.write(
-  resolve(outDir, "manifest.json"),
-  `${JSON.stringify(manifest, null, 2)}\n`,
-);
-console.log(
-  `Packaged ${info.name} ${info.version} (${info.target}, ABI ${info.abi}) -> ${outDir}`,
-);
+await Bun.write(resolve(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+console.log(`Packaged ${info.name} ${info.version} (${info.target}, ABI ${info.abi}) -> ${outDir}`);

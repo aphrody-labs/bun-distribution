@@ -4,12 +4,7 @@
 // Opening `\\.\C:` requires an administrator token (elevated session or a SYSTEM task); without it every call
 // returns ERROR_ACCESS_DENIED and the callers fall back to the Bun fs walk, never to a fake result.
 import { closeHandle, ioctl, openHandle, type Pointer } from "./win32.ts";
-import {
-  DirTree,
-  FILE_ATTRIBUTE_DIRECTORY,
-  parseUsnRecords,
-  type UsnRecord,
-} from "./usn.ts";
+import { DirTree, FILE_ATTRIBUTE_DIRECTORY, parseUsnRecords, type UsnRecord } from "./usn.ts";
 
 export type { UsnRecord };
 
@@ -51,8 +46,7 @@ export class Volume {
 
   static open(drive = "C"): Volume {
     const r = openHandle(`\\\\.\\${drive.toUpperCase()}:`);
-    if ("error" in r)
-      throw new Win32Error(`ouverture du volume ${drive}:`, r.error);
+    if ("error" in r) throw new Win32Error(`ouverture du volume ${drive}:`, r.error);
     return new Volume(drive.toUpperCase(), r.handle);
   }
 
@@ -88,8 +82,7 @@ export class Volume {
     } catch (e) {
       if (
         !(e instanceof Win32Error) ||
-        (e.code !== ERROR_JOURNAL_NOT_ACTIVE &&
-          e.code !== ERROR_JOURNAL_DELETE_IN_PROGRESS)
+        (e.code !== ERROR_JOURNAL_NOT_ACTIVE && e.code !== ERROR_JOURNAL_DELETE_IN_PROGRESS)
       ) {
         throw e;
       }
@@ -97,14 +90,8 @@ export class Volume {
       const v = new DataView(input.buffer);
       v.setBigUint64(0, 32n * 1024n * 1024n, true);
       v.setBigUint64(8, 4n * 1024n * 1024n, true);
-      const r = ioctl(
-        this.h,
-        FSCTL_CREATE_USN_JOURNAL,
-        input,
-        new Uint8Array(0),
-      );
-      if ("error" in r)
-        throw new Win32Error("FSCTL_CREATE_USN_JOURNAL", r.error);
+      const r = ioctl(this.h, FSCTL_CREATE_USN_JOURNAL, input, new Uint8Array(0));
+      if ("error" in r) throw new Win32Error("FSCTL_CREATE_USN_JOURNAL", r.error);
       return this.query();
     }
   }
@@ -115,12 +102,7 @@ export class Volume {
    * Metadata only: names, parents and attributes, never file contents.
    */
   enumerate(
-    onRecord: (
-      record: number,
-      parent: number,
-      attributes: number,
-      name: () => string,
-    ) => void,
+    onRecord: (record: number, parent: number, attributes: number, name: () => string) => void,
     bufferBytes = 4 << 20,
   ): number {
     const out = new Uint8Array(bufferBytes);
@@ -143,24 +125,13 @@ export class Volume {
       let off = 8;
       while (off + 60 <= r.bytes) {
         const len = ov.getUint32(off, true);
-        if (
-          len < 60 ||
-          off + len > r.bytes ||
-          ov.getUint16(off + 4, true) !== 2
-        )
-          break;
-        const record =
-          ov.getUint32(off + 8, true) +
-          ov.getUint16(off + 12, true) * 0x1_0000_0000;
-        const parent =
-          ov.getUint32(off + 16, true) +
-          ov.getUint16(off + 20, true) * 0x1_0000_0000;
+        if (len < 60 || off + len > r.bytes || ov.getUint16(off + 4, true) !== 2) break;
+        const record = ov.getUint32(off + 8, true) + ov.getUint16(off + 12, true) * 0x1_0000_0000;
+        const parent = ov.getUint32(off + 16, true) + ov.getUint16(off + 20, true) * 0x1_0000_0000;
         const attributes = ov.getUint32(off + 52, true);
         const nameLen = ov.getUint16(off + 56, true);
         const nameOff = off + ov.getUint16(off + 58, true);
-        onRecord(record, parent, attributes, () =>
-          decoder.decode(out.subarray(nameOff, nameOff + nameLen)),
-        );
+        onRecord(record, parent, attributes, () => decoder.decode(out.subarray(nameOff, nameOff + nameLen)));
         count++;
         off += len;
       }
@@ -171,11 +142,7 @@ export class Volume {
    * Reads the journal from `startUsn` without waiting (Timeout 0, BytesToWaitFor 0): returns the decoded records
    * and the USN to resume from. ERROR_JOURNAL_ENTRY_DELETED means the checkpoint fell out of the journal.
    */
-  read(
-    startUsn: bigint,
-    journalId: bigint,
-    bufferBytes = 1 << 20,
-  ): { records: UsnRecord[]; next: bigint } {
+  read(startUsn: bigint, journalId: bigint, bufferBytes = 1 << 20): { records: UsnRecord[]; next: bigint } {
     const out = new Uint8Array(bufferBytes);
     // READ_USN_JOURNAL_DATA_V0: StartUsn, ReasonMask, ReturnOnlyOnClose, Timeout, BytesToWaitFor, UsnJournalID.
     const input = new Uint8Array(40);

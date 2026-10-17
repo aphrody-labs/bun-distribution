@@ -54,40 +54,24 @@ export function sha256(bytes: Uint8Array | string): string {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
-const sameHash = (a: string | undefined, b: string) =>
-  a !== undefined && a.toLowerCase() === b.toLowerCase();
+const sameHash = (a: string | undefined, b: string) => a !== undefined && a.toLowerCase() === b.toLowerCase();
 
 /** Validates the host configuration (absolute paths, safe names); throws on the first defect. */
 export function validateConfig(raw: unknown): GatewayConfig {
   const c = raw as GatewayConfig;
   for (const key of ["home", "sourceConfig", "registry"] as const)
-    if (typeof c?.[key] !== "string" || !isAbsolute(c[key]))
-      throw new Error(`chemin ${key} : absolu requis`);
-  if (
-    typeof c.container !== "string" ||
-    !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,100}$/.test(c.container)
-  )
+    if (typeof c?.[key] !== "string" || !isAbsolute(c[key])) throw new Error(`chemin ${key} : absolu requis`);
+  if (typeof c.container !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,100}$/.test(c.container))
     throw new Error("nom de conteneur invalide");
   if (!Array.isArray(c.serverNames) || c.serverNames.length === 0)
     throw new Error("déclarer les noms de serveur Aphrody");
   for (const name of c.serverNames)
-    if (
-      typeof name !== "string" ||
-      !/^[a-zA-Z0-9][a-zA-Z0-9.-]{0,252}$/.test(name)
-    )
+    if (typeof name !== "string" || !/^[a-zA-Z0-9][a-zA-Z0-9.-]{0,252}$/.test(name))
       throw new Error(`nom de serveur invalide : ${String(name)}`);
   if (c.tls?.enabled) {
-    if (
-      !isAbsolute(c.tls.directory) ||
-      !/^\/[a-zA-Z0-9/_-]+$/.test(c.tls.containerDirectory)
-    )
-      throw new Error(
-        "TLS : répertoire hôte absolu et répertoire conteneur sûr requis",
-      );
-    if (
-      !SHA256.test(c.tls.certificateSha256) ||
-      !SHA256.test(c.tls.privateKeySha256)
-    )
+    if (!isAbsolute(c.tls.directory) || !/^\/[a-zA-Z0-9/_-]+$/.test(c.tls.containerDirectory))
+      throw new Error("TLS : répertoire hôte absolu et répertoire conteneur sûr requis");
+    if (!SHA256.test(c.tls.certificateSha256) || !SHA256.test(c.tls.privateKeySha256))
       throw new Error("TLS : empreintes SHA-256 du manifeste requises");
   }
   return c;
@@ -95,36 +79,22 @@ export function validateConfig(raw: unknown): GatewayConfig {
 
 /** True when `record` is held by a live process (same start time) owning exactly one loopback listener. */
 export function liveSite(record: SiteRecord): boolean {
-  if (
-    record.address !== "127.0.0.1" ||
-    !(record.port >= 1 && record.port <= 65535)
-  )
-    throw new Error(
-      "le registre doit désigner le listener loopback du site natif",
-    );
+  if (record.address !== "127.0.0.1" || !(record.port >= 1 && record.port <= 65535))
+    throw new Error("le registre doit désigner le listener loopback du site natif");
   if (processStartedAt(record.pid) !== record.processStartedAt) return false;
-  const owned = tcpListeners().filter(
-    (l) =>
-      l.pid === record.pid &&
-      l.port === record.port &&
-      l.address === "127.0.0.1",
-  );
+  const owned = tcpListeners().filter(l => l.pid === record.pid && l.port === record.port && l.address === "127.0.0.1");
   return owned.length === 1;
 }
 
 const escape = (text: string) => text.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const count = (text: string, pattern: RegExp) =>
-  [...text.matchAll(pattern)].length;
+const count = (text: string, pattern: RegExp) => [...text.matchAll(pattern)].length;
 
 /** Removes this adapter's marked block; throws when markers are ambiguous or incomplete. */
 export function stripOwnedBlock(original: string): {
   base: string;
   marked: number;
 } {
-  const block = new RegExp(
-    `^${escape(BEGIN)}\\r?\\n[\\s\\S]*?^${escape(END)}\\r?\\n?`,
-    "gm",
-  );
+  const block = new RegExp(`^${escape(BEGIN)}\\r?\\n[\\s\\S]*?^${escape(END)}\\r?\\n?`, "gm");
   const marked = count(original, block);
   if (
     marked > 1 ||
@@ -141,8 +111,7 @@ export function stripOwnedBlock(original: string): {
  */
 export function httpClosing(base: string): number {
   const opening = /^http\s*\{/m.exec(base);
-  if (!opening || count(base, /^http\s*\{/gm) !== 1)
-    throw new Error("un seul bloc http de premier niveau attendu");
+  if (!opening || count(base, /^http\s*\{/gm) !== 1) throw new Error("un seul bloc http de premier niveau attendu");
   const httpOpening = opening.index + opening[0].lastIndexOf("{");
   let depth = 0;
   let quote = "";
@@ -178,8 +147,7 @@ export function httpClosing(base: string): number {
     }
     if (character === "{") {
       depth++;
-      if (index === httpOpening && depth !== 1)
-        throw new Error("le bloc http doit être de premier niveau");
+      if (index === httpOpening && depth !== 1) throw new Error("le bloc http doit être de premier niveau");
     }
     if (character === "}") {
       depth--;
@@ -195,9 +163,7 @@ export function httpClosing(base: string): number {
     lastClosing !== closing ||
     base.slice(lastClosing + 1).trim().length !== 0
   )
-    throw new Error(
-      "passerelle attendue équilibrée et terminée par son unique bloc http",
-    );
+    throw new Error("passerelle attendue équilibrée et terminée par son unique bloc http");
   return lastClosing;
 }
 
@@ -231,11 +197,7 @@ export function gatewayModel(config: GatewayConfig, port: number) {
     const directives = ["http2 on", "ssl_protocols TLSv1.2 TLSv1.3"];
     if (tls.quic) {
       listen.push("443 quic reuseport", "[::]:443 quic reuseport");
-      directives.push(
-        "http3 on",
-        "quic_retry on",
-        `add_header Alt-Svc 'h3=":443"; ma=86400' always`,
-      );
+      directives.push("http3 on", "quic_retry on", `add_header Alt-Svc 'h3=":443"; ma=86400' always`);
     }
     servers.push({
       listen_ports: listen,
@@ -266,10 +228,7 @@ export function render(model: unknown, aphrody: string): string {
     stderr: "pipe",
     windowsHide: true,
   });
-  if (result.exitCode !== 0)
-    throw new Error(
-      `aphrody infra nginx render : ${result.stderr.toString().trim()}`,
-    );
+  if (result.exitCode !== 0) throw new Error(`aphrody infra nginx render : ${result.stderr.toString().trim()}`);
   return result.stdout.toString().trimEnd();
 }
 
@@ -278,11 +237,7 @@ export function render(model: unknown, aphrody: string): string {
  * the block gives back `base` (plus a line break before that brace when it had none), so
  * repeated applies do not drift.
  */
-export function candidateText(
-  base: string,
-  closing: number,
-  rendered: string,
-): string {
+export function candidateText(base: string, closing: number, rendered: string): string {
   const head = base.slice(0, closing);
   const separator = head.endsWith("\n") ? "" : "\n";
   return `${head}${separator}${BEGIN}\n${rendered}\n${END}\n${base.slice(closing)}`;
@@ -295,9 +250,7 @@ export function hostPath(source: string): string {
 }
 
 const samePath = (a: string, b: string) =>
-  process.platform === "win32"
-    ? resolve(a).toLowerCase() === resolve(b).toLowerCase()
-    : resolve(a) === resolve(b);
+  process.platform === "win32" ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b);
 
 function docker(args: string[]): string {
   const result = Bun.spawnSync(["docker", ...args], {
@@ -306,9 +259,7 @@ function docker(args: string[]): string {
     windowsHide: true,
   });
   if (result.exitCode !== 0)
-    throw new Error(
-      `docker ${args[0]} : ${result.stderr.toString().trim() || result.exitCode}`,
-    );
+    throw new Error(`docker ${args[0]} : ${result.stderr.toString().trim() || result.exitCode}`);
   return result.stdout.toString();
 }
 
@@ -318,18 +269,13 @@ const containerHash = (container: string, path: string) =>
 type Mount = { Type: string; Source: string; Destination: string; RW: boolean };
 
 function mountOf(mounts: Mount[], destination: string): Mount {
-  const found = mounts.filter((m) => m.Destination === destination);
+  const found = mounts.filter(m => m.Destination === destination);
   if (found.length !== 1 || found[0]!.Type !== "bind")
-    throw new Error(
-      `${destination} : un seul montage bind hôte déclaré attendu`,
-    );
+    throw new Error(`${destination} : un seul montage bind hôte déclaré attendu`);
   return found[0]!;
 }
 
-async function status(
-  url: string,
-  init: RequestInit = {},
-): Promise<number | null> {
+async function status(url: string, init: RequestInit = {}): Promise<number | null> {
   try {
     const response = await fetch(url, {
       ...init,
@@ -358,49 +304,27 @@ export type Plan = {
 export function prepare(config: GatewayConfig, aphrody: string) {
   const sourceBytes = readFileSync(config.sourceConfig);
   const sourceHash = sha256(sourceBytes);
-  const original = new TextDecoder("utf-8", { fatal: true })
-    .decode(sourceBytes)
-    .replace(/^\uFEFF/, "");
-  const record = JSON.parse(
-    readFileSync(config.registry, "utf8"),
-  ) as SiteRecord;
+  const original = new TextDecoder("utf-8", { fatal: true }).decode(sourceBytes).replace(/^\uFEFF/, "");
+  const record = JSON.parse(readFileSync(config.registry, "utf8")) as SiteRecord;
   if (!liveSite(record))
-    throw new Error(
-      "registre du site natif périmé ou listener non prouvé (native-startup.ts health)",
-    );
+    throw new Error("registre du site natif périmé ou listener non prouvé (native-startup.ts health)");
   const { base, marked } = stripOwnedBlock(original);
   const closing = httpClosing(base);
-  const candidate = candidateText(
-    base,
-    closing,
-    render(gatewayModel(config, record.port), aphrody),
-  );
+  const candidate = candidateText(base, closing, render(gatewayModel(config, record.port), aphrody));
   return { sourceBytes, sourceHash, record, marked, candidate };
 }
 
-export async function apply(
-  config: GatewayConfig,
-  prepared: ReturnType<typeof prepare>,
-) {
+export async function apply(config: GatewayConfig, prepared: ReturnType<typeof prepare>) {
   const { sourceBytes, sourceHash, record, candidate } = prepared;
   if (!sameHash(config.expectedSourceSha256, sourceHash))
-    throw new Error(
-      "empreinte source attendue différente : refaire et relire le plan",
-    );
+    throw new Error("empreinte source attendue différente : refaire et relire le plan");
   const [inspection] = JSON.parse(docker(["inspect", config.container])) as {
     Mounts: Mount[];
     NetworkSettings: { Ports: Record<string, { HostPort: string }[] | null> };
   }[];
   if (!inspection) throw new Error(`conteneur ${config.container} introuvable`);
-  if (
-    !samePath(
-      hostPath(mountOf(inspection.Mounts, "/etc/nginx/nginx.conf").Source),
-      config.sourceConfig,
-    )
-  )
-    throw new Error(
-      "le montage de la passerelle ne correspond pas à la source déclarée",
-    );
+  if (!samePath(hostPath(mountOf(inspection.Mounts, "/etc/nginx/nginx.conf").Source), config.sourceConfig))
+    throw new Error("le montage de la passerelle ne correspond pas à la source déclarée");
   const tls = config.tls?.enabled ? config.tls : undefined;
   const tlsFiles = tls
     ? ([
@@ -414,21 +338,12 @@ export async function apply(
     if (!samePath(hostPath(mount.Source), tls.directory))
       throw new Error("le montage TLS diffère du répertoire protégé déclaré");
     for (const protocol of tls.quic ? ["tcp", "udp"] : ["tcp"])
-      if (
-        !(inspection.NetworkSettings.Ports[`443/${protocol}`] ?? []).some(
-          (b) => b.HostPort === "443",
-        )
-      )
+      if (!(inspection.NetworkSettings.Ports[`443/${protocol}`] ?? []).some(b => b.HostPort === "443"))
         throw new Error(`publier 443/${protocol} dans Compose d'abord`);
     for (const [file, expected] of tlsFiles) {
       if (!sameHash(expected, sha256(readFileSync(join(tls.directory, file)))))
         throw new Error(`${file} : empreinte différente du manifeste déclaré`);
-      if (
-        !sameHash(
-          expected,
-          containerHash(config.container, `${tls.containerDirectory}/${file}`),
-        )
-      )
+      if (!sameHash(expected, containerHash(config.container, `${tls.containerDirectory}/${file}`)))
         throw new Error(`${file} : empreinte vue par le conteneur différente`);
     }
   }
@@ -439,24 +354,19 @@ export async function apply(
   const candidatePath = join(operations, `${id}.candidate.conf`);
   const inContainer = `/tmp/aphrody-site-${id}.conf`;
   writeFileSync(backup, sourceBytes);
-  if (sha256(readFileSync(backup)) !== sourceHash)
-    throw new Error("empreinte de la sauvegarde différente");
+  if (sha256(readFileSync(backup)) !== sourceHash) throw new Error("empreinte de la sauvegarde différente");
   writeFileSync(candidatePath, candidate);
   let changed = false;
   try {
     docker(["cp", candidatePath, `${config.container}:${inContainer}`]);
     docker(["exec", config.container, "nginx", "-t", "-c", inContainer]);
     if (sha256(readFileSync(config.sourceConfig)) !== sourceHash)
-      throw new Error(
-        "modification concurrente de la passerelle : original préservé",
-      );
+      throw new Error("modification concurrente de la passerelle : original préservé");
     // Rewrite in place: the bind mount follows the inode, a rename would leave Docker on the old file.
     changed = true;
     writeFileSync(config.sourceConfig, candidate);
     const candidateHash = sha256(readFileSync(config.sourceConfig));
-    if (
-      containerHash(config.container, "/etc/nginx/nginx.conf") !== candidateHash
-    )
+    if (containerHash(config.container, "/etc/nginx/nginx.conf") !== candidateHash)
       throw new Error("le conteneur ne voit pas les octets du candidat");
     docker(["exec", config.container, "nginx", "-t"]);
     docker(["exec", config.container, "nginx", "-s", "reload"]);
@@ -471,21 +381,15 @@ export async function apply(
       // oxlint-disable-next-line no-await-in-loop -- same bounded wait
       await Bun.sleep(200);
     }
-    if (http !== 204)
-      throw new Error(
-        "port 80 Host localhost n'atteint pas /health du site natif",
-      );
+    if (http !== 204) throw new Error("port 80 Host localhost n'atteint pas /health du site natif");
     if (tls) {
       // Validation against the declared local CA (second certificate of the protected chain).
       const chain = readFileSync(join(tls.directory, "leaf-chain.pem"), "utf8");
-      const ca = chain.match(
-        /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g,
-      )?.[1];
+      const ca = chain.match(/-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g)?.[1];
       const https = await status("https://localhost:443/health", {
         tls: { ca },
       } as RequestInit);
-      if (https !== 204)
-        throw new Error("santé HTTPS localhost (CA locale) en échec");
+      if (https !== 204) throw new Error("santé HTTPS localhost (CA locale) en échec");
     }
     const receipt = {
       originalSha256: sourceHash,
@@ -495,10 +399,7 @@ export async function apply(
       httpHealth: 204,
       observedAt: new Date().toISOString(),
     };
-    writeFileSync(
-      join(operations, `${id}.receipt.json`),
-      JSON.stringify(receipt, null, 2),
-    );
+    writeFileSync(join(operations, `${id}.receipt.json`), JSON.stringify(receipt, null, 2));
     return {
       applied: true,
       httpHealth: 204,
@@ -518,14 +419,11 @@ export async function apply(
     throw error;
   } finally {
     // Only this operation's candidate copy, never gateway or container data.
-    Bun.spawnSync(
-      ["docker", "exec", config.container, "rm", "-f", "--", inContainer],
-      {
-        stdout: "ignore",
-        stderr: "ignore",
-        windowsHide: true,
-      },
-    );
+    Bun.spawnSync(["docker", "exec", config.container, "rm", "-f", "--", inContainer], {
+      stdout: "ignore",
+      stderr: "ignore",
+      windowsHide: true,
+    });
   }
 }
 
@@ -537,20 +435,13 @@ function option(args: string[], name: string): string | undefined {
 async function main(args: string[]): Promise<number> {
   const [command, ...rest] = args;
   if (command !== "plan" && command !== "apply") {
-    console.error(
-      "usage : site-gateway.ts plan|apply [--config <chemin>] [--aphrody <exe>]",
-    );
+    console.error("usage : site-gateway.ts plan|apply [--config <chemin>] [--aphrody <exe>]");
     return 2;
   }
-  if (process.platform !== "win32")
-    throw new Error("contexte passerelle Windows natif requis");
+  if (process.platform !== "win32") throw new Error("contexte passerelle Windows natif requis");
   const path =
     option(rest, "--config") ??
-    join(
-      process.env.APHRODY_HOME ?? join(homedir(), ".aphrody"),
-      "host",
-      "aphrody-gateway.json",
-    );
+    join(process.env.APHRODY_HOME ?? join(homedir(), ".aphrody"), "host", "aphrody-gateway.json");
   if (!existsSync(path)) throw new Error(`configuration absente : ${path}`);
   const config = validateConfig(JSON.parse(readFileSync(path, "utf8")));
   const prepared = prepare(config, option(rest, "--aphrody") ?? "aphrody");
@@ -565,8 +456,7 @@ async function main(args: string[]): Promise<number> {
     markedBlockCount: prepared.marked,
   };
   console.log(JSON.stringify(plan, null, 2));
-  if (command === "apply")
-    console.log(JSON.stringify(await apply(config, prepared), null, 2));
+  if (command === "apply") console.log(JSON.stringify(await apply(config, prepared), null, 2));
   return 0;
 }
 
@@ -574,9 +464,7 @@ if (import.meta.main) {
   try {
     process.exit(await main(process.argv.slice(2)));
   } catch (error) {
-    console.error(
-      `site-gateway : ${error instanceof Error ? error.message : String(error)}`,
-    );
+    console.error(`site-gateway : ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }

@@ -73,10 +73,7 @@ export function auditCatalogPair(
     }
   }
 
-  const valid =
-    missingInFr.length === 0 &&
-    missingInEn.length === 0 &&
-    emptyValues.length === 0;
+  const valid = missingInFr.length === 0 && missingInEn.length === 0 && emptyValues.length === 0;
 
   return {
     valid,
@@ -109,28 +106,17 @@ export function runI18nAudit(): boolean {
   console.log(`[i18n-audit] Total string keys: ${result.totalKeys}`);
 
   if (result.missingInFr.length > 0) {
-    console.error(
-      `[i18n-audit] Missing in FR (${result.missingInFr.length}):`,
-      result.missingInFr,
-    );
+    console.error(`[i18n-audit] Missing in FR (${result.missingInFr.length}):`, result.missingInFr);
   }
   if (result.missingInEn.length > 0) {
-    console.error(
-      `[i18n-audit] Missing in EN (${result.missingInEn.length}):`,
-      result.missingInEn,
-    );
+    console.error(`[i18n-audit] Missing in EN (${result.missingInEn.length}):`, result.missingInEn);
   }
   if (result.emptyValues.length > 0) {
-    console.error(
-      `[i18n-audit] Empty values (${result.emptyValues.length}):`,
-      result.emptyValues,
-    );
+    console.error(`[i18n-audit] Empty values (${result.emptyValues.length}):`, result.emptyValues);
   }
 
   if (result.valid) {
-    console.log(
-      "[i18n-audit] PASS: 100% symmetric key parity between EN and FR, zero hardcoded empty values.",
-    );
+    console.log("[i18n-audit] PASS: 100% symmetric key parity between EN and FR, zero hardcoded empty values.");
     return true;
   } else {
     console.error("[i18n-audit] FAIL: i18n catalogs are out of sync.");

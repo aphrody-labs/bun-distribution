@@ -67,26 +67,11 @@ import {
   SwitchField,
   TextAreaField,
 } from "@aphrody/m3-forms";
-import {
-  FileThumb,
-  GridItem,
-  RenameInput,
-  TagPill,
-} from "@aphrody/m3-explorer";
-import {
-  CaptionedReader,
-  CollectionReader,
-  MangaReader,
-} from "@aphrody/m3-reader";
-import {
-  M3Document,
-  m3SchemeCss,
-} from "@aphrody/m3-next/server";
+import { FileThumb, GridItem, RenameInput, TagPill } from "@aphrody/m3-explorer";
+import { CaptionedReader, CollectionReader, MangaReader } from "@aphrody/m3-reader";
+import { M3Document, m3SchemeCss } from "@aphrody/m3-next/server";
 import { m3JsonLd } from "@aphrody/m3-next";
-import type {
-  PageKind,
-  SitePage,
-} from "../../../../../scripts/aphrody-source/audit/web-crawlability.ts";
+import type { PageKind, SitePage } from "../../../../../scripts/aphrody-source/audit/web-crawlability.ts";
 
 interface PageSpec {
   path: string;
@@ -133,11 +118,7 @@ function Shell({
           <meta name="description" content={spec.description} />
           <link rel="canonical" href={`${origin}${spec.path}`} />
           {spec.jsonLd(origin).map((data, index) => (
-            <script
-              key={index}
-              type="application/ld+json"
-              dangerouslySetInnerHTML={{ __html: m3JsonLd(data) }}
-            />
+            <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: m3JsonLd(data) }} />
           ))}
         </>
       }
@@ -149,13 +130,9 @@ function Shell({
         <p className="text-title-large">Aphrody UI</p>
         <nav aria-label="Primary">
           <ul className="flex flex-wrap gap-2">
-            {NAV.map((item) => (
+            {NAV.map(item => (
               <li key={item.href}>
-                <Button
-                  href={item.href}
-                  variant="text"
-                  aria-current={item.href === spec.path ? "page" : undefined}
-                >
+                <Button href={item.href} variant="text" aria-current={item.href === spec.path ? "page" : undefined}>
                   {item.label}
                 </Button>
               </li>
@@ -169,12 +146,10 @@ function Shell({
       </main>
       <footer className="p-4" data-testid="site-footer">
         <nav aria-label="Footer">
-          <a href="/llms.txt">llms.txt</a> · <a href="/sitemap.xml">Sitemap</a> ·{" "}
-          <a href="/robots.txt">robots.txt</a>
+          <a href="/llms.txt">llms.txt</a> · <a href="/sitemap.xml">Sitemap</a> · <a href="/robots.txt">robots.txt</a>
         </nav>
         <p className="text-body-small">
-          Material Design 3 components for React, rendered on the server and readable without
-          JavaScript.
+          Material Design 3 components for React, rendered on the server and readable without JavaScript.
         </p>
       </footer>
     </M3Document>
@@ -197,14 +172,14 @@ function Landing() {
   return (
     <>
       <p className="text-body-large">
-        This site is a crawl fixture for the Aphrody Material Design 3 packages. Each page below
-        renders real components on the server, so a crawler that never runs JavaScript sees the same
-        headings, links, form labels and landmarks that a reader does.
+        This site is a crawl fixture for the Aphrody Material Design 3 packages. Each page below renders real components
+        on the server, so a crawler that never runs JavaScript sees the same headings, links, form labels and landmarks
+        that a reader does.
       </p>
       {section(
         "Explore the component packages",
         <ul className="grid gap-4 expanded:grid-cols-2">
-          {cards.map((item) => (
+          {cards.map(item => (
             <li key={item.href}>
               <Card>
                 <CardHeader>
@@ -243,8 +218,8 @@ function Primitives() {
   return (
     <>
       <p className="text-body-large">
-        Buttons, inputs, selection controls, tabs, feedback and display components from the
-        primitives package, each with the name a screen reader or an agent would use.
+        Buttons, inputs, selection controls, tabs, feedback and display components from the primitives package, each
+        with the name a screen reader or an agent would use.
       </p>
       {section(
         "Buttons and badges",
@@ -355,9 +330,7 @@ function Primitives() {
               <Accordion.Header>
                 <Accordion.Trigger>Shipping and delivery</Accordion.Trigger>
               </Accordion.Header>
-              <Accordion.Panel>
-                Orders ship within two business days and arrive in three to five.
-              </Accordion.Panel>
+              <Accordion.Panel>Orders ship within two business days and arrive in three to five.</Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value="returns">
               <Accordion.Header>
@@ -368,9 +341,7 @@ function Primitives() {
           </Accordion.Root>
           <Collapsible defaultOpen>
             <CollapsibleTrigger>More about the plan</CollapsibleTrigger>
-            <CollapsibleContent>
-              The gold plan includes priority support and unlimited projects.
-            </CollapsibleContent>
+            <CollapsibleContent>The gold plan includes priority support and unlimited projects.</CollapsibleContent>
           </Collapsible>
         </div>,
         "disclosure",
@@ -381,9 +352,7 @@ function Primitives() {
           <Banner variant="info">Your changes were saved.</Banner>
           <InfoBanner icon="info">
             <InfoBannerText>Scheduled maintenance</InfoBannerText>
-            <InfoBannerSubtext>
-              The service will be read-only on Sunday between 02:00 and 03:00 UTC.
-            </InfoBannerSubtext>
+            <InfoBannerSubtext>The service will be read-only on Sunday between 02:00 and 03:00 UTC.</InfoBannerSubtext>
           </InfoBanner>
           <ProgressBar value={40} total={100} />
           <Meter label="Storage used" value={62} />
@@ -421,33 +390,14 @@ function FormsPage() {
   return (
     <>
       <p className="text-body-large">
-        A contact form built from the react-hook-form fields of the forms package. Every field has a
-        visible label tied to its control and supporting text where it helps.
+        A contact form built from the react-hook-form fields of the forms package. Every field has a visible label tied
+        to its control and supporting text where it helps.
       </p>
       <Form {...form}>
-        <form
-          action="/forms/submit"
-          method="post"
-          aria-label="Contact form"
-          className="flex flex-col gap-4"
-        >
-          <InputField
-            name="name"
-            label="Full name"
-            description="As it appears on your invoices."
-            required
-          />
-          <InputField
-            name="email"
-            label="Email address"
-            type="email"
-            placeholder="you@example.com"
-          />
-          <TextAreaField
-            name="message"
-            label="How can we help?"
-            description="Tell us a little about your project."
-          />
+        <form action="/forms/submit" method="post" aria-label="Contact form" className="flex flex-col gap-4">
+          <InputField name="name" label="Full name" description="As it appears on your invoices." required />
+          <InputField name="email" label="Email address" type="email" placeholder="you@example.com" />
+          <TextAreaField name="message" label="How can we help?" description="Tell us a little about your project." />
           <SelectField
             name="role"
             label="Your role"
@@ -465,16 +415,8 @@ function FormsPage() {
               { value: "gold", label: "Gold" },
             ]}
           />
-          <CheckboxField
-            name="agree"
-            label="I agree to be contacted"
-            description="You can unsubscribe at any time."
-          />
-          <SwitchField
-            name="notify"
-            label="Email notifications"
-            description="Receive a weekly summary."
-          />
+          <CheckboxField name="agree" label="I agree to be contacted" description="You can unsubscribe at any time." />
+          <SwitchField name="notify" label="Email notifications" description="Receive a weekly summary." />
           <div className="flex gap-2">
             <Button type="submit" variant="filled">
               Send message
@@ -494,8 +436,7 @@ function Explorer() {
   return (
     <>
       <p className="text-body-large">
-        File management tiles from the explorer package: selectable grid items, tag chips and an
-        inline rename field.
+        File management tiles from the explorer package: selectable grid items, tag chips and an inline rename field.
       </p>
       {section(
         "Files",
@@ -545,15 +486,14 @@ function MangaPage() {
   return (
     <>
       <p className="text-body-large">
-        A paged manga reader. Chapter navigation uses real links, and each page image carries an
-        alternative text.
+        A paged manga reader. Chapter navigation uses real links, and each page image carries an alternative text.
       </p>
       <MangaReader
         title="Chapter 1: The beginning"
         pages={MANGA_PAGES}
         prevHref="/reader/collection"
         nextHref="/reader/databook"
-        apiPageHref={(page) => `/api/pages/${page}`}
+        apiPageHref={page => `/api/pages/${page}`}
       />
     </>
   );
@@ -563,8 +503,7 @@ function DatabookPage() {
   return (
     <>
       <p className="text-body-large">
-        An illustrated databook with transcriptions, so the text of every plate is available without
-        the image.
+        An illustrated databook with transcriptions, so the text of every plate is available without the image.
       </p>
       <CaptionedReader
         title="Illustrated guide"
@@ -588,9 +527,7 @@ function DatabookPage() {
 function CollectionPage() {
   return (
     <>
-      <p className="text-body-large">
-        Edition and chapter navigation shared by volumes and illustrated collections.
-      </p>
+      <p className="text-body-large">Edition and chapter navigation shared by volumes and illustrated collections.</p>
       <CollectionReader
         title="The complete collection"
         editions={[
@@ -628,8 +565,7 @@ function DataPage() {
   return (
     <>
       <p className="text-body-large">
-        A data table and a description list, the plain HTML structures crawlers extract most
-        reliably.
+        A data table and a description list, the plain HTML structures crawlers extract most reliably.
       </p>
       {section(
         "Packages",
@@ -644,7 +580,7 @@ function DataPage() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {rows.map(row => (
               <tr key={row[1]}>
                 <th scope="row">{row[0]}</th>
                 <td>{row[1]}</td>
@@ -664,9 +600,7 @@ function DataPage() {
           <dt>SSR</dt>
           <dd>Server-side rendering: the HTML is produced before it reaches the browser.</dd>
           <dt>Landmark</dt>
-          <dd>
-            A region of the page, such as main or navigation, announced by assistive technology.
-          </dd>
+          <dd>A region of the page, such as main or navigation, announced by assistive technology.</dd>
         </dl>,
         "glossary",
       )}
@@ -696,7 +630,7 @@ const SPECS: PageSpec[] = [
     description:
       "Server-rendered Material Design 3 components that crawlers and LLM agents can read without JavaScript.",
     heading: "Aphrody UI crawl fixture",
-    jsonLd: (origin) => [website(origin)],
+    jsonLd: origin => [website(origin)],
     body: Landing,
   },
   {
@@ -706,9 +640,7 @@ const SPECS: PageSpec[] = [
     description:
       "Buttons, text fields, selection controls, tabs, feedback and display components rendered on the server.",
     heading: "Primitives",
-    jsonLd: (origin) => [
-      webPage(origin, "/primitives", "Primitives", "Server-rendered primitives"),
-    ],
+    jsonLd: origin => [webPage(origin, "/primitives", "Primitives", "Server-rendered primitives")],
     body: Primitives,
   },
   {
@@ -717,9 +649,7 @@ const SPECS: PageSpec[] = [
     title: "Forms - Aphrody UI",
     description: "A contact form built from the react-hook-form fields of the forms package.",
     heading: "Contact us",
-    jsonLd: (origin) => [
-      { ...webPage(origin, "/forms", "Contact us", "Contact form"), "@type": "ContactPage" },
-    ],
+    jsonLd: origin => [{ ...webPage(origin, "/forms", "Contact us", "Contact form"), "@type": "ContactPage" }],
     body: FormsPage,
   },
   {
@@ -728,7 +658,7 @@ const SPECS: PageSpec[] = [
     title: "Explorer - Aphrody UI",
     description: "File tiles, tag chips and an inline rename field from the explorer package.",
     heading: "File explorer",
-    jsonLd: (origin) => [webPage(origin, "/explorer", "File explorer", "Explorer components")],
+    jsonLd: origin => [webPage(origin, "/explorer", "File explorer", "Explorer components")],
     body: Explorer,
   },
   {
@@ -737,7 +667,7 @@ const SPECS: PageSpec[] = [
     title: "Manga reader - Aphrody UI",
     description: "A paged manga reader with real chapter links and image alternatives.",
     heading: "Manga reader",
-    jsonLd: (origin) => [
+    jsonLd: origin => [
       {
         "@context": "https://schema.org",
         "@type": "Chapter",
@@ -754,7 +684,7 @@ const SPECS: PageSpec[] = [
     title: "Databook reader - Aphrody UI",
     description: "An illustrated databook whose plates come with transcriptions.",
     heading: "Databook reader",
-    jsonLd: (origin) => [
+    jsonLd: origin => [
       {
         "@context": "https://schema.org",
         "@type": "Book",
@@ -770,7 +700,7 @@ const SPECS: PageSpec[] = [
     title: "Collection reader - Aphrody UI",
     description: "Edition and chapter navigation for collections of volumes.",
     heading: "Collection reader",
-    jsonLd: (origin) => [
+    jsonLd: origin => [
       {
         "@context": "https://schema.org",
         "@type": "CreativeWorkSeries",
@@ -784,10 +714,9 @@ const SPECS: PageSpec[] = [
     path: "/data",
     kind: "data",
     title: "Data - Aphrody UI",
-    description:
-      "A package table and a glossary: the plain HTML structures crawlers extract most reliably.",
+    description: "A package table and a glossary: the plain HTML structures crawlers extract most reliably.",
     heading: "Data and tables",
-    jsonLd: (origin) => [
+    jsonLd: origin => [
       {
         "@context": "https://schema.org",
         "@type": "Dataset",
@@ -802,7 +731,7 @@ const SPECS: PageSpec[] = [
 
 export async function renderPages(origin: string): Promise<SitePage[]> {
   const schemeCss = (await m3SchemeCss({}, { noFfi: true })).css;
-  return SPECS.map((spec) => {
+  return SPECS.map(spec => {
     const Body = spec.body;
     return {
       path: spec.path,

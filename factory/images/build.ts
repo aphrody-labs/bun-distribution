@@ -48,17 +48,12 @@ interface ImagesManifest {
   images: Record<string, ImageSpec>;
 }
 
-const manifest: ImagesManifest = await Bun.file(
-  join(here, "manifest.json"),
-).json();
+const manifest: ImagesManifest = await Bun.file(join(here, "manifest.json")).json();
 const sourcesDir = manifest.sources.replace(/^~/, homedir());
 
 function spec(name: string) {
   const image = manifest.images[name];
-  if (!image)
-    throw new Error(
-      `Unknown image ${name}; expected ${Object.keys(manifest.images).join("|")}`,
-    );
+  if (!image) throw new Error(`Unknown image ${name}; expected ${Object.keys(manifest.images).join("|")}`);
   return image;
 }
 
@@ -76,8 +71,7 @@ function buildArgs(name: string): Record<string, string> {
     };
   }
   if (name === "bunos-ubuntu") {
-    const kernel = pins["ubuntu-kernel"] as Pin &
-      Record<"image" | "modules", { file: string; sha256: string }>;
+    const kernel = pins["ubuntu-kernel"] as Pin & Record<"image" | "modules", { file: string; sha256: string }>;
     return {
       ...common,
       BUN_URL: bun.url!,
@@ -109,28 +103,16 @@ async function generated(name: string) {
   const omarchy = manifest.pins.omarchy as Pin & {
     pacmanRepository: { name: string; server: string };
   };
-  const bootOnly = new Set([
-    "linux-cachyos",
-    "linux-firmware",
-    usr.manifest.kernelFallback,
-  ]);
+  const bootOnly = new Set(["linux-cachyos", "linux-firmware", usr.manifest.kernelFallback]);
   const keys = [
-    ...usr.manifest.repositories.flatMap((repo) =>
-      (repo.keys ?? []).map(
-        (key) =>
-          `${key}@${(repo.keyserver ?? "keyserver.ubuntu.com").replace(/^hkps:\/\//, "")}`,
-      ),
+    ...usr.manifest.repositories.flatMap(repo =>
+      (repo.keys ?? []).map(key => `${key}@${(repo.keyserver ?? "keyserver.ubuntu.com").replace(/^hkps:\/\//, "")}`),
     ),
     `${omarchy.key}@${omarchy.keyserver}`,
   ];
   // Newest local /usr job of this composition provides the [bunos] package files.
-  const artifacts = join(
-    usr.manifest.localArtifacts.replace(/^~/, homedir()),
-    composition,
-  );
-  const jobs = (
-    await Array.fromAsync(new Bun.Glob("*/repo/*.pkg.tar.zst").scan(artifacts))
-  ).sort();
+  const artifacts = join(usr.manifest.localArtifacts.replace(/^~/, homedir()), composition);
+  const jobs = (await Array.fromAsync(new Bun.Glob("*/repo/*.pkg.tar.zst").scan(artifacts))).sort();
   const latest = jobs.at(-1)?.split(/[/\\]/)[0];
   return {
     repo: latest ? join(artifacts, latest, "repo") : undefined,
@@ -139,8 +121,7 @@ async function generated(name: string) {
       : `No [bunos] packages under ${artifacts}; run bun factory usr build --composition ${composition}`,
     files: {
       "pacman.conf": `${usr.pacmanConf.replace("file:///job/repo", "file:///var/lib/bun-os/repo")}[${omarchy.pacmanRepository.name}]\nServer = ${omarchy.pacmanRepository.server}\n`,
-      "usr.packages":
-        usr.packages.filter((pkg) => !bootOnly.has(pkg)).join("\n") + "\n",
+      "usr.packages": usr.packages.filter(pkg => !bootOnly.has(pkg)).join("\n") + "\n",
     },
     args: { PACMAN_KEYS: keys.join(" ") },
   };
@@ -189,11 +170,9 @@ async function stageAgentTooling(dir: string, tooling: AgentTooling) {
     if (server.source) {
       await cp(join(workspace, server.source), join(dir, server.name), {
         recursive: true,
-        filter: (src) => !/node_modules/.test(src),
+        filter: src => !/node_modules/.test(src),
       });
-      script.push(
-        `cp -a "$a/${server.name}" /usr/share/bun-os/${server.source.split("/").pop()}`,
-      );
+      script.push(`cp -a "$a/${server.name}" /usr/share/bun-os/${server.source.split("/").pop()}`);
     }
   const mcpServers = Object.fromEntries(
     tooling.mcpServers.map(({ name, command: [command, ...args], env }) => [
@@ -201,31 +180,23 @@ async function stageAgentTooling(dir: string, tooling: AgentTooling) {
       { command, args, ...(env ? { env } : {}) },
     ]),
   );
-  await Bun.write(
-    join(dir, "claude.json"),
-    JSON.stringify({ mcpServers }, null, 2) + "\n",
-  );
+  await Bun.write(join(dir, "claude.json"), JSON.stringify({ mcpServers }, null, 2) + "\n");
   const toml = (value: string) => JSON.stringify(value);
-  const codex = tooling.mcpServers.flatMap(
-    ({ name, command: [command, ...args], env }) => [
-      `[mcp_servers.${toml(name)}]`,
-      `command = ${toml(command!)}`,
-      `args = [${args.map(toml).join(", ")}]`,
-      ...(env
-        ? [
-            `env = { ${Object.entries(env)
-              .map(([k, v]) => `${k} = ${toml(v)}`)
-              .join(", ")} }`,
-          ]
-        : []),
-      "",
-    ],
-  );
+  const codex = tooling.mcpServers.flatMap(({ name, command: [command, ...args], env }) => [
+    `[mcp_servers.${toml(name)}]`,
+    `command = ${toml(command!)}`,
+    `args = [${args.map(toml).join(", ")}]`,
+    ...(env
+      ? [
+          `env = { ${Object.entries(env)
+            .map(([k, v]) => `${k} = ${toml(v)}`)
+            .join(", ")} }`,
+        ]
+      : []),
+    "",
+  ]);
   await Bun.write(join(dir, "codex.toml"), codex.join("\n"));
-  await Bun.write(
-    join(dir, "agent.packages"),
-    tooling.packages.join("\n") + "\nuv\n",
-  );
+  await Bun.write(join(dir, "agent.packages"), tooling.packages.join("\n") + "\nuv\n");
   script.push(
     'bunos-install-packages "$a/agent.packages"',
     "install -d /etc/skel/.claude /etc/skel/.codex",
@@ -247,21 +218,13 @@ export async function fetchSources() {
   const results: Record<string, string> = {};
   for (const [id, pin] of Object.entries(manifest.pins)) {
     const entries: [string, string, string][] = [];
-    if (pin.file && pin.url && pin.sha256)
-      entries.push([pin.file, pin.url, pin.sha256]);
+    if (pin.file && pin.url && pin.sha256) entries.push([pin.file, pin.url, pin.sha256]);
     for (const part of ["image", "modules"] as const) {
       const deb = pin[part] as { file: string; sha256: string } | undefined;
-      if (deb)
-        entries.push([deb.file, `${pin.baseUrl}/${deb.file}`, deb.sha256]);
+      if (deb) entries.push([deb.file, `${pin.baseUrl}/${deb.file}`, deb.sha256]);
     }
-    for (const [asset, digest] of Object.entries(
-      (pin.assets as Record<string, string>) ?? {},
-    ))
-      entries.push([
-        `bun-${pin.version}-${asset}`,
-        `${pin.url}${asset}`,
-        digest,
-      ]);
+    for (const [asset, digest] of Object.entries((pin.assets as Record<string, string>) ?? {}))
+      entries.push([`bun-${pin.version}-${asset}`, `${pin.url}${asset}`, digest]);
     for (const [file, url, digest] of entries) {
       const path = join(sourcesDir, file);
       if (!(await Bun.file(path).exists())) {
@@ -272,49 +235,29 @@ export async function fetchSources() {
         await Bun.write(path, response);
       }
       const actual = await sha256(path);
-      if (actual !== digest)
-        throw new Error(`${id} ${file}: sha256 ${actual} != ${digest}`);
+      if (actual !== digest) throw new Error(`${id} ${file}: sha256 ${actual} != ${digest}`);
       results[file] = digest;
     }
   }
   return { sources: sourcesDir, verified: results };
 }
 
-async function run(
-  argv: string[],
-  timeoutMs: number,
-  capture = false,
-  cwd?: string,
-) {
+async function run(argv: string[], timeoutMs: number, capture = false, cwd?: string) {
   const proc = Bun.spawn(argv, {
     cwd,
     stdio: ["ignore", capture ? "pipe" : "inherit", "inherit"],
     timeout: timeoutMs,
   });
-  const out = capture
-    ? await new Response(proc.stdout as ReadableStream).text()
-    : "";
-  if ((await proc.exited) !== 0)
-    throw new Error(`${argv[0]} exited with ${proc.exitCode}`);
+  const out = capture ? await new Response(proc.stdout as ReadableStream).text() : "";
+  if ((await proc.exited) !== 0) throw new Error(`${argv[0]} exited with ${proc.exitCode}`);
   return out;
 }
 
-function remoteScript(
-  name: string,
-  image: ImageSpec,
-  targets: string[],
-  args: Record<string, string>,
-) {
+function remoteScript(name: string, image: ImageSpec, targets: string[], args: Record<string, string>) {
   const flags = Object.entries(args)
     .map(([key, value]) => `--build-arg ${key}='${value.replaceAll("'", "")}'`)
     .join(" ");
-  const lines = [
-    "#!/usr/bin/env bash",
-    "set -uo pipefail",
-    'cd "$(dirname "$0")"',
-    "mkdir -p out",
-    ": >status",
-  ];
+  const lines = ["#!/usr/bin/env bash", "set -uo pipefail", 'cd "$(dirname "$0")"', "mkdir -p out", ": >status"];
   for (const target of targets) {
     const tag = `${name}:${target}`;
     const base = `docker buildx build --progress=plain --platform ${image.platforms.join(",")} --target ${target} ${flags} -f context/Containerfile context`;
@@ -323,14 +266,10 @@ function remoteScript(
       image.targets[target] === "rootfs"
         ? ` && { ${base} --output type=tar,dest=out/${name}-${target}-rootfs.tar && zstd -T0 -19 --rm -f out/${name}-${target}-rootfs.tar && echo "${name}-${target}-rootfs.tar.zst ok" >>status || echo "${name}-${target}-rootfs failed" >>status; }`
         : "";
-    lines.push(
-      `${base} -t ${tag} --load && echo "${tag} ok" >>status${rootfs} || echo "${tag} failed" >>status`,
-    );
+    lines.push(`${base} -t ${tag} --load && echo "${tag} ok" >>status${rootfs} || echo "${tag} failed" >>status`);
   }
   lines.push(
-    "docker image ls --format '{{.Repository}}:{{.Tag}} {{.Size}}' | grep '^" +
-      name +
-      ":' >>status",
+    "docker image ls --format '{{.Repository}}:{{.Tag}} {{.Size}}' | grep '^" + name + ":' >>status",
     "echo done >>status",
   );
   return lines.join("\n") + "\n";
@@ -339,9 +278,7 @@ function remoteScript(
 async function build(name: string, host: string, only?: string) {
   const image = spec(name);
   const targets = only ? [only] : Object.keys(image.targets);
-  for (const target of targets)
-    if (!image.targets[target])
-      throw new Error(`Unknown target ${target} for ${name}`);
+  for (const target of targets) if (!image.targets[target]) throw new Error(`Unknown target ${target} for ${name}`);
   const extra = await generated(name);
   const args = { ...buildArgs(name), ...extra.args };
   const job = `${name}-${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}`;
@@ -349,11 +286,7 @@ async function build(name: string, host: string, only?: string) {
   const stage = await mkdtemp(join(tmpdir(), "bun-os-image-"));
   try {
     await cp(join(here, name), join(stage, "context"), { recursive: true });
-    if (image.agentTooling)
-      await stageAgentTooling(
-        join(stage, "context", "agent"),
-        image.agentTooling,
-      );
+    if (image.agentTooling) await stageAgentTooling(join(stage, "context", "agent"), image.agentTooling);
     if (extra.missingRepo) throw new Error(extra.missingRepo);
     if (extra.repo)
       await cp(extra.repo, join(stage, "context", "bunos-repo"), {
@@ -361,17 +294,9 @@ async function build(name: string, host: string, only?: string) {
       });
     for (const [file, content] of Object.entries(extra.files ?? {}))
       await Bun.write(join(stage, "context", file), content);
-    await Bun.write(
-      join(stage, "build.sh"),
-      remoteScript(name, image, targets, args),
-    );
+    await Bun.write(join(stage, "build.sh"), remoteScript(name, image, targets, args));
     await run(["ssh", ...sshOptions, host, `mkdir -p ${remote}`], 30_000);
-    await run(
-      ["scp", ...sshOptions, "-r", "context", "build.sh", `${host}:${remote}/`],
-      120_000,
-      false,
-      stage,
-    );
+    await run(["scp", ...sshOptions, "-r", "context", "build.sh", `${host}:${remote}/`], 120_000, false, stage);
     const seconds = manifest.remoteTimeoutSeconds;
     await run(
       [
@@ -398,12 +323,7 @@ async function build(name: string, host: string, only?: string) {
 async function status(host: string, job: string) {
   const remote = `${manifest.remoteRoot}/${job}`;
   const out = await run(
-    [
-      "ssh",
-      ...sshOptions,
-      host,
-      `cd ${remote} && cat status; echo ---; tail -15 build.log; ls -la out`,
-    ],
+    ["ssh", ...sshOptions, host, `cd ${remote} && cat status; echo ---; tail -15 build.log; ls -la out`],
     30_000,
     true,
   );
@@ -423,10 +343,7 @@ export async function main(args: string[]) {
   const [action = "plan", name] = positionals;
   const host = values.host ?? manifest.host;
   if (action === "fetch") return fetchSources();
-  if (!name)
-    throw new Error(
-      `Expected image name: ${Object.keys(manifest.images).join("|")}`,
-    );
+  if (!name) throw new Error(`Expected image name: ${Object.keys(manifest.images).join("|")}`);
   if (action === "plan") return planImage(name);
   if (action === "build") return build(name, host, values.target);
   if (action === "status") {
@@ -436,5 +353,4 @@ export async function main(args: string[]) {
   throw new Error("Expected image plan|fetch|build|status");
 }
 
-if (import.meta.main)
-  console.log(JSON.stringify(await main(Bun.argv.slice(2)), null, 2));
+if (import.meta.main) console.log(JSON.stringify(await main(Bun.argv.slice(2)), null, 2));

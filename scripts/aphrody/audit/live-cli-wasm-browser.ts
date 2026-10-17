@@ -5,18 +5,14 @@ import { resolve } from "node:path";
 import { mkdir } from "node:fs/promises";
 
 const root = resolve(import.meta.dir, "../../../docs/aphrody");
-const wasm = Bun.file(
-  resolve(root, "packages/infra/cli-wasm/wasm/aphrody_command_wasm_bg.wasm"),
-);
-if (!(await wasm.exists()))
-  throw new Error("Build the capability-owner WASM package first");
+const wasm = Bun.file(resolve(root, "packages/infra/cli-wasm/wasm/aphrody_command_wasm_bg.wasm"));
+if (!(await wasm.exists())) throw new Error("Build the capability-owner WASM package first");
 const built = await Bun.build({
   entrypoints: [resolve(root, "packages/infra/cli-wasm/src/index.ts")],
   target: "browser",
   minify: true,
 });
-if (!built.success || built.outputs.length !== 1)
-  throw new Error("Browser facade build failed");
+if (!built.success || built.outputs.length !== 1) throw new Error("Browser facade build failed");
 const js = await built.outputs[0]!.text();
 const page = `<!doctype html><html><head><title>Aphrody WASM qualification</title></head>
 <body><pre id="result">WASM_PENDING</pre><script type="module">
@@ -50,28 +46,19 @@ const payloads = {
   "aphrody_command_wasm_bg.wasm": new Uint8Array(await wasm.arrayBuffer()),
 };
 const hashes = Object.fromEntries(
-  Object.entries(payloads).map(([name, bytes]) => [
-    name,
-    new Bun.CryptoHasher("sha256").update(bytes).digest("hex"),
-  ]),
+  Object.entries(payloads).map(([name, bytes]) => [name, new Bun.CryptoHasher("sha256").update(bytes).digest("hex")]),
 );
 if (out) {
   // Exclusive staging; never replace an existing qualification or release.
   await mkdir(resolve(out));
-  await Promise.all(
-    Object.entries(payloads).map(([name, bytes]) =>
-      Bun.write(resolve(out, name), bytes),
-    ),
-  );
+  await Promise.all(Object.entries(payloads).map(([name, bytes]) => Bun.write(resolve(out, name), bytes)));
   await Bun.write(
     resolve(out, "qualification.json"),
     JSON.stringify(
       {
         schema: "aphrody-cli-wasm-browser-qualification/v1",
-        purpose:
-          "public isolated browser qualification; not an official release or UI migration",
-        moduleSourceProvenance:
-          "unverified; bytes and tested behavior qualified separately",
+        purpose: "public isolated browser qualification; not an official release or UI migration",
+        moduleSourceProvenance: "unverified; bytes and tested behavior qualified separately",
         files: hashes,
       },
       null,
@@ -82,72 +69,42 @@ if (out) {
 }
 if (url) {
   const target = new URL(url);
-  if (
-    target.protocol !== "https:" ||
-    target.username ||
-    target.password ||
-    target.search ||
-    target.hash
-  )
+  if (target.protocol !== "https:" || target.username || target.password || target.search || target.hash)
     throw new Error("Use a credential-free public HTTPS qualification URL");
-  if (
-    target.hostname !== "os.aphrody.com" &&
-    !/^pub-[a-f0-9]+\.r2\.dev$/.test(target.hostname)
-  )
-    throw new Error(
-      "Qualification must use the declared Aphrody OS or public R2 origin",
-    );
+  if (target.hostname !== "os.aphrody.com" && !/^pub-[a-f0-9]+\.r2\.dev$/.test(target.hostname))
+    throw new Error("Qualification must use the declared Aphrody OS or public R2 origin");
   await Promise.all(
     Object.entries(payloads).map(async ([name]) => {
       const response = await fetch(new URL(name, target));
-      if (!response.ok)
-        throw new Error(
-          `Public qualification file ${name} returned ${response.status}`,
-        );
+      if (!response.ok) throw new Error(`Public qualification file ${name} returned ${response.status}`);
       const bytes = await response.arrayBuffer();
-      if (
-        new Bun.CryptoHasher("sha256").update(bytes).digest("hex") !==
-        hashes[name]
-      )
+      if (new Bun.CryptoHasher("sha256").update(bytes).digest("hex") !== hashes[name])
         throw new Error(`Public qualification integrity mismatch: ${name}`);
-      if (
-        name.endsWith(".wasm") &&
-        response.headers.get("content-type") !== "application/wasm"
-      )
+      if (name.endsWith(".wasm") && response.headers.get("content-type") !== "application/wasm")
         throw new Error("Public WASM MIME is not application/wasm");
     }),
   );
-  const proc = Bun.spawn(
-    ["aphrody", "web", "browser", "snapshot", target.href, "--json"],
-    {
-      windowsHide: true,
-      stdout: "pipe",
-      stderr: "pipe",
-    },
-  );
+  const proc = Bun.spawn(["aphrody", "web", "browser", "snapshot", target.href, "--json"], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [stdout, stderr, exitCode] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
-  if (exitCode !== 0)
-    throw new Error(`Native Aphrody Web failed (${exitCode}): ${stderr}`);
+  if (exitCode !== 0) throw new Error(`Native Aphrody Web failed (${exitCode}): ${stderr}`);
   const snapshot = JSON.parse(stdout) as { url: string; snapshot: string };
-  if (
-    !snapshot.snapshot.includes("WASM_BROWSER_PASS") ||
-    snapshot.snapshot.includes("WASM_BROWSER_FAIL")
-  )
+  if (!snapshot.snapshot.includes("WASM_BROWSER_PASS") || snapshot.snapshot.includes("WASM_BROWSER_FAIL"))
     throw new Error(`Browser qualification incomplete: ${snapshot.snapshot}`);
   console.log(
     JSON.stringify(
       {
         browser: "aphrody web browser snapshot",
-        scope:
-          "public browser WASM qualification; not full OS frontend migration",
+        scope: "public browser WASM qualification; not full OS frontend migration",
         wasmBytes: wasm.size,
-        wasmSha256: new Bun.CryptoHasher("sha256")
-          .update(await wasm.arrayBuffer())
-          .digest("hex"),
+        wasmSha256: new Bun.CryptoHasher("sha256").update(await wasm.arrayBuffer()).digest("hex"),
         snapshot: snapshot.snapshot,
       },
       null,
@@ -156,6 +113,4 @@ if (url) {
   );
 }
 if (!out && !url)
-  throw new Error(
-    "Usage: live-cli-wasm-browser.ts --out <new-directory> | --url <public-qualification-url>",
-  );
+  throw new Error("Usage: live-cli-wasm-browser.ts --out <new-directory> | --url <public-qualification-url>");

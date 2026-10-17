@@ -5,16 +5,16 @@ Play over the `wg1` mesh (VPS `10.200.77.1`, workstation `10.200.77.4`; `aphrody
 already allows the whole mesh, including the Remote Play discovery and stream ports
 27031-27037). Run it as `ubuntu` on the VPS; it is idempotent and pins every version at the top.
 
-| Layer | Owner on the VPS |
-| --- | --- |
+| Layer        | Owner on the VPS                                                                                                                                                                                                                                                              |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Games volume | `/games`: sparse 180 GiB loop image on `sda` (`/var/lib/aphrody-games/games.img`), ext4 with casefold (`chattr +F` on `SteamLibrary`, `heroic`, `prefixes`), `noatime,lazytime`. `sda` reads ~2.1 GB/s against ~15 MB/s for the btrfs pool on `sdb`/`sdc` that holds `/home`. |
-| Steam | Ubuntu `steam-installer`; library `/games/SteamLibrary` |
-| Proton | Valve Proton (installed by Steam) and `GE-Proton` in `/games/tools/compatibilitytools.d` (`STEAM_EXTRA_COMPAT_TOOLS_PATHS`) |
-| Anti-cheat | Proton EasyAntiCheat runtime (Steam app 1826330) and BattlEye runtime (1161040) in `/games/tools/runtimes`, exported as `PROTON_EAC_RUNTIME` / `PROTON_BATTLEYE_RUNTIME` |
-| Direct3D | DXVK (D3D8-11) in `/opt/dxvk/current`, vkd3d-proton (D3D12) in `/opt/vkd3d-proton/current`; Proton ships its own copies |
-| Vulkan | Mesa lavapipe (the VPS has no GPU: KVM, Cirrus VGA) and the LunarG Vulkan SDK in `/opt/vulkan-sdk/current` (`/etc/profile.d/vulkan-sdk.sh`) |
-| Epic | Heroic with its bundled `legendary` (`/usr/local/bin/legendary`, games in `/games/heroic`), the Epic Games Launcher in the Proton prefix `/games/prefixes/epic`, umu-launcher for Proton outside Steam |
-| Session | gamescope headless running Steam Big Picture: user unit `bun-os-gamescope.service` (not enabled while another Steam client runs under `ubuntu`) |
+| Steam        | Ubuntu `steam-installer`; library `/games/SteamLibrary`                                                                                                                                                                                                                       |
+| Proton       | Valve Proton (installed by Steam) and `GE-Proton` in `/games/tools/compatibilitytools.d` (`STEAM_EXTRA_COMPAT_TOOLS_PATHS`)                                                                                                                                                   |
+| Anti-cheat   | Proton EasyAntiCheat runtime (Steam app 1826330) and BattlEye runtime (1161040) in `/games/tools/runtimes`, exported as `PROTON_EAC_RUNTIME` / `PROTON_BATTLEYE_RUNTIME`                                                                                                      |
+| Direct3D     | DXVK (D3D8-11) in `/opt/dxvk/current`, vkd3d-proton (D3D12) in `/opt/vkd3d-proton/current`; Proton ships its own copies                                                                                                                                                       |
+| Vulkan       | Mesa lavapipe (the VPS has no GPU: KVM, Cirrus VGA) and the LunarG Vulkan SDK in `/opt/vulkan-sdk/current` (`/etc/profile.d/vulkan-sdk.sh`)                                                                                                                                   |
+| Epic         | Heroic with its bundled `legendary` (`/usr/local/bin/legendary`, games in `/games/heroic`), the Epic Games Launcher in the Proton prefix `/games/prefixes/epic`, umu-launcher for Proton outside Steam                                                                        |
+| Session      | gamescope headless running Steam Big Picture: user unit `bun-os-gamescope.service` (not enabled while another Steam client runs under `ubuntu`)                                                                                                                               |
 
 Compositor choice: gamescope is the Wayland compositor Steam itself drives (SteamOS gaming mode),
 with a headless backend and PipeWire capture for Remote Play. The Rust compositors of Bun OS

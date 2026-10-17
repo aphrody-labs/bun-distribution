@@ -28,8 +28,7 @@ function tlv(b: Uint8Array, off: number): Tlv {
   let hdr = 2;
   if (len & 0x80) {
     const n = len & 0x7f;
-    if (n === 0 || n > 4 || off + 2 + n > b.byteLength)
-      throw new Error("longueur DER invalide");
+    if (n === 0 || n > 4 || off + 2 + n > b.byteLength) throw new Error("longueur DER invalide");
     len = 0;
     for (let i = 0; i < n; i++) len = len * 256 + b[off + 2 + i]!;
     hdr += n;
@@ -50,8 +49,7 @@ function kids(b: Uint8Array, t: Tlv): Tlv[] {
   return out;
 }
 
-const eq = (a: Uint8Array, b: Uint8Array) =>
-  a.byteLength === b.byteLength && a.every((x, i) => x === b[i]);
+const eq = (a: Uint8Array, b: Uint8Array) => a.byteLength === b.byteLength && a.every((x, i) => x === b[i]);
 const raw = (b: Uint8Array, t: Tlv) => b.subarray(t.start - t.hdr, t.end);
 
 const OID = {
@@ -74,12 +72,10 @@ function nameAttr(b: Uint8Array, name: Tlv, oid: string): string | null {
   for (const rdn of kids(b, name)) {
     for (const atv of kids(b, rdn)) {
       const [type, value] = kids(b, atv);
-      if (!type || !value || hex(b.subarray(type.start, type.end)) !== oid)
-        continue;
+      if (!type || !value || hex(b.subarray(type.start, type.end)) !== oid) continue;
       const bytes = b.subarray(value.start, value.end);
       // BMPString (0x1e) is UTF-16BE; the others are ASCII/UTF-8 compatible.
-      if (value.tag === 0x1e)
-        return Buffer.from(bytes).swap16().toString("utf16le");
+      if (value.tag === 0x1e) return Buffer.from(bytes).swap16().toString("utf16le");
       return new TextDecoder().decode(bytes);
     }
   }
@@ -104,25 +100,17 @@ export function parseSignedData(b: Uint8Array): Authenticode | null {
   if (b.byteLength < 4) return null;
   const contentInfo = tlv(b, 0);
   const [oid, explicit] = kids(b, contentInfo);
-  if (
-    !oid ||
-    hex(b.subarray(oid.start, oid.end)) !== OID.signedData ||
-    !explicit
-  )
-    return null;
+  if (!oid || hex(b.subarray(oid.start, oid.end)) !== OID.signedData || !explicit) return null;
   const signedData = kids(b, explicit)[0];
   if (!signedData) return null;
   const parts = kids(b, signedData);
-  const certSet = parts.find((p) => p.tag === 0xa0);
+  const certSet = parts.find(p => p.tag === 0xa0);
   const signerInfos = parts.at(-1);
-  const certs = certSet ? kids(b, certSet).filter((c) => c.tag === 0x30) : [];
+  const certs = certSet ? kids(b, certSet).filter(c => c.tag === 0x30) : [];
   let issuerRaw: Uint8Array | null = null;
   let serialRaw: Uint8Array | null = null;
   let digest: string | null = null;
-  const signerInfo =
-    signerInfos && signerInfos.tag === 0x31
-      ? kids(b, signerInfos)[0]
-      : undefined;
+  const signerInfo = signerInfos && signerInfos.tag === 0x31 ? kids(b, signerInfos)[0] : undefined;
   if (signerInfo) {
     const si = kids(b, signerInfo);
     const sid = si[1];
@@ -134,10 +122,7 @@ export function parseSignedData(b: Uint8Array): Authenticode | null {
       }
     }
     const alg = si[2] ? kids(b, si[2])[0] : undefined;
-    if (alg)
-      digest =
-        DIGESTS[hex(b.subarray(alg.start, alg.end))] ??
-        hex(b.subarray(alg.start, alg.end));
+    if (alg) digest = DIGESTS[hex(b.subarray(alg.start, alg.end))] ?? hex(b.subarray(alg.start, alg.end));
   }
   let signer: string | null = null;
   let issuer: string | null = null;
@@ -151,10 +136,7 @@ export function parseSignedData(b: Uint8Array): Authenticode | null {
     const iss = f[i + 2];
     const subject = f[i + 4];
     if (!serial || !iss || !subject) continue;
-    const match =
-      issuerRaw && serialRaw
-        ? eq(raw(b, iss), issuerRaw) && eq(raw(b, serial), serialRaw)
-        : false;
+    const match = issuerRaw && serialRaw ? eq(raw(b, iss), issuerRaw) && eq(raw(b, serial), serialRaw) : false;
     if (match || (!issuerRaw && signer === null)) {
       signer = nameAttr(b, subject, OID.cn) ?? nameAttr(b, subject, OID.o);
       issuer = nameAttr(b, iss, OID.cn) ?? nameAttr(b, iss, OID.o);

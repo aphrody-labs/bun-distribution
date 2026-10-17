@@ -4,15 +4,7 @@ import { buildArgs, parseArgs, releaseTag } from "./container-image";
 
 describe("container-image", () => {
   test("parses command and options", () => {
-    const { command, options } = parseArgs([
-      "release",
-      "--host",
-      "dbfr",
-      "--host",
-      "vps",
-      "--ref",
-      "ghcr.io/a/b",
-    ]);
+    const { command, options } = parseArgs(["release", "--host", "dbfr", "--host", "vps", "--ref", "ghcr.io/a/b"]);
     expect(command).toBe("release");
     expect(options.hosts).toEqual(["dbfr", "vps"]);
     expect(options.ref).toBe("ghcr.io/a/b");

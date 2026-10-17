@@ -20,15 +20,10 @@ test("transport hands off only a bounded JSON request to the exact pinned DBFR c
   expect(call.command).toContain("sudo -n timeout 900");
   expect(call.command).toContain("--stdin");
   expect(call.timeoutMs).toBe(930000);
-  expect(() =>
-    sourceConsumerCommand(
-      { ...transport, consumerModulePath: "/etc/owner/x;touch" },
-      request,
-    ),
-  ).toThrow("Safe");
-  expect(() =>
-    sourceConsumerCommand({ ...transport, host: "foreign" } as never, request),
-  ).toThrow("DBFR");
+  expect(() => sourceConsumerCommand({ ...transport, consumerModulePath: "/etc/owner/x;touch" }, request)).toThrow(
+    "Safe",
+  );
+  expect(() => sourceConsumerCommand({ ...transport, host: "foreign" } as never, request)).toThrow("DBFR");
 });
 const sha = "a".repeat(64);
 const config: SourceConsumerConfiguration = {
@@ -71,9 +66,7 @@ test("qualified actual loader no-change result is retained without pretending a 
   expect(proof.noChange).toBe(true);
 });
 test("changed pins, protected scope escapes and foreign targets cannot invoke a product loader", async () => {
-  expect(() =>
-    validateSourceConsumer({ ...config, productModuleSha256: "bad" }, request),
-  ).toThrow("SHA256");
+  expect(() => validateSourceConsumer({ ...config, productModuleSha256: "bad" }, request)).toThrow("SHA256");
   expect(() =>
     validateSourceConsumer(config, {
       ...request,

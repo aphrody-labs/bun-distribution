@@ -136,7 +136,9 @@ for (const table of pgTables) {
     // SQLite tolerates NULL in a TEXT primary key; Postgres does not. Fall back to the row's
     // natural key (`<x>_id`, then `code`).
     if (converted.id === null && "id" in converted) {
-      const natural = shared.find(column => column.name !== "id" && /(_id|^code)$/.test(column.name) && row[column.name] != null);
+      const natural = shared.find(
+        column => column.name !== "id" && /(_id|^code)$/.test(column.name) && row[column.name] != null,
+      );
       if (natural) converted.id = String(row[natural.name]);
     }
     batch.push(converted);

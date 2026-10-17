@@ -18,9 +18,7 @@ import { parseArgs } from "node:util";
 export type CookieLayout = { home: string; cookies: string };
 
 const same = (a: string, b: string) =>
-  process.platform === "win32"
-    ? resolve(a).toLowerCase() === resolve(b).toLowerCase()
-    : resolve(a) === resolve(b);
+  process.platform === "win32" ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b);
 
 /**
  * Explicit options first, then `APHRODY_HOME`/`BXC_COOKIES_DIR`, then `~/.aphrody/cookies`.
@@ -31,13 +29,9 @@ export function cookieLayout(
   env: NodeJS.ProcessEnv = process.env,
 ): CookieLayout {
   const home = options.home ?? env.APHRODY_HOME ?? join(homedir(), ".aphrody");
-  const cookies = resolve(
-    options.dir ?? env.BXC_COOKIES_DIR ?? join(home, "cookies"),
-  );
+  const cookies = resolve(options.dir ?? env.BXC_COOKIES_DIR ?? join(home, "cookies"));
   if (env.BXC_COOKIES_DIR && !same(env.BXC_COOKIES_DIR, cookies))
-    throw new Error(
-      "BXC_COOKIES_DIR désigne un autre répertoire ; ambiguïté refusée.",
-    );
+    throw new Error("BXC_COOKIES_DIR désigne un autre répertoire ; ambiguïté refusée.");
   return { home, cookies };
 }
 
@@ -45,17 +39,13 @@ export function cookieLayout(
  * Creates the store with owner-only access and, on Windows, persists the layout in the user
  * environment unless `persist` is false. Returns the applied Windows SDDL, if any.
  */
-export async function secureCookieStore(
-  layout: CookieLayout,
-  persist = true,
-): Promise<string | null> {
+export async function secureCookieStore(layout: CookieLayout, persist = true): Promise<string | null> {
   mkdirSync(layout.cookies, { recursive: true });
   if (process.platform !== "win32") {
     chmodSync(layout.cookies, 0o700);
     return null;
   }
-  const { restrictToCurrentUser, setUserEnvironment } =
-    await import("./infra/win32-user.ts");
+  const { restrictToCurrentUser, setUserEnvironment } = await import("./infra/win32-user.ts");
   const sddl = restrictToCurrentUser(layout.cookies, true);
   if (persist)
     setUserEnvironment({

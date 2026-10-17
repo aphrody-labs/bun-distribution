@@ -7,26 +7,18 @@ import { dirname, join } from "node:path";
 type JsonObject = Record<string, unknown>;
 
 function object(value: unknown): JsonObject {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? (value as JsonObject)
-    : {};
+  return value !== null && typeof value === "object" && !Array.isArray(value) ? (value as JsonObject) : {};
 }
 
 function array(value: unknown): JsonObject[] {
-  return Array.isArray(value)
-    ? value.filter((item) => item !== null && typeof item === "object")
-    : [];
+  return Array.isArray(value) ? value.filter(item => item !== null && typeof item === "object") : [];
 }
 
-function mergeBy<T extends JsonObject>(
-  userItems: T[],
-  managedItems: T[],
-  identity: (item: T) => string,
-): T[] {
+function mergeBy<T extends JsonObject>(userItems: T[], managedItems: T[], identity: (item: T) => string): T[] {
   const result = [...userItems];
   for (const item of managedItems) {
     const key = identity(item);
-    if (!result.some((existing) => identity(existing) === key)) result.push(item);
+    if (!result.some(existing => identity(existing) === key)) result.push(item);
   }
   return result;
 }
@@ -35,9 +27,8 @@ function mergeMenu(userItems: JsonObject[], managedItems: JsonObject[]): JsonObj
   const result = [...userItems];
   for (const item of managedItems) {
     if (item.type !== "profile" || typeof item.profile !== "string") continue;
-    if (result.some((existing) => existing.type === "profile" && existing.profile === item.profile))
-      continue;
-    const tail = result.findIndex((existing) => existing.type === "remainingProfiles");
+    if (result.some(existing => existing.type === "profile" && existing.profile === item.profile)) continue;
+    const tail = result.findIndex(existing => existing.type === "remainingProfiles");
     result.splice(tail < 0 ? result.length : tail, 0, item);
   }
   return result;
@@ -48,18 +39,16 @@ function mergeTerminalSettings(userValue: unknown, managedValue: unknown): JsonO
   const managed = object(managedValue);
   const result: JsonObject = { ...managed, ...user };
 
-  result.actions = mergeBy(array(user.actions), array(managed.actions), (item) =>
+  result.actions = mergeBy(array(user.actions), array(managed.actions), item =>
     String(item.id ?? JSON.stringify(item)),
   );
-  result.keybindings = mergeBy(array(user.keybindings), array(managed.keybindings), (item) =>
+  result.keybindings = mergeBy(array(user.keybindings), array(managed.keybindings), item =>
     String(item.keys ?? item.id ?? JSON.stringify(item)),
   );
-  result.schemes = mergeBy(array(user.schemes), array(managed.schemes), (item) =>
+  result.schemes = mergeBy(array(user.schemes), array(managed.schemes), item =>
     String(item.name ?? JSON.stringify(item)),
   );
-  result.themes = mergeBy(array(user.themes), array(managed.themes), (item) =>
-    String(item.name ?? JSON.stringify(item)),
-  );
+  result.themes = mergeBy(array(user.themes), array(managed.themes), item => String(item.name ?? JSON.stringify(item)));
   result.newTabMenu = mergeMenu(array(user.newTabMenu), array(managed.newTabMenu));
 
   const userProfiles = object(user.profiles);
@@ -68,7 +57,7 @@ function mergeTerminalSettings(userValue: unknown, managedValue: unknown): JsonO
     ...managedProfiles,
     ...userProfiles,
     defaults: { ...object(managedProfiles.defaults), ...object(userProfiles.defaults) },
-    list: mergeBy(array(userProfiles.list), array(managedProfiles.list), (item) =>
+    list: mergeBy(array(userProfiles.list), array(managedProfiles.list), item =>
       String(item.guid ?? JSON.stringify(item)),
     ),
   };
@@ -84,7 +73,7 @@ async function sameFile(left: string, right: string): Promise<boolean> {
 const args = new Set(Bun.argv.slice(2));
 const check = args.has("--check");
 const windowsTerminalOnly = args.has("--windows-terminal");
-if ([...args].some((arg) => arg !== "--check" && arg !== "--windows-terminal")) {
+if ([...args].some(arg => arg !== "--check" && arg !== "--windows-terminal")) {
   throw new Error("Usage: bun install.ts [--check] [--windows-terminal]");
 }
 
@@ -96,12 +85,10 @@ let drift = 0;
 
 if (!windowsTerminalOnly) {
   const themeRoot = join(here, "rio", "themes");
-  const themeNames = await Array.fromAsync(
-    new Bun.Glob("*").scan({ cwd: themeRoot, onlyFiles: true }),
-  );
+  const themeNames = await Array.fromAsync(new Bun.Glob("*").scan({ cwd: themeRoot, onlyFiles: true }));
   const rioPairs = [
     [join(here, "rio", "config.toml"), join(rio, "config.toml")],
-    ...themeNames.map((name) => [join(themeRoot, name), join(rio, "themes", name)]),
+    ...themeNames.map(name => [join(themeRoot, name), join(rio, "themes", name)]),
   ] as const;
 
   const results = await Promise.all(

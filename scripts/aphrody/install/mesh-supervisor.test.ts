@@ -2,14 +2,7 @@
 import { expect, test } from "bun:test";
 import { dirname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import {
   composeArgs,
   adapterDue,
@@ -46,14 +39,10 @@ function alive(pid: number): boolean {
   }
 }
 
-async function waitUntil(
-  predicate: () => boolean,
-  timeout = 10_000,
-): Promise<void> {
+async function waitUntil(predicate: () => boolean, timeout = 10_000): Promise<void> {
   const deadline = Date.now() + timeout;
   while (!predicate()) {
-    if (Date.now() >= deadline)
-      throw new Error("native recovery condition timed out");
+    if (Date.now() >= deadline) throw new Error("native recovery condition timed out");
     // oxlint-disable-next-line no-await-in-loop -- bounded polling of an actual process/health receipt
     await Bun.sleep(50);
   }
@@ -83,8 +72,7 @@ test.skipIf(process.platform !== "win32")(
 
 test("native recovery stays online without Docker and isolates env errors, then tears down owned children", async () => {
   const fixture = mkdtempSync(join(tmpdir(), "mesh-recovery-test-"));
-  if (dirname(resolve(fixture)) !== resolve(tmpdir()))
-    throw new Error("invalid fixture cleanup path");
+  if (dirname(resolve(fixture)) !== resolve(tmpdir())) throw new Error("invalid fixture cleanup path");
   const fixtureHome = join(fixture, "home");
   const nativeMarker = join(fixture, "native.json");
   const receiptPath = join(fixtureHome, "run", "mesh.json");
@@ -112,8 +100,7 @@ await new Promise(() => {});
     async fetch() {
       try {
         const target = marker();
-        if (target)
-          return await fetch(target.url, { signal: AbortSignal.timeout(500) });
+        if (target) return await fetch(target.url, { signal: AbortSignal.timeout(500) });
       } catch {
         /* An absent owned child is unhealthy. */
       }
@@ -127,9 +114,7 @@ await new Promise(() => {});
       member: "dbfr",
       root: fixture,
       home: fixtureHome,
-      compose: [
-        { file: join(fixture, "absent-compose.yaml"), services: ["pc"] },
-      ],
+      compose: [{ file: join(fixture, "absent-compose.yaml"), services: ["pc"] }],
       adapters: [
         {
           id: "bad-env",
@@ -183,25 +168,18 @@ await new Promise(() => {});
       } catch {
         return false;
       }
-      return (
-        receipt?.health[0]?.healthy === true &&
-        receipt?.compose[0]?.status === "degraded"
-      );
+      return receipt?.health[0]?.healthy === true && receipt?.compose[0]?.status === "degraded";
     });
     expect(supervisor.exitCode).toBeNull();
     expect(receipt!.status).toBe("degraded");
-    expect(receipt!.adapters.find((a) => a.id === "bad-env")).toMatchObject({
+    expect(receipt!.adapters.find(a => a.id === "bad-env")).toMatchObject({
       pid: null,
       error: "native adapter or protected environment unavailable",
     });
-    expect(
-      receipt!.adapters.find((a) => a.id === "recovery")?.error,
-    ).toBeNull();
+    expect(receipt!.adapters.find(a => a.id === "recovery")?.error).toBeNull();
     const native = marker()!;
     expect(alive(native.pid)).toBe(true);
-    expect(await (await fetch(native.url)).text()).toBe(
-      "native-recovery-ready",
-    );
+    expect(await (await fetch(native.url)).text()).toBe("native-recovery-ready");
     supervisor.kill();
     await supervisor.exited;
     await waitUntil(() => !alive(native.pid), 3000);
@@ -273,15 +251,7 @@ test("reject credentials in command arguments, URLs and env outside the protecte
 
 test("startup selects declared existing services and waits for their real health, without building", () => {
   const argv = composeArgs(config().compose[0]!, "up");
-  expect(argv.slice(-7)).toEqual([
-    "up",
-    "-d",
-    "--no-build",
-    "--wait",
-    "--wait-timeout",
-    "120",
-    "pc",
-  ]);
+  expect(argv.slice(-7)).toEqual(["up", "-d", "--no-build", "--wait", "--wait-timeout", "120", "pc"]);
   expect(argv).not.toContain("--remove-orphans");
   expect(argv).not.toContain("--build");
   expect(() =>
@@ -330,34 +300,23 @@ test("health fails on errors, redirects and authentication failure instead of ac
   }
 });
 
-test.skipIf(process.platform !== "win32")(
-  "fork Windows Job closes its owned long-running child",
-  async () => {
-    const { Job } = await import("bun:windows");
-    const job = new Job({ killOnClose: true });
-    const child = Bun.spawn(
-      [process.execPath, "-e", "await Bun.sleep(120000)"],
-      {
-        windowsHide: true,
-        stdin: "ignore",
-        stdout: "ignore",
-        stderr: "ignore",
-      },
-    );
-    try {
-      job.assign(child);
-      expect(job.info().pids).toContain(child.pid);
-      job.close();
-      expect(
-        await Promise.race([
-          child.exited.then(() => true),
-          Bun.sleep(1000).then(() => false),
-        ]),
-      ).toBe(true);
-      expect(job.closed).toBe(true);
-    } finally {
-      if (!job.closed) job.close();
-      child.kill();
-    }
-  },
-);
+test.skipIf(process.platform !== "win32")("fork Windows Job closes its owned long-running child", async () => {
+  const { Job } = await import("bun:windows");
+  const job = new Job({ killOnClose: true });
+  const child = Bun.spawn([process.execPath, "-e", "await Bun.sleep(120000)"], {
+    windowsHide: true,
+    stdin: "ignore",
+    stdout: "ignore",
+    stderr: "ignore",
+  });
+  try {
+    job.assign(child);
+    expect(job.info().pids).toContain(child.pid);
+    job.close();
+    expect(await Promise.race([child.exited.then(() => true), Bun.sleep(1000).then(() => false)])).toBe(true);
+    expect(job.closed).toBe(true);
+  } finally {
+    if (!job.closed) job.close();
+    child.kill();
+  }
+});

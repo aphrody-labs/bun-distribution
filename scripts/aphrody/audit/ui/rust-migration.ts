@@ -35,7 +35,7 @@ function sourceFiles(list: string): string[] {
       list
         .split("\0")
         .filter(
-          (path) =>
+          path =>
             /\.(?:ts|tsx|js|jsx|html|css)$/.test(path) &&
             !/(?:^|\/)(?:node_modules|\.cache|target|\.coord)\//.test(path),
         ),
@@ -49,30 +49,26 @@ function classify(path: string): {
   target: string;
   status: string;
 } {
-  const role =
-    /(?:^|\/)(?:test|tests|fixtures|test-dom)(?:\/)|\.(?:test|spec)\./.test(
-      path,
-    )
-      ? "test / fixture"
-      : /(?:server|site)\.ts$/.test(path)
-        ? "HTTP server / launcher"
-        : /(?:build|config|scripts)(?:\/|\.)/.test(path)
-          ? "build / tooling"
-          : path.endsWith(".css")
-            ? "styles / tokens"
-            : path.endsWith(".html")
-              ? "HTML document"
-              : path.endsWith(".tsx") || path.endsWith(".jsx")
-                ? "component / view"
-                : path.endsWith(".d.ts")
-                  ? "type contract"
-                  : "module / behavior";
+  const role = /(?:^|\/)(?:test|tests|fixtures|test-dom)(?:\/)|\.(?:test|spec)\./.test(path)
+    ? "test / fixture"
+    : /(?:server|site)\.ts$/.test(path)
+      ? "HTTP server / launcher"
+      : /(?:build|config|scripts)(?:\/|\.)/.test(path)
+        ? "build / tooling"
+        : path.endsWith(".css")
+          ? "styles / tokens"
+          : path.endsWith(".html")
+            ? "HTML document"
+            : path.endsWith(".tsx") || path.endsWith(".jsx")
+              ? "component / view"
+              : path.endsWith(".d.ts")
+                ? "type contract"
+                : "module / behavior";
   if (path.startsWith("apps/web/"))
     return {
       surface: "retired app",
       role,
-      target:
-        "crates/web/site + canonical m3/packages/app-ui; WebOS fork owner",
+      target: "crates/web/site + canonical m3/packages/app-ui; WebOS fork owner",
       status: "removed unused legacy source; NOT Rust frontend parity",
     };
   if (path.includes("/ui-dist/"))
@@ -96,16 +92,14 @@ function classify(path: string): {
     return {
       surface: "M3 framework / example / template",
       role,
-      target:
-        "crates/ui/m3 (lot uirust-m3) + crates/ui/{m3-tokens,taffy,render,softraster,svg,sprite-sheet}",
+      target: "crates/ui/m3 (lot uirust-m3) + crates/ui/{m3-tokens,taffy,render,softraster,svg,sprite-sheet}",
       status: "TS source; Rust component parity pending",
     };
   if (path.startsWith("packages/web/"))
     return {
       surface: "web capability",
       role,
-      target:
-        "crates/web/{web-engine,obscura-*,webos-wasm} existing capability owner",
+      target: "crates/web/{web-engine,obscura-*,webos-wasm} existing capability owner",
       status: "TS capability / tests; file-level Rust parity pending",
     };
   if (path.startsWith("crates/web/"))
@@ -113,8 +107,7 @@ function classify(path: string): {
       surface: "native site / WASM",
       role,
       target: "crates/web/site + crates/aphrody-webos-wasm",
-      status:
-        "JS/HTML/CSS asset or bridge; native HTTP present, frontend parity pending",
+      status: "JS/HTML/CSS asset or bridge; native HTTP present, frontend parity pending",
     };
   return {
     surface: "desktop / Tauri / renderer",
@@ -125,36 +118,16 @@ function classify(path: string): {
 }
 
 const current = sourceFiles(
-  git(
-    root,
-    "ls-files",
-    "-z",
-    "--cached",
-    "--others",
-    "--exclude-standard",
-    "--",
-    ...roots,
-  ),
-).filter((path) => existsSync(resolve(root, path)));
-const retired = sourceFiles(
-  git(root, "ls-tree", "-r", "--name-only", "-z", checkpoint, "--", "apps/web"),
-).filter((path) => !existsSync(resolve(root, path)));
-const deletedTotal = git(
-  root,
-  "ls-tree",
-  "-r",
-  "--name-only",
-  checkpoint,
-  "--",
-  "apps/web",
-)
+  git(root, "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", ...roots),
+).filter(path => existsSync(resolve(root, path)));
+const retired = sourceFiles(git(root, "ls-tree", "-r", "--name-only", "-z", checkpoint, "--", "apps/web")).filter(
+  path => !existsSync(resolve(root, path)),
+);
+const deletedTotal = git(root, "ls-tree", "-r", "--name-only", checkpoint, "--", "apps/web")
   .split("\n")
   .filter(Boolean).length;
 const fork = process.env.APHRODY_BUN_CHECKOUT;
-if (!fork)
-  throw new Error(
-    "Set APHRODY_BUN_CHECKOUT to inspect the actual Bun Rust owners.",
-  );
+if (!fork) throw new Error("Set APHRODY_BUN_CHECKOUT to inspect the actual Bun Rust owners.");
 const originMain = git(fork, "rev-parse", "origin/main");
 const forkHead = git(fork, "rev-parse", "HEAD");
 const workspace = readFileSync(resolve(fork, "Cargo.toml"), "utf8");
@@ -174,39 +147,30 @@ const crates = [
   "bun_sourcemap",
   "bun_semver",
 ];
-const crateRows = crates.map((name) => {
-  const match = workspace.match(
-    new RegExp(`^${name}\\s*=\\s*\\{[^\\n]*path\\s*=\\s*"([^"]+)"`, "m"),
-  );
+const crateRows = crates.map(name => {
+  const match = workspace.match(new RegExp(`^${name}\\s*=\\s*\\{[^\\n]*path\\s*=\\s*"([^"]+)"`, "m"));
   if (!match) throw new Error(`Missing Bun workspace owner: ${name}`);
   const manifest = readFileSync(resolve(fork, match[1]!, "Cargo.toml"), "utf8");
   const actualName = manifest.match(/^name\s*=\s*"([^"]+)"/m)?.[1];
-  if (actualName !== name)
-    throw new Error(`Bun crate identity mismatch: ${name} != ${actualName}`);
+  if (actualName !== name) throw new Error(`Bun crate identity mismatch: ${name} != ${actualName}`);
   return `| ${name} | ${match[1]}/Cargo.toml | verified manifest; downstream integration pending |`;
 });
 const textCell = (value: string) => value.replaceAll("|", "\\|");
-const rows = [...current, ...retired].toSorted().map((path) => {
+const rows = [...current, ...retired].toSorted().map(path => {
   const record = classify(path);
   return `| ${path} | ${record.surface} | ${record.role} | ${textCell(record.target)} | ${record.status} |`;
 });
-const section = `${begin}\n## Generated file inventory\n\nRegenerate: \`bun scripts/audit/ui/rust-migration.ts\`; validate reproducibility: append \`--check\`. Git-tracked and unignored new source files are enumerated under ${roots.map((path) => `\`${path}\``).join(", ")}; caches and node_modules are excluded. Generated tracked ui-dist files remain explicit artifact rows.\n\nCurrent files: **${current.length}**. Retired TS/TSX/JS/HTML/CSS files: **${retired.length}**, from **${deletedTotal}** checkpointed apps/web files at \`${checkpoint}\`. Retired files had no active consumer in the native site launcher or canonical build. Their deletion does not establish Rust frontend parity.\n\nActive app-ui, M3 showcase and Bun WebOS remain TypeScript. Native Rust owns the site HTTP routes and catalogs; the canonical app consumer/build and native public routes are qualified. Rust-only component, rendering and desktop parity remains open. \`crates/ui/m3\` ${existsSync(resolve(root, "crates/ui/m3/Cargo.toml")) ? "exists; consult its separate owner's gates" : "is absent; reserved to lot uirust-m3"}. No competing framework is created.\n\n## Actual Bun Rust owners\n\nConfigured fork HEAD: \`${forkHead}\`. Locally verified origin/main ref: \`${originMain}\` (tracking-ref observation, not a remote fetch or a new dependency integration). Use this exact rev only after downstream qualification; no Git dependency was added by this inventory.\n\nFork toolchain is nightly-2026-09-15 and edition 2024. Direct consumption must qualify the allocator API and generic experimental/nightly feature gates. CSS, HTTP and bundler/JSC boundaries require their own build/link checks against the native Bun engine; manifest existence does not qualify standalone reuse. No native engine build runs in this inventory.\n\n| Crate | Actual owner manifest | State |\n| --- | --- | --- |\n${crateRows.join("\n")}\n\n## Per-file state\n\n| File | Surface | Role | Target Rust owner | State |\n| --- | --- | --- | --- | --- |\n${rows.join("\n")}\n${end}`;
-const previous = existsSync(output)
-  ? readFileSync(output, "utf8")
-  : "# Aphrody UI Rust migration\n\n";
+const section = `${begin}\n## Generated file inventory\n\nRegenerate: \`bun scripts/audit/ui/rust-migration.ts\`; validate reproducibility: append \`--check\`. Git-tracked and unignored new source files are enumerated under ${roots.map(path => `\`${path}\``).join(", ")}; caches and node_modules are excluded. Generated tracked ui-dist files remain explicit artifact rows.\n\nCurrent files: **${current.length}**. Retired TS/TSX/JS/HTML/CSS files: **${retired.length}**, from **${deletedTotal}** checkpointed apps/web files at \`${checkpoint}\`. Retired files had no active consumer in the native site launcher or canonical build. Their deletion does not establish Rust frontend parity.\n\nActive app-ui, M3 showcase and Bun WebOS remain TypeScript. Native Rust owns the site HTTP routes and catalogs; the canonical app consumer/build and native public routes are qualified. Rust-only component, rendering and desktop parity remains open. \`crates/ui/m3\` ${existsSync(resolve(root, "crates/ui/m3/Cargo.toml")) ? "exists; consult its separate owner's gates" : "is absent; reserved to lot uirust-m3"}. No competing framework is created.\n\n## Actual Bun Rust owners\n\nConfigured fork HEAD: \`${forkHead}\`. Locally verified origin/main ref: \`${originMain}\` (tracking-ref observation, not a remote fetch or a new dependency integration). Use this exact rev only after downstream qualification; no Git dependency was added by this inventory.\n\nFork toolchain is nightly-2026-09-15 and edition 2024. Direct consumption must qualify the allocator API and generic experimental/nightly feature gates. CSS, HTTP and bundler/JSC boundaries require their own build/link checks against the native Bun engine; manifest existence does not qualify standalone reuse. No native engine build runs in this inventory.\n\n| Crate | Actual owner manifest | State |\n| --- | --- | --- |\n${crateRows.join("\n")}\n\n## Per-file state\n\n| File | Surface | Role | Target Rust owner | State |\n| --- | --- | --- | --- | --- |\n${rows.join("\n")}\n${end}`;
+const previous = existsSync(output) ? readFileSync(output, "utf8") : "# Aphrody UI Rust migration\n\n";
 const beginAt = previous.indexOf(begin);
 const endAt = previous.indexOf(end);
-if (beginAt < 0 !== endAt < 0)
-  throw new Error(
-    "Incomplete inventory marker; preserve existing agent sections.",
-  );
+if (beginAt < 0 !== endAt < 0) throw new Error("Incomplete inventory marker; preserve existing agent sections.");
 const next =
   beginAt < 0
     ? `${previous.trimEnd()}\n\n${section}\n`
     : `${previous.slice(0, beginAt)}${section}${previous.slice(endAt + end.length)}`;
 if (process.argv.includes("--check")) {
-  if (next !== previous)
-    throw new Error("UI Rust inventory differs; regenerate it.");
+  if (next !== previous) throw new Error("UI Rust inventory differs; regenerate it.");
 } else {
   mkdirSync(dirname(output), { recursive: true });
   writeFileSync(output, next);

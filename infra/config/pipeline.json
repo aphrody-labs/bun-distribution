@@ -10,10 +10,7 @@
       "steps": [
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "monorepo:layout"
-          ]
+          "command": ["run", "monorepo:layout"]
         }
       ]
     },
@@ -24,23 +21,17 @@
         {
           "repo": "aphrody",
           "runner": "just",
-          "command": [
-            "check"
-          ]
+          "command": ["check"]
         },
         {
           "repo": "aphrody",
           "runner": "just",
-          "command": [
-            "clippy"
-          ]
+          "command": ["clippy"]
         },
         {
           "repo": "aphrody",
           "runner": "just",
-          "command": [
-            "test"
-          ]
+          "command": ["test"]
         }
       ]
     },
@@ -50,111 +41,51 @@
       "steps": [
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/drive-client",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/drive-client", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/drive-client",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/drive-client", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/drive-client",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/drive-client", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/drive-client",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/drive-client", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/os",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/os", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/os",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/os", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/os",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/os", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/os",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/os", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/winclean",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/winclean", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/winclean",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/winclean", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/winclean",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/winclean", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/winclean",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/winclean", "build"]
         }
       ]
     },
@@ -164,39 +95,19 @@
       "steps": [
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/shell-web",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/shell-web", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/shell-web",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/shell-web", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/shell-web",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/shell-web", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/shell-web",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/shell-web", "build"]
         }
       ]
     },
@@ -206,30 +117,15 @@
       "steps": [
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/bun",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/bun", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/bun",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/bun", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/bun",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/bun", "build"]
         }
       ]
     },
@@ -239,183 +135,83 @@
       "steps": [
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/ovh",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/ovh", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/ovh",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/ovh", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/ovh",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/ovh", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/ovh",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/ovh", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/paths",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/paths", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/paths",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/paths", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/paths",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/paths", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/paths",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/paths", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/sql",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/sql", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/sql",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/sql", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/sql",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/sql", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/sql",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/sql", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/update",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/update", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/update",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/update", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/update",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/update", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/update",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/update", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/workspace",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/workspace", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/workspace",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/workspace", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/workspace",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/workspace", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/workspace",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/workspace", "build"]
         }
       ]
     },
@@ -425,93 +221,43 @@
       "steps": [
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/agent-browser",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/agent-browser", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/agent-browser",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/agent-browser", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/agent-browser",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/agent-browser", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/web-test",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/web-test", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/web-test",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/web-test", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/web-test",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/web-test", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/x",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/x", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/x",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/x", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/x",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/x", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/x",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/x", "build"]
         }
       ]
     },
@@ -521,21 +267,11 @@
       "steps": [
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/google",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/google", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/google",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/google", "build"]
         }
       ]
     },
@@ -545,30 +281,15 @@
       "steps": [
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/doc-ai",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/doc-ai", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/doc-ai",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/doc-ai", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/doc-ai",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/doc-ai", "build"]
         }
       ]
     },
@@ -578,30 +299,15 @@
       "steps": [
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/discord-kit",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/discord-kit", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/discord-kit",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/discord-kit", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/discord-kit",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/discord-kit", "build"]
         }
       ]
     },
@@ -611,30 +317,15 @@
       "steps": [
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-showcase",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-showcase", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-showcase",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-showcase", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-showcase",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-showcase", "build"]
         }
       ]
     },
@@ -644,39 +335,19 @@
       "steps": [
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/yolo-core",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/yolo-core", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/yolo-core",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/yolo-core", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/runtime-sdk",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/runtime-sdk", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/runtime-sdk",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/runtime-sdk", "test"]
         }
       ]
     },
@@ -686,822 +357,367 @@
       "steps": [
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/ag-ui",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/ag-ui", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/ag-ui",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/ag-ui", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/app-ui",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/app-ui", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/app-ui",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/app-ui", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/app-ui",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/app-ui", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/assets",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/assets", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/assets",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/assets", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/canvas",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/canvas", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/canvas",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/canvas", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/canvas",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/canvas", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/eslint-plugin-m3",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/eslint-plugin-m3", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/eslint-plugin-m3",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/eslint-plugin-m3", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/identity",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/identity", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/identity",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/identity", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-ai",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-ai", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-ai",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-ai", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-ai",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-ai", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-baseui",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-baseui", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-baseui",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-baseui", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-baseui",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-baseui", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-bun",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-bun", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-bun",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-bun", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-codemods",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-codemods", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-codemods",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-codemods", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-config",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-config", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-config",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-config", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-design",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-design", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-design",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-design", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-explorer",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-explorer", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-explorer",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-explorer", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-explorer",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-explorer", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-fonts",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-fonts", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-fonts",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-fonts", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-forms",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-forms", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-forms",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-forms", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-forms",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-forms", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-front",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-front", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-front",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-front", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-front",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-front", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-icons",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-icons", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-icons",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-icons", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-icons",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-icons", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-mcp",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-mcp", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-mcp",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-mcp", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-motion",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-motion", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-motion",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-motion", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-motion",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-motion", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-next-migrate",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-next-migrate", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-next-migrate",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-next-migrate", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-next-migrate",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-next-migrate", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-next-example",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-next-example", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-next-example",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-next-example", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-next-example",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-next-example", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-next-tauri-example",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-next-tauri-example", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-next-tauri-example",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-next-tauri-example", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-next-tauri-example",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-next-tauri-example", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-next",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-next", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-next",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-next", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-next",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-next", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-os-themes",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-os-themes", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-os-themes",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-os-themes", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-os-themes",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-os-themes", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-primitives",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-primitives", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-primitives",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-primitives", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-primitives",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-primitives", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-react",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-react", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-react",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-react", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-react",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-react", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-reader",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-reader", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-reader",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-reader", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-reader",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-reader", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-tailwind",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-tailwind", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-tailwind",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-tailwind", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-tailwind",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-tailwind", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-theme",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-theme", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-theme",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-theme", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-theme",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-theme", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-theme",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-theme", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-tokens",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-tokens", "lint"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-tokens",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-tokens", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-tokens",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-tokens", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3-tokens",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3-tokens", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/m3",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/m3", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/material-design-icons",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/material-design-icons", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/material-design-icons",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/material-design-icons", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/scaffold",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/scaffold", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/scaffold",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/scaffold", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/web-to-tauri",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/web-to-tauri", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/web-to-tauri",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/web-to-tauri", "test"]
         }
       ]
     },
@@ -1511,273 +727,123 @@
       "steps": [
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/api",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/api", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/api",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/api", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-autostart",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-autostart", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-autostart",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-autostart", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-clipboard-manager",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-clipboard-manager", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-clipboard-manager",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-clipboard-manager", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-deep-link",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-deep-link", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-deep-link",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-deep-link", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-dialog",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-dialog", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-dialog",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-dialog", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-fs",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-fs", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-fs",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-fs", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-global-shortcut",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-global-shortcut", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-global-shortcut",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-global-shortcut", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-log",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-log", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-log",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-log", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-notification",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-notification", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-notification",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-notification", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-opener",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-opener", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-opener",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-opener", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-os",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-os", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-os",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-os", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-process",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-process", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-process",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-process", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-store",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-store", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-store",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-store", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-updater",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-updater", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-updater",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-updater", "build"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-window-state",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-window-state", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-window-state",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/plugin-window-state", "build"]
         }
       ]
     },
@@ -1787,39 +853,19 @@
       "steps": [
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/yolo-cli",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/yolo-cli", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/yolo-cli",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/yolo-cli", "test"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/yolo-cli",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/yolo-cli", "typecheck"]
         },
         {
           "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/yolo-cli",
-            "test"
-          ]
+          "command": ["run", "--filter", "@aphrody/yolo-cli", "test"]
         }
       ]
     }

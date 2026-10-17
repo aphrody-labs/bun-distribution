@@ -12,29 +12,18 @@ const yoloEntry = Bun.resolveSync("@aphrody/yolo-cli/cli", import.meta.dir);
 // `bench --supervisor` measures the yolo-runtime supervisor, `verify` runs the repository gate graph. Relayed here
 // because native binaries built before multicall/bun_bridge.rs ROUTES listed them reject them.
 // `parse`, `docs`, `create` are `bun parse|docs|create aphrody/<t>`.
-export const RELAY_COMMANDS: ReadonlySet<string> = new Set([
-  "bench",
-  "rename",
-  "verify",
-]);
+export const RELAY_COMMANDS: ReadonlySet<string> = new Set(["bench", "rename", "verify"]);
 
-const norm = (path: string) =>
-  resolve(path).replaceAll("\\", "/").toLowerCase();
+const norm = (path: string) => resolve(path).replaceAll("\\", "/").toLowerCase();
 
 /** True for this script, its wrappers and any TypeScript entry: running one of them would recurse. */
 export function isLauncher(candidate: string, root = rootDir): boolean {
   const path = norm(candidate);
-  return (
-    path.startsWith(`${norm(join(root, "scripts/dev/cli"))}/`) ||
-    path.endsWith(".ts")
-  );
+  return path.startsWith(`${norm(join(root, "scripts/dev/cli"))}/`) || path.endsWith(".ts");
 }
 
 /** APHRODY_BIN, then target/release, then PATH without the launchers, then the user install, then target/debug. */
-export function resolveRustAphrody(
-  root = rootDir,
-  env = process.env,
-): string | null {
+export function resolveRustAphrody(root = rootDir, env = process.env): string | null {
   const exe = process.platform === "win32" ? ".exe" : "";
   const usable = (path: string | null | undefined): path is string =>
     !!path && !isLauncher(path, root) && existsSync(path);
@@ -43,9 +32,7 @@ export function resolveRustAphrody(
   const release = join(root, "target", "release", `aphrody${exe}`);
   if (usable(release)) return release;
 
-  const pathDirs = (env.PATH ?? env.Path ?? "").split(
-    process.platform === "win32" ? ";" : ":",
-  );
+  const pathDirs = (env.PATH ?? env.Path ?? "").split(process.platform === "win32" ? ";" : ":");
   for (const dir of pathDirs) {
     if (!dir) continue;
     const found = Bun.which("aphrody", { PATH: dir });

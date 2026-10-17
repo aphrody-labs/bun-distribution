@@ -111,16 +111,7 @@
       "service": "shenron-site",
       "upstream": "127.0.0.1:5011",
       "probePath": "/health",
-      "paths": [
-        "/_next/static/",
-        "/_next/image",
-        "/wiki/",
-        "/assets/wiki/",
-        "/assets/",
-        "/health",
-        "/api/health",
-        "/"
-      ],
+      "paths": ["/_next/static/", "/_next/image", "/wiki/", "/assets/wiki/", "/assets/", "/health", "/api/health", "/"],
       "vhost": "nginx/shenron/cdn.dragonballfr.com.conf"
     },
     {
@@ -355,12 +346,7 @@
       "upstream": "127.0.0.1:18804",
       "via": "nginx",
       "publicHost": "os.aphrody.com",
-      "paths": [
-        "/desktop/",
-        "/api/webos/capabilities",
-        "/dist/workers/repl.js",
-        "/dist/wasm/bun/bun_wasm.wasm"
-      ]
+      "paths": ["/desktop/", "/api/webos/capabilities", "/dist/workers/repl.js", "/dist/wasm/bun/bun_wasm.wasm"]
     },
     {
       "service": "aphrody-downloads",

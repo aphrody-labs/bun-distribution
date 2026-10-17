@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { resolve } from "node:path";
 import { describe, expect, test } from "bun:test";
-import {
-  collectEdges,
-  cycles,
-  graphFromMetadata,
-  inside,
-} from "./repo-layering.ts";
+import { collectEdges, cycles, graphFromMetadata, inside } from "./repo-layering.ts";
 
 const root = resolve(import.meta.dir, "..", "..", "..");
 
@@ -54,9 +49,7 @@ describe("monorepo Cargo graph", () => {
       packages: [
         {
           ...fixture.packages[0]!,
-          dependencies: [
-            { name: "missing", path: `${root}/crates/os/missing` },
-          ],
+          dependencies: [{ name: "missing", path: `${root}/crates/os/missing` }],
         },
       ],
       workspace_members: ["app"],
@@ -68,15 +61,11 @@ describe("monorepo Cargo graph", () => {
         fixture.packages[0]!,
         {
           ...fixture.packages[1]!,
-          dependencies: [
-            { name: "app", path: `${root}/crates/infra/aphrody/app` },
-          ],
+          dependencies: [{ name: "app", path: `${root}/crates/infra/aphrody/app` }],
         },
       ],
     });
-    expect(cycles(cycle.nodes, cycle.edges)).toEqual([
-      ["crates/infra/aphrody/app", "crates/os/core"],
-    ]);
+    expect(cycles(cycle.nodes, cycle.edges)).toEqual([["crates/infra/aphrody/app", "crates/os/core"]]);
   });
 
   test("does not confuse a sibling prefix with a path inside the repository", () => {

@@ -16,16 +16,44 @@
   "applications": {
     "rg": {
       "role": "canonical-platform",
-      "website": { "runtime": "next-bun", "package": "@rosegriffon/website", "ui": "@rosegriffon/ui (site repository; removed from m3 on 2026-10-09)", "shell": "@rosegriffon/app-shell", "auth": "@rosegriffon/auth", "api": "@rosegriffon/achillea-client" },
-      "api": { "runtime": "vercel-function-bun-elysia", "database": "@rosegriffon/db", "auth": "@rosegriffon/auth", "contract": "@rosegriffon/types" },
+      "website": {
+        "runtime": "next-bun",
+        "package": "@rosegriffon/website",
+        "ui": "@rosegriffon/ui (site repository; removed from m3 on 2026-10-09)",
+        "shell": "@rosegriffon/app-shell",
+        "auth": "@rosegriffon/auth",
+        "api": "@rosegriffon/achillea-client"
+      },
+      "api": {
+        "runtime": "vercel-function-bun-elysia",
+        "database": "@rosegriffon/db",
+        "auth": "@rosegriffon/auth",
+        "contract": "@rosegriffon/types"
+      },
       "bot": { "runtime": "bun-discord.js", "api": "rg-api", "database": "postgresql" },
-      "data": { "primary": "supabase-postgresql", "realtime": "supabase-realtime-broadcast", "storage": "supabase-storage", "search": "@rosegriffon/search" }
+      "data": {
+        "primary": "supabase-postgresql",
+        "realtime": "supabase-realtime-broadcast",
+        "storage": "supabase-storage",
+        "search": "@rosegriffon/search"
+      }
     },
     "shenron": {
       "role": "application-namespace-on-rg-plane",
       "source": "aphrody-labs/shenron",
-      "website": { "runtime": "next-bun", "package": "@shenron/site", "ui": "reuse-rg-ui-contract", "auth": "reuse-rg-better-auth-boundary", "api": "shenron-bot" },
-      "api": { "runtime": "bun", "database": "postgresql", "localCache": "sqlite", "mcp": "shenron-mcp dragonball.* (aphrody-labs/shenron)" },
+      "website": {
+        "runtime": "next-bun",
+        "package": "@shenron/site",
+        "ui": "reuse-rg-ui-contract",
+        "auth": "reuse-rg-better-auth-boundary",
+        "api": "shenron-bot"
+      },
+      "api": {
+        "runtime": "bun",
+        "database": "postgresql",
+        "localCache": "sqlite",
+        "mcp": "shenron-mcp dragonball.* (aphrody-labs/shenron)"
+      },
       "bot": { "runtime": "bun-discord.js", "api": "shenron-bot", "database": "postgresql-with-sqlite-cache" },
       "data": { "primary": "postgresql", "media": "shared-nginx-storage", "backup": "aphrody-infra-backup-policy" }
     },
@@ -35,7 +63,14 @@
       "api": { "runtime": "rust-http", "package": "nie-model-serve", "unit": "nie-model-serve.service", "port": 8792 },
       "mcp": "optional aphrody-mcp nie.* (disabled by default until NIE source crates join this monorepo; process boundary runs nie-mcp as a child; the IECODE agent plugin is stored in ~/plugins/iecode and restricted to IECODE)",
       "desktop": "none: IEVR features are web-only (nie-site + apps/nie-web). The Inacord Tauri app was removed on 2026-09-26; its generic pet/pixel commands moved to aphrody-app, which can reach game features through the opt-in aphrody-mcp nie.* capability",
-      "data": { "primary": "none", "storage": "local-ievr-3d-assets", "localIndex": "sqlite (nie-index RE knowledge base and atlas, var/)", "optionalPostgres": "nie-pg schema nie (cfg.bin import, manual run)", "optionalRedis": "nie-index atlas mirror, opt-in via NIE_ATLAS_REDIS / --redis; no Redis service contract (OPEN-RESERVATIONS #3)", "schedules": "none (no nie timer or cron is declared or deployed)" }
+      "data": {
+        "primary": "none",
+        "storage": "local-ievr-3d-assets",
+        "localIndex": "sqlite (nie-index RE knowledge base and atlas, var/)",
+        "optionalPostgres": "nie-pg schema nie (cfg.bin import, manual run)",
+        "optionalRedis": "nie-index atlas mirror, opt-in via NIE_ATLAS_REDIS / --redis; no Redis service contract (OPEN-RESERVATIONS #3)",
+        "schedules": "none (no nie timer or cron is declared or deployed)"
+      }
     },
     "iecode": {
       "role": "modding-and-formats-plane",
@@ -44,14 +79,17 @@
     "aphrody": {
       "role": "single-product",
       "productOwner": "@aphrody/product",
-      "web": { "platform": "cloudflare", "worker": "aphrody-app", "ui": "@aphrody/app-ui", "entrypoint": "@aphrody/product/web", "deploymentQualification": "pending" },
+      "web": {
+        "platform": "cloudflare",
+        "worker": "aphrody-app",
+        "ui": "@aphrody/app-ui",
+        "entrypoint": "@aphrody/product/web",
+        "deploymentQualification": "pending"
+      },
       "ai": {
         "role": "private-backend-and-automation",
         "publicProduct": false,
-        "clients": [
-          "native-cli",
-          "authenticated-site"
-        ],
+        "clients": ["native-cli", "authenticated-site"],
         "sessionOwner": "aphrody-app-server",
         "capabilityOwners": "shared-with-native-cli",
         "requiredCapabilities": [
@@ -82,15 +120,29 @@
             "automation"
           ]
         },
-        "isolation": [
-          "provider-authentication",
-          "raw-provider-sessions",
-          "cookies",
-          "protected-data"
-        ],
+        "isolation": ["provider-authentication", "raw-provider-sessions", "cookies", "protected-data"],
         "deployment": "cloudflare-with-qualified-private-native-execution-for-host-capabilities"
       },
-      "desktop": { "runtime": "tauri-runtime-cef", "package": "aphrody-app", "sourceRepo": "aphrody", "sourcePath": "crates/ui/app", "ui": "@aphrody/app-ui", "sidecars": ["sd-daemon", "aphrody"], "modules": ["agent (aphrody app-server over stdio)", "drive (aphrody-drive plugin + sd-daemon; the Spacedrive drive/apps/tauri host was removed 2026-09-26)", "models", "identity (pet and pixel pipeline, ex-Inacord)", "browser", "terminal", "systemd", "infra", "windows", "settings"] },
+      "desktop": {
+        "runtime": "tauri-runtime-cef",
+        "package": "aphrody-app",
+        "sourceRepo": "aphrody",
+        "sourcePath": "crates/ui/app",
+        "ui": "@aphrody/app-ui",
+        "sidecars": ["sd-daemon", "aphrody"],
+        "modules": [
+          "agent (aphrody app-server over stdio)",
+          "drive (aphrody-drive plugin + sd-daemon; the Spacedrive drive/apps/tauri host was removed 2026-09-26)",
+          "models",
+          "identity (pet and pixel pipeline, ex-Inacord)",
+          "browser",
+          "terminal",
+          "systemd",
+          "infra",
+          "windows",
+          "settings"
+        ]
+      },
       "gameFeatures": "opt-in aphrody-mcp nie.* only; disabled in the root build until NIE is integrated; Aphrody desktop never imports IECODE sources through sibling paths"
     }
   },

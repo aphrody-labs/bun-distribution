@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Linux VPS performance tuning (reference)
 
 Moved from `aphrody-os/docs/vps_tuning.md`. This is a reference proposal, not an installed
@@ -28,6 +29,7 @@ On Aphrody Alpine: `apk add aphrody-sysctl-server`. On another distribution, cop
 ## 2. File Descriptor & Security Limits
 
 ### PAM Limits (`/etc/security/limits.d/99-aphrody.conf`)
+
 ```ini
 aphrody          soft    nofile          1048576
 aphrody          hard    nofile          1048576
@@ -47,6 +49,7 @@ root             hard    nofile          1048576
 ```
 
 ### systemd Global Limits (`/etc/systemd/system.conf.d/99-limits.conf`)
+
 ```ini
 [Manager]
 DefaultLimitNOFILE=1048576:1048576
@@ -60,6 +63,7 @@ DefaultTasksMax=infinity
 ## 3. Ubuntu 26 systemd & Security Hardening
 
 ### `systemd-journald` Bounds (`/etc/systemd/journald.conf.d/99-aphrody.conf`)
+
 ```ini
 [Journal]
 Storage=persistent
@@ -71,16 +75,20 @@ MaxRetentionSec=1month
 RateLimitIntervalSec=30s
 RateLimitBurst=10000
 ```
+
 Restart with `sudo systemctl restart systemd-journald`.
 
 ### `systemd-oomd` Tuning (`/etc/systemd/oomd.conf.d/99-aphrody.conf`)
+
 Prevent aggressive process terminations during heavy builds (`cargo`, `bun`):
+
 ```ini
 [OOM]
 SwapUsedLimit=90%
 DefaultMemoryPressureLimit=75%
 DefaultMemoryPressureDurationSec=30s
 ```
+
 Restart with `sudo systemctl restart systemd-oomd`.
 
 ---
@@ -88,6 +96,7 @@ Restart with `sudo systemctl restart systemd-oomd`.
 ## 4. OVH VPS VirtIO Optimizations (KVM / OpenStack)
 
 ### Storage & Discard (TRIM)
+
 - **Do NOT use `discard` in `/etc/fstab`:** Synchronous discard generates continuous UNMAP requests that stall the KVM virtual I/O queue and cause severe multi-second latency spikes.
 - **Enable batch TRIM timer:**
   ```bash
@@ -95,6 +104,7 @@ Restart with `sudo systemctl restart systemd-oomd`.
   ```
 
 ### Storage Scheduler & Network Queue (`/etc/udev/rules.d/99-virtio.rules`)
+
 ```udev
 # Set virtual disk I/O scheduler to none (bypass guest scheduling)
 ACTION=="add|change", KERNEL=="vd[a-z]|sd[a-z]", ATTR{queue/scheduler}="none"
@@ -105,7 +115,9 @@ ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth*|ens*", ATTR{tx_queue_len}="10000"
 ```
 
 ### VirtIO Network Multi-Queue & Offloads
+
 Configure active network queue to match the vCPU count:
+
 ```bash
 PRIMARY_IFACE=$(ip route show default | awk '{print $5}' | head -n1)
 MAX_QUEUES=$(ethtool -l "$PRIMARY_IFACE" 2>/dev/null | awk '/Combined:/{print $2}' | tail -n1 || echo "1")
@@ -115,6 +127,7 @@ fi
 ```
 
 ### MTU Discipline
+
 - **Public Interfaces (`eth0` / `ens3`):** Must strictly remain **1500 MTU**. OVH external gateways drop jumbo frames.
 - **Path MTU Discovery Blackhole Protection:** `net.ipv4.tcp_mtu_probing = 1` handles downstream MTU bottlenecks seamlessly.
 - **Private vRack Interfaces:** Set to **9000 MTU** only if configured across dedicated private subnets.
@@ -124,8 +137,10 @@ fi
 ## 5. Transparent Hugepages (THP)
 
 Accelerates vector search (LanceDB/HNSW) and local embedding models:
+
 ```bash
 echo always | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
 echo always | sudo tee /sys/kernel/mm/transparent_hugepage/defrag
 ```
+
 Ensure persistence via `GRUB_CMDLINE_LINUX_DEFAULT="... transparent_hugepage=always"` in `/etc/default/grub` followed by `sudo update-grub`.

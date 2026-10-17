@@ -4,14 +4,7 @@
 // OSC 9;4 progress for commands over 1 s, synchronized output (DECSET 2026) around prompt redraws.
 // History lives in $APHRODY_HOME/bun-shell-history (default ~/.aphrody); arrows browse it on a TTY.
 import { $ } from "bun";
-import {
-  appendFileSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-  writeSync,
-} from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, writeSync } from "node:fs";
 import { homedir, hostname } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -25,8 +18,7 @@ export const seq = {
   promptEnd: `${ESC}]133;B${ST}`,
   outputStart: `${ESC}]133;C${ST}`,
   finished: (code?: number) => `${ESC}]133;D${code === undefined ? "" : `;${code}`}${ST}`,
-  title: (text: string) =>
-    `${ESC}]0;${Array.from(text, (c) => (c < " " || c === "\x7f" ? " " : c)).join("")}${ST}`,
+  title: (text: string) => `${ESC}]0;${Array.from(text, c => (c < " " || c === "\x7f" ? " " : c)).join("")}${ST}`,
   cwd: (dir: string, host = hostname()) =>
     `${ESC}]7;file://${host}${pathToFileURL(dir).pathname}${ST}${ESC}]9;9;${dir}${ST}`,
   progressBusy: `${ESC}]9;4;3${ST}`,
@@ -38,16 +30,7 @@ export const seq = {
 // ---------------------------------------------------------------------------------------------- prompt
 
 type Swatch = { hex: string; ansi256: number };
-type PromptKey =
-  | "brand"
-  | "cwd"
-  | "git"
-  | "symbol"
-  | "success"
-  | "error"
-  | "duration"
-  | "muted"
-  | "text";
+type PromptKey = "brand" | "cwd" | "git" | "symbol" | "success" | "error" | "duration" | "muted" | "text";
 export type Palette = Record<PromptKey, Swatch>;
 export type ColorMode = "truecolor" | "256" | "none";
 
@@ -75,13 +58,7 @@ export function loadPalette(
   }
 }
 
-function paint(
-  palette: Palette | undefined,
-  mode: ColorMode,
-  key: PromptKey,
-  text: string,
-  bold = false,
-): string {
+function paint(palette: Palette | undefined, mode: ColorMode, key: PromptKey, text: string, bold = false): string {
   const s = palette?.[key];
   if (!s || mode === "none") return text;
   const fg =
@@ -138,10 +115,8 @@ export function renderPrompt(
   const failed = st.lastCode !== undefined && st.lastCode !== 0;
   if (failed) parts.push(["text", " "], ["error", `[${st.lastCode}]`]);
   parts.push(["text", " "], [failed ? "error" : "success", "❯"], ["text", " "]);
-  const text = parts
-    .map(([k, t, b]) => (k === "text" ? t : paint(palette, mode, k, t, b)))
-    .join("");
-  return { text, width: Bun.stringWidth(parts.map((p) => p[1]).join("")) };
+  const text = parts.map(([k, t, b]) => (k === "text" ? t : paint(palette, mode, k, t, b))).join("");
+  return { text, width: Bun.stringWidth(parts.map(p => p[1]).join("")) };
 }
 
 // --------------------------------------------------------------------------------------------- history
@@ -315,12 +290,7 @@ export function redraw(
 export type ImageProtocol = "kitty" | "sixel" | "iterm";
 
 export function imageProtocol(env: Record<string, string | undefined>): ImageProtocol {
-  if (
-    env.KITTY_WINDOW_ID ||
-    env.TERM === "xterm-kitty" ||
-    /^ghostty$/i.test(env.TERM_PROGRAM ?? "")
-  )
-    return "kitty";
+  if (env.KITTY_WINDOW_ID || env.TERM === "xterm-kitty" || /^ghostty$/i.test(env.TERM_PROGRAM ?? "")) return "kitty";
   if (/^(iTerm\.app|WezTerm|vscode|rio)$/i.test(env.TERM_PROGRAM ?? "")) return "iterm";
   // Windows Terminal (1.22+) and VTE decode DECSIXEL.
   return "sixel";
@@ -458,11 +428,11 @@ export async function img(
   columns: number,
   rows: number,
 ): Promise<string> {
-  const flags = args.filter((a) => a.startsWith("--"));
-  const file = args.find((a) => !a.startsWith("--"));
+  const flags = args.filter(a => a.startsWith("--"));
+  const file = args.find(a => !a.startsWith("--"));
   if (!file) throw new Error("usage: img [--kitty|--sixel|--iterm] <file>");
   const forced = flags
-    .map((f) => f.slice(2))
+    .map(f => f.slice(2))
     .find((f): f is ImageProtocol => f === "kitty" || f === "sixel" || f === "iterm");
   const protocol = forced ?? imageProtocol(env);
   // Sixel cells are 10×20 pixels in Windows Terminal (VT340 geometry).
@@ -472,11 +442,7 @@ export async function img(
       withoutEnlargement: true,
     });
   if (protocol === "sixel")
-    return (
-      sixel(
-        decodeIndexedPng(await image().png({ palette: true, colors: 256, dither: true }).bytes()),
-      ) + "\n"
-    );
+    return sixel(decodeIndexedPng(await image().png({ palette: true, colors: 256, dither: true }).bytes())) + "\n";
   const png = await image().png().bytes();
   return (protocol === "kitty" ? kittyImage(png) : itermImage(png, file)) + "\n";
 }
@@ -519,13 +485,7 @@ export async function probeCoreutils(): Promise<number> {
 }
 
 export async function evaluateNative(expression: string, modules: NativeModules): Promise<unknown> {
-  const evaluate = new Function(
-    "windows",
-    "linux",
-    "wasm",
-    "$",
-    `return (async () => (${expression}))()`,
-  );
+  const evaluate = new Function("windows", "linux", "wasm", "$", `return (async () => (${expression}))()`);
   return await evaluate(modules.windows, modules.linux, modules.wasm, modules.$);
 }
 
@@ -584,7 +544,7 @@ async function run(line: string, home: string, modules: NativeModules): Promise<
 }
 
 async function readKeys(): Promise<string> {
-  return await new Promise((res) => process.stdin.once("data", (d) => res(d.toString("utf8"))));
+  return await new Promise(res => process.stdin.once("data", d => res(d.toString("utf8"))));
 }
 
 async function main() {
@@ -596,9 +556,7 @@ async function main() {
   const palette = loadPalette(env.APHRODY_THEME);
   const progressMs = Number(env.BUN_SHELL_PROGRESS_MS ?? 1000);
   const tty = !!process.stdin.isTTY;
-  const history = new History(
-    join(env.APHRODY_HOME ?? join(home, ".aphrody"), "bun-shell-history"),
-  );
+  const history = new History(join(env.APHRODY_HOME ?? join(home, ".aphrody"), "bun-shell-history"));
   const state: PromptState = { cwd: process.cwd(), home };
 
   const prompt = () => {
@@ -653,9 +611,7 @@ async function main() {
   }
 
   const platform = modules.windows ? "bun:windows" : modules.linux ? "bun:linux" : "WASM tooling";
-  out(
-    `Bun Shell ${Bun.version} · coreutils · ${platform} · bun:wasm (outillage) — js <expression>, exit\n`,
-  );
+  out(`Bun Shell ${Bun.version} · coreutils · ${platform} · bun:wasm (outillage) — js <expression>, exit\n`);
   for (;;) {
     const p = prompt();
     const ed = new LineEditor(history.entries);

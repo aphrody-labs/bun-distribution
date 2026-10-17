@@ -1,5 +1,10 @@
 export type Msys2DesktopABI =
-  "msys-x64" | "ucrt64-x64" | "clang64-x64" | "clangarm64-arm64" | "msvc-x64" | "msvc-arm64";
+  | "msys-x64"
+  | "ucrt64-x64"
+  | "clang64-x64"
+  | "clangarm64-arm64"
+  | "msvc-x64"
+  | "msvc-arm64";
 
 export const msys2DesktopConfig = {
   schemaVersion: 1,

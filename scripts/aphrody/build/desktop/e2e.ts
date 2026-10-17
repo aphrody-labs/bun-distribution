@@ -53,11 +53,9 @@ try {
     stderr: "pipe",
     timeout: 120_000,
   });
-  const out =
-    (await new Response(run.stdout).text()) +
-    (await new Response(run.stderr).text());
+  const out = (await new Response(run.stdout).text()) + (await new Response(run.stderr).text());
   await run.exited;
-  const result = out.split("\n").filter((line) => line.includes("E2E_RESULT"));
+  const result = out.split("\n").filter(line => line.includes("E2E_RESULT"));
   if (result.length === 0) {
     console.error(out.split("\n").slice(-20).join("\n"));
     process.exit(1);

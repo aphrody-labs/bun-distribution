@@ -1,25 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  REPO,
-  git,
-  loadForks,
-  main,
-  parseGitmodules,
-  pinnedSha,
-  planSparse,
-  planSync,
-} from "./forks.ts";
+import { REPO, git, loadForks, main, parseGitmodules, pinnedSha, planSparse, planSync } from "./forks.ts";
 
 const SAMPLE = `
 [submodule "forks/a"]
@@ -67,36 +51,25 @@ describe("parseGitmodules", () => {
     });
   });
   test("rejects a submodule without path or url", () => {
-    expect(() => parseGitmodules('[submodule "x"]\n\tpath = x\n')).toThrow(
-      /needs path and url/,
-    );
+    expect(() => parseGitmodules('[submodule "x"]\n\tpath = x\n')).toThrow(/needs path and url/);
   });
   test("the repository registry lists every submodule once and the forks carry an upstream", () => {
     const forks = loadForks(REPO);
-    expect(new Set(forks.map((f) => f.path)).size).toBe(forks.length);
-    for (const fork of forks.filter((f) => f.path.startsWith("forks/")))
+    expect(new Set(forks.map(f => f.path)).size).toBe(forks.length);
+    for (const fork of forks.filter(f => f.path.startsWith("forks/")))
       expect(fork.upstream).toMatch(/^https:\/\/github\.com\//);
-    for (const fork of forks)
-      expect(pinnedSha(REPO, fork.path)).toMatch(/^[0-9a-f]{40}$/);
+    for (const fork of forks) expect(pinnedSha(REPO, fork.path)).toMatch(/^[0-9a-f]{40}$/);
   });
 
   test("the Material Symbols fork is delegated to its catalogue script, never to a cone", () => {
-    const icons = loadForks(REPO).find(
-      (f) => f.path === "vendor/material-design-icons",
-    )!;
-    expect(icons.sparseScript).toBe(
-      "packages/material-design-icons/scripts/sync-catalogue.ts",
-    );
+    const icons = loadForks(REPO).find(f => f.path === "vendor/material-design-icons")!;
+    expect(icons.sparseScript).toBe("packages/material-design-icons/scripts/sync-catalogue.ts");
     expect(icons.sparse).toEqual([]);
     expect(existsSync(join(REPO, icons.sparseScript!))).toBe(true);
     // Initialised: exactly the script. Absent: refused, since a submodule checkout of ~2.1M files downloads every blob.
-    expect(planSparse(icons, [], true)).toEqual([
-      { cwd: ".", bin: "bun", argv: [icons.sparseScript!] },
-    ]);
+    expect(planSparse(icons, [], true)).toEqual([{ cwd: ".", bin: "bun", argv: [icons.sparseScript!] }]);
     expect(() => planSparse(icons, [], false)).toThrow(/downloads every blob/);
-    expect(() => planSparse(icons, ["symbols/web"], true)).toThrow(
-      /takes no paths/,
-    );
+    expect(() => planSparse(icons, ["symbols/web"], true)).toThrow(/takes no paths/);
     for (const present of [true, false]) {
       let steps: ReturnType<typeof planSparse> = [];
       try {
@@ -104,13 +77,9 @@ describe("parseGitmodules", () => {
       } catch {
         // refused: nothing to run
       }
-      const lines = steps.map(
-        (step) => `${step.bin ?? "git"} ${step.argv.join(" ")}`,
-      );
-      expect(lines.filter((l) => l.includes("sparse-checkout"))).toEqual([]);
-      expect(
-        lines.filter((l) => l.includes("--cone") || l.includes("symbols/web")),
-      ).toEqual([]);
+      const lines = steps.map(step => `${step.bin ?? "git"} ${step.argv.join(" ")}`);
+      expect(lines.filter(l => l.includes("sparse-checkout"))).toEqual([]);
+      expect(lines.filter(l => l.includes("--cone") || l.includes("symbols/web"))).toEqual([]);
     }
   });
 });
@@ -119,7 +88,7 @@ describe("plans", () => {
   const fork = parseGitmodules(SAMPLE)[0]!;
   test("sync fetches the upstream branch shallowly and fast-forwards, then stages", () => {
     const steps = planSync(fork, { stage: true });
-    expect(steps.map((s) => s.argv.join(" "))).toEqual([
+    expect(steps.map(s => s.argv.join(" "))).toEqual([
       "remote add upstream https://example.com/up/a.git",
       "fetch --depth 1 --filter=blob:none upstream master",
       "merge --ff-only FETCH_HEAD",
@@ -132,39 +101,18 @@ describe("plans", () => {
         hasUpstreamRemote: true,
         ...(blobless === undefined ? {} : { blobless }),
       })[0]!.argv;
-    expect(fetchOf(fork)).toEqual([
-      "fetch",
-      "--depth",
-      "1",
-      "--filter=blob:none",
-      "upstream",
-      "master",
-    ]);
-    expect(fetchOf({ ...fork, sparse: [] })).toEqual([
-      "fetch",
-      "--depth",
-      "1",
-      "upstream",
-      "master",
-    ]);
-    expect(fetchOf({ ...fork, sparse: [] }, true)).toContain(
-      "--filter=blob:none",
-    );
-    expect(fetchOf({ ...fork, sparse: [], sparseScript: "x.ts" })).toContain(
-      "--filter=blob:none",
-    );
+    expect(fetchOf(fork)).toEqual(["fetch", "--depth", "1", "--filter=blob:none", "upstream", "master"]);
+    expect(fetchOf({ ...fork, sparse: [] })).toEqual(["fetch", "--depth", "1", "upstream", "master"]);
+    expect(fetchOf({ ...fork, sparse: [] }, true)).toContain("--filter=blob:none");
+    expect(fetchOf({ ...fork, sparse: [], sparseScript: "x.ts" })).toContain("--filter=blob:none");
   });
   test("sparse on a plain present fork disables only a checkout that is sparse", () => {
     const plain = { ...fork, sparse: [] };
     expect(planSparse(plain, [], true, false)).toEqual([]);
-    expect(
-      planSparse(plain, [], true, true).map((s) => s.argv.join(" ")),
-    ).toEqual(["sparse-checkout disable"]);
+    expect(planSparse(plain, [], true, true).map(s => s.argv.join(" "))).toEqual(["sparse-checkout disable"]);
   });
   test("sync without an upstream throws", () => {
-    expect(() => planSync(parseGitmodules(SAMPLE)[1]!, {})).toThrow(
-      /no `upstream`/,
-    );
+    expect(() => planSync(parseGitmodules(SAMPLE)[1]!, {})).toThrow(/no `upstream`/);
   });
   test("a delegated fork syncs, then lets its script materialise what the new commit adds", () => {
     const delegated = {
@@ -173,9 +121,7 @@ describe("plans", () => {
       sparseScript: "scripts/own-sparse.ts",
     };
     expect(
-      planSync(delegated, { stage: true, hasUpstreamRemote: true }).map(
-        (s) => `${s.bin ?? "git"} ${s.argv.join(" ")}`,
-      ),
+      planSync(delegated, { stage: true, hasUpstreamRemote: true }).map(s => `${s.bin ?? "git"} ${s.argv.join(" ")}`),
     ).toEqual([
       "git fetch --depth 1 --filter=blob:none upstream master",
       "git merge --ff-only FETCH_HEAD",
@@ -184,13 +130,11 @@ describe("plans", () => {
     ]);
   });
   test("sparse init is shallow and blobless, then sets the cone", () => {
-    expect(planSparse(fork, [], false).map((s) => s.argv.join(" "))).toEqual([
+    expect(planSparse(fork, [], false).map(s => s.argv.join(" "))).toEqual([
       "submodule update --init --depth 1 --filter=blob:none -- forks/a",
       "sparse-checkout set --cone symbols/web docs",
     ]);
-    expect(
-      planSparse(fork, ["only"], true).map((s) => s.argv.join(" ")),
-    ).toEqual(["sparse-checkout set --cone only"]);
+    expect(planSparse(fork, ["only"], true).map(s => s.argv.join(" "))).toEqual(["sparse-checkout set --cone only"]);
   });
 });
 
@@ -241,30 +185,9 @@ describe("against real temporary repositories", () => {
     git(fork, "config", "uploadpack.allowAnySHA1InWant", "true");
     commitFixture(sup, "README.md", "super");
     expect(git(sup, "submodule", "add", "-q", fork, "forks/x").code).toBe(0);
-    git(
-      sup,
-      "config",
-      "-f",
-      ".gitmodules",
-      "submodule.forks/x.upstream",
-      upstream,
-    );
-    git(
-      sup,
-      "config",
-      "-f",
-      ".gitmodules",
-      "submodule.forks/x.upstream-branch",
-      "main",
-    );
-    git(
-      sup,
-      "config",
-      "-f",
-      ".gitmodules",
-      "submodule.forks/x.sparse",
-      "symbols/web",
-    );
+    git(sup, "config", "-f", ".gitmodules", "submodule.forks/x.upstream", upstream);
+    git(sup, "config", "-f", ".gitmodules", "submodule.forks/x.upstream-branch", "main");
+    git(sup, "config", "-f", ".gitmodules", "submodule.forks/x.sparse", "symbols/web");
     git(sup, "add", "-A");
     expect(git(sup, "commit", "-m", "add fork").code).toBe(0);
   }, 30_000);
@@ -336,9 +259,7 @@ describe("against real temporary repositories", () => {
   });
 
   test("an unknown submodule is an error", async () => {
-    await expect(main(["status", "nope"], sup, out)).rejects.toThrow(
-      /unknown submodule/,
-    );
+    await expect(main(["status", "nope"], sup, out)).rejects.toThrow(/unknown submodule/);
   });
 });
 
@@ -392,14 +313,7 @@ describe("a fork whose sparse set is owned by a script", () => {
     git(sup, "commit", "-q", "-m", "init");
     const added = git(sup, "submodule", "add", "-q", fork, "forks/icons");
     expect(added).toMatchObject({ code: 0, err: "" });
-    git(
-      sup,
-      "config",
-      "-f",
-      ".gitmodules",
-      "submodule.forks/icons.sparse-script",
-      "scripts/own-sparse.ts",
-    );
+    git(sup, "config", "-f", ".gitmodules", "submodule.forks/icons.sparse-script", "scripts/own-sparse.ts");
     git(sup, "add", "-A");
     expect(git(sup, "commit", "-q", "-m", "add fork").code).toBe(0);
   }, 30_000);
@@ -412,10 +326,7 @@ describe("a fork whose sparse set is owned by a script", () => {
     rmSync(root, { recursive: true, force: true });
   });
 
-  const log = () =>
-    existsSync(join(sup, "delegate.log"))
-      ? readFileSync(join(sup, "delegate.log"), "utf8")
-      : "";
+  const log = () => (existsSync(join(sup, "delegate.log")) ? readFileSync(join(sup, "delegate.log"), "utf8") : "");
 
   test("sparse without --apply only prints the delegate", async () => {
     lines.length = 0;
@@ -437,9 +348,7 @@ describe("a fork whose sparse set is owned by a script", () => {
 
   test("paths are refused for a delegated fork and nothing runs", async () => {
     lines.length = 0;
-    expect(
-      await main(["sparse", "icons", "symbols/web", "--apply"], sup, out),
-    ).toBe(1);
+    expect(await main(["sparse", "icons", "symbols/web", "--apply"], sup, out)).toBe(1);
     expect(lines.join("\n")).toContain("takes no paths");
     expect(log()).toBe("\n");
   });

@@ -1,38 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import {
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  excluded,
-  linksTo,
-  storedPath,
-  totals,
-  treeBytes,
-} from "./portable.ts";
+import { excluded, linksTo, storedPath, totals, treeBytes } from "./portable.ts";
 
 describe("portable", () => {
   test("stored paths separate home and system trees", () => {
-    expect(
-      storedPath(
-        "/r/.portable",
-        { path: ".config/gh", mode: "copy", category: "essential" },
-        "home",
-      ),
-    ).toBe("/r/.portable/home/.config/gh");
-    expect(
-      storedPath(
-        "/r/.portable",
-        { path: "/var/lib/redis", mode: "copy", category: "data" },
-        "system",
-      ),
-    ).toBe("/r/.portable/system/var/lib/redis");
+    expect(storedPath("/r/.portable", { path: ".config/gh", mode: "copy", category: "essential" }, "home")).toBe(
+      "/r/.portable/home/.config/gh",
+    );
+    expect(storedPath("/r/.portable", { path: "/var/lib/redis", mode: "copy", category: "data" }, "system")).toBe(
+      "/r/.portable/system/var/lib/redis",
+    );
   });
 
   test("exclusions match whole path segments", () => {

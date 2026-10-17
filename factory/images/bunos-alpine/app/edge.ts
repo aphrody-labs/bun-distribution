@@ -5,9 +5,7 @@ import { mkdir } from "node:fs/promises";
 const port = Number(process.env.PORT ?? 8080);
 
 if (process.argv.includes("--health")) {
-  const response = await fetch(`http://127.0.0.1:${port}/healthz`).catch(
-    () => undefined,
-  );
+  const response = await fetch(`http://127.0.0.1:${port}/healthz`).catch(() => undefined);
   process.exit(response?.ok ? 0 : 1);
 }
 
@@ -28,8 +26,7 @@ const server = Bun.serve({
     if (url.pathname === "/healthz") return new Response("ok");
     if (!origin) return new Response("ORIGIN not configured", { status: 503 });
     const upstream = new URL(url.pathname + url.search, origin);
-    if (request.method !== "GET" && request.method !== "HEAD")
-      return fetch(new Request(upstream, request));
+    if (request.method !== "GET" && request.method !== "HEAD") return fetch(new Request(upstream, request));
     const body = Bun.file(key(url));
     const meta = Bun.file(`${key(url)}.json`);
     if ((await meta.exists()) && Date.now() - (await meta.json()).at < ttl) {
@@ -39,18 +36,12 @@ const server = Bun.serve({
       });
     }
     const response = await fetch(upstream, { headers: request.headers });
-    if (
-      !response.ok ||
-      /no-store|private/.test(response.headers.get("cache-control") ?? "")
-    )
-      return response;
+    if (!response.ok || /no-store|private/.test(response.headers.get("cache-control") ?? "")) return response;
     const headers = Object.fromEntries(
-      ["content-type", "cache-control", "etag", "last-modified"].flatMap(
-        (name) => {
-          const value = response.headers.get(name);
-          return value ? [[name, value]] : [];
-        },
-      ),
+      ["content-type", "cache-control", "etag", "last-modified"].flatMap(name => {
+        const value = response.headers.get(name);
+        return value ? [[name, value]] : [];
+      }),
     );
     const bytes = await response.arrayBuffer();
     await Bun.write(body, bytes);

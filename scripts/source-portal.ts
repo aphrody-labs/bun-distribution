@@ -21,19 +21,14 @@ function fail(message: string): never {
 }
 
 function hasControlCharacters(value: string): boolean {
-  return [...value].some((character) => {
+  return [...value].some(character => {
     const code = character.codePointAt(0)!;
     return code <= 0x1f || code === 0x7f;
   });
 }
 
-function repositoryURL(
-  owner: string,
-  name: string,
-  candidate: unknown,
-): string {
-  if (typeof candidate !== "string")
-    fail("A public repository URL is invalid.");
+function repositoryURL(owner: string, name: string, candidate: unknown): string {
+  if (typeof candidate !== "string") fail("A public repository URL is invalid.");
   let url: URL;
   try {
     url = new URL(candidate);
@@ -55,57 +50,32 @@ function repositoryURL(
 
 function repoOwner(value: unknown): string | null {
   if (typeof value === "string") return value;
-  if (
-    value &&
-    typeof value === "object" &&
-    "login" in value &&
-    typeof value.login === "string"
-  )
-    return value.login;
+  if (value && typeof value === "object" && "login" in value && typeof value.login === "string") return value.login;
   return null;
 }
 
-function parseRepository(
-  value: unknown,
-  observedAt: string,
-): PortalSnapshot["repositories"][number] | null {
+function parseRepository(value: unknown, observedAt: string): PortalSnapshot["repositories"][number] | null {
   if (!value || typeof value !== "object" || Array.isArray(value))
     fail("The source portal returned an invalid repository.");
   const repo = value as Record<string, unknown>;
   const owner = repoOwner(repo.owner);
-  if (
-    !sourcePortalOwners.includes(owner as (typeof sourcePortalOwners)[number])
-  )
-    return null;
+  if (!sourcePortalOwners.includes(owner as (typeof sourcePortalOwners)[number])) return null;
   if (repo.private === true) return null;
-  if (repo.private !== false)
-    fail("The source portal returned an unqualified visibility state.");
+  if (repo.private !== false) fail("The source portal returned an unqualified visibility state.");
   const name = repo.name;
-  if (
-    typeof name !== "string" ||
-    !/^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/.test(name)
-  )
+  if (typeof name !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/.test(name))
     fail("The source portal returned an invalid public repository name.");
-  if (typeof repo.mirror !== "boolean")
-    fail("The source portal returned an invalid mirror state.");
+  if (typeof repo.mirror !== "boolean") fail("The source portal returned an invalid mirror state.");
   const defaultBranch = repo.default_branch;
-  if (
-    defaultBranch !== null &&
-    defaultBranch !== undefined &&
-    typeof defaultBranch !== "string"
-  )
+  if (defaultBranch !== null && defaultBranch !== undefined && typeof defaultBranch !== "string")
     fail("The source portal returned an invalid default branch.");
-  if (
-    typeof defaultBranch === "string" &&
-    (defaultBranch.length > 255 || hasControlCharacters(defaultBranch))
-  )
+  if (typeof defaultBranch === "string" && (defaultBranch.length > 255 || hasControlCharacters(defaultBranch)))
     fail("The source portal returned an invalid default branch.");
   return {
     owner: owner as (typeof sourcePortalOwners)[number],
     name,
     htmlURL: repositoryURL(owner!, name, repo.html_url),
-    defaultBranch:
-      typeof defaultBranch === "string" && defaultBranch ? defaultBranch : null,
+    defaultBranch: typeof defaultBranch === "string" && defaultBranch ? defaultBranch : null,
     mirror: repo.mirror,
     observedAt,
   };
@@ -113,8 +83,7 @@ function parseRepository(
 
 async function fetchPage(page: number, deadline: number): Promise<unknown[]> {
   const remaining = deadline - Date.now();
-  if (remaining < 1)
-    fail("The source portal refresh exceeded its operation deadline.");
+  if (remaining < 1) fail("The source portal refresh exceeded its operation deadline.");
   const url = new URL(sourcePortalApiPath, sourcePortalOrigin);
   url.searchParams.set("limit", String(pageSize));
   url.searchParams.set("order", "asc");
@@ -125,8 +94,7 @@ async function fetchPage(page: number, deadline: number): Promise<unknown[]> {
     redirect: "error",
     signal: AbortSignal.timeout(Math.min(requestTimeoutMs, remaining)),
   });
-  if (response.status !== 200)
-    fail("Anonymous source portal search did not return HTTP 200.");
+  if (response.status !== 200) fail("Anonymous source portal search did not return HTTP 200.");
   const declaredLength = Number(response.headers.get("content-length"));
   if (Number.isFinite(declaredLength) && declaredLength > 4_000_000)
     fail("The source portal page exceeded its response bound.");
@@ -159,11 +127,7 @@ async function fetchPage(page: number, deadline: number): Promise<unknown[]> {
   if (!result || typeof result !== "object" || Array.isArray(result))
     fail("The source portal returned an invalid page.");
   const pageResult = result as { ok?: unknown; data?: unknown };
-  if (
-    pageResult.ok !== true ||
-    !Array.isArray(pageResult.data) ||
-    pageResult.data.length > pageSize
-  )
+  if (pageResult.ok !== true || !Array.isArray(pageResult.data) || pageResult.data.length > pageSize)
     fail("The source portal returned an incomplete page.");
   return pageResult.data;
 }
@@ -171,10 +135,7 @@ async function fetchPage(page: number, deadline: number): Promise<unknown[]> {
 async function loadPublicSnapshot(): Promise<PortalSnapshot> {
   const deadline = Date.now() + operationTimeoutMs;
   const observedAt = new Date().toISOString();
-  const repositories = new Map<
-    string,
-    PortalSnapshot["repositories"][number]
-  >();
+  const repositories = new Map<string, PortalSnapshot["repositories"][number]>();
   let pages = 0;
   let complete = false;
   for (let page = 1; page <= maxPages; page++) {
@@ -191,9 +152,7 @@ async function loadPublicSnapshot(): Promise<PortalSnapshot> {
           previous.mirror !== repository.mirror ||
           previous.defaultBranch !== repository.defaultBranch)
       )
-        fail(
-          "The source portal returned conflicting duplicate public repositories.",
-        );
+        fail("The source portal returned conflicting duplicate public repositories.");
       if (!previous) repositories.set(key, repository);
     }
     if (results.length < pageSize) {
@@ -201,10 +160,7 @@ async function loadPublicSnapshot(): Promise<PortalSnapshot> {
       break;
     }
   }
-  if (!complete)
-    fail(
-      "The source portal search exceeded its page bound; no partial snapshot was written.",
-    );
+  if (!complete) fail("The source portal search exceeded its page bound; no partial snapshot was written.");
   const sorted = [...repositories.values()].sort((left, right) => {
     const leftKey = `${left.owner.toLowerCase()}/${left.name.toLowerCase()}`;
     const rightKey = `${right.owner.toLowerCase()}/${right.name.toLowerCase()}`;
@@ -226,15 +182,13 @@ async function loadPublicSnapshot(): Promise<PortalSnapshot> {
 
 function repositoryProjection(snapshot: PortalSnapshot): string {
   return JSON.stringify(
-    snapshot.repositories.map(
-      ({ owner, name, htmlURL, defaultBranch, mirror }) => ({
-        owner,
-        name,
-        htmlURL,
-        defaultBranch,
-        mirror,
-      }),
-    ),
+    snapshot.repositories.map(({ owner, name, htmlURL, defaultBranch, mirror }) => ({
+      owner,
+      name,
+      htmlURL,
+      defaultBranch,
+      mirror,
+    })),
   );
 }
 
@@ -270,18 +224,13 @@ if (action === "plan") {
     }),
   );
 } else if (action === "verify") {
-  if (
-    arguments_.some((argument) => argument !== "--live") ||
-    arguments_.length > 1
-  )
+  if (arguments_.some(argument => argument !== "--live") || arguments_.length > 1)
     fail("Use source-portal.ts verify [--live].");
   const snapshot = validateSnapshot(await Bun.file(snapshotPath).json());
   if (arguments_[0] === "--live") {
     const current = await loadPublicSnapshot();
     if (repositoryProjection(current) !== repositoryProjection(snapshot))
-      fail(
-        "The saved public repository snapshot differs from the anonymous live source.",
-      );
+      fail("The saved public repository snapshot differs from the anonymous live source.");
   }
   console.log(
     JSON.stringify({

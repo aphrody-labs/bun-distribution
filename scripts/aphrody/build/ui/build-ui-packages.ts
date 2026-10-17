@@ -15,12 +15,7 @@ import { resolve, join } from "node:path";
 import { m3BunBuild } from "@aphrody/m3-config/bun-build";
 
 const REPO_ROOT = resolve(import.meta.dir, "../../../../docs/aphrody");
-const UI_ROOT = join(
-  resolve(
-    process.env.APHRODY_MATERIAL_CHECKOUT ?? join(REPO_ROOT, "..", "material"),
-  ),
-  "packages",
-);
+const UI_ROOT = join(resolve(process.env.APHRODY_MATERIAL_CHECKOUT ?? join(REPO_ROOT, "..", "material")), "packages");
 
 interface PackageBuildTarget {
   name: string;
@@ -51,9 +46,7 @@ function parseArgs(args: string[]): {
   return { targetPackage, minify, all };
 }
 
-async function discoverUiTargets(
-  targetName?: string,
-): Promise<PackageBuildTarget[]> {
+async function discoverUiTargets(targetName?: string): Promise<PackageBuildTarget[]> {
   const targets: PackageBuildTarget[] = [];
   const glob = new Glob("*/package.json");
 
@@ -68,11 +61,7 @@ async function discoverUiTargets(
     const manifest = await manifestFile.json();
     const pkgName = manifest.name ?? manifestPath.split("/")[0]!;
 
-    if (
-      targetName &&
-      pkgName !== targetName &&
-      !manifestPath.startsWith(targetName)
-    ) {
+    if (targetName && pkgName !== targetName && !manifestPath.startsWith(targetName)) {
       continue;
     }
 
@@ -108,9 +97,7 @@ export async function buildUiPackages(
   const { targetPackage, minify = false } = options;
   const targets = await discoverUiTargets(targetPackage);
   if (targets.length === 0) {
-    throw new Error(
-      `No UI build target found under ${UI_ROOT}${targetPackage ? ` for ${targetPackage}` : ""}`,
-    );
+    throw new Error(`No UI build target found under ${UI_ROOT}${targetPackage ? ` for ${targetPackage}` : ""}`);
   }
 
   console.log(`[ui-build] Discovered ${targets.length} UI build target(s)...`);
@@ -131,15 +118,10 @@ export async function buildUiPackages(
 
       const elapsed = Math.round(performance.now() - start);
       if (result.success) {
-        console.log(
-          `[ui-build] ✓ ${target.name} (${result.outputs.length} outputs, ${elapsed}ms)`,
-        );
+        console.log(`[ui-build] ✓ ${target.name} (${result.outputs.length} outputs, ${elapsed}ms)`);
         successful++;
       } else {
-        console.error(
-          `[ui-build] ✗ ${target.name} failed:`,
-          result.logs.join("\n"),
-        );
+        console.error(`[ui-build] ✗ ${target.name} failed:`, result.logs.join("\n"));
         failed++;
       }
     } catch (error) {
@@ -154,8 +136,6 @@ export async function buildUiPackages(
 if (import.meta.main) {
   const { targetPackage, minify } = parseArgs(process.argv.slice(2));
   const result = await buildUiPackages({ targetPackage, minify });
-  console.log(
-    `\n[ui-build] Completed: ${result.successful}/${result.total} packages built successfully.`,
-  );
+  console.log(`\n[ui-build] Completed: ${result.successful}/${result.total} packages built successfully.`);
   process.exit(result.failed === 0 ? 0 : 1);
 }

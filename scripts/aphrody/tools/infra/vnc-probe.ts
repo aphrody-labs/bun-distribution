@@ -24,35 +24,25 @@ const opt = (name: string) => {
   return v && !v.startsWith("--") ? v : undefined;
 };
 const valueIndexes = new Set(
-  ["--out", "--wait"].flatMap((n) => {
+  ["--out", "--wait"].flatMap(n => {
     const i = argv.indexOf(n);
-    return i >= 0 && argv[i + 1] && !argv[i + 1]!.startsWith("--")
-      ? [i + 1]
-      : [];
+    return i >= 0 && argv[i + 1] && !argv[i + 1]!.startsWith("--") ? [i + 1] : [];
   }),
 );
-const targets = argv.filter(
-  (a, i) => !a.startsWith("--") && !valueIndexes.has(i),
-);
-const out =
-  opt("--out") ??
-  join(process.env.TEMP ?? process.env.TMPDIR ?? "/tmp", "aphrody-vnc");
+const targets = argv.filter((a, i) => !a.startsWith("--") && !valueIndexes.has(i));
+const out = opt("--out") ?? join(process.env.TEMP ?? process.env.TMPDIR ?? "/tmp", "aphrody-vnc");
 const act = flag("--act");
 const wait = flag("--wait");
 const waitSeconds = Number(opt("--wait") ?? 6 * 3600);
 if (targets.length === 0) {
-  console.error(
-    "usage: vnc-probe.ts <cible>... [--out dir] [--act] [--wait [s]] [--json]",
-  );
+  console.error("usage: vnc-probe.ts <cible>... [--out dir] [--act] [--wait [s]] [--json]");
   process.exit(2);
 }
 mkdirSync(out, { recursive: true });
 
 const bin =
   process.env.APHRODY_BIN ??
-  (process.platform === "win32"
-    ? `${process.env.LOCALAPPDATA}\\Aphrody\\bin\\aphrody.exe`
-    : "aphrody");
+  (process.platform === "win32" ? `${process.env.LOCALAPPDATA}\\Aphrody\\bin\\aphrody.exe` : "aphrody");
 
 class Mcp {
   private id = 0;
@@ -89,11 +79,8 @@ class Mcp {
   request(method: string, params: object, timeoutMs = 60_000): Promise<any> {
     const id = ++this.id;
     return new Promise((resolve, reject) => {
-      const t = setTimeout(
-        () => reject(new Error(`${method}: délai dépassé`)),
-        timeoutMs,
-      );
-      this.pending.set(id, (m) => {
+      const t = setTimeout(() => reject(new Error(`${method}: délai dépassé`)), timeoutMs);
+      this.pending.set(id, m => {
         clearTimeout(t);
         resolve(m);
       });
@@ -113,11 +100,7 @@ class Mcp {
   }
 }
 
-async function call(
-  mcp: Mcp,
-  args: Record<string, unknown>,
-  shot?: string,
-): Promise<Step> {
+async function call(mcp: Mcp, args: Record<string, unknown>, shot?: string): Promise<Step> {
   const t0 = performance.now();
   const target = String(args.target);
   const action = String(args.action);
@@ -127,10 +110,7 @@ async function call(
       arguments: args,
     });
     const r = m.result ?? {};
-    const text =
-      (r.content ?? []).find((c: any) => c.type === "text")?.text ??
-      m.error?.message ??
-      "";
+    const text = (r.content ?? []).find((c: any) => c.type === "text")?.text ?? m.error?.message ?? "";
     const img = (r.content ?? []).find((c: any) => c.type === "image");
     if (img && shot) writeFileSync(shot, Buffer.from(img.data, "base64"));
     return {
@@ -164,8 +144,7 @@ for (const target of targets) {
     let ok = false;
     while (Date.now() < deadline && !ok) {
       await Bun.sleep(60_000);
-      ok = (await call(mcp, { target, action: "screenshot" }, `${base}-0.jpg`))
-        .ok;
+      ok = (await call(mcp, { target, action: "screenshot" }, `${base}-0.jpg`)).ok;
     }
     steps.push({
       ...s0,
@@ -190,9 +169,7 @@ for (const target of targets) {
     { action: "wait", duration_ms: 500 },
   ];
   for (const p of plan) steps.push(await call(mcp, { target, ...p }));
-  steps.push(
-    await call(mcp, { target, action: "screenshot" }, `${base}-1.jpg`),
-  );
+  steps.push(await call(mcp, { target, action: "screenshot" }, `${base}-1.jpg`));
   await call(mcp, { target, action: "close" });
 }
 mcp.close();
@@ -200,8 +177,6 @@ mcp.close();
 if (flag("--json")) console.log(JSON.stringify(steps, null, 2));
 else
   for (const s of steps)
-    console.log(
-      `${s.ok ? "ok  " : "FAIL"} ${s.target} ${s.action} (${s.ms} ms) ${s.ok ? "" : s.detail}`,
-    );
+    console.log(`${s.ok ? "ok  " : "FAIL"} ${s.target} ${s.action} (${s.ms} ms) ${s.ok ? "" : s.detail}`);
 console.error(`captures : ${out}`);
-process.exit(steps.every((s) => s.ok) ? 0 : 1);
+process.exit(steps.every(s => s.ok) ? 0 : 1);

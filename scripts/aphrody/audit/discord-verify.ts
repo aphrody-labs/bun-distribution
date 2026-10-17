@@ -8,23 +8,14 @@ const rootPkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 const catalog = rootPkg.workspaces?.catalog ?? {};
 
 // 1. Verify that canonical Discord packages are defined in the root catalog
-const requiredCatalog = [
-  "discordx",
-  "discord.js",
-  "discord-api-types",
-  "@discordjs/rest",
-];
+const requiredCatalog = ["discordx", "discord.js", "discord-api-types", "@discordjs/rest"];
 
 for (const pkg of requiredCatalog) {
   if (!catalog[pkg]) {
-    throw new Error(
-      `Discord catalog contract violation: '${pkg}' missing in workspaces.catalog`,
-    );
+    throw new Error(`Discord catalog contract violation: '${pkg}' missing in workspaces.catalog`);
   }
 }
-console.log(
-  `✓ Discord catalog contract: all ${requiredCatalog.length} required packages are catalogued`,
-);
+console.log(`✓ Discord catalog contract: all ${requiredCatalog.length} required packages are catalogued`);
 
 function run(cwd: string, ...args: string[]): void {
   console.log(`\n${cwd}: bun ${args.join(" ")}`);
@@ -46,10 +37,7 @@ for (const gate of ["typecheck", "test", "build"]) {
 // 3. Gate consumer bots typecheck & integrity if requested with --full. The Shenron bot lives in
 // aphrody-labs/shenron (SHENRON_ROOT, else the sibling checkout of this repository).
 if (process.argv.includes("--full")) {
-  const shenronBot = resolve(
-    process.env.SHENRON_ROOT?.trim() || resolve(root, "..", "shenron"),
-    "apps/bot",
-  );
+  const shenronBot = resolve(process.env.SHENRON_ROOT?.trim() || resolve(root, "..", "shenron"), "apps/bot");
   if (existsSync(shenronBot)) {
     run(shenronBot, "run", "type-check");
     run(shenronBot, "run", "test");
@@ -60,18 +48,7 @@ if (process.argv.includes("--full")) {
 
 // 4. Gate native standalone compilation if requested with --compile
 if (process.argv.includes("--compile")) {
-  run(
-    root,
-    "run",
-    "packages/engine/yolo/src/index.ts",
-    "ops",
-    "discord",
-    "compile",
-    "all",
-    "--smoke",
-  );
+  run(root, "run", "packages/engine/yolo/src/index.ts", "ops", "discord", "compile", "all", "--smoke");
 }
 
-console.log(
-  "\nAll Discord monorepo gates, shared packages, and bot integrations passed successfully.",
-);
+console.log("\nAll Discord monorepo gates, shared packages, and bot integrations passed successfully.");

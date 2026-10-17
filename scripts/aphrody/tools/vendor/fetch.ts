@@ -44,8 +44,7 @@ const git = (cwd: string, ...args: string[]) => {
   };
 };
 
-const head = (dir: string) =>
-  existsSync(join(dir, ".git")) ? git(dir, "rev-parse", "HEAD").out : "";
+const head = (dir: string) => (existsSync(join(dir, ".git")) ? git(dir, "rev-parse", "HEAD").out : "");
 
 export function fetchSource(s: VendorSource): string {
   const dir = join(REPO, s.path);
@@ -66,16 +65,7 @@ export function fetchSource(s: VendorSource): string {
   // A sparse script owns its tree (a cone of the 2.1M-file icons repository hangs git): check out nothing, let it materialise.
   if (s.sparseScript) git(dir, "sparse-checkout", "set", "--no-cone", "!/*");
   else if (s.sparse) git(dir, "sparse-checkout", "set", "--cone", ...s.sparse);
-  const f = git(
-    dir,
-    "fetch",
-    "-q",
-    "--depth",
-    "1",
-    "--filter=blob:none",
-    "origin",
-    s.ref,
-  );
+  const f = git(dir, "fetch", "-q", "--depth", "1", "--filter=blob:none", "origin", s.ref);
   if (!f.ok) throw new Error(`${s.name}: fetch ${s.ref}: ${f.err}`);
   const c = git(dir, "checkout", "-q", "--detach", "FETCH_HEAD");
   if (!c.ok) throw new Error(`${s.name}: checkout: ${c.err}`);
@@ -86,10 +76,7 @@ export function fetchSource(s: VendorSource): string {
       stdout: "pipe",
       stderr: "pipe",
     });
-    if (r.exitCode !== 0)
-      throw new Error(
-        `${s.name}: ${s.sparseScript}: ${r.stderr.toString().trim()}`,
-      );
+    if (r.exitCode !== 0) throw new Error(`${s.name}: ${s.sparseScript}: ${r.stderr.toString().trim()}`);
   }
   return `fetched ${s.name} @ ${s.ref.slice(0, 9)}`;
 }
@@ -97,44 +84,35 @@ export function fetchSource(s: VendorSource): string {
 export async function main(argv: string[]): Promise<number> {
   const [cmd = "list", ...rest] = argv;
   const json = rest.includes("--json");
-  const names = rest.filter((a) => !a.startsWith("--"));
+  const names = rest.filter(a => !a.startsWith("--"));
   const all = await loadSources();
-  const picked = names.length ? all.filter((s) => names.includes(s.name)) : all;
+  const picked = names.length ? all.filter(s => names.includes(s.name)) : all;
   if (names.length && picked.length !== names.length) {
-    console.error(
-      `unknown source: ${names.filter((n) => !all.some((s) => s.name === n)).join(", ")}`,
-    );
+    console.error(`unknown source: ${names.filter(n => !all.some(s => s.name === n)).join(", ")}`);
     return 2;
   }
   if (cmd === "list") {
-    const rows = picked.map((s) => ({
+    const rows = picked.map(s => ({
       name: s.name,
       path: s.path,
       ref: s.ref,
       state:
-        head(join(REPO, s.path)) === s.ref
-          ? "pinned"
-          : existsSync(join(REPO, s.path, ".git"))
-            ? "off-pin"
-            : "absent",
+        head(join(REPO, s.path)) === s.ref ? "pinned" : existsSync(join(REPO, s.path, ".git")) ? "off-pin" : "absent",
     }));
     console.log(
       json
         ? JSON.stringify(rows, null, 2)
-        : rows
-            .map((r) => `${r.state.padEnd(8)}${r.name.padEnd(26)}${r.path}`)
-            .join("\n"),
+        : rows.map(r => `${r.state.padEnd(8)}${r.name.padEnd(26)}${r.path}`).join("\n"),
     );
     return 0;
   }
   if (cmd === "check") {
-    const bad = picked.filter((s) => head(join(REPO, s.path)) !== s.ref);
+    const bad = picked.filter(s => head(join(REPO, s.path)) !== s.ref);
     for (const s of bad) console.error(`not at pin: ${s.name} (${s.path})`);
     return bad.length ? 1 : 0;
   }
   if (cmd === "remove") {
-    for (const s of picked)
-      rmSync(join(REPO, s.path), { recursive: true, force: true });
+    for (const s of picked) rmSync(join(REPO, s.path), { recursive: true, force: true });
     return 0;
   }
   if (cmd === "fetch") {

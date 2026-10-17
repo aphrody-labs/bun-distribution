@@ -53,11 +53,8 @@ export function parseArgs(argv: string[]): BuildOptions & { help: boolean } {
     else throw new Error(`Unknown argument: ${arg}`);
   }
   if (!CONFIGURATIONS.includes(options.configuration))
-    throw new Error(
-      `--configuration must be one of ${CONFIGURATIONS.join(", ")}`,
-    );
-  if (!PLATFORMS.includes(options.platform))
-    throw new Error(`--platform must be one of ${PLATFORMS.join(", ")}`);
+    throw new Error(`--configuration must be one of ${CONFIGURATIONS.join(", ")}`);
+  if (!PLATFORMS.includes(options.platform)) throw new Error(`--platform must be one of ${PLATFORMS.join(", ")}`);
   return options;
 }
 
@@ -92,18 +89,9 @@ export function parseSetOutput(text: string): Env {
 
 /** Environment of the newest (prerelease included) Visual Studio carrying MSBuild, for amd64. */
 export function developerEnvironment(env: Env): Env {
-  const programFiles =
-    env["ProgramFiles(x86)"] ?? env.ProgramFiles ?? "C:\\Program Files (x86)";
-  const vswhere = join(
-    programFiles,
-    "Microsoft Visual Studio",
-    "Installer",
-    "vswhere.exe",
-  );
-  if (!existsSync(vswhere))
-    throw new Error(
-      "vswhere.exe not found: install Visual Studio (Build Tools) 2026.",
-    );
+  const programFiles = env["ProgramFiles(x86)"] ?? env.ProgramFiles ?? "C:\\Program Files (x86)";
+  const vswhere = join(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe");
+  if (!existsSync(vswhere)) throw new Error("vswhere.exe not found: install Visual Studio (Build Tools) 2026.");
   const install = Bun.spawnSync(
     [
       vswhere,
@@ -120,8 +108,7 @@ export function developerEnvironment(env: Env): Env {
   )
     .stdout.toString()
     .trim();
-  if (!install)
-    throw new Error("No Visual Studio installation with MSBuild was found.");
+  if (!install) throw new Error("No Visual Studio installation with MSBuild was found.");
   const devCmd = join(install, "Common7", "Tools", "VsDevCmd.bat");
   if (!existsSync(devCmd)) throw new Error(`VsDevCmd.bat missing: ${devCmd}`);
   const dir = mkdtempSync(join(tmpdir(), "aphrody-vsdev-"));
@@ -131,32 +118,22 @@ export function developerEnvironment(env: Env): Env {
       script,
       `@echo off\r\nchcp 65001 >nul\r\ncall "${devCmd}" -arch=amd64 -host_arch=amd64 -no_logo >nul 2>&1\r\nif errorlevel 1 exit /b 1\r\nset\r\n`,
     );
-    const result = Bun.spawnSync(
-      [env.ComSpec ?? "cmd.exe", "/d", "/c", script],
-      {
-        env,
-        stdout: "pipe",
-        stderr: "pipe",
-        windowsHide: true,
-      },
-    );
-    if (result.exitCode !== 0)
-      throw new Error(`VsDevCmd.bat failed (${result.exitCode})`);
+    const result = Bun.spawnSync([env.ComSpec ?? "cmd.exe", "/d", "/c", script], {
+      env,
+      stdout: "pipe",
+      stderr: "pipe",
+      windowsHide: true,
+    });
+    if (result.exitCode !== 0) throw new Error(`VsDevCmd.bat failed (${result.exitCode})`);
     const captured = parseSetOutput(result.stdout.toString());
-    if (!captured.VSINSTALLDIR)
-      throw new Error("VsDevCmd.bat did not provide VSINSTALLDIR");
+    if (!captured.VSINSTALLDIR) throw new Error("VsDevCmd.bat did not provide VSINSTALLDIR");
     return captured;
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 }
 
-async function step(
-  name: string,
-  argv: string[],
-  env: Env,
-  cwd: string,
-): Promise<void> {
+async function step(name: string, argv: string[], env: Env, cwd: string): Promise<void> {
   console.log(`==> ${name}`);
   const child = Bun.spawn(argv, {
     cwd,
@@ -171,8 +148,7 @@ async function step(
 }
 
 export async function build(options: BuildOptions): Promise<void> {
-  if (process.platform !== "win32")
-    throw new Error("microsoft/terminal builds on Windows only.");
+  if (process.platform !== "win32") throw new Error("microsoft/terminal builds on Windows only.");
   const solution = join(options.terminalRoot, "OpenConsole.slnx");
   if (!existsSync(solution))
     throw new Error(
@@ -183,19 +159,13 @@ export async function build(options: BuildOptions): Promise<void> {
     PlatformToolset: TOOLSET,
     WindowsTargetPlatformVersion: SDK,
   };
-  const msbuildBin = join(
-    env.VSINSTALLDIR as string,
-    "MSBuild",
-    "Current",
-    "Bin",
-  );
+  const msbuildBin = join(env.VSINSTALLDIR as string, "MSBuild", "Current", "Bin");
   // The bundled NuGet cannot parse .slnx (NuGet/Home#14034); a current nuget.exe delegates to MSBuild.
   const nuget = join(options.terminalRoot, "dep", "nuget", "nuget-latest.exe");
   if (!existsSync(nuget)) {
     console.log("==> Downloading latest nuget.exe");
     const response = await fetch(NUGET_URL);
-    if (!response.ok)
-      throw new Error(`nuget.exe download failed: HTTP ${response.status}`);
+    if (!response.ok) throw new Error(`nuget.exe download failed: HTTP ${response.status}`);
     await Bun.write(nuget, response);
   }
   await step(

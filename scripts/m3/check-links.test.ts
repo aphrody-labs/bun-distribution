@@ -16,7 +16,7 @@ describe("link extraction", () => {
   test("inline links, images, reference definitions and HTML attributes; never code", () => {
     const found = links(
       '[a](./a.md) ![i](img/x.png "t")\n`[no](./code.md)`\n```\n[no](./fenced.md)\n```\n[ref]: ../b.md\n<img src="./c.png">\n',
-    ).map((l) => l.link);
+    ).map(l => l.link);
     expect(found).toEqual(["./a.md", "img/x.png", "../b.md", "./c.png"]);
   });
   test("GitHub heading slugs", () => {
@@ -34,9 +34,7 @@ describe("checkLinks on a synthetic repository", () => {
   write("docs/b.md", "## Section\n");
 
   test("missing files and anchors are errors; valid links and URLs pass", () => {
-    const messages = checkLinks(root).map(
-      (f) => `${f.file}:${f.line} ${f.link} ${f.message}`,
-    );
+    const messages = checkLinks(root).map(f => `${f.file}:${f.line} ${f.link} ${f.message}`);
     expect(messages).toEqual([
       "docs/a.md:5 ./gone.md target does not exist",
       "docs/a.md:5 ./b.md#nope anchor #nope not found in docs/b.md",

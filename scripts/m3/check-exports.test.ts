@@ -3,12 +3,7 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import {
-  checkAll,
-  exportTargets,
-  matchExportKey,
-  splitSpecifier,
-} from "./check-exports.ts";
+import { checkAll, exportTargets, matchExportKey, splitSpecifier } from "./check-exports.ts";
 
 const root = mkdtempSync(join(tmpdir(), "check-exports-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -57,10 +52,7 @@ write(
     dependencies: { "@fx/ghost": "workspace:*", lodash: "catalog:" },
   }),
 );
-write(
-  "packages/b/src/index.ts",
-  'import "@fx/a";\nimport "./nope";\nimport "./addon.node";\n',
-);
+write("packages/b/src/index.ts", 'import "@fx/a";\nimport "./nope";\nimport "./addon.node";\n');
 
 describe("exports helpers", () => {
   test("exportTargets flattens subpaths and conditions", () => {
@@ -92,10 +84,7 @@ describe("exports helpers", () => {
 
 describe("checkAll on a synthetic repository", () => {
   const { packages, findings } = checkAll(root);
-  const messages = (pkg: string) =>
-    findings
-      .filter((f) => f.pkg === pkg)
-      .map((f) => `${f.check}: ${f.message}`);
+  const messages = (pkg: string) => findings.filter(f => f.pkg === pkg).map(f => `${f.check}: ${f.message}`);
 
   test("a complete package has no findings (dist targets backed by a build and a source)", () => {
     expect(packages).toBe(2);
@@ -106,20 +95,12 @@ describe("checkAll on a synthetic repository", () => {
     expect(b).toContain("manifest: README.md missing");
     expect(b).toContain("manifest: no test script");
     expect(b).toContain("manifest: no typecheck or build script");
-    expect(
-      b.some((m) => m.startsWith("entries: main -> ./src/missing.ts")),
-    ).toBe(true);
-    expect(b.some((m) => m.includes("@fx/ghost@workspace:*"))).toBe(true);
-    expect(
-      b.some((m) => m.includes("lodash@catalog: not in the root catalog")),
-    ).toBe(true);
-    expect(
-      b.some((m) => m.includes("imports @fx/a but @fx/a is not declared")),
-    ).toBe(true);
-    expect(
-      b.some((m) => m.includes("relative import ./nope does not resolve")),
-    ).toBe(true);
+    expect(b.some(m => m.startsWith("entries: main -> ./src/missing.ts"))).toBe(true);
+    expect(b.some(m => m.includes("@fx/ghost@workspace:*"))).toBe(true);
+    expect(b.some(m => m.includes("lodash@catalog: not in the root catalog"))).toBe(true);
+    expect(b.some(m => m.includes("imports @fx/a but @fx/a is not declared"))).toBe(true);
+    expect(b.some(m => m.includes("relative import ./nope does not resolve"))).toBe(true);
     // Platform addons are optional by design.
-    expect(b.some((m) => m.includes("addon.node"))).toBe(false);
+    expect(b.some(m => m.includes("addon.node"))).toBe(false);
   });
 });

@@ -23,10 +23,7 @@ describe("product-residue", () => {
   });
 
   test("fails on new files and regressions, reports shrinkage", () => {
-    const report = evaluate(
-      { "a.rs": 3, "b.md": 5, "c.ts": 1 },
-      { "a.rs": 3, "b.md": 4, "d.json": 2 },
-    );
+    const report = evaluate({ "a.rs": 3, "b.md": 5, "c.ts": 1 }, { "a.rs": 3, "b.md": 4, "d.json": 2 });
     expect(report.ok).toBe(false);
     expect(report.findings).toEqual([
       { kind: "regression", file: "b.md", count: 5, baseline: 4 },

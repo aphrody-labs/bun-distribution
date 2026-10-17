@@ -18,15 +18,7 @@
 // `link` symlinks the verified library into every installed copy of `@aphrody/bun`: a plan unless
 // `--apply`. Build it first (integrator, serialized Cargo):
 //   scripts/build/rust/cargo-serial.sh build --release --locked -p aphrody-ffi --features gpu
-import {
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readFileSync,
-  readlinkSync,
-  symlinkSync,
-  unlinkSync,
-} from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, symlinkSync, unlinkSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
@@ -35,12 +27,7 @@ export const YOLO_ROOT = process.env["YOLO_ROOT"] ?? join(homedir(), "yolo");
 /** The producer SDK loader (`@aphrody/runtime-sdk/ffi`) inside the yolo checkout. */
 export const RUNTIME_SDK_FFI = join(YOLO_ROOT, "packages/runtime/src/ffi.ts");
 
-export const SUFFIX =
-  process.platform === "win32"
-    ? "dll"
-    : process.platform === "darwin"
-      ? "dylib"
-      : "so";
+export const SUFFIX = process.platform === "win32" ? "dll" : process.platform === "darwin" ? "dylib" : "so";
 export const BUILD_HINT =
   "Build it in aphrody (integrator): scripts/build/rust/cargo-serial.sh build --release --locked -p aphrody-ffi --features gpu, then `bun scripts/native.ts link --apply`.";
 
@@ -56,15 +43,8 @@ export interface InstalledCopy {
 /** The library file an installed `@aphrody/bun` opens, from its loader source. */
 export function nativeFileFor(pkgDir: string): string {
   const library = join(pkgDir, "src/library.ts");
-  if (
-    existsSync(library) &&
-    readFileSync(library, "utf8").includes("aphrody_ffi")
-  ) {
-    return join(
-      pkgDir,
-      "native",
-      `${process.platform === "win32" ? "" : "lib"}aphrody_ffi.${SUFFIX}`,
-    );
+  if (existsSync(library) && readFileSync(library, "utf8").includes("aphrody_ffi")) {
+    return join(pkgDir, "native", `${process.platform === "win32" ? "" : "lib"}aphrody_ffi.${SUFFIX}`);
   }
   return join(pkgDir, "native", `bun_rs.${SUFFIX}`);
 }
@@ -74,20 +54,20 @@ export function installedCopies(root = REPO): InstalledCopy[] {
   const dirs = new Set<string>();
   const store = join(root, "node_modules/.bun");
   if (existsSync(store)) {
-    for (const file of new Bun.Glob(
-      "@aphrody+bun@*/node_modules/@aphrody/bun/package.json",
-    ).scanSync({ cwd: store, onlyFiles: true })) {
+    for (const file of new Bun.Glob("@aphrody+bun@*/node_modules/@aphrody/bun/package.json").scanSync({
+      cwd: store,
+      onlyFiles: true,
+    })) {
       dirs.add(join(store, dirname(file)));
     }
   }
   const hoisted = join(root, "node_modules/@aphrody/bun");
   if (existsSync(join(hoisted, "package.json"))) dirs.add(hoisted);
-  return [...dirs].toSorted().map((dir) => {
+  return [...dirs].toSorted().map(dir => {
     const nativeFile = nativeFileFor(dir);
     return {
       dir,
-      version: JSON.parse(readFileSync(join(dir, "package.json"), "utf8"))
-        .version as string,
+      version: JSON.parse(readFileSync(join(dir, "package.json"), "utf8")).version as string,
       nativeFile,
       present: existsSync(nativeFile),
     };
@@ -105,10 +85,7 @@ export function aphrodyRoot(start = REPO): string {
 }
 
 /** Directories searched after the explicit and environment paths. */
-export function searchDirs(
-  root = aphrodyRoot(),
-  copies = installedCopies(),
-): string[] {
+export function searchDirs(root = aphrodyRoot(), copies = installedCopies()): string[] {
   const target = process.env["CARGO_TARGET_DIR"]
     ? resolve(root, process.env["CARGO_TARGET_DIR"])
     : join(root, "target");
@@ -125,7 +102,7 @@ export function searchDirs(
     join(target, triple, "release"),
     join(target, "debug"),
     join(target, triple, "debug"),
-    ...copies.map((copy) => dirname(copy.nativeFile)),
+    ...copies.map(copy => dirname(copy.nativeFile)),
   ];
 }
 
@@ -171,11 +148,7 @@ export async function resolveLibrary(
   const prefix = process.platform === "win32" ? "" : "lib";
   const library = nativeLibrary({
     name: "aphrody_ffi",
-    fileNames: [
-      `${prefix}aphrody_ffi.${SUFFIX}`,
-      `bun_rs.${SUFFIX}`,
-      `libbun_rs.${SUFFIX}`,
-    ],
+    fileNames: [`${prefix}aphrody_ffi.${SUFFIX}`, `bun_rs.${SUFFIX}`, `libbun_rs.${SUFFIX}`],
     symbols: { bun_rs_version: { args: [], returns: "cstring" } },
     ...(options.lib ? { path: resolve(options.lib) } : {}),
     envPaths: ["APHRODY_FFI_LIB", "BUN_RS_LIB"],
@@ -202,14 +175,12 @@ export interface LinkStep {
 
 /** Symlinks that make every installed copy open `lib`. */
 export function linkPlan(lib: string, copies: InstalledCopy[]): LinkStep[] {
-  return copies.map((copy) => {
+  return copies.map(copy => {
     let action: LinkStep["action"] = "create";
     try {
       const stat = lstatSync(copy.nativeFile);
       action =
-        stat.isSymbolicLink() &&
-        resolve(dirname(copy.nativeFile), readlinkSync(copy.nativeFile)) ===
-          resolve(lib)
+        stat.isSymbolicLink() && resolve(dirname(copy.nativeFile), readlinkSync(copy.nativeFile)) === resolve(lib)
           ? "keep"
           : "replace";
     } catch {
@@ -240,7 +211,7 @@ if (import.meta.main) {
   if (command === "status") {
     const resolution = await resolveLibrary({ lib: flag(args, "lib") });
     const verifiedCopies = await Promise.all(
-      copies.map(async (copy) => ({
+      copies.map(async copy => ({
         ...copy,
         library: await resolveLibrary({ lib: copy.nativeFile, dirs: [] }),
       })),
@@ -263,11 +234,7 @@ if (import.meta.main) {
       );
     }
     process.exit(
-      resolution.path &&
-        verifiedCopies.length > 0 &&
-        verifiedCopies.every((c) => c.present && c.library.path)
-        ? 0
-        : 1,
+      resolution.path && verifiedCopies.length > 0 && verifiedCopies.every(c => c.present && c.library.path) ? 0 : 1,
     );
   } else if (command === "link") {
     const resolution = await resolveLibrary({ lib: flag(args, "lib") });
@@ -278,23 +245,13 @@ if (import.meta.main) {
     const steps = linkPlan(resolution.path, copies);
     const apply = args.includes("--apply");
     if (apply) applyLink(steps);
-    if (json)
-      console.log(
-        JSON.stringify(
-          { applied: apply, library: resolution.path, steps },
-          null,
-          2,
-        ),
-      );
+    if (json) console.log(JSON.stringify({ applied: apply, library: resolution.path, steps }, null, 2));
     else {
-      for (const s of steps)
-        console.log(`${apply ? "" : "plan: "}${s.action} ${s.to} -> ${s.from}`);
+      for (const s of steps) console.log(`${apply ? "" : "plan: "}${s.action} ${s.to} -> ${s.from}`);
       if (!apply) console.log("dry run: pass --apply to link");
     }
   } else {
-    console.error(
-      "usage: bun scripts/native.ts status|link [--lib <file>] [--apply] [--json]",
-    );
+    console.error("usage: bun scripts/native.ts status|link [--lib <file>] [--apply] [--json]");
     process.exit(2);
   }
 }

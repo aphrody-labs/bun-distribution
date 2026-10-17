@@ -14,15 +14,7 @@
  * repository has no signing key. Native Windows x64 uses the running Bun; other build hosts may supply a qualified
  * Windows x64 Bun with `--compile-executable-path`. `--smoke` runs natively on Windows and under Wine elsewhere.
  */
-import {
-  copyFile,
-  mkdir,
-  mkdtemp,
-  readFile,
-  rm,
-  stat,
-  writeFile,
-} from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -46,11 +38,7 @@ export interface StagedEntry {
   sha256: string;
 }
 
-async function run(
-  argv: string[],
-  cwd = repo,
-  env: Record<string, string> = {},
-): Promise<string> {
+async function run(argv: string[], cwd = repo, env: Record<string, string> = {}): Promise<string> {
   const proc = Bun.spawn(argv, {
     windowsHide: true,
     cwd,
@@ -63,10 +51,7 @@ async function run(
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
-  if (code !== 0)
-    throw new Error(
-      `${argv.slice(0, 4).join(" ")} failed (${code}):\n${err || out}`,
-    );
+  if (code !== 0) throw new Error(`${argv.slice(0, 4).join(" ")} failed (${code}):\n${err || out}`);
   return out;
 }
 
@@ -86,24 +71,14 @@ export function setupCompileCommand(
   } = {},
 ): string[] {
   const argv = [options.executable ?? process.execPath, "build", "--compile"];
-  if (
-    (options.platform ?? process.platform) !== "win32" ||
-    (options.arch ?? process.arch) !== "x64"
-  )
+  if ((options.platform ?? process.platform) !== "win32" || (options.arch ?? process.arch) !== "x64")
     argv.push("--target=bun-windows-x64");
-  if (options.targetExecutable)
-    argv.push("--compile-executable-path", resolve(options.targetExecutable));
+  if (options.targetExecutable) argv.push("--compile-executable-path", resolve(options.targetExecutable));
   return [...argv, "src/cli.ts", "--outfile", outfile];
 }
 
-export async function stageSetup(
-  out: string,
-  smoke: boolean,
-  targetExecutable?: string,
-): Promise<StagedEntry[]> {
-  const { version } = JSON.parse(
-    await readFile(join(appDir, "package.json"), "utf8"),
-  ) as {
+export async function stageSetup(out: string, smoke: boolean, targetExecutable?: string): Promise<StagedEntry[]> {
+  const { version } = JSON.parse(await readFile(join(appDir, "package.json"), "utf8")) as {
     version: string;
   };
   const commit = (await run(["git", "rev-parse", "--short=9", "HEAD"])).trim();
@@ -112,10 +87,7 @@ export async function stageSetup(
   try {
     const pack = join(work, "pack");
     await mkdir(pack, { recursive: true });
-    await run(
-      setupCompileCommand(join(pack, EXE), { targetExecutable }),
-      appDir,
-    );
+    await run(setupCompileCommand(join(pack, EXE), { targetExecutable }), appDir);
     await brandExe(join(pack, EXE), {
       icon: ICON,
       version: `${version}.0`,
@@ -135,52 +107,23 @@ export async function stageSetup(
         WINEPREFIX: join(process.env.HOME ?? "", ".cache/creator-kit/wine"),
         APHRODY_SETUP_NO_UPDATE: "1",
       };
-      const printed = await run(
-        [...runner, join(pack, EXE), "--version"],
-        repo,
-        env,
-      );
-      if (!printed.includes(version))
-        throw new Error(`smoke: --version printed ${JSON.stringify(printed)}`);
+      const printed = await run([...runner, join(pack, EXE), "--version"], repo, env);
+      if (!printed.includes(version)) throw new Error(`smoke: --version printed ${JSON.stringify(printed)}`);
       await run([...runner, join(pack, EXE), "--oui", "--simuler"], repo, env);
       for (const role of ["admin", "creator"]) {
-        const roleVersion = await run(
-          [...runner, join(pack, EXE), role, "--version"],
-          repo,
-          env,
-        );
-        if (!roleVersion.includes(version))
-          throw new Error(`${role}: product version mismatch`);
+        const roleVersion = await run([...runner, join(pack, EXE), role, "--version"], repo, env);
+        if (!roleVersion.includes(version)) throw new Error(`${role}: product version mismatch`);
         await run([...runner, join(pack, EXE), role, "--help"], repo, env);
-        const events = await run(
-          [...runner, join(pack, EXE), role, "desktop", "catalog"],
-          repo,
-          env,
-        );
+        const events = await run([...runner, join(pack, EXE), role, "desktop", "catalog"], repo, env);
         const catalog = events
           .split(/\r?\n/)
           .filter(Boolean)
-          .map((line) => JSON.parse(line));
-        if (
-          !catalog.some((event) => event.catalog?.protocol === "aphrody.kit/1")
-        )
+          .map(line => JSON.parse(line));
+        if (!catalog.some(event => event.catalog?.protocol === "aphrody.kit/1"))
           throw new Error(`${role}: desktop protocol missing`);
       }
-      await run(
-        [
-          ...runner,
-          join(pack, EXE),
-          "--oui",
-          "--roles",
-          "admin,createur",
-          "--simuler",
-        ],
-        repo,
-        env,
-      );
-      console.log(
-        "smoke ok (version, installation simulation, both role CLIs and desktop catalogs)",
-      );
+      await run([...runner, join(pack, EXE), "--oui", "--roles", "admin,createur", "--simuler"], repo, env);
+      console.log("smoke ok (version, installation simulation, both role CLIs and desktop catalogs)");
     }
     await mkdir(out, { recursive: true });
     await copyFile(join(pack, EXE), join(out, names.exe));
@@ -201,14 +144,8 @@ export async function stageSetup(
         sha256: await sha256File(join(out, file)),
       });
     }
-    await writeFile(
-      join(out, "SHA256SUMS"),
-      `${entries.map((e) => `${e.sha256}  ${e.file}`).join("\n")}\n`,
-    );
-    await writeFile(
-      join(out, "aphrody-setup.manifest.json"),
-      `${JSON.stringify(entries, null, 2)}\n`,
-    );
+    await writeFile(join(out, "SHA256SUMS"), `${entries.map(e => `${e.sha256}  ${e.file}`).join("\n")}\n`);
+    await writeFile(join(out, "aphrody-setup.manifest.json"), `${JSON.stringify(entries, null, 2)}\n`);
     for (const e of entries) console.log(`${e.file}  ${e.size} B  ${e.sha256}`);
     return entries;
   } finally {
@@ -220,13 +157,8 @@ if (import.meta.main) {
   const args = Bun.argv.slice(2);
   const at = args.indexOf("--out");
   const targetAt = args.indexOf("--compile-executable-path");
-  if (
-    targetAt >= 0 &&
-    (!args[targetAt + 1] || args[targetAt + 1]?.startsWith("--"))
-  )
-    throw new Error(
-      "--compile-executable-path requires a qualified Windows x64 Bun executable",
-    );
+  if (targetAt >= 0 && (!args[targetAt + 1] || args[targetAt + 1]?.startsWith("--")))
+    throw new Error("--compile-executable-path requires a qualified Windows x64 Bun executable");
   await stageSetup(
     resolve(at >= 0 ? (args[at + 1] ?? "") : join(appDir, "dist")),
     args.includes("--smoke"),

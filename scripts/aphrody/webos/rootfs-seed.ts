@@ -66,9 +66,7 @@ export function rootfsSeed(): Record<string, string | null> {
 
 if (import.meta.main) {
   const { values } = parseArgs({ options: { out: { type: "string" } } });
-  const out = resolve(
-    values.out ?? resolve(import.meta.dir, "../../var/runs/webos/rootfs-seed.json"),
-  );
+  const out = resolve(values.out ?? resolve(import.meta.dir, "../../var/runs/webos/rootfs-seed.json"));
   await mkdir(dirname(out), { recursive: true });
   await Bun.write(out, `${JSON.stringify(rootfsSeed(), null, 2)}\n`);
   console.log(out);

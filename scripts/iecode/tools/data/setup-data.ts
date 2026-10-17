@@ -5,13 +5,7 @@
  * Supports the native Rust depot client (bun-steam-depot), steamcmd, archive decompression, and local linking.
  */
 
-import {
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, lstatSync, mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
@@ -67,9 +61,7 @@ Options:
   process.exit(0);
 }
 
-const targetDest = options.dest
-  ? resolve(process.cwd(), options.dest)
-  : canonicalDataDir;
+const targetDest = options.dest ? resolve(process.cwd(), options.dest) : canonicalDataDir;
 
 console.log("=== IECODE Game Data Setup (App 2799860) ===");
 console.log(`Target destination: ${targetDest}`);
@@ -80,10 +72,7 @@ function commandExists(cmd: string): boolean {
 }
 
 function isGameDataValid(dir: string): boolean {
-  return (
-    existsSync(join(dir, "cpk_list.cfg.bin")) ||
-    existsSync(join(dir, "nie.exe"))
-  );
+  return existsSync(join(dir, "cpk_list.cfg.bin")) || existsSync(join(dir, "nie.exe"));
 }
 
 function findExternalSteamInstall(): string | null {
@@ -92,10 +81,7 @@ function findExternalSteamInstall(): string | null {
     process.env.NIE_GAME_DIR,
     process.env.IEVR_GAME_DIR,
     join(home, ".local/share/Steam/iecode/inazuma"),
-    join(
-      home,
-      ".local/share/Steam/steamapps/common/INAZUMA ELEVEN Victory Road",
-    ),
+    join(home, ".local/share/Steam/steamapps/common/INAZUMA ELEVEN Victory Road"),
     join(home, ".steam/steam/steamapps/common/INAZUMA ELEVEN Victory Road"),
     resolve(root, "../aphrody/data"),
   ].filter((p): p is string => Boolean(p));
@@ -114,9 +100,7 @@ function ensureDataLink(sourcePath: string, destPath: string) {
     try {
       const stat = lstatSync(destPath);
       if (stat.isSymbolicLink()) {
-        console.log(
-          `[OK] Symlink already configured: ${destPath} -> ${sourcePath}`,
-        );
+        console.log(`[OK] Symlink already configured: ${destPath} -> ${sourcePath}`);
         return;
       }
     } catch {}
@@ -126,9 +110,7 @@ function ensureDataLink(sourcePath: string, destPath: string) {
       symlinkSync(rel, destPath);
       console.log(`[LINKED] ${destPath} -> ${rel}`);
     } catch (e) {
-      console.warn(
-        `[WARN] Could not symlink ${destPath} -> ${sourcePath}: ${e}`,
-      );
+      console.warn(`[WARN] Could not symlink ${destPath} -> ${sourcePath}: ${e}`);
     }
   }
 }
@@ -140,9 +122,7 @@ function registerNieGameSource(sourcePath: string) {
     mkdirSync(configDir, { recursive: true });
     const sourceFile = join(configDir, "game-source");
     writeFileSync(sourceFile, sourcePath, "utf8");
-    console.log(
-      `[CONFIG] Registered NIE game source: ${sourceFile} -> ${sourcePath}`,
-    );
+    console.log(`[CONFIG] Registered NIE game source: ${sourceFile} -> ${sourcePath}`);
   } catch (err) {
     console.warn(`[WARN] Failed to write NIE game source config: ${err}`);
   }
@@ -150,9 +130,7 @@ function registerNieGameSource(sourcePath: string) {
 
 // Check if destination is already populated
 if (isGameDataValid(targetDest)) {
-  console.log(
-    `[EXISTS] Game data already present in ${targetDest} (cpk_list.cfg.bin detected).`,
-  );
+  console.log(`[EXISTS] Game data already present in ${targetDest} (cpk_list.cfg.bin detected).`);
   registerNieGameSource(targetDest);
   ensureDataLink(targetDest, canonicalDataDir);
   process.exit(0);
@@ -179,26 +157,15 @@ async function runArchiveMethod(): Promise<boolean> {
   const archive7z = resolve(root, "data.7z");
   const archiveZst = resolve(root, "data.tar.zst");
   if (existsSync(archive7z) || existsSync(archiveZst)) {
-    console.log(
-      "[ARCHIVE] Found compressed data archive. Extracting with data-compression tool...",
-    );
+    console.log("[ARCHIVE] Found compressed data archive. Extracting with data-compression tool...");
     if (options["dry-run"]) {
-      console.log(
-        "[DRY-RUN] bun scripts/iecode/tools/data/data-compression.ts decompress",
-      );
+      console.log("[DRY-RUN] bun scripts/iecode/tools/data/data-compression.ts decompress");
       return true;
     }
-    const proc = Bun.spawnSync(
-      [
-        process.execPath,
-        "scripts/iecode/tools/data/data-compression.ts",
-        "decompress",
-      ],
-      {
-        cwd: root,
-        stdio: ["inherit", "inherit", "inherit"],
-      },
-    );
+    const proc = Bun.spawnSync([process.execPath, "scripts/iecode/tools/data/data-compression.ts", "decompress"], {
+      cwd: root,
+      stdio: ["inherit", "inherit", "inherit"],
+    });
     if (proc.exitCode === 0 && isGameDataValid(targetDest)) {
       registerNieGameSource(targetDest);
       return true;
@@ -209,31 +176,20 @@ async function runArchiveMethod(): Promise<boolean> {
 
 // Method: NIE native steam downloader
 async function runNieSteamMethod(): Promise<boolean> {
-  console.log(
-    "[NIE STEAM] Preparing native Rust Steam depot client (bun-steam-depot)...",
-  );
+  console.log("[NIE STEAM] Preparing native Rust Steam depot client (bun-steam-depot)...");
   mkdirSync(targetDest, { recursive: true });
 
   const steamUser = options.user;
   if (!steamUser) {
-    console.error(
-      "[ERROR] STEAM_USER is required for downloading IEVR (paid app 2799860).",
-    );
-    console.error(
-      "        Set STEAM_USER=<username> or pass --user <username>.",
-    );
+    console.error("[ERROR] STEAM_USER is required for downloading IEVR (paid app 2799860).");
+    console.error("        Set STEAM_USER=<username> or pass --user <username>.");
     return false;
   }
 
-  const builtBinary = resolve(
-    root,
-    `target/release/bun-steam-depot${process.platform === "win32" ? ".exe" : ""}`,
-  );
+  const builtBinary = resolve(root, `target/release/bun-steam-depot${process.platform === "win32" ? ".exe" : ""}`);
   const hasBinary = existsSync(builtBinary);
 
-  const tokenStore =
-    options["token-store"] ||
-    join(homedir(), ".local/share/nie/steam-tokens.json");
+  const tokenStore = options["token-store"] || join(homedir(), ".local/share/nie/steam-tokens.json");
 
   const cmdArgs: string[] = [
     "-u",
@@ -257,16 +213,12 @@ async function runNieSteamMethod(): Promise<boolean> {
   };
 
   if (options["dry-run"]) {
-    console.log(
-      `[DRY-RUN] Run bun-steam-depot sync -o ${targetDest} (Depot ${CONTENT_DEPOT_ID})`,
-    );
+    console.log(`[DRY-RUN] Run bun-steam-depot sync -o ${targetDest} (Depot ${CONTENT_DEPOT_ID})`);
     return true;
   }
 
   // The password, when given, is passed to the process but never echoed.
-  const shownArgs = cmdArgs
-    .map((arg, index) => (cmdArgs[index - 1] === "-p" ? "<redacted>" : arg))
-    .join(" ");
+  const shownArgs = cmdArgs.map((arg, index) => (cmdArgs[index - 1] === "-p" ? "<redacted>" : arg)).join(" ");
   let proc;
   if (hasBinary) {
     console.log(`[EXEC] ${builtBinary} ${shownArgs}`);
@@ -276,9 +228,7 @@ async function runNieSteamMethod(): Promise<boolean> {
       stdio: ["inherit", "inherit", "inherit"],
     });
   } else {
-    console.log(
-      `[EXEC] cargo run --release -p bun-steam --features depot --bin bun-steam-depot -- ${shownArgs}`,
-    );
+    console.log(`[EXEC] cargo run --release -p bun-steam --features depot --bin bun-steam-depot -- ${shownArgs}`);
     proc = Bun.spawnSync(
       [
         "cargo",
@@ -307,21 +257,15 @@ async function runNieSteamMethod(): Promise<boolean> {
     ensureDataLink(targetDest, canonicalDataDir);
     return true;
   }
-  console.error(
-    `[ERROR] Native Steam download exited with code ${proc.exitCode}`,
-  );
+  console.error(`[ERROR] Native Steam download exited with code ${proc.exitCode}`);
   return false;
 }
 
 // Method: SteamCMD downloader
 async function runSteamCmdMethod(): Promise<boolean> {
-  const steamcmdBin = commandExists("steamcmd")
-    ? "steamcmd"
-    : "/usr/local/bin/steamcmd";
+  const steamcmdBin = commandExists("steamcmd") ? "steamcmd" : "/usr/local/bin/steamcmd";
   if (!existsSync(steamcmdBin) && !commandExists("steamcmd")) {
-    console.error(
-      "[ERROR] steamcmd binary not found in PATH or at /usr/local/bin/steamcmd.",
-    );
+    console.error("[ERROR] steamcmd binary not found in PATH or at /usr/local/bin/steamcmd.");
     return false;
   }
 
@@ -329,15 +273,11 @@ async function runSteamCmdMethod(): Promise<boolean> {
 
   const steamUser = options.user;
   if (!steamUser) {
-    console.error(
-      "[ERROR] STEAM_USER is required for steamcmd to acquire IEVR (app 2799860).",
-    );
+    console.error("[ERROR] STEAM_USER is required for steamcmd to acquire IEVR (app 2799860).");
     return false;
   }
 
-  console.log(
-    `[STEAMCMD] Launching steamcmd to download App ${APP_ID} into ${targetDest}...`,
-  );
+  console.log(`[STEAMCMD] Launching steamcmd to download App ${APP_ID} into ${targetDest}...`);
 
   const steamCmdArgs = [
     "+force_install_dir",
@@ -396,10 +336,7 @@ if (method === "link") {
   if (!success && options.user) {
     console.log("[AUTO] Attempting native NIE Steam download...");
     success = await runNieSteamMethod();
-    if (
-      !success &&
-      (commandExists("steamcmd") || existsSync("/usr/local/bin/steamcmd"))
-    ) {
+    if (!success && (commandExists("steamcmd") || existsSync("/usr/local/bin/steamcmd"))) {
       console.log("[AUTO] Falling back to steamcmd...");
       success = await runSteamCmdMethod();
     }
@@ -410,14 +347,10 @@ if (method === "link") {
       "       STEAM_USER=<username> [STEAM_PASSWORD=<pass>] [STEAM_GUARD_CODE=<code>] bun run setup:data:nie",
     );
     console.log("       or with steamcmd:");
-    console.log(
-      "       STEAM_USER=<username> [STEAM_PASSWORD=<pass>] bun run setup:data:steamcmd",
-    );
+    console.log("       STEAM_USER=<username> [STEAM_PASSWORD=<pass>] bun run setup:data:steamcmd");
   }
 } else {
-  console.error(
-    `[ERROR] Unknown method '${options.method}'. Use auto, nie, steamcmd, archive, or link.`,
-  );
+  console.error(`[ERROR] Unknown method '${options.method}'. Use auto, nie, steamcmd, archive, or link.`);
   process.exit(1);
 }
 

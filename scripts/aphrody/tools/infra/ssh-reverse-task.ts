@@ -36,10 +36,9 @@ if (
   config.destination !== "10.200.77.1" ||
   config.forwards.length !== expected.size ||
   config.forwards.some(
-    (forward) =>
+    forward =>
       forward.listenAddress !== "127.0.0.1" ||
-      expected.get(forward.listenPort) !==
-        forward.connectAddress + ":" + forward.connectPort,
+      expected.get(forward.listenPort) !== forward.connectAddress + ":" + forward.connectPort,
   )
 )
   process.exit(3);
@@ -70,21 +69,15 @@ const args = [
 for (const forward of config.forwards) {
   args.push(
     "-R",
-    forward.listenAddress +
-      ":" +
-      forward.listenPort +
-      ":" +
-      forward.connectAddress +
-      ":" +
-      forward.connectPort,
+    forward.listenAddress + ":" + forward.listenPort + ":" + forward.connectAddress + ":" + forward.connectPort,
   );
 }
 args.push(config.destination);
 
 const childEnv = Object.fromEntries(
   ["SystemRoot", "WINDIR", "PATH", "TEMP", "TMP"]
-    .filter((name) => process.env[name])
-    .map((name) => [name, process.env[name]!]),
+    .filter(name => process.env[name])
+    .map(name => [name, process.env[name]!]),
 );
 childEnv.USERPROFILE = config.home;
 childEnv.HOME = config.home;
@@ -103,12 +96,8 @@ const stderr = await stderrPromise;
 if (exitCode !== 0) {
   const errors = stderr
     .split(/\r?\n/)
-    .filter((line) =>
-      /error|failed|denied|refused|timeout|could not|unable|host key|closed/i.test(
-        line,
-      ),
-    )
-    .map((line) =>
+    .filter(line => /error|failed|denied|refused|timeout|could not|unable|host key|closed/i.test(line))
+    .map(line =>
       line
         .replace(/(?:[A-Za-z]:\\)[^\s]+/g, "[path]")
         .replace(/SHA256:[A-Za-z0-9+/=]+/g, "[fingerprint]")
@@ -117,11 +106,7 @@ if (exitCode !== 0) {
     .slice(0, 20);
   await appendFile(
     config.logFile,
-    [
-      new Date().toISOString() + " bun_ssh_exit=" + exitCode,
-      ...errors,
-      "",
-    ].join("\n"),
+    [new Date().toISOString() + " bun_ssh_exit=" + exitCode, ...errors, ""].join("\n"),
     "utf8",
   );
 }

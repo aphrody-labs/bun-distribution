@@ -41,13 +41,10 @@ function assert(condition: unknown, message: string): asserts condition {
 const catalogText = await Bun.file(catalogPath).text();
 const tools = (JSON.parse(catalogText) as { tools: Tool[] }).tools;
 assert(Array.isArray(tools) && tools.length > 0, "empty WinClean catalog");
-const names = tools.map((tool) => tool.name);
+const names = tools.map(tool => tool.name);
 assert(new Set(names).size === names.length, "duplicate WinClean catalog name");
 for (const tool of tools) {
-  assert(
-    tool.inputSchema?.type === "object",
-    `invalid inputSchema for ${tool.name}`,
-  );
+  assert(tool.inputSchema?.type === "object", `invalid inputSchema for ${tool.name}`);
 }
 
 const RUST_KEYWORDS = new Set([
@@ -69,14 +66,11 @@ const RUST_KEYWORDS = new Set([
 const pascal = (name: string) =>
   name
     .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
     .join("");
-const camel = (name: string) =>
-  name.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
-const snake = (name: string) =>
-  name.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
-const rustIdent = (name: string) =>
-  RUST_KEYWORDS.has(name) ? `${name}_` : name;
+const camel = (name: string) => name.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
+const snake = (name: string) => name.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
+const rustIdent = (name: string) => (RUST_KEYWORDS.has(name) ? `${name}_` : name);
 
 /** Greedy word wrap of `text` to `width` columns after `prefix`. */
 function wrap(text: string, prefix: string, width = 100): string[] {
@@ -96,13 +90,10 @@ function wrap(text: string, prefix: string, width = 100): string[] {
 
 /** The non-null JSON type of a property (`["string", "null"]` is a nullable string). */
 function baseType(property: Property): string | undefined {
-  return Array.isArray(property.type)
-    ? property.type.find((type) => type !== "null")
-    : property.type;
+  return Array.isArray(property.type) ? property.type.find(type => type !== "null") : property.type;
 }
 
-const nullable = (property: Property) =>
-  Array.isArray(property.type) && property.type.includes("null");
+const nullable = (property: Property) => Array.isArray(property.type) && property.type.includes("null");
 
 function rustType(property: Property): string {
   switch (baseType(property)) {
@@ -113,9 +104,7 @@ function rustType(property: Property): string {
     case "boolean":
       return "bool";
     case "array":
-      return property.items?.type === "string"
-        ? "Vec<String>"
-        : "Vec<serde_json::Value>";
+      return property.items?.type === "string" ? "Vec<String>" : "Vec<serde_json::Value>";
     case "string":
       return "String";
     default:
@@ -136,9 +125,7 @@ function tsBaseType(property: Property): string {
     case "boolean":
       return "boolean";
     case "array":
-      return property.items?.type === "string"
-        ? "string[]"
-        : "Record<string, unknown>[]";
+      return property.items?.type === "string" ? "string[]" : "Record<string, unknown>[]";
     case "string":
       return "string";
     default:
@@ -164,17 +151,13 @@ function rustStruct(tool: Tool): string {
   for (const [name, property] of properties) {
     const field = rustIdent(snake(name));
     const type = rustType(property);
-    if (property.description)
-      out.push(...wrap(property.description, "    /// "));
+    if (property.description) out.push(...wrap(property.description, "    /// "));
     if (property.default !== undefined) {
       if (property.description) out.push("    ///");
       out.push(`    /// Default: \`${JSON.stringify(property.default)}\`.`);
     }
     if (required.has(name)) {
-      out.push(
-        `    #[serde(rename = "${name}")]`,
-        `    pub ${field}: ${type},`,
-      );
+      out.push(`    #[serde(rename = "${name}")]`, `    pub ${field}: ${type},`);
     } else {
       out.push(
         `    #[serde(rename = "${name}", skip_serializing_if = "Option::is_none")]`,
@@ -248,7 +231,7 @@ const rust = [
   "",
   "/// Every tool name exposed by the Rust WinClean compatibility surface.",
   `pub const TOOL_NAMES: [&str; ${names.length}] = [`,
-  ...names.map((name) => `    "${name}",`),
+  ...names.map(name => `    "${name}",`),
   "];",
   "",
   ...tools.map(rustStruct),
@@ -264,21 +247,13 @@ function tsInterface(tool: Tool): string {
   const name = `${pascal(tool.name)}Args`;
   const properties = Object.entries(tool.inputSchema.properties ?? {});
   const required = new Set(tool.inputSchema.required ?? []);
-  if (properties.length === 0)
-    return `/** Arguments for \`${tool.name}\`. */\nexport interface ${name} {}\n`;
-  const out = [
-    `/** Arguments for \`${tool.name}\`. */`,
-    `export interface ${name} {`,
-  ];
+  if (properties.length === 0) return `/** Arguments for \`${tool.name}\`. */\nexport interface ${name} {}\n`;
+  const out = [`/** Arguments for \`${tool.name}\`. */`, `export interface ${name} {`];
   for (const [field, property] of properties) {
     out.push("  /**");
     if (property.description) out.push(`   * ${property.description}`);
-    if (property.default !== undefined)
-      out.push(`   * @default ${JSON.stringify(property.default)}`);
-    out.push(
-      "   */",
-      `  ${field}${required.has(field) ? "" : "?"}: ${tsType(property)};`,
-    );
+    if (property.default !== undefined) out.push(`   * @default ${JSON.stringify(property.default)}`);
+    out.push("   */", `  ${field}${required.has(field) ? "" : "?"}: ${tsType(property)};`);
   }
   out.push("}", "");
   return out.join("\n");
@@ -304,13 +279,13 @@ const bindings = [
   'import type { ToolResult } from "./result";',
   "",
   "export const TOOL_NAMES = [",
-  ...names.map((name) => `  "${name}",`),
+  ...names.map(name => `  "${name}",`),
   "] as const;",
   "export type ToolName = (typeof TOOL_NAMES)[number];",
   "",
   ...tools.map(tsInterface),
   "export type ToolArgsMap = {",
-  ...tools.map((tool) => `  ${tool.name}: ${pascal(tool.name)}Args;`),
+  ...tools.map(tool => `  ${tool.name}: ${pascal(tool.name)}Args;`),
   "};",
   "",
   "/** One typed async method per WinClean tool. */",
@@ -329,25 +304,16 @@ const metadata = `// SPDX-License-Identifier: Apache-2.0\n// Generated from pack
 
 // ─── migration ledger ────────────────────────────────────────────────────────
 
-const ledger = JSON.parse(await Bun.file(ledgerPath).text()) as Record<
-  string,
-  unknown
->;
+const ledger = JSON.parse(await Bun.file(ledgerPath).text()) as Record<string, unknown>;
 // Hash of the catalog as Git's LF blob, as verify-winclean-integration.ts checks it.
-ledger.catalog_sha256 = new Bun.CryptoHasher("sha256")
-  .update(catalogText.replaceAll("\r\n", "\n"))
-  .digest("hex");
+ledger.catalog_sha256 = new Bun.CryptoHasher("sha256").update(catalogText.replaceAll("\r\n", "\n")).digest("hex");
 ledger.catalog_tool_count = names.length;
 ledger.tools = names;
 // Every catalog tool is implemented by the Rust dispatcher; keep the evidence map complete.
 const overrides = (ledger.dispatch_overrides ?? {}) as Record<string, string>;
 for (const name of names) overrides[name] ??= "rust";
 ledger.dispatch_overrides = overrides;
-if (typeof ledger.note === "string")
-  ledger.note = ledger.note.replace(
-    /all \d+ tools/,
-    `all ${names.length} tools`,
-  );
+if (typeof ledger.note === "string") ledger.note = ledger.note.replace(/all \d+ tools/, `all ${names.length} tools`);
 const ledgerText = `${JSON.stringify(ledger, null, 2)}\n`;
 
 // ─── write or check ──────────────────────────────────────────────────────────
@@ -361,15 +327,12 @@ const outputs: Array<[string, string]> = [
 
 /** Formats generated TypeScript with the native `bun fmt` as if it were `path`. */
 async function bunfmt(source: string, path: string): Promise<string> {
-  const child = Bun.spawn(
-    [process.execPath, "fmt", `--stdin-filepath=${path}`],
-    {
-      stdin: new Blob([source]),
-      stdout: "pipe",
-      stderr: "pipe",
-      cwd: root,
-    },
-  );
+  const child = Bun.spawn([process.execPath, "fmt", `--stdin-filepath=${path}`], {
+    stdin: new Blob([source]),
+    stdout: "pipe",
+    stderr: "pipe",
+    cwd: root,
+  });
   const [code, text, error] = await Promise.all([
     child.exited,
     new Response(child.stdout).text(),
@@ -382,15 +345,7 @@ async function bunfmt(source: string, path: string): Promise<string> {
 /** Formats generated Rust with the workspace rustfmt configuration (stdin to stdout). */
 async function rustfmt(source: string): Promise<string> {
   const child = Bun.spawn(
-    [
-      "rustfmt",
-      "--edition",
-      "2024",
-      "--emit",
-      "stdout",
-      "--config-path",
-      join(root, "rustfmt.toml"),
-    ],
+    ["rustfmt", "--edition", "2024", "--emit", "stdout", "--config-path", join(root, "rustfmt.toml")],
     {
       stdin: new Blob([source]),
       stdout: "pipe",
@@ -421,9 +376,7 @@ for (const [path, content] of outputs) {
   }
 }
 if (check && stale > 0) {
-  throw new Error(
-    "WinClean bindings diverge; run bun scripts/aphrody/tools/os/scripts/generate-winclean-catalog.ts",
-  );
+  throw new Error("WinClean bindings diverge; run bun scripts/aphrody/tools/os/scripts/generate-winclean-catalog.ts");
 }
 console.log(
   `WinClean catalog: ${names.length} tools -> generated.rs, generated.ts, catalog.ts, tool-migration.json${check ? " (checked)" : ""}`,

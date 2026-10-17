@@ -1,15 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import {
-  type Budget,
-  type Metric,
-  compareBudget,
-  formatValue,
-  groupOf,
-  pct,
-  percentile,
-  summarize,
-} from "./lib.ts";
+import { type Budget, type Metric, compareBudget, formatValue, groupOf, pct, percentile, summarize } from "./lib.ts";
 
 describe("statistics", () => {
   test("percentile is nearest-rank", () => {
@@ -27,12 +18,7 @@ describe("statistics", () => {
 });
 
 const measured = (values: Record<string, number>): Record<string, Metric> =>
-  Object.fromEntries(
-    Object.entries(values).map(([k, value]) => [
-      k,
-      { value, unit: "ms" } satisfies Metric,
-    ]),
-  );
+  Object.fromEntries(Object.entries(values).map(([k, value]) => [k, { value, unit: "ms" } satisfies Metric]));
 
 describe("budget", () => {
   const budget: Budget = {
@@ -54,7 +40,7 @@ describe("budget", () => {
         "mcp.cold": 40,
       }),
     );
-    expect(rows.map((r) => [r.key, r.ok])).toEqual([
+    expect(rows.map(r => [r.key, r.ok])).toEqual([
       ["yolo.version", true],
       ["compile.server_tuned.size", false],
       ["mcp.cold", true],
@@ -62,10 +48,7 @@ describe("budget", () => {
   });
   test("a budgeted metric that was not measured fails", () => {
     const rows = compareBudget(budget, measured({ "yolo.version": 9 }));
-    expect(rows.filter((r) => !r.ok).map((r) => r.key)).toEqual([
-      "compile.server_tuned.size",
-      "mcp.cold",
-    ]);
+    expect(rows.filter(r => !r.ok).map(r => r.key)).toEqual(["compile.server_tuned.size", "mcp.cold"]);
   });
   test("the tolerance can be overridden", () => {
     expect(
@@ -77,7 +60,7 @@ describe("budget", () => {
           "mcp.cold": 50,
         }),
         0.25,
-      ).every((r) => r.ok),
+      ).every(r => r.ok),
     ).toBe(true);
   });
 });

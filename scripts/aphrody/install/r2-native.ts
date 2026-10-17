@@ -5,7 +5,7 @@ import { defaultContext } from "@aphrody/product/admin/context";
 import { r2Plan, stageR2 } from "@aphrody/product/setup/r2";
 
 const args = process.argv.slice(2);
-if (args.some((arg) => !["--stage", "--help"].includes(arg)))
+if (args.some(arg => !["--stage", "--help"].includes(arg)))
   throw new Error("Usage: bun scripts/install/r2-native.ts [--stage]");
 if (args.includes("--help")) {
   console.log(
@@ -13,17 +13,13 @@ if (args.includes("--help")) {
   );
 } else {
   const ctx = defaultContext();
-  const plans = await Promise.all([
-    r2Plan("bun", ctx.fetchImpl),
-    r2Plan("aphrody", ctx.fetchImpl),
-  ]);
+  const plans = await Promise.all([r2Plan("bun", ctx.fetchImpl), r2Plan("aphrody", ctx.fetchImpl)]);
   if (!args.includes("--stage"))
     console.log(
       JSON.stringify(
         {
           plans,
-          activation:
-            "Not applied; stage verified artifacts before selecting a PATH activation target",
+          activation: "Not applied; stage verified artifacts before selecting a PATH activation target",
         },
         null,
         2,

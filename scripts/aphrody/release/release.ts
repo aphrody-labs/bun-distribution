@@ -38,35 +38,25 @@ import { toolingAsset } from "./tooling-asset";
 const root = resolve(import.meta.dir, "../../../docs/aphrody");
 const cliEntry = Bun.resolveSync("@aphrody/yolo-cli/cli", import.meta.dir);
 const cliRoot = resolve(dirname(cliEntry), "..");
-const sdkRoot = resolve(
-  dirname(Bun.resolveSync("@aphrody/runtime-sdk/artifact", import.meta.dir)),
-  "..",
-);
+const sdkRoot = resolve(dirname(Bun.resolveSync("@aphrody/runtime-sdk/artifact", import.meta.dir)), "..");
 const templates = join(
   checkoutRoot("material", { ...process.env, APHRODY_WORKSPACE_ROOT: root }),
   "packages/m3/templates",
 );
 const outIndex = Bun.argv.indexOf("--out");
-const outRoot = resolve(
-  root,
-  outIndex > 0 ? (Bun.argv[outIndex + 1] as string) : "dist/release",
-);
+const outRoot = resolve(root, outIndex > 0 ? (Bun.argv[outIndex + 1] as string) : "dist/release");
 const version = readFileSync(join(cliRoot, "VERSION"), "utf8").trim();
-if (!Bun.semver.satisfies(version, "*"))
-  throw new Error("Invalid release version");
+if (!Bun.semver.satisfies(version, "*")) throw new Error("Invalid release version");
 for (const input of [
   cliEntry,
   join(sdkRoot, "LICENSE-APACHE"),
   join(templates, "stack.toml"),
-  ...["install.sh", "install.ps1"].map((file) => join(cliRoot, file)),
+  ...["install.sh", "install.ps1"].map(file => join(cliRoot, file)),
 ]) {
-  if (!existsSync(input))
-    throw new Error(`Missing release source input: ${input}`);
+  if (!existsSync(input)) throw new Error(`Missing release source input: ${input}`);
 }
 if (Bun.argv.includes("--check-inputs")) {
-  console.log(
-    "Release source inputs OK (package CLI, SDK and configured Material templates).",
-  );
+  console.log("Release source inputs OK (package CLI, SDK and configured Material templates).");
   process.exit(0);
 }
 const target = hostTarget();
@@ -75,9 +65,7 @@ const dir = join(outRoot, version);
 const stage = join(outRoot, `.stage-${target}`);
 
 const sha256 = (path: string): string =>
-  new Bun.CryptoHasher("sha256")
-    .update(new Uint8Array(readFileSync(path)))
-    .digest("hex");
+  new Bun.CryptoHasher("sha256").update(new Uint8Array(readFileSync(path))).digest("hex");
 
 async function run(argv: string[], cwd = root): Promise<string> {
   const proc = Bun.spawn(argv, {
@@ -99,14 +87,11 @@ const artifactDir = process.env["YOLO_RUNTIME_ARTIFACT"]
   ? resolve(process.env["YOLO_RUNTIME_ARTIFACT"]!)
   : join(root, "dist/runtime", target);
 if (!existsSync(join(artifactDir, "manifest.json"))) {
-  throw new Error(
-    `No packaged runtime for ${target}: run \`just yolo::runtime-package\` first`,
-  );
+  throw new Error(`No packaged runtime for ${target}: run \`just yolo::runtime-package\` first`);
 }
 const manifest = verifyArtifact(artifactDir);
 const prebuilt = process.env["YOLO_BINARY"];
-if (prebuilt && !existsSync(prebuilt))
-  throw new Error(`YOLO_BINARY ${prebuilt} does not exist`);
+if (prebuilt && !existsSync(prebuilt)) throw new Error(`YOLO_BINARY ${prebuilt} does not exist`);
 const tooling = prebuilt ? null : await toolingAsset(root);
 
 rmSync(stage, { recursive: true, force: true });
@@ -121,8 +106,7 @@ if (prebuilt) {
   chmodSync(exe, 0o755);
   if (!windows) {
     // One executable, three names by argv0: yolo, bun (the engine) and vu (the vu runtime artifact).
-    for (const alias of ["bun", "vu"])
-      symlinkSync("yolo", join(stage, "bin", alias));
+    for (const alias of ["bun", "vu"]) symlinkSync("yolo", join(stage, "bin", alias));
   }
 } else {
   await run([
@@ -143,23 +127,17 @@ if (prebuilt) {
 cpSync(artifactDir, join(stage, "artifact"), { recursive: true });
 cpSync(sdkRoot, join(stage, "packages/engine/runtime"), {
   recursive: true,
-  filter: (src) => !src.includes("node_modules"),
+  filter: src => !src.includes("node_modules"),
 });
 cpSync(templates, join(stage, "m3/templates"), {
   recursive: true,
-  filter: (src) => !src.endsWith("awesome-audit.json"),
+  filter: src => !src.endsWith("awesome-audit.json"),
 });
 writeFileSync(join(stage, "VERSION"), `${version}\n`);
 cpSync(join(sdkRoot, "LICENSE-APACHE"), join(stage, "LICENSE"));
 mkdirSync(join(stage, "LICENSES"));
-cpSync(
-  join(root, "docs/reference/upstream-bun/LICENSE.md"),
-  join(stage, "LICENSES/Bun-LICENSE.md"),
-);
-cpSync(
-  join(root, "docs/reference/infra/THIRD_PARTY_LICENSES.md"),
-  join(stage, "LICENSES/THIRD_PARTY_LICENSES.md"),
-);
+cpSync(join(root, "docs/reference/upstream-bun/LICENSE.md"), join(stage, "LICENSES/Bun-LICENSE.md"));
+cpSync(join(root, "docs/reference/infra/THIRD_PARTY_LICENSES.md"), join(stage, "LICENSES/THIRD_PARTY_LICENSES.md"));
 cpSync(join(root, "vendor.lock"), join(stage, "vendor.lock"));
 
 const archive = `yolo-${version}-${target}.tar.gz`;
@@ -179,29 +157,22 @@ const imports = JSON.parse(readFileSync(join(root, "vendor.lock"), "utf8")) as {
 };
 for (const imported of imports.crates) {
   const name = imported.dir.split("/").at(-1)!;
-  if (
-    !/^crates\/[A-Za-z0-9_-]+\/aphrody-[A-Za-z0-9_-]+$/.test(imported.dir) ||
-    !name.startsWith("aphrody-")
-  ) {
+  if (!/^crates\/[A-Za-z0-9_-]+\/aphrody-[A-Za-z0-9_-]+$/.test(imported.dir) || !name.startsWith("aphrody-")) {
     throw new Error(`Invalid imported crate path: ${imported.dir}`);
   }
   cpSync(join(root, imported.dir), join(crateStage, imported.dir), {
     recursive: true,
-    filter: (src) => !/(^|[\\/])(target|node_modules)([\\/]|$)/.test(src),
+    filter: src => !/(^|[\\/])(target|node_modules)([\\/]|$)/.test(src),
   });
 }
 await run(["tar", "-czf", join(dir, crates), "-C", crateStage, "."]);
 
 // 4. installers, checksums, provenance
-for (const script of ["install.sh", "install.ps1"])
-  cpSync(join(cliRoot, script), join(dir, script));
+for (const script of ["install.sh", "install.ps1"]) cpSync(join(cliRoot, script), join(dir, script));
 const files = readdirSync(dir)
-  .filter((f) => f !== "SHA256SUMS" && f !== "release.json")
+  .filter(f => f !== "SHA256SUMS" && f !== "release.json")
   .toSorted();
-writeFileSync(
-  join(dir, "SHA256SUMS"),
-  `${files.map((f) => `${sha256(join(dir, f))}  ${f}`).join("\n")}\n`,
-);
+writeFileSync(join(dir, "SHA256SUMS"), `${files.map(f => `${sha256(join(dir, f))}  ${f}`).join("\n")}\n`);
 const commit = await run(["git", "rev-parse", "HEAD"]).catch(() => "unknown");
 writeFileSync(
   join(dir, "release.json"),
@@ -216,9 +187,7 @@ writeFileSync(
         abi: manifest.abi,
         toolchain: manifest.toolchain,
       },
-      tooling: tooling
-        ? { sha256: tooling.sha256, abi: tooling.abi, embedded: true }
-        : null,
+      tooling: tooling ? { sha256: tooling.sha256, abi: tooling.abi, embedded: true } : null,
       binary: prebuilt
         ? {
             source: "bun-forge",
@@ -235,6 +204,4 @@ writeFileSync(
 );
 rmSync(stage, { recursive: true, force: true });
 rmSync(crateStage, { recursive: true, force: true });
-console.log(
-  `Release ${version} (${target}) -> ${dir}\n  ${files.join("\n  ")}`,
-);
+console.log(`Release ${version} (${target}) -> ${dir}\n  ${files.join("\n  ")}`);

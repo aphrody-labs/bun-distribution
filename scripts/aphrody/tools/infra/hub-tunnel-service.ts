@@ -5,13 +5,8 @@ import { join, resolve } from "node:path";
 import { killWithThisProcess } from "./win32-net";
 
 /** Scheduled tasks must own their SSH descendants when stopped or restarted. */
-export async function runOwnedTunnel(
-  argv: string[],
-  cwd: string,
-  logPath: string,
-): Promise<number> {
-  if (process.platform !== "win32")
-    throw new Error("Windows task ownership required");
+export async function runOwnedTunnel(argv: string[], cwd: string, logPath: string): Promise<number> {
+  if (process.platform !== "win32") throw new Error("Windows task ownership required");
   const output = openSync(logPath, "a", 0o600);
   const child = Bun.spawn(argv, {
     cwd,
@@ -35,11 +30,8 @@ export async function runOwnedTunnel(
 if (import.meta.main) {
   const repository = resolve(import.meta.dir, "../../../../docs/aphrody");
   const installed = join(homedir(), "AppData/Local/Aphrody/bin/aphrody.exe");
-  const executable =
-    Bun.which("aphrody") ??
-    ((await Bun.file(installed).exists()) ? installed : null);
-  if (!executable)
-    throw new Error("Installed Aphrody Infra executable required");
+  const executable = Bun.which("aphrody") ?? ((await Bun.file(installed).exists()) ? installed : null);
+  if (!executable) throw new Error("Installed Aphrody Infra executable required");
   const command = [
     executable,
     "infra",
@@ -54,9 +46,5 @@ if (import.meta.main) {
     "--offset",
     "1000",
   ];
-  process.exitCode = await runOwnedTunnel(
-    command,
-    repository,
-    join(homedir(), ".aphrody/logs/hub-tunnel.log"),
-  );
+  process.exitCode = await runOwnedTunnel(command, repository, join(homedir(), ".aphrody/logs/hub-tunnel.log"));
 }

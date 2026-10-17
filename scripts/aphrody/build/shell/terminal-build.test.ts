@@ -3,30 +3,15 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  build,
-  developerEnvironment,
-  msbuildArgs,
-  parseArgs,
-  parseSetOutput,
-  SDK,
-  TOOLSET,
-} from "./terminal-build.ts";
+import { build, developerEnvironment, msbuildArgs, parseArgs, parseSetOutput, SDK, TOOLSET } from "./terminal-build.ts";
 
 describe("terminal-build", () => {
   test("parses options and rejects unknown values", () => {
-    const options = parseArgs([
-      "--project",
-      "Conhost\\Host_EXE",
-      "--platform",
-      "ARM64",
-    ]);
+    const options = parseArgs(["--project", "Conhost\\Host_EXE", "--platform", "ARM64"]);
     expect(options.project).toBe("Conhost\\Host_EXE");
     expect(options.platform).toBe("ARM64");
     expect(options.configuration).toBe("Release");
-    expect(() => parseArgs(["--configuration", "Ship"])).toThrow(
-      "--configuration",
-    );
+    expect(() => parseArgs(["--configuration", "Ship"])).toThrow("--configuration");
     expect(() => parseArgs(["--bogus"])).toThrow("Unknown argument");
     expect(() => parseArgs(["--project"])).toThrow("expects a value");
   });
@@ -46,9 +31,7 @@ describe("terminal-build", () => {
   });
 
   test("parses captured set output", () => {
-    expect(
-      parseSetOutput("A=1\r\nPath=C:\\x;C:\\y\r\n=C:=C:\\\r\nnoise\r\n"),
-    ).toEqual({
+    expect(parseSetOutput("A=1\r\nPath=C:\\x;C:\\y\r\n=C:=C:\\\r\nnoise\r\n")).toEqual({
       A: "1",
       Path: "C:\\x;C:\\y",
       "=C:": "C:\\",
@@ -59,8 +42,7 @@ describe("terminal-build", () => {
     const root = mkdtempSync(join(tmpdir(), "terminal-build-"));
     try {
       const options = parseArgs(["--terminal-root", root]);
-      if (process.platform === "win32")
-        expect(build(options)).rejects.toThrow("checkout not found");
+      if (process.platform === "win32") expect(build(options)).rejects.toThrow("checkout not found");
       else expect(build(options)).rejects.toThrow("Windows only");
     } finally {
       rmSync(root, { recursive: true, force: true });
@@ -78,11 +60,7 @@ describe("terminal-build", () => {
     () => {
       const env = developerEnvironment(process.env);
       expect(env.VSINSTALLDIR).toBeTruthy();
-      expect(
-        existsSync(
-          join(env.VSINSTALLDIR as string, "MSBuild", "Current", "Bin"),
-        ),
-      ).toBe(true);
+      expect(existsSync(join(env.VSINSTALLDIR as string, "MSBuild", "Current", "Bin"))).toBe(true);
     },
     60_000,
   );

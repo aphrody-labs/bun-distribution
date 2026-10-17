@@ -28,9 +28,7 @@ interface Options {
 
 function parseArgs(argv: string[]): Options {
   const all = (name: string): string[] =>
-    argv.flatMap((a, i) =>
-      a === name && argv[i + 1] ? [argv[i + 1] as string] : [],
-    );
+    argv.flatMap((a, i) => (a === name && argv[i + 1] ? [argv[i + 1] as string] : []));
   const one = (name: string): string | undefined => all(name)[0];
   const target = one("--target");
   const client = one("--client");
@@ -54,11 +52,7 @@ function parseArgs(argv: string[]): Options {
   };
 }
 
-async function exec(
-  host: string,
-  cmd: string,
-  timeoutSecs = 120,
-): Promise<string> {
+async function exec(host: string, cmd: string, timeoutSecs = 120): Promise<string> {
   const r = await $`aphrody-infra ssh exec --host ${host} --json --cmd ${cmd}`
     .env({
       ...process.env,
@@ -73,19 +67,13 @@ async function exec(
       stdout: string;
       stderr: string;
     };
-    if (j.exit_code !== 0)
-      throw new Error(
-        `${host}: exit ${j.exit_code}: ${j.stderr.slice(0, 400)}`,
-      );
+    if (j.exit_code !== 0) throw new Error(`${host}: exit ${j.exit_code}: ${j.stderr.slice(0, 400)}`);
     return j.stdout;
   } catch (e) {
     if (e instanceof SyntaxError)
-      throw new Error(
-        `${host}: ${text.slice(0, 400)} ${r.stderr.toString().slice(0, 400)}`,
-        {
-          cause: e,
-        },
-      );
+      throw new Error(`${host}: ${text.slice(0, 400)} ${r.stderr.toString().slice(0, 400)}`, {
+        cause: e,
+      });
     throw e;
   }
 }
@@ -100,31 +88,13 @@ interface Snapshot {
   cpu: Record<string, number>;
 }
 
-const SNAPSHOT =
-  "grep -E '^ *(NET_RX|NET_TX):' /proc/softirqs; grep '^cpu ' /proc/stat";
+const SNAPSHOT = "grep -E '^ *(NET_RX|NET_TX):' /proc/softirqs; grep '^cpu ' /proc/stat";
 
 function parseSnapshot(text: string): Snapshot {
   const row = (name: string): number[] =>
-    (text.split("\n").find((l) => l.trim().startsWith(name + ":")) ?? "")
-      .trim()
-      .split(/\s+/)
-      .slice(1)
-      .map(Number);
-  const cpuLine = (text.split("\n").find((l) => l.startsWith("cpu ")) ?? "")
-    .trim()
-    .split(/\s+/)
-    .slice(1)
-    .map(Number);
-  const names = [
-    "user",
-    "nice",
-    "system",
-    "idle",
-    "iowait",
-    "irq",
-    "softirq",
-    "steal",
-  ];
+    (text.split("\n").find(l => l.trim().startsWith(name + ":")) ?? "").trim().split(/\s+/).slice(1).map(Number);
+  const cpuLine = (text.split("\n").find(l => l.startsWith("cpu ")) ?? "").trim().split(/\s+/).slice(1).map(Number);
+  const names = ["user", "nice", "system", "idle", "iowait", "irq", "softirq", "steal"];
   return {
     netRx: row("NET_RX"),
     netTx: row("NET_TX"),
@@ -132,26 +102,18 @@ function parseSnapshot(text: string): Snapshot {
   };
 }
 
-const per = (x: number[], y: number[]): number[] =>
-  y.map((v, i) => v - (x[i] ?? 0));
+const per = (x: number[], y: number[]): number[] => y.map((v, i) => v - (x[i] ?? 0));
 
 function delta(a: Snapshot, b: Snapshot) {
   const rx = per(a.netRx, b.netRx);
   const total = rx.reduce((s, v) => s + v, 0) || 1;
-  const cpuTicks = Object.fromEntries(
-    Object.keys(b.cpu).map((k) => [k, (b.cpu[k] ?? 0) - (a.cpu[k] ?? 0)]),
-  );
+  const cpuTicks = Object.fromEntries(Object.keys(b.cpu).map(k => [k, (b.cpu[k] ?? 0) - (a.cpu[k] ?? 0)]));
   const ticks = Object.values(cpuTicks).reduce((s, v) => s + v, 0) || 1;
   return {
     netRxPerCpu: rx,
     netRxTopCpuShare: Math.round((Math.max(...rx) / total) * 1000) / 10,
-    netRxCpusAbove5pct: rx.filter((v) => v / total > 0.05).length,
-    cpuPercent: Object.fromEntries(
-      Object.entries(cpuTicks).map(([k, v]) => [
-        k,
-        Math.round((v / ticks) * 1000) / 10,
-      ]),
-    ),
+    netRxCpusAbove5pct: rx.filter(v => v / total > 0.05).length,
+    cpuPercent: Object.fromEntries(Object.entries(cpuTicks).map(([k, v]) => [k, Math.round((v / ticks) * 1000) / 10])),
   };
 }
 
@@ -173,9 +135,7 @@ async function main(): Promise<void> {
   const results = [];
   try {
     for (const unit of opts.freeze) {
-      const active = (
-        await exec(opts.target, `systemctl is-active ${unit} || true`)
-      ).trim();
+      const active = (await exec(opts.target, `systemctl is-active ${unit} || true`)).trim();
       if (active === "active" || active === "activating") {
         await exec(opts.target, cgroupFreeze(unit, 1));
         frozen.push(unit);
@@ -197,10 +157,7 @@ async function main(): Promise<void> {
         bytesPerSec: Math.round(oha.summary.sizePerSec ?? 0),
         successRate: oha.summary.successRate,
         latencyMs: Object.fromEntries(
-          ["p50", "p90", "p99", "p99.9"].map((p) => [
-            p,
-            Math.round((oha.latencyPercentiles[p] ?? 0) * 100000) / 100,
-          ]),
+          ["p50", "p90", "p99", "p99.9"].map(p => [p, Math.round((oha.latencyPercentiles[p] ?? 0) * 100000) / 100]),
         ),
         status: oha.statusCodeDistribution,
         errors: oha.errorDistribution,
@@ -209,9 +166,7 @@ async function main(): Promise<void> {
     }
   } finally {
     for (const unit of frozen)
-      await exec(opts.target, cgroupFreeze(unit, 0)).catch((e: unknown) =>
-        console.error(`thaw ${unit}: ${String(e)}`),
-      );
+      await exec(opts.target, cgroupFreeze(unit, 0)).catch((e: unknown) => console.error(`thaw ${unit}: ${String(e)}`));
   }
   const report = {
     tool: "host-netbench/1",

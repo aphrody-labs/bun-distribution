@@ -71,12 +71,7 @@
     "discordUserId": "1527405876695142620",
     "activationPrompt": {
       "channelId": "1557348890347573279",
-      "messageIds": [
-        "1557367100220112918",
-        "1557367101688254508",
-        "1557367104376807516",
-        "1557367105622380644"
-      ],
+      "messageIds": ["1557367100220112918", "1557367101688254508", "1557367104376807516", "1557367105622380644"],
       "containsPrivateKeys": false
     },
     "dedicatedVpsClientKeyPrepared": true,
@@ -91,12 +86,7 @@
       "guildId": "1554189180030947338",
       "channelId": "1557354118710829117",
       "channelName": "start-here",
-      "messageIds": [
-        "1557376931291209898",
-        "1557376932285386815",
-        "1557376933535289472",
-        "1557376934923731096"
-      ],
+      "messageIds": ["1557376931291209898", "1557376932285386815", "1557376933535289472", "1557376934923731096"],
       "omarExplicitlyMentioned": true,
       "codexLocalSetupPromptIncluded": true,
       "codexDistinctDiscordIdentityObserved": false,

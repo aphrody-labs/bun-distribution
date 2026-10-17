@@ -10,17 +10,13 @@ async function main(): Promise<number> {
   const cwd = Bun.env.APHRODY_NATIVE_CWD;
   const timeoutMs = Number(Bun.env.APHRODY_NATIVE_TIMEOUT_MS);
   if (!encoded || encoded.length > 1024 * 1024 || !executable || !cwd) {
-    throw new Error(
-      "The native build owner must supply bounded execution metadata.",
-    );
+    throw new Error("The native build owner must supply bounded execution metadata.");
   }
   const arguments_: unknown = JSON.parse(encoded);
   if (
     !Array.isArray(arguments_) ||
     arguments_.length > 10_000 ||
-    arguments_.some(
-      (value) => typeof value !== "string" || value.includes("\0"),
-    )
+    arguments_.some(value => typeof value !== "string" || value.includes("\0"))
   )
     throw new Error("Invalid native build arguments.");
   // Refuse to start a native build that would fill the volume holding its target directory.
@@ -69,9 +65,7 @@ if (import.meta.main) {
   try {
     process.exitCode = await main();
   } catch (error) {
-    console.error(
-      error instanceof Error ? error.message : "The native build failed.",
-    );
+    console.error(error instanceof Error ? error.message : "The native build failed.");
     process.exitCode = 1;
   }
 }

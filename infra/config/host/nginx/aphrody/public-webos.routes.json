@@ -6,11 +6,7 @@
       "locations": [
         {
           "path": "^~ /.well-known/acme-challenge/",
-          "custom_directives": [
-            "root /var/www/letsencrypt",
-            "default_type text/plain",
-            "try_files $uri =404"
-          ]
+          "custom_directives": ["root /var/www/letsencrypt", "default_type text/plain", "try_files $uri =404"]
         },
         { "path": "= /", "custom_directives": ["return 403"] },
         { "path": "/", "custom_directives": ["return 403"] }
@@ -21,11 +17,7 @@
       "server_names": ["omar.aphrody.com"],
       "ssl_certificate": "/etc/letsencrypt/live/omar.aphrody.com/fullchain.pem",
       "ssl_certificate_key": "/etc/letsencrypt/live/omar.aphrody.com/privkey.pem",
-      "custom_directives": [
-        "http2 on",
-        "ssl_protocols TLSv1.2 TLSv1.3",
-        "include snippets/aphrody-security.inc"
-      ],
+      "custom_directives": ["http2 on", "ssl_protocols TLSv1.2 TLSv1.3", "include snippets/aphrody-security.inc"],
       "locations": [
         { "path": "= /", "custom_directives": ["return 403"] },
         { "path": "/", "custom_directives": ["return 403"] }

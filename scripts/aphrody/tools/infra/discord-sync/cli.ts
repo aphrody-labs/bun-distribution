@@ -24,16 +24,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { Discord } from "./api.ts";
 import { collect, type CollectDeps, type SyncConfig } from "./collect.ts";
-import {
-  decode,
-  emptyState,
-  encode,
-  envelope,
-  KINDS,
-  type Kind,
-  type Snapshot,
-  type SyncState,
-} from "./protocol.ts";
+import { decode, emptyState, encode, envelope, KINDS, type Kind, type Snapshot, type SyncState } from "./protocol.ts";
 import { tick, ensureChannels, type Io } from "./sync.ts";
 
 const argv = Bun.argv.slice(2);
@@ -44,22 +35,10 @@ const opt = (n: string) => {
 };
 const flag = (n: string) => argv.includes(`--${n}`);
 
-const stateDir =
-  process.env.STATE_DIRECTORY?.split(":")[0] ??
-  join(homedir(), ".aphrody", "sync");
+const stateDir = process.env.STATE_DIRECTORY?.split(":")[0] ?? join(homedir(), ".aphrody", "sync");
 const configPath =
   process.env.APHRODY_SYNC_CONFIG ??
-  join(
-    import.meta.dir,
-    "..",
-    "..",
-    "..",
-    "..",
-    "tools",
-    "config",
-    "host",
-    "discord-sync.json",
-  );
+  join(import.meta.dir, "..", "..", "..", "..", "tools", "config", "host", "discord-sync.json");
 const cfg = JSON.parse(readFileSync(configPath, "utf8")) as SyncConfig;
 const statePath = join(stateDir, "state.json");
 
@@ -83,10 +62,7 @@ function saveState(s: SyncState) {
 function client(): Discord {
   const token = process.env.DISCORD_BOT_TOKEN ?? process.env.DISCORD_TOKEN;
   const guild = process.env.DISCORD_GUILD_ID ?? process.env.GUILD_ID;
-  if (!token || !guild)
-    throw new Error(
-      "DISCORD_BOT_TOKEN / DISCORD_GUILD_ID absents de l'environnement",
-    );
+  if (!token || !guild) throw new Error("DISCORD_BOT_TOKEN / DISCORD_GUILD_ID absents de l'environnement");
   return new Discord(token, guild);
 }
 
@@ -100,24 +76,19 @@ const io: Io = {
   outbox: () =>
     existsSync(join(stateDir, "outbox"))
       ? readdirSync(join(stateDir, "outbox"))
-          .filter((n) => n.endsWith(".json"))
+          .filter(n => n.endsWith(".json"))
           .toSorted()
-          .map((name) => ({
+          .map(name => ({
             name,
             body: readFileSync(join(stateDir, "outbox", name), "utf8"),
           }))
       : [],
-  dropOutbox: (name) => rmSync(join(stateDir, "outbox", name), { force: true }),
-  writeInbox: (name, body) =>
-    writeFileSync(join(dir("inbox"), name), body, { mode: 0o600 }),
-  writeAgreement: (name, body) =>
-    writeFileSync(join(dir("agreements"), name), body, { mode: 0o600 }),
+  dropOutbox: name => rmSync(join(stateDir, "outbox", name), { force: true }),
+  writeInbox: (name, body) => writeFileSync(join(dir("inbox"), name), body, { mode: 0o600 }),
+  writeAgreement: (name, body) => writeFileSync(join(dir("agreements"), name), body, { mode: 0o600 }),
   readFiche: () =>
-    existsSync(join(stateDir, "fiche-owner.md"))
-      ? readFileSync(join(stateDir, "fiche-owner.md"), "utf8")
-      : undefined,
-  writeMerged: (body) =>
-    writeFileSync(join(stateDir, "fiche-merged.md"), body, { mode: 0o600 }),
+    existsSync(join(stateDir, "fiche-owner.md")) ? readFileSync(join(stateDir, "fiche-owner.md"), "utf8") : undefined,
+  writeMerged: body => writeFileSync(join(stateDir, "fiche-merged.md"), body, { mode: 0o600 }),
 };
 
 async function run(cmdline: string[], timeoutMs: number): Promise<string> {
@@ -136,12 +107,8 @@ async function run(cmdline: string[], timeoutMs: number): Promise<string> {
   }
 }
 
-async function tcp(
-  host: string,
-  port: number,
-  timeoutMs: number,
-): Promise<boolean> {
-  return await new Promise<boolean>((resolve) => {
+async function tcp(host: string, port: number, timeoutMs: number): Promise<boolean> {
+  return await new Promise<boolean>(resolve => {
     const timer = setTimeout(() => resolve(false), timeoutMs);
     Bun.connect({
       hostname: host,
@@ -176,10 +143,7 @@ const deps: CollectDeps = {
 };
 
 function applyFixture(snap: Snapshot, file: string) {
-  const fx = JSON.parse(readFileSync(file, "utf8")) as Record<
-    string,
-    { online?: boolean; ageS?: number | null }
-  >;
+  const fx = JSON.parse(readFileSync(file, "utf8")) as Record<string, { online?: boolean; ageS?: number | null }>;
   for (const m of snap.members) {
     const f = fx[m.id];
     if (!f) continue;
@@ -208,8 +172,7 @@ if (cmd === "setup") {
   // Un seul passage à la fois (timer + passages manuels) : verrou exclusif, périmé après 2 minutes.
   mkdirSync(stateDir, { recursive: true, mode: 0o700 });
   const lock = join(stateDir, "tick.lock");
-  if (existsSync(lock) && Date.now() - statSync(lock).mtimeMs > 120_000)
-    rmSync(lock, { force: true });
+  if (existsSync(lock) && Date.now() - statSync(lock).mtimeMs > 120_000) rmSync(lock, { force: true });
   let fd: number | undefined;
   try {
     fd = openSync(lock, "wx", 0o600);
@@ -230,11 +193,7 @@ if (cmd === "setup") {
       const fx = opt("fixture");
       if (fx) applyFixture(snap, fx);
       try {
-        console.log(
-          JSON.stringify(
-            await tick(api, cfg, state, snap, io, api.guildId, template),
-          ),
-        );
+        console.log(JSON.stringify(await tick(api, cfg, state, snap, io, api.guildId, template)));
       } finally {
         saveState(state);
       }
@@ -248,9 +207,7 @@ if (cmd === "setup") {
   const type = opt("type");
   const text = opt("text");
   if (!channelKey || !KINDS.includes(kind) || !type || text === undefined)
-    throw new Error(
-      'usage : post <etat|evenements|demandes|fiche> --kind K --type T --text "…"',
-    );
+    throw new Error('usage : post <etat|evenements|demandes|fiche> --kind K --type T --text "…"');
   const spec = {
     channel: channelKey,
     kind,
@@ -259,15 +216,10 @@ if (cmd === "setup") {
     from: opt("from"),
     to: opt("to")?.split(","),
     needsAck: flag("ack") || undefined,
-    data: opt("json")
-      ? (JSON.parse(opt("json")!) as Record<string, unknown>)
-      : undefined,
+    data: opt("json") ? (JSON.parse(opt("json")!) as Record<string, unknown>) : undefined,
   };
   if (flag("outbox")) {
-    const f = join(
-      dir("outbox"),
-      `${Date.now()}-${Math.floor(Math.random() * 1e6)}.json`,
-    );
+    const f = join(dir("outbox"), `${Date.now()}-${Math.floor(Math.random() * 1e6)}.json`);
     writeFileSync(f, JSON.stringify(spec), { mode: 0o600 });
     console.log(`outbox ${f}`);
   } else {
@@ -316,8 +268,6 @@ if (cmd === "setup") {
     }),
   );
 } else {
-  console.error(
-    "usage : cli.ts setup | tick [--fixture F] | post | read | status",
-  );
+  console.error("usage : cli.ts setup | tick [--fixture F] | post | read | status");
   process.exit(2);
 }

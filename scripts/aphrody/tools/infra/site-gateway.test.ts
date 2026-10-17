@@ -42,18 +42,10 @@ describe("configuration", () => {
   });
 
   test("rejects relative paths, unsafe names and incomplete TLS", () => {
-    expect(() => validateConfig({ ...config, registry: "site.json" })).toThrow(
-      "registry",
-    );
-    expect(() => validateConfig({ ...config, container: "-x" })).toThrow(
-      "conteneur",
-    );
-    expect(() => validateConfig({ ...config, serverNames: [] })).toThrow(
-      "noms",
-    );
-    expect(() => validateConfig({ ...config, serverNames: ["a b"] })).toThrow(
-      "invalide",
-    );
+    expect(() => validateConfig({ ...config, registry: "site.json" })).toThrow("registry");
+    expect(() => validateConfig({ ...config, container: "-x" })).toThrow("conteneur");
+    expect(() => validateConfig({ ...config, serverNames: [] })).toThrow("noms");
+    expect(() => validateConfig({ ...config, serverNames: ["a b"] })).toThrow("invalide");
     const tls = {
       enabled: true,
       directory: "C:/tls",
@@ -68,9 +60,7 @@ describe("configuration", () => {
         tls: { ...tls, containerDirectory: "../x" },
       }),
     ).toThrow("TLS");
-    expect(() =>
-      validateConfig({ ...config, tls: { ...tls, privateKeySha256: "" } }),
-    ).toThrow("SHA-256");
+    expect(() => validateConfig({ ...config, tls: { ...tls, privateKeySha256: "" } })).toThrow("SHA-256");
   });
 });
 
@@ -89,8 +79,7 @@ describe("gateway text", () => {
   });
 
   test("inserting twice is idempotent and keeps the existing routes", () => {
-    const rendered =
-      "upstream aphrody_native_site {\n    server host.docker.internal:36515;\n}";
+    const rendered = "upstream aphrody_native_site {\n    server host.docker.internal:36515;\n}";
     const once = (source: string) => {
       const { base } = stripOwnedBlock(source);
       return candidateText(base, httpClosing(base), rendered);
@@ -105,15 +94,11 @@ describe("gateway text", () => {
 
   test("ambiguous markers are refused", () => {
     expect(() => stripOwnedBlock(`${BEGIN}\nhttp {}\n`)).toThrow("marqueurs");
-    expect(() =>
-      stripOwnedBlock(`${BEGIN}\n${END}\n${BEGIN}\n${END}\n`),
-    ).toThrow("marqueurs");
+    expect(() => stripOwnedBlock(`${BEGIN}\n${END}\n${BEGIN}\n${END}\n`)).toThrow("marqueurs");
   });
 
   test("Docker Desktop bind sources map back to host paths", () => {
-    expect(hostPath("/run/desktop/mnt/host/c/shenron/deploy/x.conf")).toBe(
-      "c:/shenron/deploy/x.conf",
-    );
+    expect(hostPath("/run/desktop/mnt/host/c/shenron/deploy/x.conf")).toBe("c:/shenron/deploy/x.conf");
     expect(hostPath("C:\\shenron\\x.conf")).toBe("C:\\shenron\\x.conf");
   });
 });
@@ -121,9 +106,7 @@ describe("gateway text", () => {
 describe("model", () => {
   test("plain HTTP proxies every declared name to the native site", () => {
     const model = gatewayModel(config, 36515);
-    expect(model.upstreams[0]!.targets[0]!.target).toBe(
-      "host.docker.internal:36515",
-    );
+    expect(model.upstreams[0]!.targets[0]!.target).toBe("host.docker.internal:36515");
     expect(model.servers).toHaveLength(1);
     expect(model.servers[0]!.server_names).toEqual(config.serverNames);
   });
@@ -141,15 +124,12 @@ describe("model", () => {
     expect(servers).toHaveLength(2);
     expect(servers[1]!.listen_ports).toContain("[::]:443 quic reuseport");
     expect(servers[1]!.custom_directives).toContain("http3 on");
-    expect(servers[1]!.ssl_certificate_key).toBe(
-      "/etc/aphrody-local-tls/leaf-key.pem",
-    );
+    expect(servers[1]!.ssl_certificate_key).toBe("/etc/aphrody-local-tls/leaf-key.pem");
   });
 
-  const aphrody = [
-    process.env.APHRODY_BIN,
-    join(process.env.LOCALAPPDATA ?? "", "Aphrody", "bin", "aphrody.exe"),
-  ].find((path) => path && existsSync(path));
+  const aphrody = [process.env.APHRODY_BIN, join(process.env.LOCALAPPDATA ?? "", "Aphrody", "bin", "aphrody.exe")].find(
+    path => path && existsSync(path),
+  );
   test.skipIf(!aphrody)("renders through aphrody infra nginx render", () => {
     const text = render(gatewayModel(config, 36515), aphrody!);
     expect(text).toContain("upstream aphrody_native_site {");
@@ -180,12 +160,8 @@ describe.skipIf(!windows)("native site registry", () => {
           processStartedAt: "2000-01-01T00:00:00.0000000Z",
         }),
       ).toBe(false);
-      expect(liveSite({ ...record, port: record.port === 1 ? 2 : 1 })).toBe(
-        false,
-      );
-      expect(() => liveSite({ ...record, address: "0.0.0.0" })).toThrow(
-        "loopback",
-      );
+      expect(liveSite({ ...record, port: record.port === 1 ? 2 : 1 })).toBe(false);
+      expect(() => liveSite({ ...record, address: "0.0.0.0" })).toThrow("loopback");
     } finally {
       server.stop(true);
     }

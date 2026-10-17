@@ -23,8 +23,7 @@ import { join } from "node:path";
 const HOME = process.env.HOME || process.env.USERPROFILE || homedir();
 const APP_ID = "2799860"; // INAZUMA ELEVEN: Victory Road
 const GAME_DIR = process.env.IEVR_GAME_DIR ?? join(HOME, ".local/share/Steam/iecode/inazuma");
-const TOKEN_STORE =
-	process.env.STEAM_TOKEN_STORE ?? join(HOME, ".local/share/iecode/steam-tokens.json");
+const TOKEN_STORE = process.env.STEAM_TOKEN_STORE ?? join(HOME, ".local/share/iecode/steam-tokens.json");
 const PRESET = process.env.DUMP_PRESET ?? "full";
 const OUT = process.env.DUMP_OUT ?? join(HOME, "aphrody-nie-dump");
 const binaryName = process.platform === "win32" ? "nie.exe" : "nie";
@@ -32,11 +31,11 @@ const NIE = process.env.NIE_BIN ?? join(import.meta.dir, "../../../../target/rel
 const useBuiltBinary = existsSync(NIE);
 
 async function runNie(...args: string[]) {
-	if (useBuiltBinary) {
-		await $`${NIE} ${args}`;
-	} else {
-		await $`cargo run --release -q -p aphrody-nie-cli -- ${args}`;
-	}
+  if (useBuiltBinary) {
+    await $`${NIE} ${args}`;
+  } else {
+    await $`cargo run --release -q -p aphrody-nie-cli -- ${args}`;
+  }
 }
 
 // 1. Télécharger/valider le jeu nativement (sauf SKIP_DOWNLOAD).
@@ -46,11 +45,11 @@ async function runNie(...args: string[]) {
 // Le download écrit l'arborescence d'install Steam dans GAME_DIR (GAME_DIR/data/packs/*.cpk),
 // layout identique à steamcmd, donc directement consommable par `iecode dump -g`.
 if (process.env.SKIP_DOWNLOAD !== "1") {
-	if (!process.env.STEAM_USER) {
-		throw new Error("STEAM_USER requis (ou SKIP_DOWNLOAD=1 pour dumper l'install existante).");
-	}
-	console.info(`▸ download natif : app ${APP_ID} → ${GAME_DIR}`);
-	await runNie("steam", "download", APP_ID, "-o", GAME_DIR, "--token-store", TOKEN_STORE);
+  if (!process.env.STEAM_USER) {
+    throw new Error("STEAM_USER requis (ou SKIP_DOWNLOAD=1 pour dumper l'install existante).");
+  }
+  console.info(`▸ download natif : app ${APP_ID} → ${GAME_DIR}`);
+  await runNie("steam", "download", APP_ID, "-o", GAME_DIR, "--token-store", TOKEN_STORE);
 }
 
 // 2. Selective dump: useful game data, localized text, and assets selected by the Rust preset.

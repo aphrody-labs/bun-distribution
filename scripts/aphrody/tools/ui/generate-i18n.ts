@@ -159,21 +159,17 @@ export const EN_CATALOG: I18nSchema = {
     web: "Web & Obscura Engine",
     web_desc: "Headless web crawling, DOM tree extraction, and browser bridge",
     window: "Window Manager",
-    window_desc:
-      "Tauri multi-window supervision (main, splash, pet, widget, quickbar)",
+    window_desc: "Tauri multi-window supervision (main, splash, pet, widget, quickbar)",
     admin: "Administrative Subsystem",
     admin_desc: "Kernel inspection, permission management, and service control",
     systemd: "Systemd Service Subsystem",
-    systemd_desc:
-      "Linux user unit supervision and background daemon monitoring",
+    systemd_desc: "Linux user unit supervision and background daemon monitoring",
     coreutils: "Core Utilities Subsystem",
-    coreutils_desc:
-      "Memory-safe cross-platform core utilities and file primitives",
+    coreutils_desc: "Memory-safe cross-platform core utilities and file primitives",
     compat: "Compatibility & N2B Subsystem",
     compat_desc: "Node-to-Bun scanning, registry bridge, and toolchain shims",
     infra: "Infrastructure Subsystem",
-    infra_desc:
-      "Server orchestration, SSH clustering, and deployment automation",
+    infra_desc: "Server orchestration, SSH clustering, and deployment automation",
     cloud: "Cloud & Storage Subsystem",
     cloud_desc: "Unified object store and cloud synchronization connectors",
   },
@@ -204,13 +200,11 @@ export const EN_CATALOG: I18nSchema = {
   errors: {
     network_unreachable: "Remote network endpoint is unreachable.",
     daemon_offline: "Supervised daemon is offline or starting.",
-    model_not_found:
-      "Requested model weights are not installed in the local store.",
+    model_not_found: "Requested model weights are not installed in the local store.",
     subsystem_unavailable: "Requested OS subsystem is currently not loaded.",
     kernel_disconnected: "Kernel IPC connection was lost; reconnecting...",
     unauthorized: "Action rejected by Aphrody execution policy.",
-    path_traversal_blocked:
-      "Access denied: path traversal outside workspace root.",
+    path_traversal_blocked: "Access denied: path traversal outside workspace root.",
   },
 };
 
@@ -338,26 +332,19 @@ export const FR_CATALOG: I18nSchema = {
     web: "Moteur Web & Obscura",
     web_desc: "Exploration web headless, extraction de DOM et pont navigateur",
     window: "Gestionnaire de fenêtres",
-    window_desc:
-      "Supervision multi-fenêtres Tauri (main, splash, pet, widget, quickbar)",
+    window_desc: "Supervision multi-fenêtres Tauri (main, splash, pet, widget, quickbar)",
     admin: "Sous-système d'administration",
-    admin_desc:
-      "Inspection du noyau, gestion des permissions et contrôle des services",
+    admin_desc: "Inspection du noyau, gestion des permissions et contrôle des services",
     systemd: "Sous-système Systemd",
-    systemd_desc:
-      "Supervision des unités utilisateur Linux et surveillance des démons",
+    systemd_desc: "Supervision des unités utilisateur Linux et surveillance des démons",
     coreutils: "Sous-système Utilitaires de base",
-    coreutils_desc:
-      "Utilitaires système sécurisés en mémoire et gestion des fichiers",
+    coreutils_desc: "Utilitaires système sécurisés en mémoire et gestion des fichiers",
     compat: "Sous-système Compatibilité & N2B",
-    compat_desc:
-      "Analyse Node vers Bun, passerelle de registre et adaptateurs de compilation",
+    compat_desc: "Analyse Node vers Bun, passerelle de registre et adaptateurs de compilation",
     infra: "Sous-système Infrastructure",
-    infra_desc:
-      "Orchestration serveurs, grappes SSH et automatisation du déploiement",
+    infra_desc: "Orchestration serveurs, grappes SSH et automatisation du déploiement",
     cloud: "Sous-système Cloud & Stockage",
-    cloud_desc:
-      "Stockage d'objets unifié et connecteurs de synchronisation cloud",
+    cloud_desc: "Stockage d'objets unifié et connecteurs de synchronisation cloud",
   },
   drive: {
     title: "Moteur Aphrody Drive",
@@ -384,38 +371,22 @@ export const FR_CATALOG: I18nSchema = {
     bun_ffi_bridge: "Pont FFI Bun (@aphrody/bun)",
   },
   errors: {
-    network_unreachable:
-      "Le point de terminaison réseau distant est injoignable.",
-    daemon_offline:
-      "Le démon supervisé est hors ligne ou en cours d'initialisation.",
-    model_not_found:
-      "Les poids du modèle demandé ne sont pas installés dans le magasin local.",
-    subsystem_unavailable:
-      "Le sous-système demandé du noyau OS n'est pas chargé actuellement.",
-    kernel_disconnected:
-      "La connexion IPC au noyau a été interrompue ; reconnexion en cours...",
+    network_unreachable: "Le point de terminaison réseau distant est injoignable.",
+    daemon_offline: "Le démon supervisé est hors ligne ou en cours d'initialisation.",
+    model_not_found: "Les poids du modèle demandé ne sont pas installés dans le magasin local.",
+    subsystem_unavailable: "Le sous-système demandé du noyau OS n'est pas chargé actuellement.",
+    kernel_disconnected: "La connexion IPC au noyau a été interrompue ; reconnexion en cours...",
     unauthorized: "Action refusée par la politique de sécurité d'Aphrody OS.",
-    path_traversal_blocked:
-      "Accès refusé : tentative de traversée hors de la racine de travail.",
+    path_traversal_blocked: "Accès refusé : tentative de traversée hors de la racine de travail.",
   },
 };
 
 export async function generateLocales(apply = false) {
   if (apply) {
     await mkdir(LOCALES_DIR, { recursive: true });
-    await writeFile(
-      join(LOCALES_DIR, "en.json"),
-      JSON.stringify(EN_CATALOG, null, 2) + "\n",
-      "utf8",
-    );
-    await writeFile(
-      join(LOCALES_DIR, "fr.json"),
-      JSON.stringify(FR_CATALOG, null, 2) + "\n",
-      "utf8",
-    );
-    console.log(
-      `[i18n-generate] Wrote symmetric EN & FR catalogs to ${LOCALES_DIR}`,
-    );
+    await writeFile(join(LOCALES_DIR, "en.json"), JSON.stringify(EN_CATALOG, null, 2) + "\n", "utf8");
+    await writeFile(join(LOCALES_DIR, "fr.json"), JSON.stringify(FR_CATALOG, null, 2) + "\n", "utf8");
+    console.log(`[i18n-generate] Wrote symmetric EN & FR catalogs to ${LOCALES_DIR}`);
   }
   return { en: EN_CATALOG, fr: FR_CATALOG };
 }
@@ -424,8 +395,6 @@ if (import.meta.main) {
   const apply = process.argv.includes("--apply");
   await generateLocales(apply);
   if (!apply) {
-    console.log(
-      "[i18n-generate] Dry-run complete. Run with --apply to write catalogs.",
-    );
+    console.log("[i18n-generate] Dry-run complete. Run with --apply to write catalogs.");
   }
 }

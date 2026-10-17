@@ -6,11 +6,7 @@
       "locations": [
         {
           "path": "^~ /.well-known/acme-challenge/",
-          "custom_directives": [
-            "root /var/www/letsencrypt",
-            "default_type text/plain",
-            "try_files $uri =404"
-          ]
+          "custom_directives": ["root /var/www/letsencrypt", "default_type text/plain", "try_files $uri =404"]
         },
         {
           "path": "/",

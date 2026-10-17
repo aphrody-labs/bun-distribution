@@ -44,15 +44,13 @@ export const PROBES: {
 ];
 
 const profile =
-  (process.argv.includes("--profile")
-    ? process.argv[process.argv.indexOf("--profile") + 1]
-    : undefined) ?? "aphrody";
+  (process.argv.includes("--profile") ? process.argv[process.argv.indexOf("--profile") + 1] : undefined) ?? "aphrody";
 const child = spawn("docker", ["mcp", "gateway", "run", "--profile", profile], {
   stdio: ["pipe", "pipe", "ignore"],
 });
 let buf = "";
 const waiting = new Map<number, (m: any) => void>();
-child.stdout.on("data", (d) => {
+child.stdout.on("data", d => {
   buf += d;
   let i: number;
   while ((i = buf.indexOf("\n")) >= 0) {
@@ -68,10 +66,8 @@ const rpc = (method: string, params: unknown, ms = 240_000) =>
   new Promise<any>((res, rej) => {
     const id = ++n;
     const t = setTimeout(() => rej(new Error(`timeout ${method}`)), ms);
-    waiting.set(id, (m) => (clearTimeout(t), res(m)));
-    child.stdin.write(
-      JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n",
-    );
+    waiting.set(id, m => (clearTimeout(t), res(m)));
+    child.stdin.write(JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n");
   });
 
 await rpc("initialize", {
@@ -79,13 +75,8 @@ await rpc("initialize", {
   capabilities: {},
   clientInfo: { name: "probe", version: "1" },
 });
-child.stdin.write(
-  JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) +
-    "\n",
-);
-const tools: string[] = (await rpc("tools/list", {})).result.tools.map(
-  (t: any) => t.name,
-);
+child.stdin.write(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n");
+const tools: string[] = (await rpc("tools/list", {})).result.tools.map((t: any) => t.name);
 console.log(`${tools.length} tools: ${tools.join(", ")}`);
 let failed = 0;
 // Sequential on purpose: one gateway session, ordered output.
@@ -105,9 +96,7 @@ for (const p of PROBES) {
       .slice(0, 100);
     const bad = r.error || r.result?.isError || text.startsWith("Error");
     if (bad) failed++;
-    console.log(
-      `${bad ? "FAIL" : "OK  "} ${p.server}/${p.tool}: ${r.error?.message ?? text}`,
-    );
+    console.log(`${bad ? "FAIL" : "OK  "} ${p.server}/${p.tool}: ${r.error?.message ?? text}`);
   } catch (e) {
     failed++;
     console.log(`FAIL ${p.server}/${p.tool}: ${(e as Error).message}`);

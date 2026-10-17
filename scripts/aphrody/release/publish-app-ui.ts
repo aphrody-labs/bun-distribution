@@ -587,18 +587,7 @@ async function main() {
   if (dirty) throw new Error("Commit the complete owned UI/source batch before building or publishing");
   const bunCheckout = releaseBunCheckout();
   const bunRevision = await run(["git", "rev-parse", "HEAD"], bunCheckout);
-  if (
-    await run(
-      [
-        "git",
-        "status",
-        "--porcelain",
-        "--",
-        "packages/bun-google/src/search.ts",
-      ],
-      bunCheckout,
-    )
-  )
+  if (await run(["git", "status", "--porcelain", "--", "packages/bun-google/src/search.ts"], bunCheckout))
     throw new Error("Commit canonical Bun search and documentation sources before publication");
   const sources = canonicalBunInputs(bunCheckout, bunRevision);
   const workspace = mkdtempSync(join(tmpdir(), "aphrody-app-ui-release-"));

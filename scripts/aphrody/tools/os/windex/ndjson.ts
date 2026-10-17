@@ -22,8 +22,7 @@ export const KEEP_SNAPSHOTS = 3;
 export const JOURNAL_MAX_BYTES = 64 << 20;
 export const JOURNAL_DAYS = 14;
 
-export const driveDir = (dir: string, drive: string) =>
-  join(dir, drive.slice(0, 1).toLowerCase());
+export const driveDir = (dir: string, drive: string) => join(dir, drive.slice(0, 1).toLowerCase());
 
 const stamp = (d = new Date()) =>
   d
@@ -35,7 +34,7 @@ const stamp = (d = new Date()) =>
 export function rotateSnapshots(dir: string, keep = KEEP_SNAPSHOTS): string[] {
   if (!existsSync(dir)) return [];
   const snaps = readdirSync(dir)
-    .filter((f) => /^snapshot-\d{8}T\d{6}Z\.ndjson$/.test(f))
+    .filter(f => /^snapshot-\d{8}T\d{6}Z\.ndjson$/.test(f))
     .toSorted();
   const drop = snaps.slice(0, Math.max(0, snaps.length - keep));
   for (const f of drop) rmSync(join(dir, f), { force: true });
@@ -43,17 +42,10 @@ export function rotateSnapshots(dir: string, keep = KEEP_SNAPSHOTS): string[] {
 }
 
 /** Removes journals older than `days` (by the day in their name). Returns the removed names. */
-export function rotateJournals(
-  dir: string,
-  days = JOURNAL_DAYS,
-  now = new Date(),
-): string[] {
+export function rotateJournals(dir: string, days = JOURNAL_DAYS, now = new Date()): string[] {
   if (!existsSync(dir)) return [];
-  const limit = new Date(now.getTime() - days * 86_400_000)
-    .toISOString()
-    .slice(0, 10)
-    .replaceAll("-", "");
-  const drop = readdirSync(dir).filter((f) => {
+  const limit = new Date(now.getTime() - days * 86_400_000).toISOString().slice(0, 10).replaceAll("-", "");
+  const drop = readdirSync(dir).filter(f => {
     const m = /^journal-(\d{8})(?:-\d+)?\.ndjson$/.exec(f);
     return m !== null && m[1]! < limit;
   });
@@ -74,10 +66,7 @@ export class Journal {
 
   private target(day: string): string {
     for (let n = 0; ; n++) {
-      const f = join(
-        this.dir,
-        n ? `journal-${day}-${n}.ndjson` : `journal-${day}.ndjson`,
-      );
+      const f = join(this.dir, n ? `journal-${day}-${n}.ndjson` : `journal-${day}.ndjson`);
       if (!existsSync(f) || statSync(f).size < this.maxBytes) return f;
     }
   }
@@ -85,11 +74,7 @@ export class Journal {
   append(events: object[]): void {
     if (!events.length) return;
     const day = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-    if (
-      this.fd < 0 ||
-      !this.file.includes(`journal-${day}`) ||
-      this.size >= this.maxBytes
-    ) {
+    if (this.fd < 0 || !this.file.includes(`journal-${day}`) || this.size >= this.maxBytes) {
       this.close();
       mkdirSync(this.dir, { recursive: true });
       this.file = this.target(day);
@@ -97,10 +82,7 @@ export class Journal {
       this.size = statSync(this.file).size;
       rotateJournals(this.dir);
     }
-    const text =
-      events
-        .map((e) => JSON.stringify({ v: RECORD_VERSION, ...e }))
-        .join("\n") + "\n";
+    const text = events.map(e => JSON.stringify({ v: RECORD_VERSION, ...e })).join("\n") + "\n";
     this.size += writeSync(this.fd, text);
   }
 
@@ -127,12 +109,7 @@ export type ExportResult = {
  * Streams every stored node below `root` from PostgreSQL into a new snapshot (keyset pagination on the unique
  * `path_lc` index), then atomically renames it, updates `latest.json` and rotates old snapshots.
  */
-export async function exportSnapshot(
-  sql: SQL,
-  root: string,
-  dir: string,
-  page = 20_000,
-): Promise<ExportResult> {
+export async function exportSnapshot(sql: SQL, root: string, dir: string, page = 20_000): Promise<ExportResult> {
   const t0 = performance.now();
   mkdirSync(dir, { recursive: true });
   const name = `snapshot-${stamp()}.ndjson`;
@@ -151,8 +128,7 @@ export async function exportSnapshot(
     );
     let last = "";
     for (;;) {
-      const rows =
-        await sql`SELECT f.path, f.path_lc, f.is_dir, f.size, f.attrs, f.frn::text AS frn, f.nlink,
+      const rows = await sql`SELECT f.path, f.path_lc, f.is_dir, f.size, f.attrs, f.frn::text AS frn, f.nlink,
           f.created_at, f.modified_at, f.accessed_at, f.changed_at, f.sha256, f.ads, f.error,
           CASE WHEN p.node_id IS NULL THEN NULL ELSE jsonb_build_object(
             'kind', p.kind, 'machine', p.machine, 'bits', p.bits, 'subsystem', p.subsystem,

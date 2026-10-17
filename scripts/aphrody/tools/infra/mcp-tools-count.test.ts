@@ -23,9 +23,7 @@ describe("MCP HTTP tools count", () => {
             const bytes = encoder.encode(data);
             for (let offset = 0; offset < bytes.length; offset += 7) {
               const chunk = bytes.slice(offset, offset + 7);
-              timers.push(
-                setTimeout(() => controller.enqueue(chunk), offset / 7),
-              );
+              timers.push(setTimeout(() => controller.enqueue(chunk), offset / 7));
             }
           },
         }),
@@ -45,11 +43,9 @@ describe("MCP HTTP tools count", () => {
           authorization: request.headers.get("authorization"),
           session: request.headers.get("mcp-session-id"),
         });
-        if (request.method === "DELETE")
-          return new Response(null, { status: 204 });
+        if (request.method === "DELETE") return new Response(null, { status: 204 });
         const body = await request.json();
-        if (body.method === "notifications/initialized")
-          return new Response(null, { status: 202 });
+        if (body.method === "notifications/initialized") return new Response(null, { status: 202 });
         if (body.method === "initialize") {
           return openSse(
             ': keepalive\ndata: {"jsonrpc":"2.0","method":"notifications/message","params":{}}\n\n' +
@@ -76,24 +72,14 @@ describe("MCP HTTP tools count", () => {
       for (const controller of controllers) controller.close();
     }, 1_500);
     try {
-      expect(
-        await countTools(new URL("mcp", server.url).href, "fixture-token"),
-      ).toEqual({
+      expect(await countTools(new URL("mcp", server.url).href, "fixture-token")).toEqual({
         server: "Aphrødÿ@test",
         tools: ["first", "second"],
       });
       expect(closed).toBe(false);
       expect(controllers).toHaveLength(3);
-      expect(
-        requests.every(
-          (request) => request.authorization === "Bearer fixture-token",
-        ),
-      ).toBe(true);
-      expect(
-        requests
-          .slice(1)
-          .every((request) => request.session === "fixture-session"),
-      ).toBe(true);
+      expect(requests.every(request => request.authorization === "Bearer fixture-token")).toBe(true);
+      expect(requests.slice(1).every(request => request.session === "fixture-session")).toBe(true);
       expect(requests.at(-1)?.method).toBe("DELETE");
     } finally {
       clearTimeout(deadline);
@@ -108,8 +94,7 @@ describe("MCP HTTP tools count", () => {
       port: 0,
       async fetch(request) {
         const body = await request.json();
-        if (body.method === "notifications/initialized")
-          return new Response(null, { status: 204 });
+        if (body.method === "notifications/initialized") return new Response(null, { status: 204 });
         return Response.json({
           jsonrpc: "2.0",
           id: body.id,
@@ -132,7 +117,7 @@ describe("MCP HTTP tools count", () => {
 
   test.each(["application/json", "text/event-stream"])(
     "reports JSON-RPC errors from %s without waiting for stream closure",
-    async (contentType) => {
+    async contentType => {
       const payload = JSON.stringify({
         jsonrpc: "2.0",
         id: 1,
@@ -156,9 +141,9 @@ describe("MCP HTTP tools count", () => {
         },
       });
       try {
-        await expect(
-          countTools(new URL("mcp", server.url).href),
-        ).rejects.toThrow("initialize: JSON-RPC -32603: fixture failure");
+        await expect(countTools(new URL("mcp", server.url).href)).rejects.toThrow(
+          "initialize: JSON-RPC -32603: fixture failure",
+        );
       } finally {
         await server.stop(true);
       }

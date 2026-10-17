@@ -8,12 +8,7 @@
   "apiUrl": "http://127.0.0.1:29020/api/v1",
   "credentialFile": "/home/ubuntu/.aphrody/config/gitea.env",
   "credentialVariable": "GITEA_TOKEN_LABS",
-  "credentialScopes": [
-    "read:user",
-    "read:organization",
-    "write:organization",
-    "write:repository"
-  ],
+  "credentialScopes": ["read:user", "read:organization", "write:organization", "write:repository"],
   "bunExecutable": "/home/ubuntu/.bun/bin/bun-1.4.4",
   "mirrorInterval": "8h",
   "visibilityPolicy": "match-source",
@@ -62,13 +57,7 @@
     "runnerJobQualification": "not-run"
   },
   "batches": {
-    "wave-1": [
-      "aphrody-m3-ai",
-      "aphrody-m3-primitives",
-      "aphrody-m3-bun",
-      "aphrody-identity",
-      "aphrody-app-ui"
-    ],
+    "wave-1": ["aphrody-m3-ai", "aphrody-m3-primitives", "aphrody-m3-bun", "aphrody-identity", "aphrody-app-ui"],
     "wave-2": [
       "aphrody-m3-next-example",
       "aphrody-m3-next-tauri-example",
@@ -76,34 +65,10 @@
       "aphrody-m3-theme",
       "aphrody-m3-tokens"
     ],
-    "wave-3": [
-      "aphrody-material-design-icons",
-      "aphrody-rg-ui",
-      "aphrody-scaffold",
-      "fixture-hello-m3",
-      "aphrody-a2a"
-    ],
-    "wave-4": [
-      "aphrody-bun",
-      "aphrody-cli-wasm",
-      "aphrody-discord-kit",
-      "aphrody-doc-ai",
-      "aphrody-drive-client"
-    ],
-    "wave-5": [
-      "aphrody-os",
-      "aphrody-ovh",
-      "aphrody-paths",
-      "aphrody-product",
-      "aphrody-rag-core"
-    ],
-    "wave-6": [
-      "aphrody-runtime-sdk",
-      "aphrody-shell-web",
-      "aphrody-sql",
-      "aphrody-update",
-      "aphrody-webos-wasm"
-    ],
+    "wave-3": ["aphrody-material-design-icons", "aphrody-rg-ui", "aphrody-scaffold", "fixture-hello-m3", "aphrody-a2a"],
+    "wave-4": ["aphrody-bun", "aphrody-cli-wasm", "aphrody-discord-kit", "aphrody-doc-ai", "aphrody-drive-client"],
+    "wave-5": ["aphrody-os", "aphrody-ovh", "aphrody-paths", "aphrody-product", "aphrody-rag-core"],
+    "wave-6": ["aphrody-runtime-sdk", "aphrody-shell-web", "aphrody-sql", "aphrody-update", "aphrody-webos-wasm"],
     "wave-7": [
       "aphrody-winclean",
       "aphrody-workspace",
@@ -111,13 +76,7 @@
       "aphrody-yolo-core",
       "aphrody-yt-subs-sorter"
     ],
-    "wave-8": [
-      "aphrody-m3-front",
-      "aphrody-m3-icons",
-      "aphrody-m3-config",
-      "aphrody-m3-mcp",
-      "aphrody-m3-forms"
-    ],
+    "wave-8": ["aphrody-m3-front", "aphrody-m3-icons", "aphrody-m3-config", "aphrody-m3-mcp", "aphrody-m3-forms"],
     "wave-9": [
       "aphrody-eslint-plugin-m3",
       "aphrody-m3-explorer",
@@ -125,33 +84,11 @@
       "aphrody-m3-reader",
       "aphrody-m3-os-themes"
     ],
-    "wave-10": [
-      "aphrody-canvas",
-      "aphrody-m3-baseui",
-      "aphrody-m3-design",
-      "msys2-docker",
-      "aphrody-m3-next"
-    ],
-    "wave-11": [
-      "cosmic-idle",
-      "cosmic-randr",
-      "cosmic-screenshot",
-      "simple-wrapper",
-      "msys2-tests"
-    ],
-    "wave-12": [
-      "aas-sign-build",
-      "pacdb",
-      "package-grokker",
-      "vu",
-      "msys2-main-server"
-    ],
-    "wave-13": [
-      "typesafe-sdk-js"
-    ],
-    "wave-14": [
-      "bun-distribution"
-    ],
+    "wave-10": ["aphrody-canvas", "aphrody-m3-baseui", "aphrody-m3-design", "msys2-docker", "aphrody-m3-next"],
+    "wave-11": ["cosmic-idle", "cosmic-randr", "cosmic-screenshot", "simple-wrapper", "msys2-tests"],
+    "wave-12": ["aas-sign-build", "pacdb", "package-grokker", "vu", "msys2-main-server"],
+    "wave-13": ["typesafe-sdk-js"],
+    "wave-14": ["bun-distribution"],
     "wave-15": [
       "aphrody-m3-react",
       "aphrody-m3-next-migrate",
@@ -159,20 +96,8 @@
       "cosmic-epoch",
       "msys2-installer"
     ],
-    "wave-16": [
-      "shenron-config",
-      "cosmic-osk",
-      "pactoys",
-      "cosmic-bg",
-      "cosmic-monitor"
-    ],
-    "wave-17": [
-      "cosmic-session",
-      "msys2-texlive",
-      "msys2-launcher",
-      "MSYS2-keyring",
-      "uutils-diffutils"
-    ],
+    "wave-16": ["shenron-config", "cosmic-osk", "pactoys", "cosmic-bg", "cosmic-monitor"],
+    "wave-17": ["cosmic-session", "msys2-texlive", "msys2-launcher", "MSYS2-keyring", "uutils-diffutils"],
     "wave-18": [
       "typesafe-sdk-python",
       "cosmic-icons",
@@ -180,142 +105,30 @@
       "cosmic-settings-daemon",
       "cosmic-notifications"
     ],
-    "wave-19": [
-      "launcher",
-      "cosmic-osd",
-      "c-ward",
-      "cosmic-player",
-      "cosmic-workspaces-epoch"
-    ],
-    "wave-20": [
-      "msys2-devtools",
-      "cosmic-launcher",
-      "xdg-desktop-portal-cosmic",
-      "cosmic-app-library"
-    ],
-    "wave-21": [
-      "msys2-autobuild",
-      "uutils-findutils",
-      "cosmic-term",
-      "llvm-mingw"
-    ],
-    "wave-22": [
-      "wslg",
-      "cosmic-panel",
-      "cosmic-sound-theme",
-      "cosmic-store"
-    ],
-    "wave-23": [
-      "msys2-web",
-      "docker-steam-headless",
-      "material-color-utilities",
-      "cosmic-files"
-    ],
-    "wave-24": [
-      "rusty_v8",
-      "cosmic-applets",
-      "webkit2gtk-rs",
-      "setup-msys2"
-    ],
-    "wave-25": [
-      "create-tauri-app",
-      "cosmic-comp"
-    ],
-    "wave-26": [
-      "cosmic-settings"
-    ],
-    "wave-27": [
-      "wry"
-    ],
-    "wave-28": [
-      "tao"
-    ],
-    "wave-30": [
-      "winit-gtk4",
-      "rsync",
-      "aphrody-assets",
-      "aphrody-m3-fonts"
-    ],
-    "wave-31": [
-      "kirigami",
-      "plugins-workspace",
-      "cosmic-viewer",
-      "weston-mirror",
-      "pyo3"
-    ],
-    "private-wave-1": [
-      "aphrody-claude",
-      "mcp-ui",
-      "plugin-bxc",
-      "plugin-iecode",
-      "plugin-shenron"
-    ],
-    "archive-wave-1": [
-      "plugin-vscode"
-    ],
-    "private-wave-2": [
-      "plugin-aphrody-m3",
-      "dbxv2",
-      "taffy",
-      "plugin-google-gemini",
-      "omar"
-    ],
-    "archive-wave-2": [
-      "gemini",
-      "plugin-bun-ts7",
-      "plugin-rose-griffon",
-      "wsh"
-    ],
-    "private-wave-3": [
-      "plugins",
-      "ag-ui-client",
-      "fut",
-      "antigravity-sdk-python",
-      "plugin-yolo"
-    ],
-    "private-wave-4": [
-      "node-api-dotnet",
-      "plugin-aphrody",
-      "material",
-      "material-web",
-      "aphrody-py"
-    ],
-    "private-wave-5": [
-      "yolo",
-      "nie-ui",
-      "aphrody-m3",
-      "rg",
-      "shenron"
-    ],
-    "private-wave-6": [
-      "iecode",
-      "aphrody"
-    ],
-    "wave-32": [
-      "obscura",
-      "iced",
-      "msys2-pacman",
-      "MSYS2-packages",
-      "libcosmic"
-    ],
-    "wave-33": [
-      "gn",
-      "cef-rs",
-      "cef",
-      "MINGW-packages-dev",
-      "uutils-coreutils"
-    ],
-    "wave-34": [
-      "base-ui",
-      "opentui",
-      "FreeRDP-mirror",
-      "vcpkg-tool",
-      "NuGet.Client"
-    ],
-    "private-wave-7": [
-      "cpython",
-      "jan"
-    ],
+    "wave-19": ["launcher", "cosmic-osd", "c-ward", "cosmic-player", "cosmic-workspaces-epoch"],
+    "wave-20": ["msys2-devtools", "cosmic-launcher", "xdg-desktop-portal-cosmic", "cosmic-app-library"],
+    "wave-21": ["msys2-autobuild", "uutils-findutils", "cosmic-term", "llvm-mingw"],
+    "wave-22": ["wslg", "cosmic-panel", "cosmic-sound-theme", "cosmic-store"],
+    "wave-23": ["msys2-web", "docker-steam-headless", "material-color-utilities", "cosmic-files"],
+    "wave-24": ["rusty_v8", "cosmic-applets", "webkit2gtk-rs", "setup-msys2"],
+    "wave-25": ["create-tauri-app", "cosmic-comp"],
+    "wave-26": ["cosmic-settings"],
+    "wave-27": ["wry"],
+    "wave-28": ["tao"],
+    "wave-30": ["winit-gtk4", "rsync", "aphrody-assets", "aphrody-m3-fonts"],
+    "wave-31": ["kirigami", "plugins-workspace", "cosmic-viewer", "weston-mirror", "pyo3"],
+    "private-wave-1": ["aphrody-claude", "mcp-ui", "plugin-bxc", "plugin-iecode", "plugin-shenron"],
+    "archive-wave-1": ["plugin-vscode"],
+    "private-wave-2": ["plugin-aphrody-m3", "dbxv2", "taffy", "plugin-google-gemini", "omar"],
+    "archive-wave-2": ["gemini", "plugin-bun-ts7", "plugin-rose-griffon", "wsh"],
+    "private-wave-3": ["plugins", "ag-ui-client", "fut", "antigravity-sdk-python", "plugin-yolo"],
+    "private-wave-4": ["node-api-dotnet", "plugin-aphrody", "material", "material-web", "aphrody-py"],
+    "private-wave-5": ["yolo", "nie-ui", "aphrody-m3", "rg", "shenron"],
+    "private-wave-6": ["iecode", "aphrody"],
+    "wave-32": ["obscura", "iced", "msys2-pacman", "MSYS2-packages", "libcosmic"],
+    "wave-33": ["gn", "cef-rs", "cef", "MINGW-packages-dev", "uutils-coreutils"],
+    "wave-34": ["base-ui", "opentui", "FreeRDP-mirror", "vcpkg-tool", "NuGet.Client"],
+    "private-wave-7": ["cpython", "jan"],
     "public-divergence-wave": [
       "apk-tools",
       "cosmic-greeter",
@@ -324,34 +137,10 @@
       "cosmic-initial-setup",
       "cosmic-text"
     ],
-    "wave-35": [
-      "tailwindcss",
-      "WSL",
-      "msys2-runtime",
-      "gfw-build-extra",
-      "PowerShell"
-    ],
-    "wave-36": [
-      "mingw-w64",
-      "tauri",
-      "vcpkg",
-      "uv",
-      "MINGW-packages"
-    ],
-    "wave-37": [
-      "apt",
-      "gfw-msys2-runtime",
-      "cygwin",
-      "ruff",
-      "terminal"
-    ],
-    "wave-38": [
-      "oxc",
-      "cosmic-protocols",
-      "mullvadvpn-app",
-      "kxmlgui",
-      "deno"
-    ]
+    "wave-35": ["tailwindcss", "WSL", "msys2-runtime", "gfw-build-extra", "PowerShell"],
+    "wave-36": ["mingw-w64", "tauri", "vcpkg", "uv", "MINGW-packages"],
+    "wave-37": ["apt", "gfw-msys2-runtime", "cygwin", "ruff", "terminal"],
+    "wave-38": ["oxc", "cosmic-protocols", "mullvadvpn-app", "kxmlgui", "deno"]
   },
   "initialExistingMirrors": [
     "artcraft",
@@ -388,9 +177,7 @@
       "admission": "private-wave-4",
       "sourceQualification": {
         "sha": "1edbbad3f1a32b395ec25fe8a4ad031ea9806e56",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "1edbbad3f1a32b395ec25fe8a4ad031ea9806e56"
         },
@@ -496,9 +283,7 @@
       "admission": "archive-wave-2",
       "sourceQualification": {
         "sha": "a2aecac97c078e731509ecf4fe92e3c196b2fbee",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "a2aecac97c078e731509ecf4fe92e3c196b2fbee"
         },
@@ -586,9 +371,7 @@
       "admission": "private-wave-3",
       "sourceQualification": {
         "sha": "32cb358a6e86b39e0709ded32302fd85ec453595",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "32cb358a6e86b39e0709ded32302fd85ec453595"
         },
@@ -608,9 +391,7 @@
       "admission": "private-wave-1",
       "sourceQualification": {
         "sha": "29a0a24fc1fdf034626f1c71f4b553b26941cf66",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "29a0a24fc1fdf034626f1c71f4b553b26941cf66"
         },
@@ -630,9 +411,7 @@
       "admission": "private-wave-4",
       "sourceQualification": {
         "sha": "493369405aaa4c020483a3a11d8bb49d59a0cb10",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "493369405aaa4c020483a3a11d8bb49d59a0cb10"
         },
@@ -652,9 +431,7 @@
       "admission": "private-wave-3",
       "sourceQualification": {
         "sha": "813164fb28b4cc2fc3bdefa09fe57ac44eda2450",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "813164fb28b4cc2fc3bdefa09fe57ac44eda2450"
         },
@@ -674,9 +451,7 @@
       "admission": "private-wave-2",
       "sourceQualification": {
         "sha": "f484b7c4a4586cd762a0858eaa05c05160f48c59",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "f484b7c4a4586cd762a0858eaa05c05160f48c59"
         },
@@ -696,12 +471,7 @@
       "admission": "private-wave-5",
       "sourceQualification": {
         "sha": "a9c0a731c6ca42265745696388ed29b1753c7b49",
-        "refs": [
-          "refs/heads/dev",
-          "refs/heads/main",
-          "refs/heads/vendor",
-          "refs/tags/v0.1.0"
-        ],
+        "refs": ["refs/heads/dev", "refs/heads/main", "refs/heads/vendor", "refs/tags/v0.1.0"],
         "refShas": {
           "refs/heads/dev": "048886bf92dd239889373d521cab1fc97054f68c",
           "refs/heads/main": "a9c0a731c6ca42265745696388ed29b1753c7b49",
@@ -10482,10 +10252,7 @@
       "admission": "private-wave-3",
       "sourceQualification": {
         "sha": "8b2bf2efa1746cd2f667e86605c76f653ef92981",
-        "refs": [
-          "refs/heads/main",
-          "refs/tags/downloads-20261005T222045Z-8f891f0d4f19"
-        ],
+        "refs": ["refs/heads/main", "refs/tags/downloads-20261005T222045Z-8f891f0d4f19"],
         "refShas": {
           "refs/heads/main": "8b2bf2efa1746cd2f667e86605c76f653ef92981",
           "refs/tags/downloads-20261005T222045Z-8f891f0d4f19": "14e4ff4e8ac76861f6bb41dc61bdac70e662caac"
@@ -10506,10 +10273,7 @@
       "admission": "private-wave-4",
       "sourceQualification": {
         "sha": "f5802d3aca147c9650b74c9041569a19543b3e6d",
-        "refs": [
-          "refs/heads/main",
-          "refs/tags/downloads-20261005T222045Z-8f891f0d4f19"
-        ],
+        "refs": ["refs/heads/main", "refs/tags/downloads-20261005T222045Z-8f891f0d4f19"],
         "refShas": {
           "refs/heads/main": "f5802d3aca147c9650b74c9041569a19543b3e6d",
           "refs/tags/downloads-20261005T222045Z-8f891f0d4f19": "1b85235efc4569dfb9ac5efba991809a2d0f23ab"
@@ -10530,9 +10294,7 @@
       "admission": "archive-wave-2",
       "sourceQualification": {
         "sha": "a8e2b3a5c0607da9cb52e05290af087d0663642f",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "a8e2b3a5c0607da9cb52e05290af087d0663642f"
         },
@@ -10552,9 +10314,7 @@
       "admission": "private-wave-1",
       "sourceQualification": {
         "sha": "3aa1bc0ad75057b6564150777cf71cdc04e560d9",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "3aa1bc0ad75057b6564150777cf71cdc04e560d9"
         },
@@ -10574,9 +10334,7 @@
       "admission": "private-wave-2",
       "sourceQualification": {
         "sha": "4ee66ccea8cc106f868a44d9ffa10aebc43a5e8c",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "4ee66ccea8cc106f868a44d9ffa10aebc43a5e8c"
         },
@@ -10596,9 +10354,7 @@
       "admission": "private-wave-1",
       "sourceQualification": {
         "sha": "3e9cba3f75f3c4056b143f093cf022d806ea47b6",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "3e9cba3f75f3c4056b143f093cf022d806ea47b6"
         },
@@ -10618,9 +10374,7 @@
       "admission": "archive-wave-2",
       "sourceQualification": {
         "sha": "5a1e61312eff5ee107bce256c80088e02e96caaf",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "5a1e61312eff5ee107bce256c80088e02e96caaf"
         },
@@ -10640,9 +10394,7 @@
       "admission": "private-wave-1",
       "sourceQualification": {
         "sha": "335c08f6b904e87b6fcba1cff20aafdd1afe2c00",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "335c08f6b904e87b6fcba1cff20aafdd1afe2c00"
         },
@@ -10662,10 +10414,7 @@
       "admission": "private-wave-3",
       "sourceQualification": {
         "sha": "bc00ba5c848aec4405b06368618d59a432c73ff1",
-        "refs": [
-          "refs/heads/main",
-          "refs/tags/downloads-20261005T222045Z-8f891f0d4f19"
-        ],
+        "refs": ["refs/heads/main", "refs/tags/downloads-20261005T222045Z-8f891f0d4f19"],
         "refShas": {
           "refs/heads/main": "bc00ba5c848aec4405b06368618d59a432c73ff1",
           "refs/tags/downloads-20261005T222045Z-8f891f0d4f19": "60776a7fd730c5e4b13096149b5acef051b05cb3"
@@ -10726,9 +10475,7 @@
       "admission": "private-wave-7",
       "sourceQualification": {
         "sha": "9764a44d4982e62872e6340b69c16f44b04dfd2e",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "9764a44d4982e62872e6340b69c16f44b04dfd2e"
         },
@@ -10748,9 +10495,7 @@
       "admission": "private-wave-1",
       "sourceQualification": {
         "sha": "ab59226382ccdf71c667d5fb5ac8f6bbd8175c9c",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "ab59226382ccdf71c667d5fb5ac8f6bbd8175c9c"
         },
@@ -10770,9 +10515,7 @@
       "admission": "archive-wave-1",
       "sourceQualification": {
         "sha": "94956e39df11d368644ba36dbed2c3c2c3806e8a",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "94956e39df11d368644ba36dbed2c3c2c3806e8a"
         },
@@ -10822,9 +10565,7 @@
       "admission": "private-wave-2",
       "sourceQualification": {
         "sha": "4ede803ecfb9021753980ce21549660c7f0097a1",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "4ede803ecfb9021753980ce21549660c7f0097a1"
         },
@@ -10844,9 +10585,7 @@
       "admission": "private-wave-5",
       "sourceQualification": {
         "sha": "e1e7813fc38f75f7704f93fd2c1a962aeef5ce74",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "e1e7813fc38f75f7704f93fd2c1a962aeef5ce74"
         },
@@ -10866,10 +10605,7 @@
       "admission": "wave-35",
       "sourceQualification": {
         "sha": "ed9dee8893815f67ca8084e6befc9c6c8f66df81",
-        "refs": [
-          "refs/heads/bun",
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/bun", "refs/heads/main"],
         "refShas": {
           "refs/heads/bun": "2e23bfcfc1714437f5ff74818d3fa49e11a951d8",
           "refs/heads/main": "ed9dee8893815f67ca8084e6befc9c6c8f66df81"
@@ -10890,11 +10626,7 @@
       "admission": "wave-34",
       "sourceQualification": {
         "sha": "a5ca5b6531e830482305ccb13bbab52d6c9a39bf",
-        "refs": [
-          "refs/heads/bun",
-          "refs/heads/main",
-          "refs/heads/master"
-        ],
+        "refs": ["refs/heads/bun", "refs/heads/main", "refs/heads/master"],
         "refShas": {
           "refs/heads/bun": "67dec15aed40fb360256ae12ec451ab343744151",
           "refs/heads/main": "67dec15aed40fb360256ae12ec451ab343744151",
@@ -10916,9 +10648,7 @@
       "admission": "wave-23",
       "sourceQualification": {
         "sha": "51f0744f9cfbbef63f45c1058c2a883c5656b0fe",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "51f0744f9cfbbef63f45c1058c2a883c5656b0fe"
         },
@@ -10962,9 +10692,7 @@
       "admission": "private-wave-3",
       "sourceQualification": {
         "sha": "f7cc6b0149aeaefa5c664844666648466fcbe1d8",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "f7cc6b0149aeaefa5c664844666648466fcbe1d8"
         },
@@ -11040,11 +10768,7 @@
       "admission": "wave-24",
       "sourceQualification": {
         "sha": "2f588046bf45a7b9adeda3ed0f0e881d38e6f3f5",
-        "refs": [
-          "refs/heads/claude/bun-chromium-157",
-          "refs/heads/main",
-          "refs/heads/obscura-pin-v150.4.0"
-        ],
+        "refs": ["refs/heads/claude/bun-chromium-157", "refs/heads/main", "refs/heads/obscura-pin-v150.4.0"],
         "refShas": {
           "refs/heads/claude/bun-chromium-157": "5c15a6995c9bb4bacd3e341b59fff32c909c80bf",
           "refs/heads/main": "2f588046bf45a7b9adeda3ed0f0e881d38e6f3f5",
@@ -11066,10 +10790,7 @@
       "admission": "wave-36",
       "sourceQualification": {
         "sha": "ff4a13f48f16de46641c89db41dfc629918d155f",
-        "refs": [
-          "refs/heads/main",
-          "refs/heads/vu-pin-0.12.23"
-        ],
+        "refs": ["refs/heads/main", "refs/heads/vu-pin-0.12.23"],
         "refShas": {
           "refs/heads/main": "ff4a13f48f16de46641c89db41dfc629918d155f",
           "refs/heads/vu-pin-0.12.23": "46b84fd0bfec23b72f29e8e2185ba68a65052f48"
@@ -11090,10 +10811,7 @@
       "admission": "wave-37",
       "sourceQualification": {
         "sha": "97ef64a11677261b2e2d3089c4b6176c8b5d7c59",
-        "refs": [
-          "refs/heads/main",
-          "refs/heads/vu-pin-0.16.10"
-        ],
+        "refs": ["refs/heads/main", "refs/heads/vu-pin-0.16.10"],
         "refShas": {
           "refs/heads/main": "97ef64a11677261b2e2d3089c4b6176c8b5d7c59",
           "refs/heads/vu-pin-0.16.10": "3265ed1f944c98bb4c04d632fbefb1257cdb583d"
@@ -11115,10 +10833,7 @@
       "admission": "wave-31",
       "sourceQualification": {
         "sha": "4cad91f80db0a6e3ed052977f89a2609c43302cb",
-        "refs": [
-          "refs/heads/main",
-          "refs/heads/vu-pin-0.29.3"
-        ],
+        "refs": ["refs/heads/main", "refs/heads/vu-pin-0.29.3"],
         "refShas": {
           "refs/heads/main": "4cad91f80db0a6e3ed052977f89a2609c43302cb",
           "refs/heads/vu-pin-0.29.3": "451d99fdcdcddf159e8e0a1186960b332cdb5d7c"
@@ -13276,9 +12991,7 @@
       "admission": "wave-12",
       "sourceQualification": {
         "sha": "25db5ee96681ae988f84aaa99211b097a5d6d2cd",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "25db5ee96681ae988f84aaa99211b097a5d6d2cd"
         },
@@ -13298,9 +13011,7 @@
       "admission": "private-wave-2",
       "sourceQualification": {
         "sha": "fabc19c0021e3e992786dc2a093a749c8a1c26f0",
-        "refs": [
-          "refs/heads/master"
-        ],
+        "refs": ["refs/heads/master"],
         "refShas": {
           "refs/heads/master": "fabc19c0021e3e992786dc2a093a749c8a1c26f0"
         },
@@ -18164,10 +17875,7 @@
       "admission": "wave-36",
       "sourceQualification": {
         "sha": "a70671f323aef4bf735c271ca9f96f193ef79fb3",
-        "refs": [
-          "refs/heads/master",
-          "refs/tags/srcinfo-cache"
-        ],
+        "refs": ["refs/heads/master", "refs/tags/srcinfo-cache"],
         "refShas": {
           "refs/heads/master": "a70671f323aef4bf735c271ca9f96f193ef79fb3",
           "refs/tags/srcinfo-cache": "602084216dbaf3e6399bb92cd75cdc600c1263f2"
@@ -18188,10 +17896,7 @@
       "admission": "wave-32",
       "sourceQualification": {
         "sha": "baea8f4cda2c3cf0e597d12479bfb914d4c24955",
-        "refs": [
-          "refs/heads/master",
-          "refs/tags/srcinfo-cache"
-        ],
+        "refs": ["refs/heads/master", "refs/tags/srcinfo-cache"],
         "refShas": {
           "refs/heads/master": "baea8f4cda2c3cf0e597d12479bfb914d4c24955",
           "refs/tags/srcinfo-cache": "07edae3bf6de6f9b9f446b2ea8847e6b6414d8ff"
@@ -20110,9 +19815,7 @@
       "admission": "wave-18",
       "sourceQualification": {
         "sha": "789e30ed478bfc823d9d9018d2b31ea42bfe21aa",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "789e30ed478bfc823d9d9018d2b31ea42bfe21aa"
         },
@@ -20132,10 +19835,7 @@
       "admission": "wave-20",
       "sourceQualification": {
         "sha": "7175382e14dfc96ba500e144f45499b73f9ba80d",
-        "refs": [
-          "refs/heads/i686-sync",
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/i686-sync", "refs/heads/main"],
         "refShas": {
           "refs/heads/i686-sync": "8ff47b78e826e967df8f0bfd1cb0c1115fad02cb",
           "refs/heads/main": "7175382e14dfc96ba500e144f45499b73f9ba80d"
@@ -20460,9 +20160,7 @@
       "admission": "wave-10",
       "sourceQualification": {
         "sha": "4e146f08c0b9a0973949d28b806041c3a23f8505",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -20549,9 +20247,7 @@
       "admission": "wave-23",
       "sourceQualification": {
         "sha": "48788bd6ef2e4e19fc8190ef07be311f4c8dfef6",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "48788bd6ef2e4e19fc8190ef07be311f4c8dfef6"
         },
@@ -20571,9 +20267,7 @@
       "admission": "wave-11",
       "sourceQualification": {
         "sha": "816899016fa076cc4faf7a1032d185a88431bc94",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "816899016fa076cc4faf7a1032d185a88431bc94"
         },
@@ -20593,10 +20287,7 @@
       "admission": "wave-12",
       "sourceQualification": {
         "sha": "7ca742873fd184e2965604fb2dea6d6fab6d1031",
-        "refs": [
-          "refs/heads/main",
-          "refs/tags/v0.1.0"
-        ],
+        "refs": ["refs/heads/main", "refs/tags/v0.1.0"],
         "refShas": {
           "refs/heads/main": "7ca742873fd184e2965604fb2dea6d6fab6d1031",
           "refs/tags/v0.1.0": "c896c4ce43cfb7fd4211404619893dde78292e43"
@@ -20617,9 +20308,7 @@
       "admission": "wave-16",
       "sourceQualification": {
         "sha": "b5fcc0f3100a20bbb15602c99f4297dbe16ddad9",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "b5fcc0f3100a20bbb15602c99f4297dbe16ddad9"
         },
@@ -20719,10 +20408,7 @@
       "admission": "wave-12",
       "sourceQualification": {
         "sha": "c5ea2848ade5b148f59e36ecb93a6ae10cd9138e",
-        "refs": [
-          "refs/heads/main",
-          "refs/tags/2026-06-14"
-        ],
+        "refs": ["refs/heads/main", "refs/tags/2026-06-14"],
         "refShas": {
           "refs/heads/main": "c5ea2848ade5b148f59e36ecb93a6ae10cd9138e",
           "refs/tags/2026-06-14": "c5ea2848ade5b148f59e36ecb93a6ae10cd9138e"
@@ -20769,10 +20455,7 @@
       "admission": "wave-12",
       "sourceQualification": {
         "sha": "a976a49de6f306122b7b603d1212782a900fa8fd",
-        "refs": [
-          "refs/heads/main",
-          "refs/tags/v0.1.0"
-        ],
+        "refs": ["refs/heads/main", "refs/tags/v0.1.0"],
         "refShas": {
           "refs/heads/main": "a976a49de6f306122b7b603d1212782a900fa8fd",
           "refs/tags/v0.1.0": "a976a49de6f306122b7b603d1212782a900fa8fd"
@@ -27935,10 +27618,7 @@
       "admission": "wave-36",
       "sourceQualification": {
         "sha": "caa3dcce328d7adf7bb51ce456942c0512dfe0de",
-        "refs": [
-          "refs/heads/main",
-          "refs/heads/master"
-        ],
+        "refs": ["refs/heads/main", "refs/heads/master"],
         "refShas": {
           "refs/heads/main": "caa3dcce328d7adf7bb51ce456942c0512dfe0de",
           "refs/heads/master": "caa3dcce328d7adf7bb51ce456942c0512dfe0de"
@@ -27959,9 +27639,7 @@
       "admission": "wave-34",
       "sourceQualification": {
         "sha": "51d29dc92f78a5a5609106c2972f069e7e6ef4b7",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "51d29dc92f78a5a5609106c2972f069e7e6ef4b7"
         },
@@ -27981,9 +27659,7 @@
       "admission": "wave-34",
       "sourceQualification": {
         "sha": "d6da1db60ccd797655b585da1ce6e52c11a01402",
-        "refs": [
-          "refs/heads/dev"
-        ],
+        "refs": ["refs/heads/dev"],
         "refShas": {
           "refs/heads/dev": "d6da1db60ccd797655b585da1ce6e52c11a01402"
         },
@@ -28819,10 +28495,7 @@
       "admission": "wave-30",
       "sourceQualification": {
         "sha": "f16c3eac981bd4b6556c57df5c0d96b8b660f323",
-        "refs": [
-          "refs/heads/chore/release",
-          "refs/heads/master"
-        ],
+        "refs": ["refs/heads/chore/release", "refs/heads/master"],
         "refShas": {
           "refs/heads/chore/release": "3d6808c2c22444068acd6c91d84c6de5dabf85aa",
           "refs/heads/master": "f16c3eac981bd4b6556c57df5c0d96b8b660f323"
@@ -29993,10 +29666,7 @@
       "admission": "wave-11",
       "sourceQualification": {
         "sha": "95db0daff42acb879013763b55f31d85ce805642",
-        "refs": [
-          "refs/heads/master_jammy",
-          "refs/heads/rework-0.30"
-        ],
+        "refs": ["refs/heads/master_jammy", "refs/heads/rework-0.30"],
         "refShas": {
           "refs/heads/master_jammy": "95db0daff42acb879013763b55f31d85ce805642",
           "refs/heads/rework-0.30": "b443f5e817364ea83682527565ae0c429d8c8a4e"
@@ -32529,12 +32199,7 @@
       "admission": "wave-16",
       "sourceQualification": {
         "sha": "3a4800a10b03efac1684817238922db5d6746403",
-        "refs": [
-          "refs/heads/epoch-update",
-          "refs/heads/master",
-          "refs/tags/epoch-1.10.0",
-          "refs/tags/epoch-1.9.0"
-        ],
+        "refs": ["refs/heads/epoch-update", "refs/heads/master", "refs/tags/epoch-1.10.0", "refs/tags/epoch-1.9.0"],
         "refShas": {
           "refs/heads/epoch-update": "1b2c367bf121cc3fd7093e9cddb4daa5aeb0a79d",
           "refs/heads/master": "3a4800a10b03efac1684817238922db5d6746403",
@@ -32940,9 +32605,7 @@
       "admission": "private-wave-7",
       "sourceQualification": {
         "sha": "e848e4b09ca4bc67c0041c9ce7526dae471d4c36",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "e848e4b09ca4bc67c0041c9ce7526dae471d4c36"
         },
@@ -35105,10 +34768,7 @@
       "admission": "private-wave-2",
       "sourceQualification": {
         "sha": "d565a5a67d570e3648c091c351698781fb24bf54",
-        "refs": [
-          "refs/heads/main",
-          "refs/tags/omar-bun-1.4.4-a2efe694-20261011"
-        ],
+        "refs": ["refs/heads/main", "refs/tags/omar-bun-1.4.4-a2efe694-20261011"],
         "refShas": {
           "refs/heads/main": "d565a5a67d570e3648c091c351698781fb24bf54",
           "refs/tags/omar-bun-1.4.4-a2efe694-20261011": "e3ce5f3294229d4b603b56dc5be4ffac879fe79b"
@@ -35129,10 +34789,7 @@
       "admission": "wave-33",
       "sourceQualification": {
         "sha": "3f99f58c2568dd267952dcd80696406474f7e2ea",
-        "refs": [
-          "refs/heads/main",
-          "refs/tags/initial-commit"
-        ],
+        "refs": ["refs/heads/main", "refs/tags/initial-commit"],
         "refShas": {
           "refs/heads/main": "3f99f58c2568dd267952dcd80696406474f7e2ea",
           "refs/tags/initial-commit": "f0be552ab5313bb64a75c9365af22155d979949f"
@@ -37454,9 +37111,7 @@
       "admission": "wave-1",
       "sourceQualification": {
         "sha": "e53a9a75e8dc171794de9322c2ffb0fec3aa2ed2",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "blobBytes": 2259471,
         "files": 421
       }
@@ -37474,9 +37129,7 @@
       "admission": "wave-30",
       "sourceQualification": {
         "sha": "e0fbe34fe07e45ef83e1fb48735cdd0f1ce34b7f",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "e0fbe34fe07e45ef83e1fb48735cdd0f1ce34b7f"
         },
@@ -37496,9 +37149,7 @@
       "admission": "wave-10",
       "sourceQualification": {
         "sha": "d0e6e7a92b25e19b896d45f9d9d243b453a5d261",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -37515,9 +37166,7 @@
       "admission": "wave-9",
       "sourceQualification": {
         "sha": "8abad2d98a63dae07e89b0a9af3aff0446022b82",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -37534,9 +37183,7 @@
       "admission": "wave-1",
       "sourceQualification": {
         "sha": "6e4e6d1ebba2ff6ee9046f5a945fe0b6faa68ab1",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "blobBytes": 584449,
         "files": 119
       }
@@ -37554,9 +37201,7 @@
       "admission": "wave-1",
       "sourceQualification": {
         "sha": "b13889cdfa178cad84a876bf22ebcbd31a35c129",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "blobBytes": 356335,
         "files": 48
       }
@@ -37574,9 +37219,7 @@
       "admission": "wave-10",
       "sourceQualification": {
         "sha": "6f5d315d1c9b907144db96fedd9b33d82629506a",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -37593,9 +37236,7 @@
       "admission": "wave-1",
       "sourceQualification": {
         "sha": "0460fc7533c8ef4fac4ffa3c3a673969831f4f8a",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "blobBytes": 531757,
         "files": 104
       }
@@ -37613,9 +37254,7 @@
       "admission": "wave-15",
       "sourceQualification": {
         "sha": "6d4585b147cf5eba688c300666332b9e2c42a6e5",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "6d4585b147cf5eba688c300666332b9e2c42a6e5"
         },
@@ -37635,9 +37274,7 @@
       "admission": "wave-8",
       "sourceQualification": {
         "sha": "6e5edd98b630bcb0618bceebc6add028673ed0e2",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -37654,9 +37291,7 @@
       "admission": "wave-10",
       "sourceQualification": {
         "sha": "1c7ccf99ef5ec4e38e07532f92472bc0d197eb0d",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -37673,9 +37308,7 @@
       "admission": "wave-9",
       "sourceQualification": {
         "sha": "0ea7310d3f93cef0a9f5e35824bfc69700ace5e6",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -37692,9 +37325,7 @@
       "admission": "wave-30",
       "sourceQualification": {
         "sha": "e1d24a2e2c8f14c3e71a210f1af6ef8e1ae25db9",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "e1d24a2e2c8f14c3e71a210f1af6ef8e1ae25db9"
         },
@@ -37714,9 +37345,7 @@
       "admission": "wave-8",
       "sourceQualification": {
         "sha": "7c957c6a60d6478719632e35d53667626c6fa8da",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -37733,9 +37362,7 @@
       "admission": "wave-8",
       "sourceQualification": {
         "sha": "9863e27db98edab821af944be0cd2a0045e463e4",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -37752,9 +37379,7 @@
       "admission": "wave-8",
       "sourceQualification": {
         "sha": "b04ebc5f37b31b37d49001f732b4a5d2f4cdb91c",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -37771,9 +37396,7 @@
       "admission": "wave-8",
       "sourceQualification": {
         "sha": "e517e372ae84a5c5257f809a19c072ad456cc0d8",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -37790,9 +37413,7 @@
       "admission": "wave-9",
       "sourceQualification": {
         "sha": "30dce381c3b0c790165ecae061d1d0f406134296",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -37809,9 +37430,7 @@
       "admission": "wave-10",
       "sourceQualification": {
         "sha": "43f22d2ba0da4fb4991da03d71c61fcb1c928fea",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -37828,9 +37447,7 @@
       "admission": "wave-2",
       "sourceQualification": {
         "sha": "86a13a1055552c96c9bfd7184cf3503c675eb1ea",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 67
       }
@@ -37848,9 +37465,7 @@
       "admission": "wave-15",
       "sourceQualification": {
         "sha": "a9730fc7e8ddb2ed25aa76b003a246daa72da6b0",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "a9730fc7e8ddb2ed25aa76b003a246daa72da6b0"
         },
@@ -37870,9 +37485,7 @@
       "admission": "wave-2",
       "sourceQualification": {
         "sha": "1270fc6b0b1ac29df2cdd69a73f4d606c40180d0",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 79
       }
@@ -37890,9 +37503,7 @@
       "admission": "wave-9",
       "sourceQualification": {
         "sha": "27b36bd34253da5010ec2855403852ba6e97d6e6",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -37909,9 +37520,7 @@
       "admission": "wave-1",
       "sourceQualification": {
         "sha": "91d8e1f21058d93475d692206e52c9b3dc7eabf1",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "blobBytes": 336634,
         "files": 70
       }
@@ -37929,9 +37538,7 @@
       "admission": "wave-15",
       "sourceQualification": {
         "sha": "246c99380be475fdd5b22d48a483fbb1771f46a2",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "246c99380be475fdd5b22d48a483fbb1771f46a2"
         },
@@ -37951,9 +37558,7 @@
       "admission": "wave-9",
       "sourceQualification": {
         "sha": "85edb4fa74f5f552f8b72593143cd386ae30ba0f",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -37970,9 +37575,7 @@
       "admission": "wave-2",
       "sourceQualification": {
         "sha": "3c908e0f486d791ee2c8991277c0a5479d53b1a7",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 59
       }
@@ -37990,9 +37593,7 @@
       "admission": "wave-2",
       "sourceQualification": {
         "sha": "dbd880d287d2452554b650816c907920bc7f1bf1",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 53
       }
@@ -38010,9 +37611,7 @@
       "admission": "wave-2",
       "sourceQualification": {
         "sha": "57bb29b4c1791bf57952b85e6c114d2b068dfa52",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 55
       }
@@ -38030,9 +37629,7 @@
       "admission": "wave-3",
       "sourceQualification": {
         "sha": "acf43692ca4ec6ed74c2a15aa0c4057a461f846c",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 79
       }
@@ -38050,9 +37647,7 @@
       "admission": "wave-3",
       "sourceQualification": {
         "sha": "ca0ad561c17e23749ee082591a465efb83e3f933",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 47
       }
@@ -38070,9 +37665,7 @@
       "admission": "wave-3",
       "sourceQualification": {
         "sha": "c45dace90474a30db8ce0819c0de0ebdd7d03e7a",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 53
       }
@@ -38090,9 +37683,7 @@
       "admission": "wave-3",
       "sourceQualification": {
         "sha": "ce77e78ac364272be15e4cba984440dfad869114",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 53
       }
@@ -38110,9 +37701,7 @@
       "admission": "wave-3",
       "sourceQualification": {
         "sha": "abeb44170a60674d366238b413134cd8b3431452",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 43
       }
@@ -38130,9 +37719,7 @@
       "admission": "wave-4",
       "sourceQualification": {
         "sha": "37494ab5d0ff152b5e5c805e4b2c68c8a242b57a",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 43
       }
@@ -38150,9 +37737,7 @@
       "admission": "wave-4",
       "sourceQualification": {
         "sha": "846e7fddb24bcc8c994a8f9152a770272daa840b",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 53
       }
@@ -38170,9 +37755,7 @@
       "admission": "wave-4",
       "sourceQualification": {
         "sha": "f5faf53f834b28603ac7773d4866c2a1a96330bd",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 59
       }
@@ -38190,9 +37773,7 @@
       "admission": "wave-4",
       "sourceQualification": {
         "sha": "0137c01b0b51fbefc5e15b141babe64bfba8ccfb",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 49
       }
@@ -38210,9 +37791,7 @@
       "admission": "wave-4",
       "sourceQualification": {
         "sha": "b4487bfb08b6edda5d2e67018c1a8e86e959adb8",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 61
       }
@@ -38230,9 +37809,7 @@
       "admission": "wave-5",
       "sourceQualification": {
         "sha": "88bff9341eb6e6a5d3c8f08411858830f57b9c5a",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 41
       }
@@ -38250,9 +37827,7 @@
       "admission": "wave-5",
       "sourceQualification": {
         "sha": "7aeb94542429a93a408538deea4fd31d08341c1c",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 43
       }
@@ -38270,9 +37845,7 @@
       "admission": "wave-5",
       "sourceQualification": {
         "sha": "23e3fe8eeab795adb9aef6f051aa3149fa07342a",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 47
       }
@@ -38290,9 +37863,7 @@
       "admission": "wave-5",
       "sourceQualification": {
         "sha": "0847eb048bc5f36ce687fb4c3b05a7fe6a9358ba",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 51
       }
@@ -38310,9 +37881,7 @@
       "admission": "wave-5",
       "sourceQualification": {
         "sha": "12523506571efbb4fe4dce7b90cc3b8305e26195",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "files": 1,
         "blobBytes": 53
       }
@@ -38330,9 +37899,7 @@
       "admission": "wave-6",
       "sourceQualification": {
         "sha": "8949b10aff3838c4f736b177a24d20c55f9f7444",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -38349,9 +37916,7 @@
       "admission": "wave-6",
       "sourceQualification": {
         "sha": "478435d489a97c3451a8bfc177037e9814a07634",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -38368,9 +37933,7 @@
       "admission": "wave-6",
       "sourceQualification": {
         "sha": "8ea256fdcc08a9dcc63aa09c01521530b58cd28c",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -38387,9 +37950,7 @@
       "admission": "wave-6",
       "sourceQualification": {
         "sha": "f78ea8485589b0f09334a19e5ec28f65b18c1ba1",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -38406,9 +37967,7 @@
       "admission": "wave-6",
       "sourceQualification": {
         "sha": "c1d20f1f59cdc0289940a0cdcda671018dce30a7",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -38425,9 +37984,7 @@
       "admission": "wave-7",
       "sourceQualification": {
         "sha": "4886c880edb3f4c87aa57f8c507c31cc99c9d034",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -38444,9 +38001,7 @@
       "admission": "wave-7",
       "sourceQualification": {
         "sha": "33021fd443a8cf4496af29a584c8b438d5ab616e",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -38463,9 +38018,7 @@
       "admission": "wave-7",
       "sourceQualification": {
         "sha": "4b40dd50b8282612651cacaa8f95e40f2577cee2",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -38482,9 +38035,7 @@
       "admission": "wave-7",
       "sourceQualification": {
         "sha": "0057fa1fcc0c1fa38567c7b7e8582a30b96f1465",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -38501,9 +38052,7 @@
       "admission": "wave-7",
       "sourceQualification": {
         "sha": "a311cd38656eaa594092726f2a5b4895ab63082c",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "lfsApplicable": false
       }
     },
@@ -38520,9 +38069,7 @@
       "admission": "wave-16",
       "sourceQualification": {
         "sha": "6f57f08763d0f9456f3b14d3d534510cd7b51494",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "6f57f08763d0f9456f3b14d3d534510cd7b51494"
         },
@@ -38542,10 +38089,7 @@
       "admission": "private-wave-4",
       "sourceQualification": {
         "sha": "68dd86618368efe9f55a23928eb06ac45bf75863",
-        "refs": [
-          "refs/heads/main",
-          "refs/heads/os"
-        ],
+        "refs": ["refs/heads/main", "refs/heads/os"],
         "refShas": {
           "refs/heads/main": "68dd86618368efe9f55a23928eb06ac45bf75863",
           "refs/heads/os": "e858361dfd2597b067eea56d471ff4caab7442f8"
@@ -39894,10 +39438,7 @@
       "admission": "queued-storage-admission",
       "sourceQualification": {
         "sha": "b8b053081e8e43f0206130dc6c70d996343cffa2",
-        "refs": [
-          "refs/heads/claude/bun-chromium-157-cef",
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/claude/bun-chromium-157-cef", "refs/heads/main"],
         "refShas": {
           "refs/heads/claude/bun-chromium-157-cef": "95ff46fdacff0d4973f17710418f12e1ceedeed9",
           "refs/heads/main": "b8b053081e8e43f0206130dc6c70d996343cffa2"
@@ -45080,9 +44621,7 @@
       "admission": "already-mirrored",
       "sourceQualification": {
         "sha": "520418c673551381431a8957c9d7ddd526c0bc88",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "520418c673551381431a8957c9d7ddd526c0bc88"
         },
@@ -45117,9 +44656,7 @@
       "admission": "wave-37",
       "sourceQualification": {
         "sha": "745fc126218c7cb3df48b22bbc7c7098fa2f7966",
-        "refs": [
-          "refs/heads/main"
-        ],
+        "refs": ["refs/heads/main"],
         "refShas": {
           "refs/heads/main": "745fc126218c7cb3df48b22bbc7c7098fa2f7966"
         },
@@ -45140,9 +44677,7 @@
       "admission": "wave-14",
       "sourceQualification": {
         "sha": "f1ad8a5336d3e0d0aa63d4d18af51cb0439be744",
-        "refs": [
-          "refs/heads/os"
-        ],
+        "refs": ["refs/heads/os"],
         "refShas": {
           "refs/heads/os": "f1ad8a5336d3e0d0aa63d4d18af51cb0439be744"
         },
@@ -45164,12 +44699,7 @@
       "admission": "wave-13",
       "sourceQualification": {
         "sha": "23a9fc740974c653533e39a2a0e7a1b97d2e3393",
-        "refs": [
-          "refs/heads/codex/npm-bootstrap",
-          "refs/heads/main",
-          "refs/tags/v0.5.7",
-          "refs/tags/v0.6.0"
-        ],
+        "refs": ["refs/heads/codex/npm-bootstrap", "refs/heads/main", "refs/tags/v0.5.7", "refs/tags/v0.6.0"],
         "refShas": {
           "refs/heads/codex/npm-bootstrap": "0098f35e89f18cfe287a6c588f54ea6d962e190c",
           "refs/heads/main": "23a9fc740974c653533e39a2a0e7a1b97d2e3393",
@@ -45341,9 +44871,7 @@
           "reason": "GitHub has 12,750 refs and Gitea has 12,743; main differs; target remains private pending stable source and complete ref alignment"
         }
       ],
-      "actionsEnabledOnly": [
-        "bun-libraries"
-      ],
+      "actionsEnabledOnly": ["bun-libraries"],
       "note": "Actions are observed per repository; no workflow-setting changes in the 17-repository qualification pass.",
       "organizationVisibility": "public",
       "anonymousProbe": {
@@ -45366,12 +44894,8 @@
       "latestSourceObservedSha": "f4e72088c1e4cf0255cbd0ec9956ac64fb33ed3b",
       "targetObservedSha": "f1ad8a5336d3e0d0aa63d4d18af51cb0439be744",
       "latestSourceDeltaPending": "f4e72088c1e4cf0255cbd0ec9956ac64fb33ed3b: newer source commit observed after the qualified snapshot; target was not resynchronized",
-      "sourceRefs": [
-        "refs/heads/os"
-      ],
-      "targetRefs": [
-        "refs/heads/os"
-      ],
+      "sourceRefs": ["refs/heads/os"],
+      "targetRefs": ["refs/heads/os"],
       "refsAligned": true,
       "mirror": true,
       "defaultBranch": "os",
@@ -45400,9 +44924,7 @@
         {
           "name": "aphrody-m3-next-example",
           "sha": "86a13a1055552c96c9bfd7184cf3503c675eb1ea",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 67,
@@ -45411,9 +44933,7 @@
         {
           "name": "aphrody-m3-next-tauri-example",
           "sha": "1270fc6b0b1ac29df2cdd69a73f4d606c40180d0",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 79,
@@ -45422,9 +44942,7 @@
         {
           "name": "aphrody-m3-tailwind",
           "sha": "3c908e0f486d791ee2c8991277c0a5479d53b1a7",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 59,
@@ -45433,9 +44951,7 @@
         {
           "name": "aphrody-m3-theme",
           "sha": "dbd880d287d2452554b650816c907920bc7f1bf1",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 53,
@@ -45444,9 +44960,7 @@
         {
           "name": "aphrody-m3-tokens",
           "sha": "57bb29b4c1791bf57952b85e6c114d2b068dfa52",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 55,
@@ -45466,9 +44980,7 @@
         {
           "name": "aphrody-material-design-icons",
           "sha": "acf43692ca4ec6ed74c2a15aa0c4057a461f846c",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 79,
@@ -45477,9 +44989,7 @@
         {
           "name": "aphrody-rg-ui",
           "sha": "ca0ad561c17e23749ee082591a465efb83e3f933",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 47,
@@ -45488,9 +44998,7 @@
         {
           "name": "aphrody-scaffold",
           "sha": "c45dace90474a30db8ce0819c0de0ebdd7d03e7a",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 53,
@@ -45499,9 +45007,7 @@
         {
           "name": "fixture-hello-m3",
           "sha": "ce77e78ac364272be15e4cba984440dfad869114",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 53,
@@ -45510,9 +45016,7 @@
         {
           "name": "aphrody-a2a",
           "sha": "abeb44170a60674d366238b413134cd8b3431452",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 43,
@@ -45531,9 +45035,7 @@
         {
           "name": "aphrody-bun",
           "sha": "37494ab5d0ff152b5e5c805e4b2c68c8a242b57a",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 43,
@@ -45542,9 +45044,7 @@
         {
           "name": "aphrody-cli-wasm",
           "sha": "846e7fddb24bcc8c994a8f9152a770272daa840b",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 53,
@@ -45553,9 +45053,7 @@
         {
           "name": "aphrody-discord-kit",
           "sha": "f5faf53f834b28603ac7773d4866c2a1a96330bd",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 59,
@@ -45564,9 +45062,7 @@
         {
           "name": "aphrody-doc-ai",
           "sha": "0137c01b0b51fbefc5e15b141babe64bfba8ccfb",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 49,
@@ -45575,9 +45071,7 @@
         {
           "name": "aphrody-drive-client",
           "sha": "b4487bfb08b6edda5d2e67018c1a8e86e959adb8",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 61,
@@ -45596,9 +45090,7 @@
         {
           "name": "aphrody-os",
           "sha": "88bff9341eb6e6a5d3c8f08411858830f57b9c5a",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 41,
@@ -45607,9 +45099,7 @@
         {
           "name": "aphrody-ovh",
           "sha": "7aeb94542429a93a408538deea4fd31d08341c1c",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 43,
@@ -45618,9 +45108,7 @@
         {
           "name": "aphrody-paths",
           "sha": "23e3fe8eeab795adb9aef6f051aa3149fa07342a",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 47,
@@ -45629,9 +45117,7 @@
         {
           "name": "aphrody-product",
           "sha": "0847eb048bc5f36ce687fb4c3b05a7fe6a9358ba",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 51,
@@ -45640,9 +45126,7 @@
         {
           "name": "aphrody-rag-core",
           "sha": "12523506571efbb4fe4dce7b90cc3b8305e26195",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "files": 1,
           "blobBytes": 53,
@@ -45661,9 +45145,7 @@
         {
           "name": "aphrody-runtime-sdk",
           "sha": "8949b10aff3838c4f736b177a24d20c55f9f7444",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "lfsApplicable": false,
           "targetOwner": "aphrody-labs",
@@ -45673,9 +45155,7 @@
         {
           "name": "aphrody-shell-web",
           "sha": "478435d489a97c3451a8bfc177037e9814a07634",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "lfsApplicable": false,
           "targetOwner": "aphrody-labs",
@@ -45685,9 +45165,7 @@
         {
           "name": "aphrody-sql",
           "sha": "8ea256fdcc08a9dcc63aa09c01521530b58cd28c",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "lfsApplicable": false,
           "targetOwner": "aphrody-labs",
@@ -45697,9 +45175,7 @@
         {
           "name": "aphrody-update",
           "sha": "f78ea8485589b0f09334a19e5ec28f65b18c1ba1",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "lfsApplicable": false,
           "targetOwner": "aphrody-labs",
@@ -45709,9 +45185,7 @@
         {
           "name": "aphrody-webos-wasm",
           "sha": "c1d20f1f59cdc0289940a0cdcda671018dce30a7",
-          "refs": [
-            "refs/heads/main"
-          ],
+          "refs": ["refs/heads/main"],
           "tags": 0,
           "lfsApplicable": false,
           "targetOwner": "aphrody-labs",
@@ -45733,9 +45207,7 @@
     "privateSourceAuth": {
       "provider": "GitHub CLI",
       "account": "aphrody-code",
-      "scopes": [
-        "repo"
-      ],
+      "scopes": ["repo"],
       "authStatus": "private repository APIs returned 200 for qualification probes",
       "store": "/home/ubuntu/.config/gh/hosts.yml",
       "storeMode": "0600",
@@ -46788,8 +46260,6 @@
   "publicBaseUrl": "https://source.aphrody.app",
   "sourceCredentialFile": "/home/ubuntu/.config/gh/hosts.yml",
   "sourceCredentialUser": "aphrody-code",
-  "sourceCredentialScopes": [
-    "repo"
-  ],
+  "sourceCredentialScopes": ["repo"],
   "repositoryRoot": "/data/git/repositories"
 }

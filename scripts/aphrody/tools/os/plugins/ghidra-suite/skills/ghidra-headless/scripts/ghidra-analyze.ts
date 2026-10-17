@@ -80,8 +80,7 @@ const VALUE_FLAGS: Record<string, string> = {
 
 function positiveInteger(flag: string, value: string): number {
   const number = Number(value);
-  if (!Number.isInteger(number) || number <= 0)
-    throw new Error(`${flag} expects a positive integer`);
+  if (!Number.isInteger(number) || number <= 0) throw new Error(`${flag} expects a positive integer`);
   return number;
 }
 
@@ -160,8 +159,7 @@ export function parseArgs(argv: string[], cwd = process.cwd()): AnalyzeOptions {
     else if (arg === "-v" || arg === "--verbose") options.verbose = true;
     else if (arg === "-h" || arg === "--help") options.help = true;
     else if (arg.startsWith("-")) throw new Error(`Unknown option: ${arg}`);
-    else if (options.binary)
-      throw new Error(`Only one binary is accepted (got ${arg})`);
+    else if (options.binary) throw new Error(`Only one binary is accepted (got ${arg})`);
     else options.binary = arg;
   }
   return options;
@@ -174,14 +172,8 @@ export function defaultProjectName(binary: string, pid = process.pid): string {
 }
 
 /** The analyzeHeadless argument vector (after the launcher itself). */
-export function launcherArgs(
-  options: AnalyzeOptions,
-  builtinScripts: string,
-  logFile: string,
-): string[] {
-  const scriptPath = options.scriptPath
-    ? `${builtinScripts};${options.scriptPath}`
-    : builtinScripts;
+export function launcherArgs(options: AnalyzeOptions, builtinScripts: string, logFile: string): string[] {
+  const scriptPath = options.scriptPath ? `${builtinScripts};${options.scriptPath}` : builtinScripts;
   const args = [
     options.projectDir,
     options.projectName ?? defaultProjectName(options.binary),
@@ -190,17 +182,14 @@ export function launcherArgs(
     "-scriptPath",
     scriptPath,
   ];
-  for (const script of options.scripts)
-    args.push("-postScript", script.name, ...script.args);
+  for (const script of options.scripts) args.push("-postScript", script.name, ...script.args);
   if (options.processor) args.push("-processor", options.processor);
   if (options.cspec) args.push("-cspec", options.cspec);
   if (options.noAnalysis) args.push("-noanalysis");
-  if (options.timeout)
-    args.push("-analysisTimeoutPerFile", String(options.timeout));
+  if (options.timeout) args.push("-analysisTimeoutPerFile", String(options.timeout));
   if (!options.keepProject) args.push("-deleteProject");
   if (options.loader) args.push("-loader", options.loader);
-  if (options.librarySearchPaths.length > 0)
-    args.push("-librarySearchPaths", options.librarySearchPaths.join(";"));
+  if (options.librarySearchPaths.length > 0) args.push("-librarySearchPaths", options.librarySearchPaths.join(";"));
   if (options.maxCpu) args.push("-max-cpu", String(options.maxCpu));
   args.push("-log", logFile, ...options.extra);
   return args;
@@ -212,11 +201,7 @@ export function cmdQuote(arg: string): string {
   return `"${arg.replace(/"/g, '""')}"`;
 }
 
-async function pump(
-  stream: ReadableStream<Uint8Array>,
-  sink: NodeJS.WriteStream,
-  log: Bun.FileSink,
-) {
+async function pump(stream: ReadableStream<Uint8Array>, sink: NodeJS.WriteStream, log: Bun.FileSink) {
   for await (const chunk of stream) {
     sink.write(chunk);
     log.write(chunk);
@@ -226,9 +211,7 @@ async function pump(
 export async function analyze(options: AnalyzeOptions): Promise<number> {
   const launcher = findAnalyzeHeadless();
   if (!launcher)
-    throw new Error(
-      `Could not find Ghidra's ${LAUNCHER}; set GHIDRA_INSTALL_DIR to the Ghidra install root.`,
-    );
+    throw new Error(`Could not find Ghidra's ${LAUNCHER}; set GHIDRA_INSTALL_DIR to the Ghidra install root.`);
   const ghidraHome = dirname(dirname(launcher));
   if (!existsSync(options.binary) || !statSync(options.binary).isFile())
     throw new Error(`Binary file not found: ${options.binary}`);
@@ -236,11 +219,7 @@ export async function analyze(options: AnalyzeOptions): Promise<number> {
   const output = resolve(options.output);
   mkdirSync(output, { recursive: true });
   const logFile = join(output, "ghidra_analysis.log");
-  const args = launcherArgs(
-    { ...options, binary },
-    join(import.meta.dir, "ghidra_scripts"),
-    logFile,
-  );
+  const args = launcherArgs({ ...options, binary }, join(import.meta.dir, "ghidra_scripts"), logFile);
   const env: Record<string, string | undefined> = {
     ...process.env,
     GHIDRA_HOME: ghidraHome,
@@ -248,16 +227,9 @@ export async function analyze(options: AnalyzeOptions): Promise<number> {
   };
   if (options.maxMemory) env.MAXMEM = options.maxMemory;
   const argv = launcher.toLowerCase().endsWith(".bat")
-    ? [
-        "cmd.exe",
-        "/d",
-        "/s",
-        "/c",
-        `"${[launcher, ...args].map(cmdQuote).join(" ")}"`,
-      ]
+    ? ["cmd.exe", "/d", "/s", "/c", `"${[launcher, ...args].map(cmdQuote).join(" ")}"`]
     : [launcher, ...args];
-  if (options.verbose)
-    console.error(`Running: ${[launcher, ...args].join(" ")}`);
+  if (options.verbose) console.error(`Running: ${[launcher, ...args].join(" ")}`);
   const child = Bun.spawn(argv, {
     env,
     stdin: "ignore",
@@ -267,10 +239,7 @@ export async function analyze(options: AnalyzeOptions): Promise<number> {
     windowsVerbatimArguments: argv[0] === "cmd.exe",
   });
   const log = Bun.file(join(output, "ghidra_output.log")).writer();
-  await Promise.all([
-    pump(child.stdout, process.stdout, log),
-    pump(child.stderr, process.stderr, log),
-  ]);
+  await Promise.all([pump(child.stdout, process.stdout, log), pump(child.stderr, process.stderr, log)]);
   await log.end();
   const code = await child.exited;
   if (code === 0) {

@@ -7,15 +7,7 @@
 import { readFileSync } from "node:fs";
 import { basename } from "node:path";
 import { parseSignedData } from "./authenticode.ts";
-import {
-  closeHandle,
-  GENERIC_READ,
-  openHandle,
-  readWstr,
-  wintrust,
-  wstr,
-  type Pointer,
-} from "./win32.ts";
+import { closeHandle, GENERIC_READ, openHandle, readWstr, wintrust, wstr, type Pointer } from "./win32.ts";
 
 let admins: { sha256: Pointer | null; sha1: Pointer | null } | undefined;
 
@@ -36,15 +28,8 @@ function lookup(admin: Pointer, file: Pointer): string | null {
   const lib = wintrust()!;
   const size = new Uint32Array([64]);
   const hash = new Uint8Array(64);
-  if (!lib.CryptCATAdminCalcHashFromFileHandle2(admin, file, size, hash, 0))
-    return null;
-  const info = lib.CryptCATAdminEnumCatalogFromHash(
-    admin,
-    hash,
-    size[0]!,
-    0,
-    null,
-  );
+  if (!lib.CryptCATAdminCalcHashFromFileHandle2(admin, file, size, hash, 0)) return null;
+  const info = lib.CryptCATAdminEnumCatalogFromHash(admin, hash, size[0]!, 0, null);
   if (!info) return null;
   try {
     // CATALOG_INFO: DWORD cbStruct + WCHAR wszCatalogFile[MAX_PATH].
@@ -92,9 +77,7 @@ export function catalogSignature(path: string): CatalogSignature | null {
   if (!file) return null;
   return {
     catalog: basename(file),
-    ...(file.includes("\\")
-      ? catalogSigner(file)
-      : { signer: null, issuer: null, digest: null }),
+    ...(file.includes("\\") ? catalogSigner(file) : { signer: null, issuer: null, digest: null }),
   };
 }
 
@@ -124,7 +107,6 @@ function catalogFile(path: string): string | null {
 export function releaseCatalogContexts(): void {
   const lib = wintrust();
   if (!lib || !admins) return;
-  for (const a of [admins.sha256, admins.sha1])
-    if (a !== null) lib.CryptCATAdminReleaseContext(a, 0);
+  for (const a of [admins.sha256, admins.sha1]) if (a !== null) lib.CryptCATAdminReleaseContext(a, 0);
   admins = undefined;
 }

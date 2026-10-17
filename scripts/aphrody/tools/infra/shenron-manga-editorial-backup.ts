@@ -3,8 +3,7 @@
 import { chmod, lstat, mkdir, realpath, rename } from "node:fs/promises";
 import { hostname } from "node:os";
 import { isAbsolute, join, relative, resolve } from "node:path";
-const digest = (body: Uint8Array | string) =>
-  new Bun.CryptoHasher("sha256").update(body).digest("hex");
+const digest = (body: Uint8Array | string) => new Bun.CryptoHasher("sha256").update(body).digest("hex");
 async function fileDigest(path: string) {
   const hash = new Bun.CryptoHasher("sha256");
   for await (const chunk of Bun.file(path).stream()) hash.update(chunk);
@@ -23,21 +22,15 @@ export function backupScope(job: string, inventoryRoot: string) {
 }
 export function qualifyBackupInventory(list: string) {
   if (
-    !["db_manga_volumes", "db_manga_chapters", "wiki_revisions"].every((name) =>
-      list
-        .split("\n")
-        .some((line) => line.includes("TABLE DATA ") && line.includes(name)),
+    !["db_manga_volumes", "db_manga_chapters", "wiki_revisions"].every(name =>
+      list.split("\n").some(line => line.includes("TABLE DATA ") && line.includes(name)),
     )
   )
     throw Error("Full editorial backup inventory is incomplete");
 }
-export async function prepareMangaEditorialBackup(input: {
-  job: string;
-  inventoryRoot: string;
-}) {
+export async function prepareMangaEditorialBackup(input: { job: string; inventoryRoot: string }) {
   backupScope(input.job, input.inventoryRoot);
-  if (hostname() !== "vps-6732365f" || process.getuid?.() !== 0)
-    throw Error("DBFR root capability required");
+  if (hostname() !== "vps-6732365f" || process.getuid?.() !== 0) throw Error("DBFR root capability required");
   await mkdir(input.job, { recursive: true, mode: 0o700 });
   const info = await lstat(input.job);
   if (
@@ -51,25 +44,12 @@ export async function prepareMangaEditorialBackup(input: {
     receiptPath = join(input.job, "backup.json");
   if (await Bun.file(receiptPath).exists()) {
     const receipt = await Bun.file(receiptPath).json();
-    if (
-      !receipt.inventoryVerified ||
-      (await fileDigest(path)) !== receipt.sha256
-    )
+    if (!receipt.inventoryVerified || (await fileDigest(path)) !== receipt.sha256)
       throw Error("Existing backup changed");
     return { ...receipt, replay: true };
   }
   const dump = Bun.spawn(
-    [
-      "docker",
-      "exec",
-      "-u",
-      "postgres",
-      "shenron-postgres",
-      "pg_dump",
-      "-Fc",
-      "-d",
-      "shenron_site",
-    ],
+    ["docker", "exec", "-u", "postgres", "shenron-postgres", "pg_dump", "-Fc", "-d", "shenron_site"],
     { stdout: "pipe", stderr: "pipe", timeout: 300000 },
   );
   const pending = path + ".pending";
@@ -77,32 +57,15 @@ export async function prepareMangaEditorialBackup(input: {
   await Bun.write(pending, dump.stdout);
   await chmod(pending, 0o600);
   await errors;
-  if ((await dump.exited) !== 0)
-    throw Error("Canonical PostgreSQL backup failed");
-  const inventory = Bun.spawn(
-    [
-      "docker",
-      "exec",
-      "-i",
-      "-u",
-      "postgres",
-      "shenron-postgres",
-      "pg_restore",
-      "--list",
-    ],
-    {
-      stdin: Bun.file(pending),
-      stdout: "pipe",
-      stderr: "pipe",
-      timeout: 300000,
-    },
-  );
-  const [list] = await Promise.all([
-    new Response(inventory.stdout).text(),
-    new Response(inventory.stderr).text(),
-  ]);
-  if ((await inventory.exited) !== 0)
-    throw Error("Canonical backup inventory failed");
+  if ((await dump.exited) !== 0) throw Error("Canonical PostgreSQL backup failed");
+  const inventory = Bun.spawn(["docker", "exec", "-i", "-u", "postgres", "shenron-postgres", "pg_restore", "--list"], {
+    stdin: Bun.file(pending),
+    stdout: "pipe",
+    stderr: "pipe",
+    timeout: 300000,
+  });
+  const [list] = await Promise.all([new Response(inventory.stdout).text(), new Response(inventory.stderr).text()]);
+  if ((await inventory.exited) !== 0) throw Error("Canonical backup inventory failed");
   qualifyBackupInventory(list);
   await rename(pending, path);
   const receipt = {

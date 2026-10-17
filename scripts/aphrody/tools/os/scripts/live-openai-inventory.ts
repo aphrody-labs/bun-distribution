@@ -23,36 +23,14 @@ import {
 } from "./kernel-session.ts";
 import { findMsixPackage } from "./msix.ts";
 
-const SENSITIVE =
-  /(token|secret|cookie|credential|password|passwd|auth|private[-_]?key|\.env($|\.))/i;
+const SENSITIVE = /(token|secret|cookie|credential|password|passwd|auth|private[-_]?key|\.env($|\.))/i;
 const KINDS: Array<[string, Set<string>]> = [
   ["binary", new Set([".exe", ".dll", ".sys", ".node", ".msi", ".appx"])],
   ["archive", new Set([".asar", ".zip", ".7z", ".pak"])],
-  [
-    "database-metadata-only",
-    new Set([".db", ".sqlite", ".sqlite3", ".wal", ".shm"]),
-  ],
-  [
-    "configuration-metadata-only",
-    new Set([
-      ".json",
-      ".jsonl",
-      ".toml",
-      ".yaml",
-      ".yml",
-      ".ini",
-      ".cfg",
-      ".conf",
-    ]),
-  ],
-  [
-    "application-source",
-    new Set([".js", ".mjs", ".cjs", ".ts", ".tsx", ".css", ".html"]),
-  ],
-  [
-    "asset",
-    new Set([".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".webp"]),
-  ],
+  ["database-metadata-only", new Set([".db", ".sqlite", ".sqlite3", ".wal", ".shm"])],
+  ["configuration-metadata-only", new Set([".json", ".jsonl", ".toml", ".yaml", ".yml", ".ini", ".cfg", ".conf"])],
+  ["application-source", new Set([".js", ".mjs", ".cjs", ".ts", ".tsx", ".css", ".html"])],
+  ["asset", new Set([".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".webp"])],
 ];
 const PE_EXTENSIONS = new Set([".exe", ".dll", ".sys"]);
 const MAX_HASH_BYTES = 1024 ** 3;
@@ -61,11 +39,8 @@ const MAX_HASH_BYTES = 1024 ** 3;
 export function classify(path: string, rootKind: string): string {
   if (SENSITIVE.test(path)) return "sensitive-metadata-only";
   const extension = extname(path).toLowerCase();
-  for (const [kind, extensions] of KINDS)
-    if (extensions.has(extension)) return kind;
-  return rootKind.startsWith("msix-")
-    ? "application-data"
-    : "user-data-metadata-only";
+  for (const [kind, extensions] of KINDS) if (extensions.has(extension)) return kind;
+  return rootKind.startsWith("msix-") ? "application-data" : "user-data-metadata-only";
 }
 
 /** Every regular file under `base`, without following links; unreadable entries are skipped. */
@@ -111,29 +86,14 @@ async function main(): Promise<number> {
     },
     { kind: "codex-home", path: join(home, ".codex") },
     { kind: "chatgpt-home", path: join(home, ".chatgpt") },
-  ].filter(
-    (root) => existsSync(root.path) && statSync(root.path).isDirectory(),
-  );
+  ].filter(root => existsSync(root.path) && statSync(root.path).isDirectory());
   const scanRoots = [{ kind: "msix-install", path: installRoot }, ...userRoots];
 
   const stamp = sessionStamp();
-  const dirs = artifactDirs(
-    options.get("artifact-root") ?? "var/winclean-live/openai",
-    stamp,
-  );
-  return withKernel("openai-inventory", stamp, async (kernel) => {
+  const dirs = artifactDirs(options.get("artifact-root") ?? "var/winclean-live/openai", stamp);
+  return withKernel("openai-inventory", stamp, async kernel => {
     const yolo = Bun.spawnSync(
-      [
-        kernel.aphrody,
-        "yolo",
-        "--root",
-        repoRoot,
-        "--socket",
-        kernel.endpoint,
-        "--json",
-        "win",
-        "status",
-      ],
+      [kernel.aphrody, "yolo", "--root", repoRoot, "--socket", kernel.endpoint, "--json", "win", "status"],
       { windowsHide: true, stdin: "ignore", stdout: "pipe", stderr: "pipe" },
     );
     const yoloText = yolo.stdout.toString().trim();
@@ -143,8 +103,8 @@ async function main(): Promise<number> {
     } catch {
       yoloStatus = yoloText
         .split("\n")
-        .filter((line) => line.trim())
-        .map((line) => JSON.parse(line) as Json);
+        .filter(line => line.trim())
+        .map(line => JSON.parse(line) as Json);
     }
 
     const records: Array<Record<string, Json>> = [];
@@ -167,15 +127,9 @@ async function main(): Promise<number> {
           classification,
           sensitive,
         });
-        if (
-          classification === "binary" &&
-          !sensitive &&
-          info.size <= MAX_HASH_BYTES
-        ) {
+        if (classification === "binary" && !sensitive && info.size <= MAX_HASH_BYTES) {
           const hash = await kernel.tryCall("binary_hash_multi", { path });
-          const pe = PE_EXTENSIONS.has(extension)
-            ? await kernel.tryCall("binary_parse_pe_header", { path })
-            : null;
+          const pe = PE_EXTENSIONS.has(extension) ? await kernel.tryCall("binary_parse_pe_header", { path }) : null;
           binaries.push({ path, bytes: info.size, hash, pe });
         }
       }
@@ -185,13 +139,11 @@ async function main(): Promise<number> {
     const asar = existsSync(asarPath)
       ? await kernel.call("asar_list", { path: asarPath })
       : { success: false, error: "app.asar not found" };
-    const asarPayload = ((asar as Record<string, Json>).structuredContent ??
-      asar) as Record<string, Json>;
+    const asarPayload = ((asar as Record<string, Json>).structuredContent ?? asar) as Record<string, Json>;
     const profile = await kernel.call("get_system_profile");
     const os = await kernel.call("get_os_info");
-    const sensitiveCount = records.filter((record) => record.sensitive).length;
-    const asarFiles =
-      typeof asarPayload.totalFiles === "number" ? asarPayload.totalFiles : 0;
+    const sensitiveCount = records.filter(record => record.sensitive).length;
+    const asarFiles = typeof asarPayload.totalFiles === "number" ? asarPayload.totalFiles : 0;
     const manifest = {
       schema: "aphrody.openai.local.inventory.v1",
       status: "verified-live-read-only",
@@ -209,8 +161,7 @@ async function main(): Promise<number> {
         sensitiveMetadataOnly: sensitiveCount,
         asarFiles,
       },
-      policy:
-        "metadata, hashes and structural classification only; no secret or user-content extraction",
+      policy: "metadata, hashes and structural classification only; no secret or user-content extraction",
       consumers: ["aphrody-re", "codex", "gui-electron"],
       artifacts: [
         "manifest.json",

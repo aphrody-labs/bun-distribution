@@ -29,17 +29,13 @@ export function parseArgs(argv: string[]) {
     else if (a === "--image" && argv[i + 1]) o.images.push(argv[++i]!);
     else throw new Error(`unknown or incomplete option: ${a}`);
   }
-  if (!HOSTS.includes(o.source))
-    throw new Error(`unknown source host: ${o.source}`);
+  if (!HOSTS.includes(o.source)) throw new Error(`unknown source host: ${o.source}`);
   if (o.images.length === 0) o.images = DEFAULT_IMAGES;
   return o;
 }
 
 /** Hosts (other than the source) whose image creation date differs, in a stable order. */
-export function plan(
-  source: Host,
-  ids: Record<string, Record<string, string | null>>,
-): Plan {
+export function plan(source: Host, ids: Record<string, Record<string, string | null>>): Plan {
   const out: Plan = [];
   for (const image of Object.keys(ids[source] ?? {})) {
     const from = ids[source]?.[image];
@@ -55,22 +51,14 @@ export function plan(
 const SAFE = /^[A-Za-z0-9_./:@-]+$/;
 
 /** Shell command line that runs `cmd` on a host: the local engine for the PC, SSH otherwise. */
-const onHost = (host: Host, cmd: string) =>
-  host === "pc" ? cmd : `ssh ${host} "${cmd.replaceAll('"', '\\"')}"`;
+const onHost = (host: Host, cmd: string) => (host === "pc" ? cmd : `ssh ${host} "${cmd.replaceAll('"', '\\"')}"`);
 
 function imageId(host: Host, image: string): string | null {
   if (!SAFE.test(image)) throw new Error(`invalid image: ${image}`);
-  const r = Bun.spawnSync(
-    [
-      "sh",
-      "-c",
-      onHost(host, `docker image inspect -f '{{.Created}}' ${image}`),
-    ],
-    {
-      stdout: "pipe",
-      stderr: "pipe",
-    },
-  );
+  const r = Bun.spawnSync(["sh", "-c", onHost(host, `docker image inspect -f '{{.Created}}' ${image}`)], {
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   return r.exitCode === 0 ? r.stdout.toString().trim() : null;
 }
 
@@ -82,12 +70,11 @@ function sshTarget(host: Host): string {
   const get = (k: string) =>
     out
       .split("\n")
-      .find((l) => l.startsWith(`${k} `))
+      .find(l => l.startsWith(`${k} `))
       ?.slice(k.length + 1)
       .trim();
   const target = `${get("user")}@${get("hostname")}`;
-  if (!SAFE.test(target))
-    throw new Error(`invalid ssh target for ${host}: ${target}`);
+  if (!SAFE.test(target)) throw new Error(`invalid ssh target for ${host}: ${target}`);
   return target;
 }
 
@@ -95,29 +82,22 @@ function ship(source: Host, host: Host, image: string): void {
   // Server to server the stream goes directly (no hop through the PC); otherwise through the local engine/SSH.
   const direct = source !== "pc" && host !== "pc";
   const line = direct
-    ? onHost(
-        source,
-        `docker save ${image} | gzip -1 | ssh -o BatchMode=yes ${sshTarget(host)} 'gunzip | docker load'`,
-      )
+    ? onHost(source, `docker save ${image} | gzip -1 | ssh -o BatchMode=yes ${sshTarget(host)} 'gunzip | docker load'`)
     : `${onHost(source, `docker save ${image} | gzip -1`)} | ${onHost(host, "gunzip | docker load")}`;
   const r = Bun.spawnSync(["sh", "-c", line], {
     stdout: "inherit",
     stderr: "inherit",
   });
-  if (r.exitCode !== 0)
-    throw new Error(`sync ${image} ${source} -> ${host} failed`);
+  if (r.exitCode !== 0) throw new Error(`sync ${image} ${source} -> ${host} failed`);
 }
 
 if (import.meta.main) {
   const { source, images, dryRun } = parseArgs(Bun.argv.slice(2));
   const ids: Record<string, Record<string, string | null>> = {};
-  for (const h of HOSTS)
-    ids[h] = Object.fromEntries(images.map((i) => [i, imageId(h, i)]));
+  for (const h of HOSTS) ids[h] = Object.fromEntries(images.map(i => [i, imageId(h, i)]));
   const todo = plan(source, ids);
   for (const t of todo) {
-    console.log(
-      `${t.image}: ${source} -> ${t.host}${dryRun ? " (dry run)" : ""}`,
-    );
+    console.log(`${t.image}: ${source} -> ${t.host}${dryRun ? " (dry run)" : ""}`);
     if (!dryRun) ship(source, t.host, t.image);
   }
   if (todo.length === 0) console.log("images identical on pc, vps and dbfr");

@@ -117,7 +117,7 @@ export async function scanRoot(opts: ScanOptions): Promise<ScanStats> {
     sinkPending++;
     sinkChain = sinkChain
       .then(() => opts.sink(records))
-      .catch((e) => {
+      .catch(e => {
         sinkError ??= e;
       })
       .finally(() => {
@@ -132,9 +132,7 @@ export async function scanRoot(opts: ScanOptions): Promise<ScanStats> {
 
   const dispatch = async (tasks: Task[]) => {
     const { done } = await opts.pool.submit(tasks);
-    const p: Promise<void> = done
-      .then(deliver)
-      .finally(() => inflight.delete(p));
+    const p: Promise<void> = done.then(deliver).finally(() => inflight.delete(p));
     inflight.add(p);
     // The sinks (PostgreSQL) bound the scan: never queue more than a few batches ahead of them.
     while (sinkPending > 16) await sinkChain;
@@ -152,10 +150,7 @@ export async function scanRoot(opts: ScanOptions): Promise<ScanStats> {
       dir: e.dir,
       hash: opts.hashFor ? opts.hashFor(e.path) : opts.hash,
       maxHashBytes: opts.maxHashBytes,
-      prev:
-        e.dir || !opts.prev?.size
-          ? undefined
-          : opts.prev.get(hash52(pathKey(e.path))),
+      prev: e.dir || !opts.prev?.size ? undefined : opts.prev.get(hash52(pathKey(e.path))),
       skipAttrs: opts.mft !== undefined,
     });
     if (batch.length >= size) {

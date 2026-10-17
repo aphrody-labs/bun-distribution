@@ -20,11 +20,7 @@ type = "docker"
 name = "BunGamestreamGlxgears"
 image = "aphrody/bun-gamestream:local"
 mounts = []
-env = [
-    "GAMESTREAM_MODE=wolf-app",
-    "GAMESTREAM_APP=glxgears -fullscreen",
-    "LP_NUM_THREADS=4",
-]
+env = ["GAMESTREAM_MODE=wolf-app", "GAMESTREAM_APP=glxgears -fullscreen", "LP_NUM_THREADS=4"]
 devices = []
 ports = []
 base_create_json = """
@@ -50,11 +46,7 @@ type = "docker"
 name = "BunGamestreamVkcube"
 image = "aphrody/bun-gamestream:local"
 mounts = []
-env = [
-    "GAMESTREAM_MODE=wolf-app",
-    "GAMESTREAM_APP=vkcube",
-    "LP_NUM_THREADS=4",
-]
+env = ["GAMESTREAM_MODE=wolf-app", "GAMESTREAM_APP=vkcube", "LP_NUM_THREADS=4"]
 devices = []
 ports = []
 base_create_json = """
@@ -84,12 +76,12 @@ name = "BunWolfSteam"
 image = "ghcr.io/games-on-whales/steam:edge"
 mounts = ["/games/SteamLibrary-wolf:/home/retro/.steam/debian-installation/steamapps:rw"]
 env = [
-    "RUN_GAMESCOPE=true",
-    "GAMESCOPE_WIDTH=1280",
-    "GAMESCOPE_HEIGHT=720",
-    "GAMESCOPE_REFRESH=60",
-    "LP_NUM_THREADS=4",
-    "GOW_REQUIRED_DEVICES=/dev/input/* /dev/dri/*",
+  "RUN_GAMESCOPE=true",
+  "GAMESCOPE_WIDTH=1280",
+  "GAMESCOPE_HEIGHT=720",
+  "GAMESCOPE_REFRESH=60",
+  "LP_NUM_THREADS=4",
+  "GOW_REQUIRED_DEVICES=/dev/input/* /dev/dri/*",
 ]
 devices = []
 ports = []

@@ -19,38 +19,20 @@ export type DeploymentSelection = {
   deployment?: SourceRuntimeDeployment;
 };
 
-function sourceRuntimeIdentity(
-  commit: string,
-  runtime: SourceRuntimeDeployment["runtime"],
-): SourceRuntimeDeployment {
+function sourceRuntimeIdentity(commit: string, runtime: SourceRuntimeDeployment["runtime"]): SourceRuntimeDeployment {
   if (
     commit.length !== 40 ||
     !/^[a-f0-9]{40}$/.test(commit) ||
-    Object.values(runtime).some(
-      (value) => typeof value !== "string" || /\s/.test(value),
-    ) ||
+    Object.values(runtime).some(value => typeof value !== "string" || /\s/.test(value)) ||
     !/^[a-f0-9]{64}$/.test(runtime.sha256) ||
     !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(runtime.version) ||
     !/^[a-f0-9]{40}$/.test(runtime.revision) ||
-    !/^https:\/\/github\.com\/aphrody-labs\/bun\/releases\/download\/[^\s]+$/.test(
-      runtime.sourceUrl,
-    )
+    !/^https:\/\/github\.com\/aphrody-labs\/bun\/releases\/download\/[^\s]+$/.test(runtime.sourceUrl)
   )
-    throw Error(
-      "Source/runtime deployment requires exact qualified runtime pins",
-    );
+    throw Error("Source/runtime deployment requires exact qualified runtime pins");
   const schema = "shenron-source-runtime/v1";
   const id = new Bun.CryptoHasher("sha256")
-    .update(
-      [
-        schema,
-        commit,
-        runtime.sha256,
-        runtime.version,
-        runtime.revision,
-        runtime.sourceUrl,
-      ].join("\n"),
-    )
+    .update([schema, commit, runtime.sha256, runtime.version, runtime.revision, runtime.sourceUrl].join("\n"))
     .digest("hex");
   return {
     schema,
@@ -78,12 +60,9 @@ export function deploymentSelection(
     };
   },
 ): DeploymentSelection {
-  if (commit.length !== 40 || !/^[a-f0-9]{40}$/.test(commit))
-    throw Error("Invalid Shenron source commit");
-  if (config.deploymentIdentity === undefined)
-    return { commit, id: commit, releaseName: `docker-${commit}` };
-  if (config.deploymentIdentity !== "source-runtime-v1")
-    throw Error("Unknown deployment identity contract");
+  if (commit.length !== 40 || !/^[a-f0-9]{40}$/.test(commit)) throw Error("Invalid Shenron source commit");
+  if (config.deploymentIdentity === undefined) return { commit, id: commit, releaseName: `docker-${commit}` };
+  if (config.deploymentIdentity !== "source-runtime-v1") throw Error("Unknown deployment identity contract");
   const deployment = sourceRuntimeIdentity(commit, {
     sha256: config.runtimeSha256 ?? "",
     version: config.runtimeExpected?.version ?? "",
@@ -106,12 +85,8 @@ export function activeDeployment(value: {
 }) {
   let selected: DeploymentSelection;
   if (value.deployment !== undefined && value.deployment !== null) {
-    const expected = sourceRuntimeIdentity(
-      value.commit,
-      value.deployment.runtime,
-    );
-    if (!Bun.deepEquals(expected, value.deployment))
-      throw Error("Active deployment identity differs");
+    const expected = sourceRuntimeIdentity(value.commit, value.deployment.runtime);
+    if (!Bun.deepEquals(expected, value.deployment)) throw Error("Active deployment identity differs");
     selected = {
       commit: value.commit,
       id: expected.id,
@@ -119,19 +94,11 @@ export function activeDeployment(value: {
       deployment: expected,
     };
   } else selected = deploymentSelection(value.commit, {});
-  if (
-    ![
-      selected.releaseName,
-      ...(selected.deployment ? [] : [value.commit]),
-    ].includes(basename(value.release))
-  )
+  if (![selected.releaseName, ...(selected.deployment ? [] : [value.commit])].includes(basename(value.release)))
     throw Error("Active release name differs from its sealed identity");
   return { ...selected, release: value.release };
 }
 
-export function deploymentIsCurrent(
-  active: { commit: string; id: string },
-  expected: DeploymentSelection,
-) {
+export function deploymentIsCurrent(active: { commit: string; id: string }, expected: DeploymentSelection) {
   return active.commit === expected.commit && active.id === expected.id;
 }

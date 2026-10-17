@@ -51,8 +51,7 @@ const tsx = new Bun.Transpiler({ loader: "tsx" });
 /** The checkout that contains this repository as a submodule, if any (holds host assets). */
 export function hostRoot(repo = REPO): string | undefined {
   for (let dir = dirname(repo); dirname(dir) !== dir; dir = dirname(dir)) {
-    if (existsSync(join(dir, ".git")) && existsSync(join(dir, "package.json")))
-      return dir;
+    if (existsSync(join(dir, ".git")) && existsSync(join(dir, "package.json"))) return dir;
   }
   return undefined;
 }
@@ -62,8 +61,8 @@ export function nestedRepos(repo = REPO): string[] {
   const base = join(repo, "packages");
   if (!existsSync(base)) return [];
   return readdirSync(base)
-    .map((d) => join(base, d))
-    .filter((d) => existsSync(join(d, ".git")));
+    .map(d => join(base, d))
+    .filter(d => existsSync(join(d, ".git")));
 }
 
 function walk(dir: string, out: string[], skip: string[]): string[] {
@@ -71,7 +70,7 @@ function walk(dir: string, out: string[], skip: string[]): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (SKIP_DIRS.has(entry.name)) continue;
     const path = join(dir, entry.name);
-    if (skip.some((s) => path === s || path.startsWith(s + sep))) continue;
+    if (skip.some(s => path === s || path.startsWith(s + sep))) continue;
     if (entry.isDirectory()) walk(path, out, skip);
     else if (entry.isFile()) out.push(path);
   }
@@ -80,14 +79,7 @@ function walk(dir: string, out: string[], skip: string[]): string[] {
 
 /** Whether `ref` names a file of this repository (relative path, not a URL or expression). */
 export function isLocalRef(ref: string): boolean {
-  if (
-    !ref ||
-    ref.startsWith("#") ||
-    ref.startsWith("%23") ||
-    ref.startsWith("/") ||
-    ref.startsWith("~")
-  )
-    return false;
+  if (!ref || ref.startsWith("#") || ref.startsWith("%23") || ref.startsWith("/") || ref.startsWith("~")) return false;
   if (/^[a-z][a-z0-9+.-]*:/i.test(ref) || ref.startsWith("//")) return false; // http:, data:, mailto:, m3:, bun:
   if (/[{}$`<>*]|\$\{/.test(ref)) return false; // template expressions and globs
   return ref.startsWith("./") || ref.startsWith("../") || !ref.includes(":");
@@ -96,10 +88,7 @@ export function isLocalRef(ref: string): boolean {
 const strip = (ref: string) => decodeURI(ref.replace(/[?#].*$/, ""));
 
 /** References of one file: [ref, kind]. */
-export function references(
-  file: string,
-  text: string,
-): Array<[string, string]> {
+export function references(file: string, text: string): Array<[string, string]> {
   const out: Array<[string, string]> = [];
   const ext = extname(file).toLowerCase();
   const add = (ref: string | undefined, kind: string) => {
@@ -108,31 +97,18 @@ export function references(
   if (CODE.test(file)) {
     let imports: string[] = [];
     try {
-      imports = (/\.[cm]?tsx$|\.jsx$/.test(file) ? tsx : ts)
-        .scanImports(text)
-        .map((i) => i.path);
+      imports = (/\.[cm]?tsx$|\.jsx$/.test(file) ? tsx : ts).scanImports(text).map(i => i.path);
     } catch {
       // a file the transpiler rejects is reported by the typecheck gate
     }
-    for (const spec of imports)
-      if (ASSET_EXT.test(strip(spec)) && spec.startsWith("."))
-        add(spec, "import");
-    const code = text
-      .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
-    for (const m of code.matchAll(
-      /new\s+URL\(\s*["']([^"']+)["']\s*,\s*import\.meta\.url\s*\)/g,
-    ))
-      add(m[1], "url");
+    for (const spec of imports) if (ASSET_EXT.test(strip(spec)) && spec.startsWith(".")) add(spec, "import");
+    const code = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
+    for (const m of code.matchAll(/new\s+URL\(\s*["']([^"']+)["']\s*,\s*import\.meta\.url\s*\)/g)) add(m[1], "url");
   } else if (ext === ".css" || ext === ".scss") {
     // `url()` inside an inline SVG data URI (`filter="url(%23n)"`) is part of that document.
-    const css = text
-      .replace(/url\(\s*(["'])data:[\s\S]*?\1\s*\)/g, "")
-      .replace(/\/\*[\s\S]*?\*\//g, "");
-    for (const m of css.matchAll(/url\(\s*["']?([^"')\s]+)["']?\s*\)/g))
-      add(m[1], "css-url");
-    for (const m of text.matchAll(/@import\s+["'](\.[^"']+)["']/g))
-      add(m[1], "css-import");
+    const css = text.replace(/url\(\s*(["'])data:[\s\S]*?\1\s*\)/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+    for (const m of css.matchAll(/url\(\s*["']?([^"')\s]+)["']?\s*\)/g)) add(m[1], "css-url");
+    for (const m of text.matchAll(/@import\s+["'](\.[^"']+)["']/g)) add(m[1], "css-import");
   } else if (ext === ".html") {
     for (const m of text.matchAll(/\s(?:src|href)\s*=\s*["']([^"']+)["']/g))
       if (!/^\w+$/.test(m[1]!)) add(m[1], "html");
@@ -147,18 +123,14 @@ export function references(
       }
     } else if (ext === ".webmanifest" || file.endsWith("manifest.json")) {
       try {
-        for (const icon of JSON.parse(text)?.icons ?? [])
-          add(icon?.src, "manifest-icon");
+        for (const icon of JSON.parse(text)?.icons ?? []) add(icon?.src, "manifest-icon");
       } catch {
         // not a manifest
       }
     }
   } else if (ext === ".md") {
     const body = text.replace(/```[\s\S]*?```/g, "");
-    for (const m of body.matchAll(
-      /!\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/g,
-    ))
-      add(m[1], "md-image");
+    for (const m of body.matchAll(/!\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/g)) add(m[1], "md-image");
   }
   return out;
 }
@@ -168,21 +140,10 @@ export function checkAssets(repo = REPO, roots: string[] = [repo]): Finding[] {
   const host = hostRoot(repo);
   const nested = nestedRepos(repo);
   const findings: Finding[] = [];
-  const files = roots.flatMap((r) =>
-    statSync(r).isDirectory() ? walk(r, [], nested) : [r],
-  );
+  const files = roots.flatMap(r => (statSync(r).isDirectory() ? walk(r, [], nested) : [r]));
   for (const file of files) {
-    if (
-      !/\.(?:[cm]?[jt]sx?|css|scss|html|json|webmanifest|md)$/.test(file) ||
-      file.endsWith(".d.ts")
-    )
-      continue;
-    if (
-      /(?:^|[\\/])(?:test|tests|__tests__)[\\/]fixtures[\\/]|__testfixtures__/.test(
-        file,
-      )
-    )
-      continue;
+    if (!/\.(?:[cm]?[jt]sx?|css|scss|html|json|webmanifest|md)$/.test(file) || file.endsWith(".d.ts")) continue;
+    if (/(?:^|[\\/])(?:test|tests|__tests__)[\\/]fixtures[\\/]|__testfixtures__/.test(file)) continue;
     const text = readFileSync(file, "utf8");
     for (const [ref, kind] of references(file, text)) {
       if (!isLocalRef(ref)) continue;
@@ -224,7 +185,7 @@ export function checkAppIcons(repo = REPO): Finding[] {
   for (const name of existsSync(apps) ? readdirSync(apps) : []) {
     const dir = join(apps, name);
     if (!existsSync(join(dir, "package.json"))) continue;
-    const html = walk(dir, [], []).filter((f) => f.endsWith("index.html"));
+    const html = walk(dir, [], []).filter(f => f.endsWith("index.html"));
     if (html.length === 0) continue;
     for (const file of html) {
       const text = readFileSync(file, "utf8");
@@ -238,9 +199,7 @@ export function checkAppIcons(repo = REPO): Finding[] {
         });
     }
   }
-  for (const file of walk(repo, [], nestedRepos(repo)).filter((f) =>
-    f.endsWith("tauri.conf.json"),
-  )) {
+  for (const file of walk(repo, [], nestedRepos(repo)).filter(f => f.endsWith("tauri.conf.json"))) {
     const conf = JSON.parse(readFileSync(file, "utf8"));
     const icons: string[] = conf?.bundle?.icon ?? [];
     const rel = relative(repo, file);
@@ -254,7 +213,7 @@ export function checkAppIcons(repo = REPO): Finding[] {
       continue;
     }
     for (const fmt of [".ico", ".icns", ".png"]) {
-      if (!icons.some((i) => i.endsWith(fmt)))
+      if (!icons.some(i => i.endsWith(fmt)))
         findings.push({
           file: rel,
           ref: "",
@@ -268,25 +227,13 @@ export function checkAppIcons(repo = REPO): Finding[] {
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
-  const paths = args.filter((a) => !a.startsWith("--")).map((p) => resolve(p));
-  const findings = [
-    ...checkAssets(REPO, paths.length ? paths : [REPO]),
-    ...(paths.length ? [] : checkAppIcons(REPO)),
-  ];
-  const errors = findings.filter((f) => f.severity === "error");
+  const paths = args.filter(a => !a.startsWith("--")).map(p => resolve(p));
+  const findings = [...checkAssets(REPO, paths.length ? paths : [REPO]), ...(paths.length ? [] : checkAppIcons(REPO))];
+  const errors = findings.filter(f => f.severity === "error");
   if (args.includes("--json"))
-    console.log(
-      JSON.stringify(
-        { host: hostRoot() ?? null, errors: errors.length, findings },
-        null,
-        2,
-      ),
-    );
+    console.log(JSON.stringify({ host: hostRoot() ?? null, errors: errors.length, findings }, null, 2));
   else {
-    for (const f of findings)
-      console.log(
-        `${f.severity.toUpperCase().padEnd(5)} ${f.file}: ${f.message}`,
-      );
+    for (const f of findings) console.log(`${f.severity.toUpperCase().padEnd(5)} ${f.file}: ${f.message}`);
     console.log(
       `check-assets: ${errors.length} errors, ${findings.length - errors.length} warnings (host: ${hostRoot() ?? "none"})`,
     );

@@ -21,6 +21,9 @@
     "absent": ["shenron.target", "shenron-runtime.service", "shenron-api.service", "shenron-zswap.service"]
   },
   "source_parity": "installed Shenron units and aphrody-ai-http/aphrody-shenron-embed are byte-identical to systemd/ sources; /etc/nginx/conf.d/shenron.conf equals the concatenation of the four Shenron nginx examples and mcp.dragonballfr.com.conf equals its example",
-  "active_release": { "shenron": "/srv/shenron/releases/63426cfb", "aphrody": "/srv/aphrody/releases/20260924T154215Z-62d6deff-bf76b6af" },
+  "active_release": {
+    "shenron": "/srv/shenron/releases/63426cfb",
+    "aphrody": "/srv/aphrody/releases/20260924T154215Z-62d6deff-bf76b6af"
+  },
   "mutation_status": "observed-read-only"
 }

@@ -19,10 +19,7 @@ import type { PageKind, SitePage } from "./web-crawlability.ts";
 export const FIXTURE_ORIGIN = "http://fixture.invalid";
 
 const UI = resolve(import.meta.dir, "../../../packages/aphrody-migrated/m3/aphrody-m3/packages");
-const PAGES_MODULE = resolve(
-  import.meta.dir,
-  "./web-crawlability-pages.tsx",
-);
+const PAGES_MODULE = resolve(import.meta.dir, "./web-crawlability-pages.tsx");
 let installed = false;
 
 /**

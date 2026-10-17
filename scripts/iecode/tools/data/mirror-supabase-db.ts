@@ -35,7 +35,7 @@ const tables = [
   "mis_uniformes",
   "sobres_pendientes",
   "admins",
-  "beta_testers"
+  "beta_testers",
 ];
 
 fs.mkdirSync("var/mirror/ievr-ut/db", { recursive: true });
@@ -56,8 +56,8 @@ async function dumpTable(table: string) {
           "apikey": ANON_KEY,
           "Authorization": `Bearer ${ANON_KEY}`,
           "Range": `${from}-${to}`,
-          "Prefer": "count=exact"
-        }
+          "Prefer": "count=exact",
+        },
       });
 
       if (!res.ok) {
@@ -88,18 +88,22 @@ async function dumpTable(table: string) {
   if (allRows.length > 0) {
     const sample = allRows[0];
     const cols = Object.keys(sample);
-    const colDefs = cols.map(c => {
-      const val = sample[c];
-      if (typeof val === "number") return `"${c}" REAL`;
-      if (typeof val === "boolean") return `"${c}" INTEGER`;
-      return `"${c}" TEXT`;
-    }).join(", ");
+    const colDefs = cols
+      .map(c => {
+        const val = sample[c];
+        if (typeof val === "number") return `"${c}" REAL`;
+        if (typeof val === "boolean") return `"${c}" INTEGER`;
+        return `"${c}" TEXT`;
+      })
+      .join(", ");
 
     sqliteDb.run(`DROP TABLE IF EXISTS "${table}"`);
     sqliteDb.run(`CREATE TABLE "${table}" (${colDefs})`);
 
     const placeholders = cols.map(() => "?").join(", ");
-    const insertStmt = sqliteDb.prepare(`INSERT INTO "${table}" (${cols.map(c => `"${c}"`).join(", ")}) VALUES (${placeholders})`);
+    const insertStmt = sqliteDb.prepare(
+      `INSERT INTO "${table}" (${cols.map(c => `"${c}"`).join(", ")}) VALUES (${placeholders})`,
+    );
 
     sqliteDb.transaction(() => {
       for (const row of allRows) {

@@ -66,16 +66,12 @@ function fixture() {
 }
 test("activation preserves credential references and replay performs no write or restart", async () => {
   const f = fixture();
-  expect(
-    (await activateOriginInventory(path, pins, f.ports, true)).writes,
-  ).toBe(1);
+  expect((await activateOriginInventory(path, pins, f.ports, true)).writes).toBe(1);
   expect(f.calls).toEqual(["qualify", "backup", "write", "restart", "attest"]);
   expect(f.current().profile).toBe("/protected/profile.json");
   expect(f.current().sdkModule).toBe("/owned/sdk.js");
   f.calls.length = 0;
-  expect(
-    (await activateOriginInventory(path, pins, f.ports, true)).replay,
-  ).toBe(true);
+  expect((await activateOriginInventory(path, pins, f.ports, true)).replay).toBe(true);
   expect(f.calls).toEqual(["qualify", "attest"]);
 });
 test("prepare never writes; concurrent update and unverified backup stop before service operations", async () => {
@@ -83,24 +79,18 @@ test("prepare never writes; concurrent update and unverified backup stop before 
   await activateOriginInventory(path, pins, f.ports);
   expect(f.calls).toEqual(["qualify", "backup"]);
   f.concurrent();
-  await expect(
-    activateOriginInventory(path, pins, f.ports, true),
-  ).rejects.toThrow("Concurrent");
+  await expect(activateOriginInventory(path, pins, f.ports, true)).rejects.toThrow("Concurrent");
   expect(f.calls).not.toContain("restart");
   const backup = fixture();
   backup.ports.qualifyBackup = async () => {
     throw Error("Backup unavailable");
   };
-  await expect(
-    activateOriginInventory(path, pins, backup.ports, true),
-  ).rejects.toThrow("Backup");
+  await expect(activateOriginInventory(path, pins, backup.ports, true)).rejects.toThrow("Backup");
   expect(backup.calls).not.toContain("write");
 });
 test("candidate scope and prefix identity cannot be substituted", async () => {
   const f = fixture();
-  await expect(
-    activateOriginInventory("C:/foreign/inventory.json", pins, f.ports, true),
-  ).rejects.toThrow("scope");
+  await expect(activateOriginInventory("C:/foreign/inventory.json", pins, f.ports, true)).rejects.toThrow("scope");
   await expect(
     activateOriginInventory(
       path,
@@ -119,9 +109,7 @@ test("CAS is checked again immediately before replacement", async () => {
   f.ports.qualifyBackup = async () => {
     f.concurrent();
   };
-  await expect(
-    activateOriginInventory(path, pins, f.ports, true),
-  ).rejects.toThrow("Concurrent");
+  await expect(activateOriginInventory(path, pins, f.ports, true)).rejects.toThrow("Concurrent");
   expect(f.calls).not.toContain("restart");
 });
 
@@ -145,11 +133,9 @@ test("a delayed restart reaches attestation without another pointer write or res
       () => clock,
     );
   };
-  expect(
-    (await activateOriginInventory(path, pins, f.ports, true)).writes,
-  ).toBe(1);
-  expect(f.calls.filter((call) => call === "write")).toHaveLength(1);
-  expect(f.calls.filter((call) => call === "restart")).toHaveLength(1);
+  expect((await activateOriginInventory(path, pins, f.ports, true)).writes).toBe(1);
+  expect(f.calls.filter(call => call === "write")).toHaveLength(1);
+  expect(f.calls.filter(call => call === "restart")).toHaveLength(1);
   expect(delays).toEqual([100, 200]);
   expect(calls).toBe(3);
 });

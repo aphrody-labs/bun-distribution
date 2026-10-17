@@ -16,11 +16,9 @@ import {
 
 const roots: string[] = [];
 afterEach(async () => {
-  for (const root of roots.splice(0))
-    await rm(root, { recursive: true, force: true });
+  for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true });
 });
-const hash = (value: string) =>
-  new Bun.CryptoHasher("sha256").update(value).digest("hex");
+const hash = (value: string) => new Bun.CryptoHasher("sha256").update(value).digest("hex");
 const artifactPath = (name: string) => "/app/data/source-pipeline/" + name;
 async function fixtureFile(path: string, content: string, mode = 0o600) {
   await Bun.write(path, content);
@@ -30,8 +28,7 @@ async function fixtureFile(path: string, content: string, mode = 0o600) {
 async function fixture(batchMode = false) {
   const root = await mkdtemp(join(tmpdir(), "aphrody-source-vpn-"));
   roots.push(root);
-  for (const part of ["data", "vpn", "resources"])
-    await mkdir(join(root, part), { mode: 0o700 });
+  for (const part of ["data", "vpn", "resources"]) await mkdir(join(root, part), { mode: 0o700 });
   const file = fixtureFile;
   const config: SourceJobConfig = {
     version: 1,
@@ -39,19 +36,11 @@ async function fixture(batchMode = false) {
     host: "dbfr",
     imageId: "sha256:" + "1".repeat(64),
     runtime: {
-      path: await file(
-        join(root, "runtime"),
-        "qualified fixture runtime",
-        0o755,
-      ),
+      path: await file(join(root, "runtime"), "qualified fixture runtime", 0o755),
       sha256: hash("qualified fixture runtime"),
     },
     bundle: {
-      path: await file(
-        join(root, "bundle.mjs"),
-        "qualified fixture bundle",
-        0o644,
-      ),
+      path: await file(join(root, "bundle.mjs"), "qualified fixture bundle", 0o644),
       sha256: hash("qualified fixture bundle"),
     },
     resources: {
@@ -84,8 +73,7 @@ async function fixture(batchMode = false) {
     timeoutMs: 10000,
   };
   await file(join(root, "resources/relays.json"), "relay fixture");
-  if (batchMode)
-    await file(join(config.dataRoot, "input.jsonl"), "fixture snapshot");
+  if (batchMode) await file(join(config.dataRoot, "input.jsonl"), "fixture snapshot");
   const calls: { args: string[]; stdin?: Uint8Array }[] = [];
   let running = false;
   let ownership = "";
@@ -95,9 +83,7 @@ async function fixture(batchMode = false) {
     if (args[1] === "run") {
       running = true;
       ownership =
-        args
-          .find((value) => value.startsWith("aphrody.source.plan="))!
-          .slice("aphrody.source.plan=".length) +
+        args.find(value => value.startsWith("aphrody.source.plan="))!.slice("aphrody.source.plan=".length) +
         "|" +
         args[args.indexOf("--name") + 1];
       return { code: 0, stdout: "fixture-container-id" };
@@ -109,23 +95,13 @@ async function fixture(batchMode = false) {
     if (args[1] === "inspect")
       return {
         code: running ? 0 : 1,
-        stdout: running
-          ? args.some((value) => value.includes(".Config.Labels"))
-            ? ownership
-            : "true"
-          : "",
+        stdout: running ? (args.some(value => value.includes(".Config.Labels")) ? ownership : "true") : "",
       };
-    if (args.includes("status"))
-      return { code: 0, stdout: "Connected { fixture: true }" };
+    if (args.includes("status")) return { code: 0, stdout: "Connected { fixture: true }" };
     if (args.includes("-e")) {
       const code = args.at(-1)!;
-      const destination = JSON.parse(
-        /const path=("[^"]+")/.exec(code)![1]!,
-      ) as string;
-      const pinned = await file(
-        join(config.dataRoot, "pinned.json"),
-        "pinned collection fixture",
-      );
+      const destination = JSON.parse(/const path=("[^"]+")/.exec(code)![1]!) as string;
+      const pinned = await file(join(config.dataRoot, "pinned.json"), "pinned collection fixture");
       const receipt: Record<string, unknown> = {
         schema: "shenron-source-collection/v1",
         configSha256: hash(await Bun.file(config.pipelineConfig).text()),
@@ -137,13 +113,7 @@ async function fixture(batchMode = false) {
       };
       if (batchMode) {
         const artifacts: Record<string, string> = {};
-        for (const name of [
-          "collection.json",
-          "membership.json",
-          "batch.json",
-          "export.jsonl",
-          "validation.json",
-        ]) {
+        for (const name of ["collection.json", "membership.json", "batch.json", "export.jsonl", "validation.json"]) {
           const body = "fixture " + name;
           await file(join(config.dataRoot, name), body);
           artifacts[name] = hash(body);
@@ -173,10 +143,7 @@ async function fixture(batchMode = false) {
           },
         });
       }
-      await file(
-        join(config.dataRoot, destination.split("/").at(-1)!),
-        JSON.stringify(receipt),
-      );
+      await file(join(config.dataRoot, destination.split("/").at(-1)!), JSON.stringify(receipt));
     }
     return { code: 0, stdout: "" };
   };
@@ -198,9 +165,7 @@ test("typed source job grants only private child capabilities and never mounts d
   expect(args).toContain("none");
   expect(args.at(-1)).toContain("Bun.file(path).stream()");
   expect(args.at(-1)).not.toContain("Bun.file(path).bytes()");
-  expect(args).toContain(
-    "/app/data/source-pipeline/credentials:ro,nosuid,nodev,noexec,mode=000",
-  );
+  expect(args).toContain("/app/data/source-pipeline/credentials:ro,nosuid,nodev,noexec,mode=000");
 });
 
 test("v2 isolated job keeps VPN and resources contracts and verifies every handoff artifact hash", async () => {
@@ -221,23 +186,14 @@ test("v2 isolated job keeps VPN and resources contracts and verifies every hando
       deliveryAuthorized: false,
     },
   });
-  expect(f.calls.some((call) => call.args.includes("login"))).toBe(true);
-  expect(f.calls.some((call) => call.args.includes("connect"))).toBe(true);
-  const containerArgs = sourceJobArgs(
-    plan,
-    "shenron-source-vpn-" + "c".repeat(16),
-  );
+  expect(f.calls.some(call => call.args.includes("login"))).toBe(true);
+  expect(f.calls.some(call => call.args.includes("connect"))).toBe(true);
+  const containerArgs = sourceJobArgs(plan, "shenron-source-vpn-" + "c".repeat(16));
   expect(containerArgs).not.toContain("host");
   expect(containerArgs).not.toContain("DATABASE_URL");
   expect(containerArgs).toContain("--cap-drop");
   const receipt = result.collection;
-  expect(
-    validSourceCollectionReceipt(
-      receipt,
-      "shenron-source-collection/v1",
-      plan.pipelineConfigSha256,
-    ),
-  ).toBe(false);
+  expect(validSourceCollectionReceipt(receipt, "shenron-source-collection/v1", plan.pipelineConfigSha256)).toBe(false);
   expect(
     validSourceCollectionReceipt(
       { ...receipt, deliveryAuthorized: true },
@@ -262,36 +218,25 @@ test("v2 isolated job keeps VPN and resources contracts and verifies every hando
 test("v2 source plan refuses mutable input and invalid cycle budgets before launching a child", async () => {
   const f = await fixture(true);
   await fixtureFile(join(f.config.dataRoot, "input.jsonl"), "changed snapshot");
-  await expect(planSourceJob(f.config, { run: f.run })).rejects.toThrow(
-    "immutable pinned snapshot",
-  );
-  expect(f.calls.some((call) => call.args[1] === "run")).toBe(false);
+  await expect(planSourceJob(f.config, { run: f.run })).rejects.toThrow("immutable pinned snapshot");
+  expect(f.calls.some(call => call.args[1] === "run")).toBe(false);
   await fixtureFile(join(f.config.dataRoot, "input.jsonl"), "fixture snapshot");
   const config = await Bun.file(f.config.pipelineConfig).json();
   config.batchCollection.maxBatchesPerCycle = 2;
   await fixtureFile(f.config.pipelineConfig, JSON.stringify(config));
-  await expect(planSourceJob(f.config, { run: f.run })).rejects.toThrow(
-    "immutable source batch collection",
-  );
+  await expect(planSourceJob(f.config, { run: f.run })).rejects.toThrow("immutable source batch collection");
 });
 test("only the pinned relay file is exposed even when its private parent contains other data", async () => {
   const f = await fixture();
-  await fixtureFile(
-    join(f.config.resources.path, "unrelated-private.json"),
-    "private fixture",
-  );
+  await fixtureFile(join(f.config.resources.path, "unrelated-private.json"), "private fixture");
   const plan = await planSourceJob(f.config, { run: f.run });
   const args = sourceJobArgs(plan, "shenron-source-vpn-" + "b".repeat(16));
   const mounts = args.filter((_, index) => args[index - 1] === "--mount");
   expect(mounts).toContain(
     `type=bind,src=${join(f.config.resources.path, "relays.json")},dst=/job/resources/relays.json,readonly`,
   );
-  expect(
-    mounts.some((mount) => mount.includes(`src=${f.config.resources.path},`)),
-  ).toBe(false);
-  expect(mounts.some((mount) => mount.includes("unrelated-private"))).toBe(
-    false,
-  );
+  expect(mounts.some(mount => mount.includes(`src=${f.config.resources.path},`))).toBe(false);
+  expect(mounts.some(mount => mount.includes("unrelated-private"))).toBe(false);
 });
 test("collection uses stdin login, UID1000 and finite teardown without claiming full pipeline success", async () => {
   const f = await fixture(),
@@ -303,21 +248,15 @@ test("collection uses stdin login, UID1000 and finite teardown without claiming 
   expect(result.collected).toBe(true);
   expect(result.pipelineComplete).toBe(false);
   expect(result.stage).toBe("collection-only");
-  const login = f.calls.find((call) => call.args.includes("login"))!;
+  const login = f.calls.find(call => call.args.includes("login"))!;
   expect(new TextDecoder().decode(login.stdin)).toBe("1234567890123456\n");
-  expect(
-    f.calls.some((call) => call.args.join(" ").includes("1234567890123456")),
-  ).toBe(false);
-  const collect = f.calls.find(
-    (call) => call.args[1] === "exec" && call.args.includes("-e"),
-  )!;
+  expect(f.calls.some(call => call.args.join(" ").includes("1234567890123456"))).toBe(false);
+  const collect = f.calls.find(call => call.args[1] === "exec" && call.args.includes("-e"))!;
   expect(collect.args).toContain("1000:1000");
   expect(collect.args.at(-1)).toContain("collectSourcePipeline");
   expect(collect.args.at(-1)).toContain("https://am.i.mullvad.net/json");
-  expect(f.calls.some((call) => call.args[1] === "stop")).toBe(true);
-  expect(
-    (await readdir(f.config.dataRoot)).some((path) => path.endsWith(".lock")),
-  ).toBe(false);
+  expect(f.calls.some(call => call.args[1] === "stop")).toBe(true);
+  expect((await readdir(f.config.dataRoot)).some(path => path.endsWith(".lock"))).toBe(false);
 });
 test("a failed container launch still removes an uncertain created child and releases the lock", async () => {
   const f = await fixture(),
@@ -332,10 +271,8 @@ test("a failed container launch still removes an uncertain created child and rel
       account: async () => "1234567890123456",
     }),
   ).rejects.toThrow("native owner command failed");
-  expect(f.calls.some((call) => call.args[1] === "stop")).toBe(true);
-  expect(
-    (await readdir(f.config.dataRoot)).some((path) => path.endsWith(".lock")),
-  ).toBe(false);
+  expect(f.calls.some(call => call.args[1] === "stop")).toBe(true);
+  expect((await readdir(f.config.dataRoot)).some(path => path.endsWith(".lock"))).toBe(false);
 });
 test("teardown refuses a foreign container that raced an uncertain launch", async () => {
   const f = await fixture(),
@@ -343,10 +280,7 @@ test("teardown refuses a foreign container that raced an uncertain launch", asyn
   const run: NonNullable<SourceJobPorts["run"]> = async (args, options) => {
     const result = await f.run(args, options);
     if (args[1] === "run") return { code: 1, stdout: "" };
-    if (
-      args[1] === "inspect" &&
-      args.some((value) => value.includes(".Config.Labels"))
-    )
+    if (args[1] === "inspect" && args.some(value => value.includes(".Config.Labels")))
       return { code: 0, stdout: "foreign|foreign" };
     return result;
   };
@@ -356,7 +290,7 @@ test("teardown refuses a foreign container that raced an uncertain launch", asyn
       account: async () => "1234567890123456",
     }),
   ).rejects.toThrow("refused foreign");
-  expect(f.calls.some((call) => call.args[1] === "stop")).toBe(false);
+  expect(f.calls.some(call => call.args[1] === "stop")).toBe(false);
 });
 test("native command cancellation kills and reaps a process that ignores SIGTERM", async () => {
   const root = await mkdtemp(join(tmpdir(), "aphrody-source-vpn-cancel-"));
@@ -385,18 +319,14 @@ test("changed artifacts, unsafe cookie permissions and symlinked job roots fail 
   const f = await fixture(),
     plan = await planSourceJob(f.config, { run: f.run });
   await Bun.write(f.config.bundle.path, "changed");
-  await expect(
-    applySourceJob(plan, hash(JSON.stringify(plan)), { run: f.run }),
-  ).rejects.toThrow("artifact hash differs");
-  expect(f.calls.some((call) => call.args[0] === "docker")).toBe(false);
-  await chmod(f.config.googleJar, 0o644);
-  await expect(planSourceJob(f.config, { run: f.run })).rejects.toThrow(
-    "permissions",
+  await expect(applySourceJob(plan, hash(JSON.stringify(plan)), { run: f.run })).rejects.toThrow(
+    "artifact hash differs",
   );
+  expect(f.calls.some(call => call.args[0] === "docker")).toBe(false);
+  await chmod(f.config.googleJar, 0o644);
+  await expect(planSourceJob(f.config, { run: f.run })).rejects.toThrow("permissions");
   await chmod(f.config.googleJar, 0o600);
   const alias = join(f.root, "alias");
   await symlink(f.config.dataRoot, alias);
-  await expect(
-    planSourceJob({ ...f.config, dataRoot: alias }, { run: f.run }),
-  ).rejects.toThrow("regular owned");
+  await expect(planSourceJob({ ...f.config, dataRoot: alias }, { run: f.run })).rejects.toThrow("regular owned");
 });

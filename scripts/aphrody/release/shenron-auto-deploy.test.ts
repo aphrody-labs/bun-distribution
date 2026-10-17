@@ -3,18 +3,8 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  probe,
-  verifyVendor,
-  qualifyRuntime,
-  qualifyCompiledRuntimes,
-  runtimeEvidence,
-} from "./shenron-auto-deploy";
-import {
-  activeDeployment,
-  deploymentIsCurrent,
-  deploymentSelection,
-} from "./shenron-deployment-identity";
+import { probe, verifyVendor, qualifyRuntime, qualifyCompiledRuntimes, runtimeEvidence } from "./shenron-auto-deploy";
+import { activeDeployment, deploymentIsCurrent, deploymentSelection } from "./shenron-deployment-identity";
 
 test("a runtime-only change builds a distinct deployment without changing the Shenron Git commit", () => {
   const commit = "a".repeat(40);
@@ -24,8 +14,7 @@ test("a runtime-only change builds a distinct deployment without changing the Sh
     runtimeExpected: {
       version: "1.4.5",
       revision: "c".repeat(40),
-      sourceUrl:
-        "https://github.com/aphrody-labs/bun/releases/download/bun-v1.4.5/bun-linux-x64-full.zip",
+      sourceUrl: "https://github.com/aphrody-labs/bun/releases/download/bun-v1.4.5/bun-linux-x64-full.zip",
     },
   };
   const expected = deploymentSelection(commit, config);
@@ -34,9 +23,7 @@ test("a runtime-only change builds a distinct deployment without changing the Sh
     commit,
     deployment: expected.deployment,
   });
-  expect(deploymentIsCurrent(active, deploymentSelection(commit, config))).toBe(
-    true,
-  );
+  expect(deploymentIsCurrent(active, deploymentSelection(commit, config))).toBe(true);
   for (const change of [
     { runtimeSha256: "d".repeat(64) },
     {
@@ -46,10 +33,7 @@ test("a runtime-only change builds a distinct deployment without changing the Sh
     {
       runtimeExpected: {
         ...config.runtimeExpected,
-        sourceUrl: config.runtimeExpected.sourceUrl.replace(
-          "full.zip",
-          "other.zip",
-        ),
+        sourceUrl: config.runtimeExpected.sourceUrl.replace("full.zip", "other.zip"),
       },
     },
   ]) {
@@ -63,9 +47,7 @@ test("a runtime-only change builds a distinct deployment without changing the Sh
     release: "/fixture/docker-" + commit,
     commit,
   });
-  expect(deploymentIsCurrent(legacy, deploymentSelection(commit, {}))).toBe(
-    true,
-  );
+  expect(deploymentIsCurrent(legacy, deploymentSelection(commit, {}))).toBe(true);
   expect(deploymentIsCurrent(legacy, expected)).toBe(false);
   expect(() =>
     activeDeployment({
@@ -73,9 +55,7 @@ test("a runtime-only change builds a distinct deployment without changing the Sh
       deployment: { ...expected.deployment!, id: "0".repeat(64) },
     }),
   ).toThrow();
-  expect(() =>
-    activeDeployment({ ...active, release: legacy.release }),
-  ).toThrow();
+  expect(() => activeDeployment({ ...active, release: legacy.release })).toThrow();
   expect(() =>
     activeDeployment({
       ...active,
@@ -85,9 +65,7 @@ test("a runtime-only change builds a distinct deployment without changing the Sh
       } as typeof expected.deployment,
     }),
   ).toThrow("identity differs");
-  expect(() =>
-    deploymentSelection(commit, { ...config, runtimeSha256: "invalid" }),
-  ).toThrow("exact qualified");
+  expect(() => deploymentSelection(commit, { ...config, runtimeSha256: "invalid" })).toThrow("exact qualified");
   expect(() =>
     deploymentSelection(commit, {
       ...config,
@@ -99,8 +77,7 @@ test("a runtime-only change builds a distinct deployment without changing the Sh
 const nativeEvidence = {
   version: "1.4.4+fixture",
   revision: "a".repeat(40),
-  sourceUrl:
-    "https://github.com/aphrody-labs/bun/releases/download/fixture/bun.zip",
+  sourceUrl: "https://github.com/aphrody-labs/bun/releases/download/fixture/bun.zip",
   features: { yolo: true, crawl: true, curl: true, vectorIndex: true },
 };
 test("runtime hash is checked before execution and evidence binds provenance and all native fixtures", async () => {
@@ -108,30 +85,20 @@ test("runtime hash is checked before execution and evidence binds provenance and
   temporary.push(root);
   const binary = join(root, "bun");
   await Bun.write(binary, "pinned runtime fixture");
-  const sha = new Bun.CryptoHasher("sha256")
-    .update("pinned runtime fixture")
-    .digest("hex");
+  const sha = new Bun.CryptoHasher("sha256").update("pinned runtime fixture").digest("hex");
   let calls = 0;
-  const run = async (
-    args: string[],
-    env: Record<string, string | undefined>,
-  ) => {
+  const run = async (args: string[], env: Record<string, string | undefined>) => {
     calls++;
     expect(args[0]).toBe(binary);
     expect(env.BUN_BE_BUN).toBe("1");
     return JSON.stringify(nativeEvidence);
   };
-  expect(
-    await qualifyRuntime(
-      binary,
-      sha,
-      { revision: nativeEvidence.revision },
-      run,
-    ),
-  ).toMatchObject({ sha256: sha, size: 22, ...nativeEvidence });
-  await expect(qualifyRuntime(binary, "0".repeat(64), {}, run)).rejects.toThrow(
-    "digest differs",
-  );
+  expect(await qualifyRuntime(binary, sha, { revision: nativeEvidence.revision }, run)).toMatchObject({
+    sha256: sha,
+    size: 22,
+    ...nativeEvidence,
+  });
+  await expect(qualifyRuntime(binary, "0".repeat(64), {}, run)).rejects.toThrow("digest differs");
   expect(calls).toBe(1);
   expect(() =>
     runtimeEvidence(
@@ -156,18 +123,9 @@ test("both compiled product runtimes must pass the same isolated fixtures before
     return JSON.stringify(nativeEvidence);
   };
   expect(
-    Object.keys(
-      await qualifyCompiledRuntimes(
-        "sha256:" + "a".repeat(64),
-        { revision: nativeEvidence.revision },
-        run,
-      ),
-    ),
+    Object.keys(await qualifyCompiledRuntimes("sha256:" + "a".repeat(64), { revision: nativeEvidence.revision }, run)),
   ).toEqual(["shenron-server", "shenron-bot"]);
-  expect(paths).toEqual([
-    "/usr/local/bin/shenron-server",
-    "/usr/local/bin/shenron-bot",
-  ]);
+  expect(paths).toEqual(["/usr/local/bin/shenron-server", "/usr/local/bin/shenron-bot"]);
   let calls = 0;
   await expect(
     qualifyCompiledRuntimes("image", {}, async () => {
@@ -192,9 +150,7 @@ test("tracked Next fork archives are verified without a removed bootstrap script
       packages: [
         {
           archive: "next.tgz",
-          sha256: new Bun.CryptoHasher("sha256")
-            .update("qualified fixture")
-            .digest("hex"),
+          sha256: new Bun.CryptoHasher("sha256").update("qualified fixture").digest("hex"),
         },
       ],
     }),
@@ -209,13 +165,10 @@ test("tracked Next fork archives are verified without a removed bootstrap script
       packages: [{ archive: "../escape.tgz", sha256: "a".repeat(64) }],
     }),
   );
-  await expect(verifyVendor(root)).rejects.toThrow(
-    "Invalid Next fork archive identity",
-  );
+  await expect(verifyVendor(root)).rejects.toThrow("Invalid Next fork archive identity");
 });
 afterEach(() => {
-  for (const path of temporary.splice(0))
-    rmSync(path, { recursive: true, force: true });
+  for (const path of temporary.splice(0)) rmSync(path, { recursive: true, force: true });
 });
 
 function git(cwd: string, ...args: string[]) {
@@ -273,19 +226,12 @@ async function fixture() {
       return git(publisher, "rev-parse", "HEAD");
     },
     async sync() {
-      const child = Bun.spawn(
-        [
-          process.execPath,
-          join(import.meta.dir, "shenron-auto-deploy.ts"),
-          "sync",
-        ],
-        {
-          cwd: root,
-          env: { ...process.env, SHENRON_AUTO_DEPLOY_CONFIG: config },
-          stdout: "pipe",
-          stderr: "pipe",
-        },
-      );
+      const child = Bun.spawn([process.execPath, join(import.meta.dir, "shenron-auto-deploy.ts"), "sync"], {
+        cwd: root,
+        env: { ...process.env, SHENRON_AUTO_DEPLOY_CONFIG: config },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
       const [code, stdout, stderr] = await Promise.all([
         child.exited,
         new Response(child.stdout).text(),
@@ -304,9 +250,7 @@ test("sync fetches local origin/main and fast-forwards the real checkout", async
   expect(result.code, result.stderr).toBe(0);
   expect(git(f.source, "rev-parse", "HEAD")).toBe(latest);
   expect(git(f.source, "rev-parse", "origin/main")).toBe(latest);
-  expect(await Bun.file(join(f.source, "content.txt")).text()).toBe(
-    "upstream change\n",
-  );
+  expect(await Bun.file(join(f.source, "content.txt")).text()).toBe("upstream change\n");
   expect(result.receipt).toMatchObject({
     status: "synchronized",
     commit: latest,
@@ -328,12 +272,8 @@ test("sync preserves tracked and untracked local edits and exits 75", async () =
   expect(git(f.source, "rev-parse", "HEAD")).toBe(f.initial);
   expect(git(f.source, "rev-parse", "origin/main")).toBe(latest);
   expect(git(f.source, "status", "--porcelain")).toBe(before);
-  expect(await Bun.file(join(f.source, "content.txt")).text()).toBe(
-    "local work\n",
-  );
-  expect(await Bun.file(join(f.source, "untracked.txt")).text()).toBe(
-    "unique work\n",
-  );
+  expect(await Bun.file(join(f.source, "content.txt")).text()).toBe("local work\n");
+  expect(await Bun.file(join(f.source, "untracked.txt")).text()).toBe("unique work\n");
 });
 
 test("sync refuses a different branch and preserves its checkout", async () => {
@@ -348,9 +288,7 @@ test("sync refuses a different branch and preserves its checkout", async () => {
   });
   expect(git(f.source, "branch", "--show-current")).toBe("feature/local");
   expect(git(f.source, "rev-parse", "HEAD")).toBe(f.initial);
-  expect(await Bun.file(join(f.source, "content.txt")).text()).toBe(
-    "initial\n",
-  );
+  expect(await Bun.file(join(f.source, "content.txt")).text()).toBe("initial\n");
 });
 
 test("sync refuses divergent history without discarding the local commit", async () => {
@@ -369,63 +307,41 @@ test("sync refuses divergent history without discarding the local commit", async
   expect(git(f.source, "rev-parse", "HEAD")).toBe(local);
   expect(git(f.source, "rev-parse", "origin/main")).toBe(upstream);
   expect(git(f.source, "status", "--porcelain")).toBe("");
-  expect(await Bun.file(join(f.source, "local.txt")).text()).toBe(
-    "committed local work\n",
-  );
+  expect(await Bun.file(join(f.source, "local.txt")).text()).toBe("committed local work\n");
 });
 
-test.each(["stdout", "stderr"])(
-  "runtime probe bounds %s before waiting for exit",
-  async (stream) => {
-    await expect(
-      probe(
-        [
-          process.execPath,
-          "-e",
-          `process.${stream}.write('x'.repeat(20_000));setInterval(()=>{},1000)`,
-        ],
-        process.env,
-        1000,
-      ),
-    ).rejects.toThrow("Native runtime qualification failed");
-  },
-);
-test("runtime probe kills a stalled runtime and accepts bounded output", async () => {
+test.each(["stdout", "stderr"])("runtime probe bounds %s before waiting for exit", async stream => {
   await expect(
     probe(
-      [process.execPath, "-e", "setInterval(()=>{},1000)"],
+      [process.execPath, "-e", `process.${stream}.write('x'.repeat(20_000));setInterval(()=>{},1000)`],
       process.env,
-      25,
+      1000,
     ),
   ).rejects.toThrow("Native runtime qualification failed");
-  expect(
-    await probe(
-      [process.execPath, "-e", "console.log('bounded')"],
-      process.env,
-    ),
-  ).toBe("bounded\n");
+});
+test("runtime probe kills a stalled runtime and accepts bounded output", async () => {
+  await expect(probe([process.execPath, "-e", "setInterval(()=>{},1000)"], process.env, 25)).rejects.toThrow(
+    "Native runtime qualification failed",
+  );
+  expect(await probe([process.execPath, "-e", "console.log('bounded')"], process.env)).toBe("bounded\n");
 });
 
 test.each(["yolo", "curl", "crawl", "vector-index", "untrusted-secret"])(
   "runtime probe reports only a recognized fixture failure stage [%s]",
-  async (stage) => {
+  async stage => {
     const failure = JSON.stringify({
       schema: "shenron-runtime-failure/v1",
       stage,
     });
     const command = `console.error('private-child-diagnostic');console.error(${JSON.stringify(failure)});process.exit(1)`;
-    const error = await probe(
-      [process.execPath, "-e", command],
-      process.env,
-    ).then(
+    const error = await probe([process.execPath, "-e", command], process.env).then(
       () => {
         throw new Error("Fixture unexpectedly passed");
       },
-      (reason) => reason as Error,
+      reason => reason as Error,
     );
     expect(error.message).toBe(
-      "Native runtime qualification failed" +
-        (stage === "untrusted-secret" ? "" : ` (stage: ${stage})`),
+      "Native runtime qualification failed" + (stage === "untrusted-secret" ? "" : ` (stage: ${stage})`),
     );
     expect(error.message).not.toContain("private-child-diagnostic");
     expect(error.message).not.toContain("untrusted-secret");
@@ -434,15 +350,10 @@ test.each(["yolo", "curl", "crawl", "vector-index", "untrusted-secret"])(
 
 test("canonical auto-deploy configuration requires exact runtime qualification pins", async () => {
   const configuration = await Bun.file(
-    join(
-      import.meta.dir,
-      "../../../tools/aphrody/config/shenron-auto-deploy.json",
-    ),
+    join(import.meta.dir, "../../../tools/aphrody/config/shenron-auto-deploy.json"),
   ).json();
   expect(configuration.runtimeSha256).toMatch(/^[a-f0-9]{64}$/);
   expect(configuration.runtimeExpected.version).toMatch(/^\d+\.\d+\.\d+/);
   expect(configuration.runtimeExpected.revision).toMatch(/^[a-f0-9]{40}$/);
-  expect(configuration.runtimeExpected.sourceUrl).toStartWith(
-    "https://github.com/aphrody-labs/bun/releases/download/",
-  );
+  expect(configuration.runtimeExpected.sourceUrl).toStartWith("https://github.com/aphrody-labs/bun/releases/download/");
 });

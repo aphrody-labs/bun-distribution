@@ -34,11 +34,7 @@ export async function connectRedis(cfg: Config): Promise<RedisClient> {
 export type Cached<T> = { hit: boolean; value: T | undefined };
 
 /** Read-through lookup of one path: Redis first, PostgreSQL on a miss (then cached for NODE_TTL_S). */
-export async function cachedNode(
-  redis: RedisClient,
-  sql: SQL,
-  path: string,
-): Promise<Cached<Record<string, unknown>>> {
+export async function cachedNode(redis: RedisClient, sql: SQL, path: string): Promise<Cached<Record<string, unknown>>> {
   const key = nodeKey(path);
   const raw = await redis.get(key);
   if (raw !== null) {
@@ -52,11 +48,7 @@ export async function cachedNode(
 }
 
 /** Read-through cache of a query result, keyed by the current generation (any change invalidates all queries). */
-export async function cachedQuery<T>(
-  redis: RedisClient,
-  text: string,
-  compute: () => Promise<T>,
-): Promise<Cached<T>> {
+export async function cachedQuery<T>(redis: RedisClient, text: string, compute: () => Promise<T>): Promise<Cached<T>> {
   const gen = (await redis.get(genKey)) ?? "0";
   const key = queryKey(gen, text);
   const raw = await redis.get(key);
@@ -86,10 +78,7 @@ function parentOf(path: string): string | null {
 }
 
 /** Invalidates the keys touched by a batch of changes, bumps the query generation and publishes the events. */
-export async function invalidate(
-  redis: RedisClient,
-  events: ChangeEvent[],
-): Promise<void> {
+export async function invalidate(redis: RedisClient, events: ChangeEvent[]): Promise<void> {
   if (!events.length) return;
   const keys = new Set<string>();
   for (const e of events) {
@@ -101,29 +90,18 @@ export async function invalidate(
     }
   }
   const all = [...keys];
-  for (let i = 0; i < all.length; i += 500)
-    await redis.unlink(...all.slice(i, i + 500));
+  for (let i = 0; i < all.length; i += 500) await redis.unlink(...all.slice(i, i + 500));
   await redis.incr(genKey);
-  for (const e of events)
-    await redis.publish(EVENTS_CHANNEL, JSON.stringify(e));
+  for (const e of events) await redis.publish(EVENTS_CHANNEL, JSON.stringify(e));
 }
 
 /** Drops every cached path below a root (after a rescan or a directory rename). */
-export async function invalidatePrefix(
-  redis: RedisClient,
-  root: string,
-): Promise<number> {
+export async function invalidatePrefix(redis: RedisClient, root: string): Promise<number> {
   let cursor = "0";
   let n = 0;
-  const pattern = `${nodeKey(root).replace(/[*?[\]\\]/g, (c) => `\\${c}`)}*`;
+  const pattern = `${nodeKey(root).replace(/[*?[\]\\]/g, c => `\\${c}`)}*`;
   do {
-    const [next, keys] = (await redis.send("SCAN", [
-      cursor,
-      "MATCH",
-      pattern,
-      "COUNT",
-      "1000",
-    ])) as [string, string[]];
+    const [next, keys] = (await redis.send("SCAN", [cursor, "MATCH", pattern, "COUNT", "1000"])) as [string, string[]];
     cursor = next;
     if (keys.length) n += await redis.unlink(...keys);
   } while (cursor !== "0");

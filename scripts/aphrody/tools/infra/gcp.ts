@@ -15,24 +15,13 @@
  * `.env` block and proves access by minting a token in a throwaway gcloud configuration.
  * Keys and tokens are written to owner-only files, never printed.
  */
-import {
-  chmodSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
 export type GcloudResult = { code: number; stdout: string; stderr: string };
-export type Gcloud = (
-  args: string[],
-  env?: Record<string, string>,
-) => GcloudResult;
+export type Gcloud = (args: string[], env?: Record<string, string>) => GcloudResult;
 export type Log = (line: string) => void;
 
 export const API_KEY_DISPLAY = "aphrody-full";
@@ -104,36 +93,25 @@ export const gcloud: Gcloud = (args, env) => {
   };
 };
 
-function must(
-  run: Gcloud,
-  args: string[],
-  env?: Record<string, string>,
-): string {
+function must(run: Gcloud, args: string[], env?: Record<string, string>): string {
   const result = run(args, env);
   if (result.code !== 0)
-    throw new Error(
-      `gcloud ${args.slice(0, 4).join(" ")} : ${result.stderr.trim() || result.code}`,
-    );
+    throw new Error(`gcloud ${args.slice(0, 4).join(" ")} : ${result.stderr.trim() || result.code}`);
   return result.stdout.trim();
 }
 
 export function validateProject(project: string): string {
-  if (!/^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(project))
-    throw new Error(`projet invalide : ${project}`);
+  if (!/^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(project)) throw new Error(`projet invalide : ${project}`);
   return project;
 }
 
 export function validateLocation(location: string): string {
-  if (!/^[a-z]+(?:-[a-z0-9]+)+$/.test(location))
-    throw new Error(`région invalide : ${location}`);
+  if (!/^[a-z]+(?:-[a-z0-9]+)+$/.test(location)) throw new Error(`région invalide : ${location}`);
   return location;
 }
 
 /** Non-secret runtime contract (gcloud, ADC, google-genai on Vertex, `aphrody google`). */
-export function runtimeEnvironment(
-  project: string,
-  location: string,
-): Record<string, string> {
+export function runtimeEnvironment(project: string, location: string): Record<string, string> {
   return {
     GOOGLE_CLOUD_PROJECT: project,
     GCLOUD_PROJECT: project,
@@ -169,8 +147,7 @@ export async function runtime(
     log(`GOOGLE_CLOUD_PROJECT=${project}`);
     log(`GOOGLE_CLOUD_LOCATION=${location}`);
   } else {
-    for (const [name, value] of Object.entries(env))
-      log(`export ${name}=${value}`);
+    for (const [name, value] of Object.entries(env)) log(`export ${name}=${value}`);
   }
   log(`ADC_PRESENT=${existsSync(adcPath())}`);
   log("No token, API key or credential content was read or printed.");
@@ -191,7 +168,7 @@ export function mergeEnvBlock(current: string, block: string): string {
   const owned = new RegExp(`^(?:${ENV_KEYS.join("|")})=`);
   const kept = current
     .split(/\r?\n/)
-    .filter((line) => !owned.test(line) && !line.startsWith(BLOCK_HEADER))
+    .filter(line => !owned.test(line) && !line.startsWith(BLOCK_HEADER))
     .join("\n")
     .trimEnd();
   return kept ? `${kept}\n\n${block}` : block;
@@ -291,39 +268,18 @@ export async function serviceAccount(
 
   step(`Activation de ${APIS.length} APIs (idempotent)`);
   for (let i = 0; i < APIS.length; i += 20)
-    must(run, [
-      "services",
-      "enable",
-      ...APIS.slice(i, i + 20),
-      "--project",
-      project,
-    ]);
+    must(run, ["services", "enable", ...APIS.slice(i, i + 20), "--project", project]);
 
   mkdirSync(secrets, { recursive: true });
   if (options.rotate || !existsSync(keyFile)) {
     step(`Génération clé JSON -> ${keyFile}`);
-    must(run, [
-      "iam",
-      "service-accounts",
-      "keys",
-      "create",
-      keyFile,
-      "--iam-account",
-      email,
-    ]);
+    must(run, ["iam", "service-accounts", "keys", "create", keyFile, "--iam-account", email]);
   } else step("Clé existante conservée (--rotate pour régénérer)");
-  if (!existsSync(keyFile))
-    throw new Error(`clé absente après création : ${keyFile}`);
+  if (!existsSync(keyFile)) throw new Error(`clé absente après création : ${keyFile}`);
   await ownerOnly(keyFile);
 
   step(`Clé API (${API_KEY_DISPLAY})`);
-  must(run, [
-    "services",
-    "enable",
-    "apikeys.googleapis.com",
-    "--project",
-    project,
-  ]);
+  must(run, ["services", "enable", "apikeys.googleapis.com", "--project", project]);
   const keyName = must(run, [
     "services",
     "api-keys",
@@ -334,13 +290,7 @@ export async function serviceAccount(
     "--format=value(name)",
   ]).split(/\r?\n/)[0];
   const apiKey = keyName
-    ? must(run, [
-        "services",
-        "api-keys",
-        "get-key-string",
-        keyName,
-        "--format=value(keyString)",
-      ])
+    ? must(run, ["services", "api-keys", "get-key-string", keyName, "--format=value(keyString)"])
     : must(run, [
         "services",
         "api-keys",
@@ -350,8 +300,7 @@ export async function serviceAccount(
         project,
         "--format=value(response.keyString)",
       ]);
-  if (!/^[\w-]{20,}$/.test(apiKey))
-    throw new Error("clé API absente ou illisible");
+  if (!/^[\w-]{20,}$/.test(apiKey)) throw new Error("clé API absente ou illisible");
   writeFileSync(apiKeyFile, apiKey);
   await ownerOnly(apiKeyFile);
   log(`    clé API prête (${apiKey.length} caractères).`);
@@ -372,30 +321,17 @@ export async function serviceAccount(
   const config = mkdtempSync(join(tmpdir(), "aphrody-gcp-"));
   try {
     const isolated = { CLOUDSDK_CONFIG: config };
-    must(
-      run,
-      ["auth", "activate-service-account", `--key-file=${keyFile}`],
-      isolated,
-    );
+    must(run, ["auth", "activate-service-account", `--key-file=${keyFile}`], isolated);
     const token = must(run, ["auth", "print-access-token"], isolated);
     if (!token) throw new Error("impossible de minter un token");
     const apis = must(
       run,
-      [
-        "services",
-        "list",
-        "--enabled",
-        "--project",
-        project,
-        "--format=value(config.name)",
-      ],
+      ["services", "list", "--enabled", "--project", project, "--format=value(config.name)"],
       isolated,
     )
       .split(/\r?\n/)
       .filter(Boolean).length;
-    log(
-      `    OK : token minté (${token.length} caractères), ${apis} APIs actives.`,
-    );
+    log(`    OK : token minté (${token.length} caractères), ${apis} APIs actives.`);
     return { email, keyFile, apis, token: token.length };
   } finally {
     rmSync(config, { recursive: true, force: true });
@@ -419,22 +355,16 @@ if (import.meta.main) {
   });
   try {
     if (values.help) console.log(USAGE);
-    else if (positionals[0] === "runtime")
-      await runtime(values.project, values.location);
+    else if (positionals[0] === "runtime") await runtime(values.project, values.location);
     else if (positionals[0] === "service-account") {
       const report = await serviceAccount({
         project: values.project,
         location: values.location,
         name: values.name,
-        root:
-          values.root ??
-          process.env.APHRODY_ROOT ??
-          resolve(import.meta.dir, "../../../../docs/aphrody"),
+        root: values.root ?? process.env.APHRODY_ROOT ?? resolve(import.meta.dir, "../../../../docs/aphrody"),
         rotate: values.rotate,
       });
-      console.log(
-        `Terminé. SA=${report.email}  clé=${report.keyFile}  APIs=${report.apis}`,
-      );
+      console.log(`Terminé. SA=${report.email}  clé=${report.keyFile}  APIs=${report.apis}`);
     } else {
       console.error(USAGE);
       process.exitCode = 2;

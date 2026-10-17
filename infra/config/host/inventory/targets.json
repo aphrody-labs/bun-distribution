@@ -35,12 +35,7 @@
           "building from a Windows filesystem mount when Linux filesystem performance or permissions are required"
         ]
       },
-      "toolchain": [
-        "rust",
-        "cargo",
-        "bun",
-        "uv"
-      ],
+      "toolchain": ["rust", "cargo", "bun", "uv"],
       "guiPolicy": "cosmic-native-headless-no-gtk-no-qt",
       "authority": "reproducible-build-and-check",
       "observation": {
@@ -53,12 +48,7 @@
       "id": "vps",
       "kind": "production-host",
       "os": "Ubuntu 26.04",
-      "applicationRoots": [
-        "/srv/aphrody",
-        "/srv/rg",
-        "/srv/shenron",
-        "/srv/aphrody-infra"
-      ],
+      "applicationRoots": ["/srv/aphrody", "/srv/rg", "/srv/shenron", "/srv/aphrody-infra"],
       "consumers": [
         "aphrody-site",
         "aphrody-web-api",
@@ -79,22 +69,14 @@
       "kind": "secondary-host",
       "os": "Ubuntu",
       "lifecycle": "active: postgresql@18 (shenron_site)",
-      "consumers": [
-        "postgresql",
-        "redis",
-        "asset-cdn",
-        "backups",
-        "release-slot"
-      ],
+      "consumers": ["postgresql", "redis", "asset-cdn", "backups", "release-slot"],
       "authority": "service-specific"
     },
     {
       "id": "nie-local-data",
       "kind": "historical-data-location-observation",
       "os": "Windows",
-      "consumers": [
-        "nie"
-      ],
+      "consumers": ["nie"],
       "authority": "owner-defined-location",
       "observation": {
         "observedAt": "2026-09-22",
@@ -107,9 +89,7 @@
       "id": "nie-repo",
       "kind": "historical-source-checkout-observation",
       "os": "Windows + WSL2",
-      "consumers": [
-        "nie"
-      ],
+      "consumers": ["nie"],
       "observation": {
         "observedAt": "2026-09-22",
         "source": "legacy target inventory in this repository",

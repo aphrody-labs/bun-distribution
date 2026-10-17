@@ -270,7 +270,7 @@ export async function inventoryCrates(root: string): Promise<Crate[]> {
       return rank[dv] > rank[v] ? dv : v;
     }, "ok");
   for (const c of crates) c.verdict = own(c);
-  for (let changed = true; changed; ) {
+  for (let changed = true; changed;) {
     changed = false;
     for (const c of crates) {
       for (const d of c.deps) {

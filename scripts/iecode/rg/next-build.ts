@@ -16,7 +16,8 @@ export function assertWorkspaceMember(root: string, app: string): void {
 export async function assertFreshBuild(app: string, startedAt: number): Promise<void> {
   const path = join(app, ".next", "BUILD_ID");
   const artifact = await stat(path);
-  if (!artifact.isFile() || artifact.mtimeMs < startedAt) throw new Error(`Next build output is missing or stale: ${path}`);
+  if (!artifact.isFile() || artifact.mtimeMs < startedAt)
+    throw new Error(`Next build output is missing or stale: ${path}`);
 }
 
 export async function buildNext(root: string, app: string, args: string[]): Promise<number> {

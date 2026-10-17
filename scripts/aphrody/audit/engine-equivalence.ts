@@ -20,13 +20,8 @@ const OBSCURA = join(OBSCURA_ROOT, "obscura-js/src");
 const OBSCURA_JS = join(OBSCURA_ROOT, "obscura-js/js");
 const WEBKIT_PREBUILT = process.env.APHRODY_WEBKIT_INCLUDE;
 if (!WEBKIT_PREBUILT)
-  throw new Error(
-    "Set APHRODY_WEBKIT_INCLUDE to the qualified build host's WebKit include directory",
-  );
-const VPS_JSC = [
-  posix.join(WEBKIT_PREBUILT, "JavaScriptCore"),
-  posix.join(WEBKIT_PREBUILT, "wtf"),
-];
+  throw new Error("Set APHRODY_WEBKIT_INCLUDE to the qualified build host's WebKit include directory");
+const VPS_JSC = [posix.join(WEBKIT_PREBUILT, "JavaScriptCore"), posix.join(WEBKIT_PREBUILT, "wtf")];
 
 interface Capability {
   id: string;
@@ -53,11 +48,7 @@ const CAPABILITIES: Capability[] = [
     name: "Several global contexts in one VM (frame realms)",
     v8: ["Context::from_snapshot", "ContextScope::new"],
     jsc: ["JSGlobalContextCreateInGroup", "JSContextGroupCreate"],
-    bun: [
-      "JSGlobalContextCreateInGroup",
-      "JSContextGroupCreate",
-      "createGlobalObject",
-    ],
+    bun: ["JSGlobalContextCreateInGroup", "JSContextGroupCreate", "createGlobalObject"],
     note: "A JSContextGroup holds several global contexts: compatible with frame realms.",
   },
   {
@@ -145,11 +136,7 @@ const CAPABILITIES: Capability[] = [
   {
     id: "rejections",
     name: "Unhandled and handled promise-rejection hooks and the uncaught-exception reporter",
-    v8: [
-      "setUnhandledPromiseRejectionHandler",
-      "setHandledPromiseRejectionHandler",
-      "setReportExceptionCallback",
-    ],
+    v8: ["setUnhandledPromiseRejectionHandler", "setHandledPromiseRejectionHandler", "setReportExceptionCallback"],
     v8Where: "obscura-js",
     jsc: ["promiseRejectionTracker", "reportUncaughtExceptionAtEventLoop"],
     bun: ["promiseRejectionTracker", "reportUncaughtExceptionAtEventLoop"],
@@ -158,10 +145,7 @@ const CAPABILITIES: Capability[] = [
 ];
 
 // Near-misses: symbols that exist but are NOT an equivalent (kept out of the status logic on purpose).
-const ADJACENT: Record<
-  string,
-  { jsc?: string[]; bun?: string[]; why: string }
-> = {
+const ADJACENT: Record<string, { jsc?: string[]; bun?: string[]; why: string }> = {
   "heap-limit": {
     jsc: ["gcMaxHeapSize", "forceRAMSize", "maxHeapSizeAsRAMSizeMultiple"],
     why: "At the WebKit pin 5718a6ec, Heap.cpp uses Options::gcMaxHeapSize as a GC-request threshold on bytes allocated in the cycle: it bounds garbage, not live memory, and has no callback or termination.",
@@ -184,16 +168,8 @@ const MITIGATIONS: {
   {
     id: "heap-limit",
     name: "Poll the heap from the host, then terminate",
-    jsc: [
-      "JSGetMemoryUsageStatistics",
-      "extraMemorySize",
-      "notifyNeedTermination",
-    ],
-    bun: [
-      "percentAvailableMemoryInUse",
-      "functionMemoryUsageStatistics",
-      "functionCreateMemoryFootprint",
-    ],
+    jsc: ["JSGetMemoryUsageStatistics", "extraMemorySize", "notifyNeedTermination"],
+    bun: ["percentAvailableMemoryInUse", "functionMemoryUsageStatistics", "functionCreateMemoryFootprint"],
     note: "bun:jsc exports heapStats, memoryUsage and percentAvailableMemoryInUse; the host would poll and call the termination path. Existence only: probe P1 of docs/plans/fusion/bench/METHOD.md must exercise it.",
   },
   {
@@ -240,10 +216,7 @@ async function hits(symbol: string, where: Where): Promise<number> {
           .nothrow()
           .quiet()
           .text()
-      : await $`rg -F -c --no-messages -e ${symbol} ${dir}`
-          .nothrow()
-          .quiet()
-          .text();
+      : await $`rg -F -c --no-messages -e ${symbol} ${dir}`.nothrow().quiet().text();
   let total = 0;
   for (const line of out.split("\n")) {
     const m = line.trim().match(/:(\d+)$/);
@@ -253,16 +226,11 @@ async function hits(symbol: string, where: Where): Promise<number> {
 }
 
 const symbols = async (list: string[], where: Where) =>
-  Object.fromEntries(
-    await Promise.all(
-      list.map(async (s) => [s, await hits(s, where)] as const),
-    ),
-  );
-const found = (r: Record<string, number>) =>
-  Object.values(r).some((n) => n > 0);
+  Object.fromEntries(await Promise.all(list.map(async s => [s, await hits(s, where)] as const)));
+const found = (r: Record<string, number>) => Object.values(r).some(n => n > 0);
 
 const receipt = await Promise.all(
-  CAPABILITIES.map(async (c) => {
+  CAPABILITIES.map(async c => {
     const [v8, jsc, bun] = await Promise.all([
       symbols(c.v8, c.v8Where ?? "obscura"),
       symbols(c.jsc, "jsc"),
@@ -298,18 +266,11 @@ const receipt = await Promise.all(
   }),
 );
 for (const r of receipt)
-  console.log(
-    r.status.padEnd(9),
-    r.id.padEnd(15),
-    JSON.stringify({ v8: r.v8, jsc: r.jsc, bun: r.bun }),
-  );
+  console.log(r.status.padEnd(9), r.id.padEnd(15), JSON.stringify({ v8: r.v8, jsc: r.jsc, bun: r.bun }));
 
 const mitigations = await Promise.all(
-  MITIGATIONS.map(async (m) => {
-    const [jsc, bun] = await Promise.all([
-      symbols(m.jsc, "jsc"),
-      symbols(m.bun, "bun"),
-    ]);
+  MITIGATIONS.map(async m => {
+    const [jsc, bun] = await Promise.all([symbols(m.jsc, "jsc"), symbols(m.bun, "bun")]);
     return {
       id: m.id,
       name: m.name,
@@ -321,18 +282,10 @@ const mitigations = await Promise.all(
   }),
 );
 for (const m of mitigations)
-  console.log(
-    m.status.padEnd(9),
-    `${m.id}/mitigation`.padEnd(15),
-    JSON.stringify({ jsc: m.jsc, bun: m.bun }),
-  );
+  console.log(m.status.padEnd(9), `${m.id}/mitigation`.padEnd(15), JSON.stringify({ jsc: m.jsc, bun: m.bun }));
 for (const r of receipt)
   if (r.adjacent)
-    console.log(
-      "adjacent ".padEnd(9),
-      r.id.padEnd(15),
-      JSON.stringify({ jsc: r.adjacent.jsc, bun: r.adjacent.bun }),
-    );
+    console.log("adjacent ".padEnd(9), r.id.padEnd(15), JSON.stringify({ jsc: r.adjacent.jsc, bun: r.adjacent.bun }));
 
 // Bun also ships a V8 C++ API shim over JSC (node-addon compatibility). rusty_v8 links the real V8, so the
 // shim cannot run Obscura's engine layer; it is probed to record which Obscura-used V8 C++ calls it implements.
@@ -357,12 +310,8 @@ if (process.argv.includes("--write")) {
   const pins = {
     webkit: "5718a6ec579b98362ea7276a426deedcc6281ef5",
     bunFork: (await $`git -C ${BUN_CHECKOUT} rev-parse HEAD`.text()).trim(),
-    rustyV8:
-      "v8 crate 150.4.0 (denoland/rusty_v8 tag v150.4.0, 5c15a6995c9bb4bacd3e341b59fff32c909c80bf)",
-    forks: [
-      "aphrody-labs/WebKit@bun-pin",
-      "aphrody-labs/rusty_v8@obscura-pin-v150.4.0",
-    ],
+    rustyV8: "v8 crate 150.4.0 (denoland/rusty_v8 tag v150.4.0, 5c15a6995c9bb4bacd3e341b59fff32c909c80bf)",
+    forks: ["aphrody-labs/WebKit@bun-pin", "aphrody-labs/rusty_v8@obscura-pin-v150.4.0"],
   };
   const bunV8Shim = {
     path: "src/jsc/bindings/v8",
@@ -371,10 +320,6 @@ if (process.argv.includes("--write")) {
   };
   await Bun.write(
     join(ROOT, "docs/plans/fusion/engine-equivalence-2026-10-05.json"),
-    JSON.stringify(
-      { pins, capabilities: receipt, mitigations, bunV8Shim },
-      null,
-      2,
-    ) + "\n",
+    JSON.stringify({ pins, capabilities: receipt, mitigations, bunV8Shim }, null, 2) + "\n",
   );
 }

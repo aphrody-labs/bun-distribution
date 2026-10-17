@@ -5,13 +5,7 @@
 // docs/operations/os/WINDEX.md. Results go to stdout as JSON, progress to stderr.
 import { parseArgs } from "node:util";
 import { cachedNode, cachedQuery, connectRedis } from "./cache.ts";
-import {
-  loadConfig,
-  normalizeRoot,
-  underRoot,
-  type Config,
-  type HashMode,
-} from "./config.ts";
+import { loadConfig, normalizeRoot, underRoot, type Config, type HashMode } from "./config.ts";
 import { ps, up } from "./containers.ts";
 import { driveDir, exportSnapshot } from "./ndjson.ts";
 import { connect, migrate } from "./pg.ts";
@@ -61,23 +55,15 @@ const { values: opt, positionals } = parseArgs({
   },
 });
 
-const log = (msg: string) =>
-  console.error(`[windex ${new Date().toLocaleTimeString("fr-FR")}] ${msg}`);
-const out = (v: unknown) =>
-  console.log(
-    JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? x.toString() : x), 2),
-  );
+const log = (msg: string) => console.error(`[windex ${new Date().toLocaleTimeString("fr-FR")}] ${msg}`);
+const out = (v: unknown) => console.log(JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? x.toString() : x), 2));
 
 function defaultsFor(root: string): { hash: HashMode; graph: boolean } {
   const inWindows = underRoot(root, `${root.slice(0, 2)}\\Windows`);
   return { hash: inWindows ? "all" : "pe", graph: inWindows };
 }
 
-async function withSql<T>(
-  cfg: Config,
-  fn: (sql: ReturnType<typeof connect>) => Promise<T>,
-  max = 6,
-): Promise<T> {
+async function withSql<T>(cfg: Config, fn: (sql: ReturnType<typeof connect>) => Promise<T>, max = 6): Promise<T> {
   const sql = connect(cfg, max);
   try {
     return await fn(sql);
@@ -118,12 +104,11 @@ async function main(): Promise<number> {
       const root = normalizeRoot(opt.root ?? "C:\\Windows\\System32");
       const d = defaultsFor(root);
       const hash = (opt.hash as HashMode | undefined) ?? d.hash;
-      if (!["all", "pe", "none"].includes(hash))
-        throw new Error(`--hash invalide : ${hash}`);
+      if (!["all", "pe", "none"].includes(hash)) throw new Error(`--hash invalide : ${hash}`);
       const pool = new Pool(cfg.workers);
       const redis = await tryRedis(cfg);
       try {
-        const report = await withSql(cfg, async (sql) => {
+        const report = await withSql(cfg, async sql => {
           await migrate(sql);
           return await scan(
             cfg,
@@ -152,16 +137,7 @@ async function main(): Promise<number> {
     case "catalog": {
       const pool = new Pool(cfg.workers);
       try {
-        out(
-          await withSql(cfg, (sql) =>
-            catalogPass(
-              sql,
-              pool,
-              opt.root ? normalizeRoot(opt.root) : undefined,
-              log,
-            ),
-          ),
-        );
+        out(await withSql(cfg, sql => catalogPass(sql, pool, opt.root ? normalizeRoot(opt.root) : undefined, log)));
       } finally {
         pool.close();
       }
@@ -169,7 +145,7 @@ async function main(): Promise<number> {
     }
     case "system":
       out(
-        await withSql(cfg, async (sql) => ({
+        await withSql(cfg, async sql => ({
           apiset: await loadApiSet(sql),
           services: await loadServices(sql),
         })),
@@ -179,7 +155,7 @@ async function main(): Promise<number> {
       if (!rest[0]) throw new Error("chemin manquant");
       const redis = await connectRedis(cfg);
       try {
-        out(await withSql(cfg, (sql) => cachedNode(redis, sql, rest[0]!)));
+        out(await withSql(cfg, sql => cachedNode(redis, sql, rest[0]!)));
       } finally {
         redis.close();
       }
@@ -187,24 +163,20 @@ async function main(): Promise<number> {
     }
     case "graph": {
       if (!rest[0]) throw new Error("chemin manquant");
-      out(await withSql(cfg, (sql) => peGraph(sql, rest[0]!)));
+      out(await withSql(cfg, sql => peGraph(sql, rest[0]!)));
       return 0;
     }
     case "stats": {
       const redis = await connectRedis(cfg);
       try {
-        out(
-          await withSql(cfg, (sql) =>
-            cachedQuery(redis, "stats", () => stats(sql)),
-          ),
-        );
+        out(await withSql(cfg, sql => cachedQuery(redis, "stats", () => stats(sql))));
       } finally {
         redis.close();
       }
       return 0;
     }
     case "rag": {
-      const cards = await withSql(cfg, (sql) => buildCards(sql, cfg));
+      const cards = await withSql(cfg, sql => buildCards(sql, cfg));
       log(
         `fiches : ${cards.cards} (${cards.written} écrites, ${cards.removed} retirées) en ${Math.round(cards.ms)} ms`,
       );
@@ -219,23 +191,16 @@ async function main(): Promise<number> {
     }
     case "export": {
       const root = normalizeRoot(opt.root ?? "C:\\");
-      out(
-        await withSql(cfg, (sql) =>
-          exportSnapshot(sql, root, driveDir(cfg.dir, root)),
-        ),
-      );
+      out(await withSql(cfg, sql => exportSnapshot(sql, root, driveDir(cfg.dir, root))));
       return 0;
     }
     case "status": {
       const containers = await ps(cfg);
-      const r = await withSql(cfg, async (sql) => ({
-        migrations:
-          await sql`SELECT version, name, applied_at FROM public.windex_schema_migrations ORDER BY version`,
-        roots:
-          await sql`SELECT path, hash_mode, graph, scanned_at, entries, files, pe_files, errors, duration_ms
+      const r = await withSql(cfg, async sql => ({
+        migrations: await sql`SELECT version, name, applied_at FROM public.windex_schema_migrations ORDER BY version`,
+        roots: await sql`SELECT path, hash_mode, graph, scanned_at, entries, files, pe_files, errors, duration_ms
           FROM windex.root ORDER BY path_lc`,
-        volume:
-          await sql`SELECT letter, serial, journal_id::text, next_usn::text, updated_at FROM windex.volume`,
+        volume: await sql`SELECT letter, serial, journal_id::text, next_usn::text, updated_at FROM windex.volume`,
       }));
       console.error(containers.trim());
       out(r);
@@ -262,22 +227,17 @@ async function main(): Promise<number> {
 }
 
 async function peGraph(sql: ReturnType<typeof connect>, path: string) {
-  const [node] =
-    await sql`SELECT f.id, f.path, p.kind, p.machine, p.signature, p.signer, p.file_version
+  const [node] = await sql`SELECT f.id, f.path, p.kind, p.machine, p.signature, p.signer, p.file_version
     FROM windex.fs_node f JOIN windex.pe p ON p.node_id = f.id WHERE f.path_lc = ${path.replaceAll("/", "\\").toLowerCase()}`;
   if (!node) return null;
-  const imports =
-    await sql`SELECT e.label AS module, t.path AS resolved FROM windex.edge e
+  const imports = await sql`SELECT e.label AS module, t.path AS resolved FROM windex.edge e
     JOIN windex.fs_node t ON t.id = e.dst WHERE e.src = ${node.id} AND e.kind = 'imports' ORDER BY e.label`;
-  const unresolved =
-    await sql`SELECT i.module FROM windex.pe_import i WHERE i.node_id = ${node.id}
+  const unresolved = await sql`SELECT i.module FROM windex.pe_import i WHERE i.node_id = ${node.id}
     AND NOT EXISTS (SELECT 1 FROM windex.edge e WHERE e.src = i.node_id AND e.kind = 'imports' AND e.label = i.module)
     ORDER BY i.module`;
-  const importers =
-    await sql`SELECT s.path, e.label AS as_module FROM windex.edge e
+  const importers = await sql`SELECT s.path, e.label AS as_module FROM windex.edge e
     JOIN windex.fs_node s ON s.id = e.src WHERE e.dst = ${node.id} AND e.kind = 'imports' ORDER BY s.path`;
-  const services =
-    await sql`SELECT s.name, e.kind, e.label FROM windex.edge e JOIN windex.service s ON s.id = e.src
+  const services = await sql`SELECT s.name, e.kind, e.label FROM windex.edge e JOIN windex.service s ON s.id = e.src
     WHERE e.dst = ${node.id} AND e.kind IN ('service', 'driver') ORDER BY s.name`;
   return {
     ...node,
@@ -300,10 +260,8 @@ async function stats(sql: ReturnType<typeof connect>) {
       (SELECT count(*)::int FROM windex.service) AS services,
       (SELECT count(*)::int FROM windex.apiset) AS apiset,
       (SELECT count(*)::int FROM windex.symbol) AS symbols`;
-  const pe =
-    await sql`SELECT kind, signature, count(*)::int AS n FROM windex.pe GROUP BY 1, 2 ORDER BY 1, 2`;
-  const edges =
-    await sql`SELECT kind, count(*)::int AS n FROM windex.graph_edge GROUP BY 1 ORDER BY 1`;
+  const pe = await sql`SELECT kind, signature, count(*)::int AS n FROM windex.pe GROUP BY 1, 2 ORDER BY 1, 2`;
+  const edges = await sql`SELECT kind, count(*)::int AS n FROM windex.graph_edge GROUP BY 1 ORDER BY 1`;
   return { ...s, pe_by_kind: pe, edges };
 }
 

@@ -44,8 +44,7 @@ export class Discord {
     private readonly token: string,
     readonly guildId: string,
     private readonly fetchFn: FetchLike = fetch,
-    private readonly sleep: (ms: number) => Promise<void> = (ms) =>
-      new Promise((r) => setTimeout(r, ms)),
+    private readonly sleep: (ms: number) => Promise<void> = ms => new Promise(r => setTimeout(r, ms)),
   ) {}
 
   async req<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -63,17 +62,10 @@ export class Discord {
         const j = (await res.json().catch(() => ({}))) as {
           retry_after?: number;
         };
-        await this.sleep(
-          Math.min(10_000, Math.ceil((j.retry_after ?? 1) * 1000)),
-        );
+        await this.sleep(Math.min(10_000, Math.ceil((j.retry_after ?? 1) * 1000)));
         continue;
       }
-      if (!res.ok)
-        throw new DiscordError(
-          res.status,
-          method,
-          path.replace(/\d{15,}/g, "#"),
-        );
+      if (!res.ok) throw new DiscordError(res.status, method, path.replace(/\d{15,}/g, "#"));
       if (res.status === 204) return undefined as T;
       return (await res.json()) as T;
     }
@@ -97,11 +89,7 @@ export class Discord {
           attachments: [{ id: 0, filename: name }],
         }),
       );
-      form.set(
-        "files[0]",
-        new Blob([content], { type: "text/markdown" }),
-        name,
-      );
+      form.set("files[0]", new Blob([content], { type: "text/markdown" }), name);
       const res = await this.fetchFn(`https://discord.com/api/v10${path}`, {
         method,
         headers: {
@@ -114,25 +102,17 @@ export class Discord {
         const j = (await res.json().catch(() => ({}))) as {
           retry_after?: number;
         };
-        await this.sleep(
-          Math.min(10_000, Math.ceil((j.retry_after ?? 1) * 1000)),
-        );
+        await this.sleep(Math.min(10_000, Math.ceil((j.retry_after ?? 1) * 1000)));
         continue;
       }
-      if (!res.ok)
-        throw new DiscordError(
-          res.status,
-          method,
-          path.replace(/d{15,}/g, "#"),
-        );
+      if (!res.ok) throw new DiscordError(res.status, method, path.replace(/d{15,}/g, "#"));
       return (await res.json()) as Message;
     }
     throw new DiscordError(429, method, path.replace(/d{15,}/g, "#"));
   }
 
   me = () => this.req<{ id: string; username: string }>("GET", "/users/@me");
-  channels = () =>
-    this.req<Channel[]>("GET", `/guilds/${this.guildId}/channels`);
+  channels = () => this.req<Channel[]>("GET", `/guilds/${this.guildId}/channels`);
   createChannel = (body: Record<string, unknown>) =>
     this.req<Channel>("POST", `/guilds/${this.guildId}/channels`, body);
   messages = (channel: string, query = "limit=50") =>
@@ -141,17 +121,11 @@ export class Discord {
     this.req<Message>("POST", `/channels/${channel}/messages`, body);
   edit = (channel: string, id: string, body: Record<string, unknown>) =>
     this.req<Message>("PATCH", `/channels/${channel}/messages/${id}`, body);
-  remove = (channel: string, id: string) =>
-    this.req<void>("DELETE", `/channels/${channel}/messages/${id}`);
-  pin = (channel: string, id: string) =>
-    this.req<void>("PUT", `/channels/${channel}/pins/${id}`);
-  pins = (channel: string) =>
-    this.req<Message[]>("GET", `/channels/${channel}/pins`);
+  remove = (channel: string, id: string) => this.req<void>("DELETE", `/channels/${channel}/messages/${id}`);
+  pin = (channel: string, id: string) => this.req<void>("PUT", `/channels/${channel}/pins/${id}`);
+  pins = (channel: string) => this.req<Message[]>("GET", `/channels/${channel}/pins`);
   react = (channel: string, id: string, emoji: string) =>
-    this.req<void>(
-      "PUT",
-      `/channels/${channel}/messages/${id}/reactions/${encodeURIComponent(emoji)}/@me`,
-    );
+    this.req<void>("PUT", `/channels/${channel}/messages/${id}/reactions/${encodeURIComponent(emoji)}/@me`);
   reactors = (channel: string, id: string, emoji: string) =>
     this.req<{ id: string; username: string; bot?: boolean }[]>(
       "GET",

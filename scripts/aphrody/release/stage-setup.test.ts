@@ -15,17 +15,13 @@ describe("setup compiler selection", () => {
     });
     expect(argv[0]).toBe(executable);
     expect(argv).not.toContain("bun");
-    expect(argv.some((arg) => arg.startsWith("--target"))).toBe(false);
+    expect(argv.some(arg => arg.startsWith("--target"))).toBe(false);
     expect(argv.at(-1)).toBe(outfile);
   });
 
   test("other build hosts retain the Windows x64 target and qualified artifact path", () => {
     const executable = join(tmpdir(), "build runtime", "bun");
-    const targetExecutable = join(
-      tmpdir(),
-      "qualified Windows runtime",
-      "bun.exe",
-    );
+    const targetExecutable = join(tmpdir(), "qualified Windows runtime", "bun.exe");
     const outfile = join(tmpdir(), "release pack", "Aphrody-Setup.exe");
     for (const platform of ["linux", "darwin", "win32"] as const) {
       const argv = setupCompileCommand(outfile, {
@@ -36,9 +32,7 @@ describe("setup compiler selection", () => {
       });
       expect(argv[0]).toBe(executable);
       expect(argv).toContain("--target=bun-windows-x64");
-      expect(argv[argv.indexOf("--compile-executable-path") + 1]).toBe(
-        targetExecutable,
-      );
+      expect(argv[argv.indexOf("--compile-executable-path") + 1]).toBe(targetExecutable);
       expect(argv.at(-1)).toBe(outfile);
     }
   });

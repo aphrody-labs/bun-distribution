@@ -14,14 +14,7 @@
  *   bun scripts/iecode/tools/data/data-compression.ts info-cpk <path-to-cpk>
  */
 
-import {
-  createReadStream,
-  existsSync,
-  readdirSync,
-  statSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
+import { createReadStream, existsSync, readdirSync, statSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve, relative, join } from "node:path";
 import { createHash } from "node:crypto";
 
@@ -95,9 +88,7 @@ export async function generateManifest(): Promise<void> {
     manifest.totalBytes += size;
     processed++;
     if (processed % 100 === 0 || processed === allFiles.length) {
-      process.stdout.write(
-        `\r[data-compression] Traité: ${processed}/${allFiles.length} fichiers...`,
-      );
+      process.stdout.write(`\r[data-compression] Traité: ${processed}/${allFiles.length} fichiers...`);
     }
   }
   process.stdout.write("\n");
@@ -115,9 +106,7 @@ export async function verifyIntegrity(): Promise<boolean> {
   }
 
   const manifest: ManifestData = JSON.parse(readFileSync(manifestPath, "utf8"));
-  console.log(
-    `[data-compression] Vérification de ${manifest.totalFiles} fichiers par rapport au manifeste...`,
-  );
+  console.log(`[data-compression] Vérification de ${manifest.totalFiles} fichiers par rapport au manifeste...`);
 
   let valid = 0;
   let corrupted = 0;
@@ -133,9 +122,7 @@ export async function verifyIntegrity(): Promise<boolean> {
 
     const { sha256, size } = await computeFileSha256(fullPath);
     if (size !== expected.size || sha256 !== expected.sha256) {
-      console.error(
-        `[ERREUR] Altération détectée : ${relPath} (attendu ${expected.sha256}, obtenu ${sha256})`,
-      );
+      console.error(`[ERREUR] Altération détectée : ${relPath} (attendu ${expected.sha256}, obtenu ${sha256})`);
       corrupted++;
     } else {
       valid++;
@@ -164,19 +151,7 @@ export async function compressData(format = "7z"): Promise<void> {
     const p7z = getBest7z();
     // 7z LZMA2 ultra solid, dictionnaire 64M, filtres de match étendus
     const proc = Bun.spawnSync(
-      [
-        p7z,
-        "a",
-        "-t7z",
-        "-m0=lzma2",
-        "-mx=9",
-        "-mfb=273",
-        "-md=64m",
-        "-ms=on",
-        "-y",
-        archive7z,
-        "data/",
-      ],
+      [p7z, "a", "-t7z", "-m0=lzma2", "-mx=9", "-mfb=273", "-md=64m", "-ms=on", "-y", archive7z, "data/"],
       { cwd: root, stdout: "inherit", stderr: "inherit" },
     );
     if (proc.exitCode !== 0) throw new Error("Échec de la compression 7z.");
@@ -185,10 +160,11 @@ export async function compressData(format = "7z"): Promise<void> {
     );
   } else if (format === "zstd") {
     if (!findCommand("zstd")) throw new Error("zstd n'est pas disponible.");
-    const proc = Bun.spawnSync(
-      ["sh", "-c", `tar -cf - data/ | zstd --ultra -22 -T0 -o "${archiveZst}"`],
-      { cwd: root, stdout: "inherit", stderr: "inherit" },
-    );
+    const proc = Bun.spawnSync(["sh", "-c", `tar -cf - data/ | zstd --ultra -22 -T0 -o "${archiveZst}"`], {
+      cwd: root,
+      stdout: "inherit",
+      stderr: "inherit",
+    });
     if (proc.exitCode !== 0) throw new Error("Échec de la compression Zstandard.");
     console.log(
       `[data-compression] Archive créée : ${archiveZst} (${(statSync(archiveZst).size / 1024 / 1024 / 1024).toFixed(2)} Go).`,
@@ -233,9 +209,7 @@ export async function decompressData(): Promise<void> {
     if (proc.exitCode !== 0) throw new Error("Échec de la décompression zstd.");
   }
 
-  console.log(
-    "[data-compression] Décompression achevée. Vérification de l'intégrité SHA-256 sans perte...",
-  );
+  console.log("[data-compression] Décompression achevée. Vérification de l'intégrité SHA-256 sans perte...");
   const ok = await verifyIntegrity();
   if (!ok) {
     throw new Error("[data-compression] ALERTE : Données décompressées incomplètes ou corrompues.");
@@ -280,9 +254,7 @@ export function inspectCpk(cpkPath: string): void {
   const magic = fd.subarray(0, 4).toString("ascii");
   console.log(`Magic  : "${magic}" (attendu "CPK " ou chiffré)`);
   if (magic !== "CPK ") {
-    console.log(
-      `Note   : Ce CPK est chiffré par CRI XOR. Le décodage utilise la clé CRC32 du nom de fichier.`,
-    );
+    console.log(`Note   : Ce CPK est chiffré par CRI XOR. Le décodage utilise la clé CRC32 du nom de fichier.`);
   }
 }
 

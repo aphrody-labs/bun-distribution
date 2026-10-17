@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Fresh-process CLI latency. No VM reuse, cache eviction, compilation or installation. */
-import {
-  mkdtempSync,
-  realpathSync,
-  rmSync,
-  statSync,
-  mkdirSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, realpathSync, rmSync, statSync, mkdirSync, writeFileSync } from "node:fs";
 import { homedir, loadavg, release, tmpdir, cpus } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
@@ -35,21 +28,12 @@ interface Pair {
   readonly reference: Sample;
   readonly candidate: Sample;
 }
-const sha256 = (data: string | Uint8Array) =>
-  new Bun.CryptoHasher("sha256").update(data).digest("hex");
+const sha256 = (data: string | Uint8Array) => new Bun.CryptoHasher("sha256").update(data).digest("hex");
 
 function validate(options: StartupOptions): void {
-  if (
-    !Number.isInteger(options.samples) ||
-    options.samples < 10 ||
-    options.samples > 100
-  )
+  if (!Number.isInteger(options.samples) || options.samples < 10 || options.samples > 100)
     throw new Error("samples must be an integer in 10..100");
-  if (
-    !Number.isInteger(options.warmupPairs) ||
-    options.warmupPairs < 0 ||
-    options.warmupPairs > 20
-  )
+  if (!Number.isInteger(options.warmupPairs) || options.warmupPairs < 0 || options.warmupPairs > 20)
     throw new Error("warmupPairs must be an integer in 0..20");
   const timeout = options.timeoutMs ?? 3000;
   if (!Number.isInteger(timeout) || timeout < 1 || timeout > 5000)
@@ -70,11 +54,8 @@ function invoke(command: StartupCommand, options: StartupOptions): Sample {
   });
   const elapsedMs = (Bun.nanoseconds() - started) / 1e6;
   if (process.exitCode !== 0 || process.stderr.byteLength !== 0)
-    throw new Error(
-      `${command.id} failed (exit ${process.exitCode}, signal ${process.signalCode})`,
-    );
-  if (process.stdout.toString() !== command.stdout)
-    throw new Error(`${command.id} output identity changed`);
+    throw new Error(`${command.id} failed (exit ${process.exitCode}, signal ${process.signalCode})`);
+  if (process.stdout.toString() !== command.stdout) throw new Error(`${command.id} output identity changed`);
   return {
     elapsedMs,
     exitCode: process.exitCode,
@@ -104,33 +85,24 @@ export function measureStartupComparison(
 ) {
   validate(options);
   const pair = (index: number): Pair => {
-    const order =
-      index % 2 === 0 ? [reference, candidate] : [candidate, reference];
+    const order = index % 2 === 0 ? [reference, candidate] : [candidate, reference];
     const first = invoke(order[0]!, options);
     const second = invoke(order[1]!, options);
     return {
       index,
-      order: order.map((command) => command.id),
+      order: order.map(command => command.id),
       reference: index % 2 === 0 ? first : second,
       candidate: index % 2 === 0 ? second : first,
     };
   };
   const series = () => {
-    const pairs = Array.from({ length: options.samples }, (_, index) =>
-      pair(index),
-    );
+    const pairs = Array.from({ length: options.samples }, (_, index) => pair(index));
     return {
       summary: {
-        referenceMs: distribution(
-          pairs.map((entry) => entry.reference.elapsedMs),
-        ),
-        candidateMs: distribution(
-          pairs.map((entry) => entry.candidate.elapsedMs),
-        ),
+        referenceMs: distribution(pairs.map(entry => entry.reference.elapsedMs)),
+        candidateMs: distribution(pairs.map(entry => entry.candidate.elapsedMs)),
         pairedCandidateMinusReferenceMs: distribution(
-          pairs.map(
-            (entry) => entry.candidate.elapsedMs - entry.reference.elapsedMs,
-          ),
+          pairs.map(entry => entry.candidate.elapsedMs - entry.reference.elapsedMs),
         ),
       },
       pairs,
@@ -154,11 +126,7 @@ async function fingerprint(file: string) {
   return { path, bytes: statSync(path).size, sha256: hasher.digest("hex") };
 }
 
-function probe(
-  argv: string[],
-  cwd: string,
-  env: Record<string, string>,
-): string {
+function probe(argv: string[], cwd: string, env: Record<string, string>): string {
   const result = Bun.spawnSync(argv, {
     windowsHide: true,
     cwd,
@@ -181,24 +149,16 @@ export async function runStartupBenchmark(
     bun?: string;
   } = {},
 ) {
-  const root = resolve(
-    options.repository ?? join(import.meta.dir, "../../../../docs/aphrody"),
-  );
+  const root = resolve(options.repository ?? join(import.meta.dir, "../../../../docs/aphrody"));
   const bun = realpathSync(options.bun ?? Bun.which("bun") ?? process.execPath);
-  const installed = resolve(
-    options.installedYolo ?? join(homedir(), ".yolo/bin/yolo"),
-  );
+  const installed = resolve(options.installedYolo ?? join(homedir(), ".yolo/bin/yolo"));
   const launcher = join(root, "scripts/dev/cli/yolo");
   const cwd = mkdtempSync(join(tmpdir(), "yolo-startup-"));
   const env = {
-    PATH: [dirname(bun), "/usr/bin", "/bin"].join(
-      process.platform === "win32" ? ";" : ":",
-    ),
+    PATH: [dirname(bun), "/usr/bin", "/bin"].join(process.platform === "win32" ? ";" : ":"),
     HOME: cwd,
     NO_COLOR: "1",
-    ...(process.platform === "win32"
-      ? { SystemRoot: process.env.SystemRoot ?? "C:\\Windows" }
-      : {}),
+    ...(process.platform === "win32" ? { SystemRoot: process.env.SystemRoot ?? "C:\\Windows" } : {}),
   };
   try {
     const settings: StartupOptions = {
@@ -208,20 +168,13 @@ export async function runStartupBenchmark(
       env,
     };
     validate(settings);
-    const files = [
-      bun,
-      installed,
-      launcher,
-      join(root, "packages/engine/yolo/src/index.ts"),
-      join(root, "VERSION"),
-    ];
+    const files = [bun, installed, launcher, join(root, "packages/engine/yolo/src/index.ts"), join(root, "VERSION")];
     const before = await Promise.all(files.map(fingerprint));
     const installedLine = probe([installed, "version"], cwd, env);
     const sourceLine = probe([launcher, "version"], cwd, env);
     const bunLine = probe([bun, "--version"], cwd, env);
     for (const line of [installedLine, sourceLine])
-      if (!/^yolo \S+ \(\S+, Bun \S+\)\n$/.test(line))
-        throw new Error("Expected a Yolo version-line workload");
+      if (!/^yolo \S+ \(\S+, Bun \S+\)\n$/.test(line)) throw new Error("Expected a Yolo version-line workload");
     const reference: StartupCommand = {
       id: "bun-cli-version",
       argv: [bun, "--version"],
@@ -239,11 +192,7 @@ export async function runStartupBenchmark(
     };
     const identicalLine: StartupCommand = {
       id: "bun-js-print-installed-version-line",
-      argv: [
-        bun,
-        "-e",
-        `console.log(${JSON.stringify(installedLine.trimEnd())})`,
-      ],
+      argv: [bun, "-e", `console.log(${JSON.stringify(installedLine.trimEnd())})`],
       stdout: installedLine,
     };
     const loadBefore = loadavg();
@@ -255,9 +204,7 @@ export async function runStartupBenchmark(
     const loadAfter = loadavg();
     const after = await Promise.all(files.map(fingerprint));
     if (before.some((file, index) => file.sha256 !== after[index]?.sha256))
-      throw new Error(
-        "Measured executable or source files changed during the benchmark",
-      );
+      throw new Error("Measured executable or source files changed during the benchmark");
     const installedHelp = probe([installed, "--help"], cwd, env);
     return {
       schema: "yolo.startup-benchmark/1",
@@ -273,29 +220,18 @@ export async function runStartupBenchmark(
       tool: { bunVersion: Bun.version, bunRevision: Bun.revision },
       provenance: {
         files: before,
-        sourceCommit: probe(
-          ["git", "-C", root, "rev-parse", "HEAD"],
-          cwd,
-          env,
-        ).trim(),
-        sourceDirty:
-          probe(
-            ["git", "-C", root, "status", "--porcelain", "-uno"],
-            cwd,
-            env,
-          ) !== "",
+        sourceCommit: probe(["git", "-C", root, "rev-parse", "HEAD"], cwd, env).trim(),
+        sourceDirty: probe(["git", "-C", root, "status", "--porcelain", "-uno"], cwd, env) !== "",
         installedVersionLine: installedLine.trimEnd(),
         sourceVersionLine: sourceLine.trimEnd(),
-        installedBunRevision:
-          installedHelp.match(/Runtime: Bun \S+ \(([^)]+)\)/)?.[1] ?? null,
+        installedBunRevision: installedHelp.match(/Runtime: Bun \S+ \(([^)]+)\)/)?.[1] ?? null,
         globalBunRevision: probe([bun, "--revision"], cwd, env).trim(),
         installedSourceCommit: null,
       },
       protocol: {
         samplesPerCommandPerSeries: settings.samples,
         unmeasuredWarmupPairsBeforePrimedSeries: settings.warmupPairs,
-        order:
-          "Alternating reference/candidate and candidate/reference; sequential, no competing benchmark children",
+        order: "Alternating reference/candidate and candidate/reference; sequential, no competing benchmark children",
         timing:
           "Parent Bun.spawnSync call through captured stdout/stderr and process exit; includes spawn/wait/collection overhead",
         initialFreshProcesses:
@@ -316,9 +252,7 @@ export async function runStartupBenchmark(
   }
 }
 
-export async function runStartupBenchCli(
-  args: readonly string[],
-): Promise<number> {
+export async function runStartupBenchCli(args: readonly string[]): Promise<number> {
   if (args.includes("--help") || args.includes("-h")) {
     console.log(
       "Usage: bun scripts/bench/startup.ts [--samples 10..100] [--warmup-pairs 0..20] [--installed FILE] [--out FILE]. Measures fresh version-command processes; no builds/installations or desktop/VM parity claim.",
@@ -329,15 +263,10 @@ export async function runStartupBenchCli(
   let out: string | undefined;
   for (let index = 0; index < args.length; index++) {
     const argument = args[index];
-    if (
-      !["--samples", "--warmup-pairs", "--installed", "--out"].includes(
-        argument!,
-      )
-    )
+    if (!["--samples", "--warmup-pairs", "--installed", "--out"].includes(argument!))
       throw new Error("Unknown startup option: " + argument);
     const value = args[++index];
-    if (!value || value.startsWith("--"))
-      throw new Error("Missing value for " + argument);
+    if (!value || value.startsWith("--")) throw new Error("Missing value for " + argument);
     if (argument === "--samples") options.samples = Number(value);
     else if (argument === "--warmup-pairs") options.warmupPairs = Number(value);
     else if (argument === "--installed") options.installedYolo = value;

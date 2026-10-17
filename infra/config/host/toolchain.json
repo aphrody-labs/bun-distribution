@@ -2,24 +2,12 @@
   "schemaVersion": 1,
   "owner": "aphrody-infra",
   "generatedAt": "2026-10-04",
-  "hosts": [
-    "wsl",
-    "windows",
-    "vps",
-    "dbfr"
-  ],
+  "hosts": ["wsl", "windows", "vps", "dbfr"],
   "policy": {
     "canonicalSource": "one source per tool and host; shadowed duplicates removed",
     "path": "per-user bin dirs only (~/.cargo/bin, ~/.bun/bin, ~/.local/bin); PATH and profiles are owned by aphrody-claude user/shell, never edited here",
     "cargo": "no Cargo build: toolchains via rustup, tools via cargo-binstall with compile strategy disabled",
-    "untouched": [
-      "services",
-      "nginx",
-      "systemd units",
-      "databases",
-      "models",
-      "persistent stores"
-    ]
+    "untouched": ["services", "nginx", "systemd units", "databases", "models", "persistent stores"]
   },
   "versions": {
     "rust": "1.98.1",
@@ -44,17 +32,8 @@
     "python313": "3.13"
   },
   "rustToolchain": {
-    "components": [
-      "rustfmt",
-      "clippy",
-      "rust-src",
-      "rust-analyzer"
-    ],
-    "targets": [
-      "x86_64-pc-windows-msvc",
-      "wasm32-unknown-unknown",
-      "wasm32-wasip1"
-    ]
+    "components": ["rustfmt", "clippy", "rust-src", "rust-analyzer"],
+    "targets": ["x86_64-pc-windows-msvc", "wasm32-unknown-unknown", "wasm32-wasip1"]
   },
   "binstall": [
     "nu@0.116.0",
@@ -71,26 +50,8 @@
     "zoxide",
     "cargo-nextest"
   ],
-  "apt": [
-    "git",
-    "curl",
-    "openssh-client",
-    "rsync",
-    "zstd",
-    "pigz",
-    "mosh",
-    "ripgrep",
-    "eza",
-    "nodejs"
-  ],
-  "aptRemovedAsShadowed": [
-    "bat",
-    "fd-find",
-    "just",
-    "sccache",
-    "rclone",
-    "gh"
-  ],
+  "apt": ["git", "curl", "openssh-client", "rsync", "zstd", "pigz", "mosh", "ripgrep", "eza", "nodejs"],
+  "aptRemovedAsShadowed": ["bat", "fd-find", "just", "sccache", "rclone", "gh"],
   "bunGlobal": [
     "typescript@7.0.2",
     "@typescript/native-preview",
@@ -119,10 +80,7 @@
     "context-mode",
     "repomix"
   ],
-  "bunxScanSources": [
-    "aphrody",
-    "yolo"
-  ],
+  "bunxScanSources": ["aphrody", "yolo"],
   "releaseBinaries": {
     "ovhcloud": "https://github.com/ovh/ovhcloud-cli/releases/download/v{version}/ovhcloud-cli_{Linux_x86_64|Windows_x86_64}",
     "rclone": "https://downloads.rclone.org/rclone-current-linux-amd64.zip",
@@ -134,23 +92,14 @@
     "rtk": "https://github.com/rtk-ai/rtk/releases/download/v{version}/rtk-x86_64-unknown-linux-musl.tar.gz (Windows: rtk-x86_64-pc-windows-msvc.zip)"
   },
   "aphrodyArtifacts": {
-    "linuxPrebuilt": [
-      "aphrody",
-      "aphrody-infra",
-      "aphrody-kernel"
-    ],
+    "linuxPrebuilt": ["aphrody", "aphrody-infra", "aphrody-kernel"],
     "note": "aphrody-ovh is a library compiled into aphrody-infra; the Bun package commands (yolo ops|workspace|optimize|update|ovh|google|doc-ai|browser) load their owner modules from a source checkout",
     "windowsBuild": "APHRODY_LOCAL_CARGO=1 scripts/build/rust/cargo-serial.sh xwin build --release --target x86_64-pc-windows-msvc -p aphrody (the multi-call binary; aphrody-infra and aphrody-kernel are links to it) (integrator; factory route otherwise), installed to %USERPROFILE%\\.local\\bin",
-    "windowsPrebuilt": [
-      "aphrody-infra.exe",
-      "aphrody-kernel.exe"
-    ],
+    "windowsPrebuilt": ["aphrody-infra.exe", "aphrody-kernel.exe"],
     "linuxBunCompiled": {
       "aphrody-cdn-optimize": {
         "source": "scripts/release/cdn-optimize.ts",
-        "hosts": [
-          "vps"
-        ],
+        "hosts": ["vps"],
         "build": "bun build --compile --target=bun-linux-x64 scripts/release/cdn-optimize.ts --outfile ~/.local/bin/aphrody-cdn-optimize"
       }
     }
@@ -167,10 +116,7 @@
     "linux": {
       "script": "scripts/tools/bun-hygiene.sh",
       "installedAs": "~/.local/bin/aphrody-bun-hygiene",
-      "units": [
-        "yolo:units/aphrody-bun-hygiene.service",
-        "yolo:units/aphrody-bun-hygiene.timer"
-      ],
+      "units": ["yolo:units/aphrody-bun-hygiene.service", "yolo:units/aphrody-bun-hygiene.timer"],
       "schedule": "daily 05:30 +-30m, user timer, linger enabled on vps and dbfr",
       "log": "~/.local/state/aphrody/log/bun-hygiene.log"
     },
@@ -189,18 +135,9 @@
     ]
   },
   "windowsTools": {
-    "winget": [
-      "Rclone.Rclone",
-      "Zellij.Zellij",
-      "MSYS2.MSYS2",
-      "gerardog.gsudo"
-    ],
-    "elevated": [
-      "Microsoft.OpenSSH.Preview"
-    ],
-    "msys2Packages": [
-      "rsync"
-    ],
+    "winget": ["Rclone.Rclone", "Zellij.Zellij", "MSYS2.MSYS2", "gerardog.gsudo"],
+    "elevated": ["Microsoft.OpenSSH.Preview"],
+    "msys2Packages": ["rsync"],
     "sourceBuilds": {
       "pigz": "https://github.com/madler/pigz (tag v2.8) with MSYS2 ucrt64 gcc -static"
     },
@@ -210,9 +147,7 @@
     "vps": "~/src/aphrody",
     "dbfr": "~/src/aphrody",
     "remote": "workspace (git@github.com:aphrody-labs/aphrody.git, blobless clone via forwarded agent)",
-    "links": [
-      "~/.local/bin/bun (release aphrody-labs/bun, also linked as ~/.bun/bin/bun)"
-    ]
+    "links": ["~/.local/bin/bun (release aphrody-labs/bun, also linked as ~/.bun/bin/bun)"]
   },
   "uvTools": [],
   "codeIntel": {
@@ -220,18 +155,12 @@
       "rust": {
         "server": "rust-analyzer",
         "install": "rustup component (rustToolchain.components)",
-        "start": [
-          "rust-analyzer"
-        ]
+        "start": ["rust-analyzer"]
       },
       "typescript": {
         "server": "TypeScript 7 native language server",
         "install": "bun global typescript@7 (tsc); @typescript/native-preview (tsgo) kept for m3 typecheck",
-        "start": [
-          "tsc",
-          "--lsp",
-          "--stdio"
-        ],
+        "start": ["tsc", "--lsp", "--stdio"],
         "note": "typescript-language-server 6.x requires tsserver.js and exits on TypeScript 7 workspaces; not installed"
       }
     },
@@ -252,17 +181,8 @@
   "hostTools": {
     "vps": {
       "purpose": "lossless CDN optimizer scripts/release/cdn-optimize.ts (shenron-cdn-sync.service)",
-      "apt": [
-        "libjpeg-turbo-progs",
-        "gifsicle",
-        "webp",
-        "ffmpeg",
-        "zopfli",
-        "imagemagick"
-      ],
-      "binstall": [
-        "oxipng"
-      ]
+      "apt": ["libjpeg-turbo-progs", "gifsicle", "webp", "ffmpeg", "zopfli", "imagemagick"],
+      "binstall": ["oxipng"]
     }
   }
 }

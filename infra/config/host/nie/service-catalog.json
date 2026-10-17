@@ -12,13 +12,7 @@
       "unit": "rg-core.service",
       "health": "http://127.0.0.1:8810/health",
       "port": 8810,
-      "capabilities": [
-        "discord-gateway",
-        "ranked-colyseus",
-        "unified-api",
-        "cron",
-        "3d-assets"
-      ],
+      "capabilities": ["discord-gateway", "ranked-colyseus", "unified-api", "cron", "3d-assets"],
       "children": [
         {
           "id": "nie-model-serve",
@@ -39,10 +33,7 @@
         "https://cdn.rosegriffon.fr",
         "https://nie.aphrody.app"
       ],
-      "consumers": [
-        "iecode-web",
-        "rg-website"
-      ]
+      "consumers": ["iecode-web", "rg-website"]
     },
     {
       "id": "rg-website",
@@ -89,12 +80,7 @@
       "filebrowser.service",
       "nie-model-serve.service"
     ],
-    "sharedRuntimes": [
-      "bun",
-      "postgresql",
-      "redis",
-      "nginx"
-    ],
+    "sharedRuntimes": ["bun", "postgresql", "redis", "nginx"],
     "databasePolicy": "postgresql-primary-with-sqlite-local-cache",
     "authPolicy": "one-better-auth-contract-per-public-origin"
   }

@@ -176,13 +176,7 @@
       "service": "aphrody-a2a",
       "unit": "aphrody-a2a.service",
       "path": "systemd/aphrody/aphrody-a2a.service",
-      "dropIns": [
-        "run-as-ubuntu",
-        "sandbox-base",
-        "sandbox-kernel",
-        "net-inet-only",
-        "syscall-service"
-      ],
+      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-kernel", "net-inet-only", "syscall-service"],
       "ownerRepo": "aphrody",
       "targetHost": "vps"
     },
@@ -382,13 +376,7 @@
       "service": "shenron-site",
       "unit": "shenron-site.service",
       "path": "systemd/shenron/shenron-site.service",
-      "dropIns": [
-        "run-as-ubuntu",
-        "sandbox-base",
-        "sandbox-home-ro",
-        "sandbox-kernel",
-        "syscall-service"
-      ],
+      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-home-ro", "sandbox-kernel", "syscall-service"],
       "ownerRepo": "aphrody",
       "targetHost": "dbfr",
       "site": "dragonballfr.com"
@@ -479,13 +467,7 @@
       "service": "aphrody-ai-gateway-dbfr",
       "unit": "aphrody-ai-gateway-dbfr.service",
       "path": "systemd/aphrody/aphrody-ai-gateway-dbfr.service",
-      "dropIns": [
-        "run-as-ubuntu",
-        "sandbox-base",
-        "sandbox-kernel",
-        "net-inet-only",
-        "syscall-service"
-      ],
+      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-kernel", "net-inet-only", "syscall-service"],
       "ownerRepo": "aphrody",
       "targetHost": "dbfr"
     },
@@ -493,13 +475,7 @@
       "service": "aphrody-mcp-http-dbfr",
       "unit": "aphrody-mcp-http-dbfr.service",
       "path": "systemd/aphrody/aphrody-mcp-http-dbfr.service",
-      "dropIns": [
-        "run-as-ubuntu",
-        "sandbox-base",
-        "sandbox-kernel",
-        "net-inet-only",
-        "syscall-service"
-      ],
+      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-kernel", "net-inet-only", "syscall-service"],
       "ownerRepo": "aphrody",
       "targetHost": "dbfr"
     },

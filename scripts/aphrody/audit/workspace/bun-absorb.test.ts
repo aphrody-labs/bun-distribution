@@ -23,13 +23,7 @@ describe("bun-absorb", () => {
       `import "./local";`,
       `export * from "ws";`,
     ].join("\n");
-    expect([...importedPackages(source)].toSorted()).toEqual([
-      "@scope/pkg",
-      "lru-cache",
-      "node:fs",
-      "postgres",
-      "ws",
-    ]);
+    expect([...importedPackages(source)].toSorted()).toEqual(["@scope/pkg", "lru-cache", "node:fs", "postgres", "ws"]);
   });
 
   test("refuses builtin declarations and native regressions, warns on fork declarations", () => {
@@ -53,9 +47,7 @@ describe("bun-absorb", () => {
       false,
     );
     expect(report.ok).toBe(false);
-    expect(
-      report.findings.map((f) => `${f.level}:${f.kind}:${f.package}`),
-    ).toEqual([
+    expect(report.findings.map(f => `${f.level}:${f.kind}:${f.package}`)).toEqual([
       "error:declared-builtin:ws",
       "warn:declared-fork:dotenv",
       "error:native-regression:postgres",
@@ -76,20 +68,14 @@ describe("bun-absorb", () => {
       {},
       true,
     );
-    expect(
-      report.findings.map((f) => `${f.level}:${f.kind}:${f.package}`),
-    ).toEqual(["error:declared-fork:dotenv", "error:dead-catalog:unused"]);
+    expect(report.findings.map(f => `${f.level}:${f.kind}:${f.package}`)).toEqual([
+      "error:declared-fork:dotenv",
+      "error:dead-catalog:unused",
+    ]);
   });
 
   test("a shrinking native baseline passes", () => {
-    const report = evaluate(
-      config,
-      [],
-      {},
-      { postgres: 1 },
-      { postgres: 2 },
-      false,
-    );
+    const report = evaluate(config, [], {}, { postgres: 1 }, { postgres: 2 }, false);
     expect(report).toMatchObject({ ok: true, findings: [] });
   });
 });

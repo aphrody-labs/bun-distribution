@@ -60,12 +60,7 @@ async function session(dir: string, input: string, extra: Record<string, string>
   ]);
   const url = pathToFileURL(dir).pathname;
   const norm = (s: string) =>
-    visible(
-      s
-        .replaceAll(`${hostname()}${url}`, "HOST/TMP")
-        .replaceAll(url, "/TMP")
-        .replaceAll(dir, "TMP"),
-    );
+    visible(s.replaceAll(`${hostname()}${url}`, "HOST/TMP").replaceAll(url, "/TMP").replaceAll(dir, "TMP"));
   return { stdout: norm(stdout), stderr: norm(stderr), code };
 }
 
@@ -102,19 +97,13 @@ test("progress (OSC 9;4) wraps busy commands; light palette, 256 colours", async
 test("NO_COLOR keeps the marks and drops the colours", async () => {
   using home = tempHome();
   const { stdout } = await session(home.dir, "", { NO_COLOR: "1" });
-  expect(stdout).toBe(
-    "␛[?2026h␛]7;file://HOST/TMP␛\\␛]9;9;TMP␛\\␛]0;bun ~␛\\␛]133;A␛\\bun ~ ❯ ␛]133;B␛\\␛[?2026l",
-  );
+  expect(stdout).toBe("␛[?2026h␛]7;file://HOST/TMP␛\\␛]9;9;TMP␛\\␛]0;bun ~␛\\␛]133;A␛\\bun ~ ❯ ␛]133;B␛\\␛[?2026l");
 });
 
 test("prompt shows branch, duration and failure", () => {
   const palette = loadPalette("dark");
   expect(palette?.brand.hex).toBe("#efb4e9");
-  const p = renderPrompt(
-    { cwd: "/h/x", home: "/h", lastCode: 2, lastMs: 1530, branch: "main" },
-    palette,
-    "none",
-  );
+  const p = renderPrompt({ cwd: "/h/x", home: "/h", lastCode: 2, lastMs: 1530, branch: "main" }, palette, "none");
   expect(p).toEqual({ text: "bun ~/x (main) 1.5s [2] ❯ ", width: 26 });
   expect(colorMode({ WT_SESSION: "x" })).toBe("truecolor");
   expect(colorMode({ TERM: "xterm-256color" })).toBe("256");
@@ -150,9 +139,7 @@ test("compiled-runtime probe guard exits before opening an interactive session",
 test("JavaScript expressions use native modules and Bun Shell in the parent VM", async () => {
   const modules = await loadNativeModules();
   expect(await evaluateNative("await $`echo native-shell`.text()", modules)).toBe("native-shell\n");
-  expect(await evaluateNative("wasm === undefined ? 0 : typeof wasm.build", modules)).toBe(
-    "function",
-  );
+  expect(await evaluateNative("wasm === undefined ? 0 : typeof wasm.build", modules)).toBe("function");
   expect(await evaluateNative("globalThis", modules)).toBe(globalThis);
   if (process.platform === "win32") {
     const version = await evaluateNative("windows.version()", modules);
@@ -175,18 +162,9 @@ test("piped native commands execute and recover after expression errors", async 
 });
 
 test("line editor: keys, history, kill commands", () => {
-  expect(keys("ab\x1b[A\x1bOB\x1b[3~é😀\r")).toEqual([
-    "a",
-    "b",
-    "\x1b[A",
-    "\x1bOB",
-    "\x1b[3~",
-    "é",
-    "😀",
-    "\r",
-  ]);
+  expect(keys("ab\x1b[A\x1bOB\x1b[3~é😀\r")).toEqual(["a", "b", "\x1b[A", "\x1bOB", "\x1b[3~", "é", "😀", "\r"]);
   const ed = new LineEditor(["ls", "echo one"]);
-  const type = (s: string) => keys(s).map((k) => ed.feed(k));
+  const type = (s: string) => keys(s).map(k => ed.feed(k));
   type("pwd");
   type("\x1b[A");
   expect(ed.buf).toBe("echo one");
@@ -214,9 +192,7 @@ test("redraw keeps the cursor on wrapped lines inside one synchronized update", 
   expect(visible(r.out)).toBe("␛[?2026h␛[1A\r␛[J> abcdefgh␛[2A\r␛[3C␛[?2026l");
   expect(r.row).toBe(0);
   ed.feed("\x05");
-  expect(visible(redraw({ text: "> ", width: 2 }, ed, 5, 0).out)).toBe(
-    "␛[?2026h\r␛[J> abcdefgh \r\r␛[?2026l",
-  );
+  expect(visible(redraw({ text: "> ", width: 2 }, ed, 5, 0).out)).toBe("␛[?2026h\r␛[J> abcdefgh \r\r␛[?2026l");
 });
 
 test("history is stored under APHRODY_HOME, deduplicated", () => {
@@ -240,18 +216,14 @@ test("image protocol follows the terminal", () => {
 test("kitty graphics: PNG in 4096-byte base64 chunks, replies suppressed", () => {
   const out = visible(kittyImage(new Uint8Array(5000)));
   const chunks = out.split("␛\\").filter(Boolean);
-  expect(chunks.map((c) => c.slice(0, c.indexOf(";") + 1))).toEqual([
-    "␛_Ga=T,f=100,q=2,m=1;",
-    "␛_Gm=0;",
-  ]);
+  expect(chunks.map(c => c.slice(0, c.indexOf(";") + 1))).toEqual(["␛_Ga=T,f=100,q=2,m=1;", "␛_Gm=0;"]);
   expect(chunks[0].length - "␛_Ga=T,f=100,q=2,m=1;".length).toBe(4096);
 });
 
 test("sixel encodes bands, run lengths and transparency", () => {
   // 5×7: colour 0 transparent, 1 red, 2 blue.
   const pixels = Uint8Array.from([
-    1, 1, 1, 1, 1, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 2, 2,
-    2, 2, 2,
+    1, 1, 1, 1, 1, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 2, 2, 2, 2, 2,
   ]);
   const out = sixel({
     width: 5,
@@ -260,18 +232,10 @@ test("sixel encodes bands, run lengths and transparency", () => {
     alpha: Uint8Array.from([0]),
     pixels,
   });
-  expect(visible(out)).toBe(
-    '␛P0;1;0q"1;1;5;7#0;2;0;0;0#1;2;100;0;0#2;2;0;0;100#1~!4@$#2!4?}-#2!5@␛\\',
-  );
+  expect(visible(out)).toBe('␛P0;1;0q"1;1;5;7#0;2;0;0;0#1;2;100;0;0#2;2;0;0;100#1~!4@$#2!4?}-#2!5@␛\\');
 });
 
-function indexedPng(
-  width: number,
-  height: number,
-  depth: number,
-  palette: number[],
-  rows: number[][],
-) {
+function indexedPng(width: number, height: number, depth: number, palette: number[], rows: number[][]) {
   const chunk = (type: string, body: Uint8Array) => {
     const head = new Uint8Array(8 + body.length + 4);
     const dv = new DataView(head.buffer);

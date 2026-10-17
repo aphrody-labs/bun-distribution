@@ -5,17 +5,16 @@ import { catalogSignature } from "./catalog.ts";
 
 declare const self: Worker;
 
-type Message =
-  { id: number; tasks: Task[] } | { id: number; catalog: string[] };
+type Message = { id: number; tasks: Task[] } | { id: number; catalog: string[] };
 
 self.onmessage = (event: MessageEvent<Message>) => {
   const m = event.data;
   if ("catalog" in m) {
     self.postMessage({
       id: m.id,
-      records: m.catalog.map((p) => catalogSignature(p)),
+      records: m.catalog.map(p => catalogSignature(p)),
     });
     return;
   }
-  self.postMessage({ id: m.id, records: m.tasks.map((t) => analyze(t)) });
+  self.postMessage({ id: m.id, records: m.tasks.map(t => analyze(t)) });
 };

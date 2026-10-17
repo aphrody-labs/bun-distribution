@@ -79,10 +79,7 @@ const round = (n: number, digits = 3): number => {
 };
 
 /** Distribution of samples; the headline `value` is the p50. */
-export function summarize(
-  samples: readonly number[],
-  unit: Unit = "ms",
-): Metric {
+export function summarize(samples: readonly number[], unit: Unit = "ms"): Metric {
   const sorted = samples.toSorted((a, b) => a - b);
   return {
     value: round(percentile(sorted, 50)),
@@ -97,11 +94,7 @@ export function summarize(
 export const exact = (value: number, unit: Unit): Metric => ({ value, unit });
 
 /** Run `fn` `warmup` times unrecorded, then `runs` times; the samples are what `fn` returns (ms). */
-export async function sample(
-  fn: () => Promise<number> | number,
-  runs: number,
-  warmup = 0,
-): Promise<number[]> {
+export async function sample(fn: () => Promise<number> | number, runs: number, warmup = 0): Promise<number[]> {
   for (let i = 0; i < warmup; i++) await fn();
   const out: number[] = [];
   for (let i = 0; i < runs; i++) out.push(await fn());
@@ -115,10 +108,7 @@ export interface Spawned {
 }
 
 /** Spawn synchronously and time it; stdout and stderr are captured (not timed separately). */
-export function spawnTimed(
-  cmd: string[],
-  opts: { cwd?: string; env?: Record<string, string> } = {},
-): Spawned {
+export function spawnTimed(cmd: string[], opts: { cwd?: string; env?: Record<string, string> } = {}): Spawned {
   const started = performance.now();
   const proc = Bun.spawnSync(cmd, {
     cwd: opts.cwd,
@@ -172,13 +162,10 @@ export function dirBytes(dir: string): number {
 }
 
 export function gitHead(dir: string): string {
-  const proc = Bun.spawnSync(
-    ["git", "-C", dir, "rev-parse", "--short", "HEAD"],
-    {
-      stdout: "pipe",
-      stderr: "ignore",
-    },
-  );
+  const proc = Bun.spawnSync(["git", "-C", dir, "rev-parse", "--short", "HEAD"], {
+    stdout: "pipe",
+    stderr: "ignore",
+  });
   return proc.exitCode === 0 ? proc.stdout.toString().trim() : "unknown";
 }
 
@@ -186,8 +173,7 @@ export async function readEnv(repos: Record<string, string>): Promise<Env> {
   const info = await Bun.file("/proc/cpuinfo")
     .text()
     .catch(() => "");
-  const model =
-    /model name\s*:\s*(.+)/.exec(info)?.[1] ?? cpus()[0]?.model ?? "unknown";
+  const model = /model name\s*:\s*(.+)/.exec(info)?.[1] ?? cpus()[0]?.model ?? "unknown";
   const version = await Bun.file("/proc/version")
     .text()
     .catch(() => "");
@@ -199,11 +185,9 @@ export async function readEnv(repos: Record<string, string>): Promise<Env> {
     cpu: model,
     cores: cpus().length,
     memMiB: Math.round(totalmem() / 1048576),
-    loadStart: loadavg().map((n) => round(n, 2)),
+    loadStart: loadavg().map(n => round(n, 2)),
     loadEnd: [],
-    repos: Object.fromEntries(
-      Object.entries(repos).map(([name, dir]) => [name, gitHead(dir)]),
-    ),
+    repos: Object.fromEntries(Object.entries(repos).map(([name, dir]) => [name, gitHead(dir)])),
   };
 }
 
@@ -245,16 +229,11 @@ export function formatValue(value: number | undefined, unit: Unit): string {
     return `${value} B`;
   }
   if (unit === "ms")
-    return value >= 1000
-      ? `${(value / 1000).toFixed(2)} s`
-      : `${value.toFixed(value < 10 ? 2 : 1)} ms`;
+    return value >= 1000 ? `${(value / 1000).toFixed(2)} s` : `${value.toFixed(value < 10 ? 2 : 1)} ms`;
   return String(value);
 }
 
-export const pct = (
-  before: number | undefined,
-  after: number | undefined,
-): string => {
+export const pct = (before: number | undefined, after: number | undefined): string => {
   if (before === undefined || after === undefined) return "n/a";
   if (before === 0) return after === 0 ? "0%" : "new";
   const d = ((after - before) / before) * 100;

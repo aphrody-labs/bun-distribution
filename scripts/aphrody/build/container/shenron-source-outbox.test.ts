@@ -9,12 +9,9 @@ import type { SourceJobConfig, SourceJobPlan } from "./shenron-source-job";
 
 const roots: string[] = [];
 afterEach(async () => {
-  await Promise.all(
-    roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
-  );
+  await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true })));
 });
-const sha = (value: string) =>
-  new Bun.CryptoHasher("sha256").update(value).digest("hex");
+const sha = (value: string) => new Bun.CryptoHasher("sha256").update(value).digest("hex");
 async function fixture(batchMode = false) {
   const root = await mkdtemp(join(tmpdir(), "shenron-outbox-"));
   roots.push(root);
@@ -63,15 +60,11 @@ async function fixture(batchMode = false) {
     hostRouteSha256: pin,
     hostIdentitySha256: pin,
     googleJarSha256: pin,
-    collectionSchema: batchMode
-      ? "shenron-source-collection/v2"
-      : "shenron-source-collection/v1",
+    collectionSchema: batchMode ? "shenron-source-collection/v2" : "shenron-source-collection/v1",
   };
   let applies = 0;
   const collection = {
-    schema: batchMode
-      ? "shenron-source-collection/v2"
-      : "shenron-source-collection/v1",
+    schema: batchMode ? "shenron-source-collection/v2" : "shenron-source-collection/v1",
     configSha256,
     pinnedConfigPath: "/app/data/source-pipeline/pinned.json",
     pinnedConfigSha256: sha("pinned"),
@@ -80,8 +73,7 @@ async function fixture(batchMode = false) {
     revisionIdentity: sha("revision"),
     ...(batchMode
       ? {
-          collectionPath:
-            "/app/data/source-pipeline/revision/batch-collections/0-1.json",
+          collectionPath: "/app/data/source-pipeline/revision/batch-collections/0-1.json",
           artifactOnly: true,
           complete: false,
           deliveryAuthorized: false,
@@ -93,8 +85,7 @@ async function fixture(batchMode = false) {
             batchReceiptSha256: sha("batch"),
             exportPath: "/app/data/source-pipeline/revision/export.jsonl",
             exportSha256: sha("export"),
-            validationPath:
-              "/app/data/source-pipeline/revision/validation.json",
+            validationPath: "/app/data/source-pipeline/revision/validation.json",
             validationSha256: sha("validation"),
             cursor: 0,
             nextCursor: 1,
@@ -145,25 +136,14 @@ test("fixed profile drains one bounded request with saved plan and canonical col
   expect(response.schema).toBe("shenron-source-response/v1");
   expect(response.collection.configSha256).toBe(f.request.configSha256);
   expect((await stat(responsePath)).mode & 0o777).toBe(0o600);
-  expect(
-    await Bun.file(join(f.control, "jobs", f.requestId, "plan.json")).exists(),
-  ).toBe(true);
-  expect(
-    (await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status,
-  ).toBe("idle");
+  expect(await Bun.file(join(f.control, "jobs", f.requestId, "plan.json")).exists()).toBe(true);
+  expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("idle");
   expect(f.applies()).toBe(1);
 });
 test("v2 outbox keeps the strict v1 request and replays the saved artifact-only handoff", async () => {
   const f = await fixture(true);
-  expect(Object.keys(f.request).toSorted()).toEqual([
-    "configPath",
-    "configSha256",
-    "requestId",
-    "schema",
-  ]);
-  expect(
-    (await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status,
-  ).toBe("complete");
+  expect(Object.keys(f.request).toSorted()).toEqual(["configPath", "configSha256", "requestId", "schema"]);
+  expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("complete");
   const responsePath = join(f.control, "responses", f.requestId + ".json");
   const response = await Bun.file(responsePath).json();
   expect(response.schema).toBe("shenron-source-response/v1");
@@ -174,16 +154,10 @@ test("v2 outbox keeps the strict v1 request and replays the saved artifact-only 
     deliveryAuthorized: false,
   });
   await rm(responsePath);
-  expect(
-    (await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status,
-  ).toBe("complete");
-  expect((await Bun.file(responsePath).json()).collection).toEqual(
-    response.collection,
-  );
+  expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("complete");
+  expect((await Bun.file(responsePath).json()).collection).toEqual(response.collection);
   expect(f.applies()).toBe(1);
-  const fence = await Bun.file(
-    join(f.control, "jobs", f.requestId, "started.json"),
-  ).json();
+  const fence = await Bun.file(join(f.control, "jobs", f.requestId, "started.json")).json();
   expect(fence.collectionSchema).toBe("shenron-source-collection/v2");
 });
 test("v2 outbox refuses schema drift and malformed references without a successful response", async () => {
@@ -203,15 +177,11 @@ test("v2 outbox refuses schema drift and malformed references without a successf
   ]) {
     const f = await fixture(true);
     mutate(f);
-    expect(
-      (await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status,
-    ).toBe("failed");
+    expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("failed");
     const responsePath = join(f.control, "responses", f.requestId + ".json");
     expect((await Bun.file(responsePath).json()).status).toBe("failed");
     await rm(responsePath);
-    expect(
-      (await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status,
-    ).toBe("failed");
+    expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("failed");
     expect(f.applies()).toBe(1);
   }
   const f = await fixture(true);
@@ -221,49 +191,28 @@ test("v2 outbox refuses schema drift and malformed references without a successf
   const saved = await Bun.file(resultPath).json();
   saved.collection.batch.validationSha256 = "invalid";
   await Bun.write(resultPath, JSON.stringify(saved));
-  await expect(
-    drainSourceOutbox(f.configPath, f.ownerSha, f.ports),
-  ).rejects.toThrow("replay binding differs");
+  await expect(drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).rejects.toThrow("replay binding differs");
   expect(f.applies()).toBe(1);
 });
 test("arbitrary execution fields and stale config pins fail before collection", async () => {
   const f = await fixture();
-  await Bun.write(
-    f.requestPath,
-    JSON.stringify({ ...f.request, command: "docker arbitrary" }),
-  );
-  expect(
-    (await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status,
-  ).toBe("failed");
+  await Bun.write(f.requestPath, JSON.stringify({ ...f.request, command: "docker arbitrary" }));
+  expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("failed");
   expect(f.applies()).toBe(0);
-  await expect(
-    drainSourceOutbox(f.configPath, "0".repeat(64), f.ports),
-  ).rejects.toThrow("digest differs");
+  await expect(drainSourceOutbox(f.configPath, "0".repeat(64), f.ports)).rejects.toThrow("digest differs");
 });
 test("malformed orphan is privately quarantined and the next valid request runs", async () => {
   const f = await fixture();
-  const orphan = join(
-    f.control,
-    "requests",
-    "00000000-0000-0000-0000-000000000000.json",
-  );
+  const orphan = join(f.control, "requests", "00000000-0000-0000-0000-000000000000.json");
   await Bun.write(orphan, "{invalid private request");
   await chmod(orphan, 0o600);
-  expect(
-    (await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status,
-  ).toBe("failed");
+  expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("failed");
   expect(f.applies()).toBe(0);
   expect(await Bun.file(orphan).exists()).toBe(false);
   const journals = await readdir(join(f.control, "jobs"));
   expect(journals.length).toBe(1);
-  expect(
-    await Bun.file(
-      join(f.control, "jobs", journals[0]!, "request.json"),
-    ).text(),
-  ).toBe("{invalid private request");
-  expect(
-    (await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status,
-  ).toBe("complete");
+  expect(await Bun.file(join(f.control, "jobs", journals[0]!, "request.json")).text()).toBe("{invalid private request");
+  expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("complete");
   expect(f.applies()).toBe(1);
 });
 test("a persisted start fence never silently repeats an uncertain collection", async () => {
@@ -272,22 +221,19 @@ test("a persisted start fence never silently repeats an uncertain collection", a
   await mkdir(job, { recursive: true, mode: 0o700 });
   await Bun.write(join(job, "started.json"), "{}");
   await chmod(join(job, "started.json"), 0o600);
-  expect(
-    (await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status,
-  ).toBe("failed");
-  expect(
-    (await Bun.file(join(f.control, "responses", f.requestId + ".json")).json())
-      .errorCode,
-  ).toBe("ERR_SOURCE_JOB_STATE_UNCERTAIN");
+  expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("failed");
+  expect((await Bun.file(join(f.control, "responses", f.requestId + ".json")).json()).errorCode).toBe(
+    "ERR_SOURCE_JOB_STATE_UNCERTAIN",
+  );
   expect(f.applies()).toBe(0);
 });
 test("native SQLite control mutex prevents concurrent workers and releases after completion", async () => {
   const f = await fixture();
   let release!: () => void, entered!: () => void;
-  const waiting = new Promise<void>((resolve) => {
+  const waiting = new Promise<void>(resolve => {
       release = resolve;
     }),
-    started = new Promise<void>((resolve) => {
+    started = new Promise<void>(resolve => {
       entered = resolve;
     });
   const first = drainSourceOutbox(f.configPath, f.ownerSha, {
@@ -300,30 +246,24 @@ test("native SQLite control mutex prevents concurrent workers and releases after
   });
   await started;
   try {
-    expect(
-      (await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status,
-    ).toBe("busy");
+    expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("busy");
   } finally {
     release();
   }
   expect((await first).status).toBe("complete");
-  expect(
-    (await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status,
-  ).toBe("idle");
+  expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("idle");
 });
 test("a saved successful result replays after a response publication interruption", async () => {
   const f = await fixture();
   await drainSourceOutbox(f.configPath, f.ownerSha, f.ports);
   await rm(join(f.control, "responses", f.requestId + ".json"));
-  expect(
-    (await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status,
-  ).toBe("complete");
+  expect((await drainSourceOutbox(f.configPath, f.ownerSha, f.ports)).status).toBe("complete");
   expect(f.applies()).toBe(1);
 });
 test("removing the private request aborts its active finite collection", async () => {
   const f = await fixture();
   let entered!: () => void;
-  const started = new Promise<void>((resolve) => {
+  const started = new Promise<void>(resolve => {
     entered = resolve;
   });
   let aborted = false;

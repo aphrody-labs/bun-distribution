@@ -84,7 +84,7 @@ export interface PacmanRepository {
   signingKey?: string;
 }
 
-const archOfficial: PacmanRepository[] = ["core", "extra", "multilib"].map((name) => ({
+const archOfficial: PacmanRepository[] = ["core", "extra", "multilib"].map(name => ({
   name,
   family: "archlinux",
   arch: "x86_64",
@@ -103,6 +103,6 @@ export function pacmanRepositories(): PacmanRepository[] {
 
 export function repositoryUrls(repository: PacmanRepository, file: string): string[] {
   return repository.servers.map(
-    (server) => `${server.replaceAll("$repo", repository.name).replaceAll("$arch", repository.arch)}/${file}`,
+    server => `${server.replaceAll("$repo", repository.name).replaceAll("$arch", repository.arch)}/${file}`,
   );
 }

@@ -30,12 +30,8 @@
     }
   },
   "watch": {
-    "channels": [
-      "1557354144149405806"
-    ],
-    "dm": [
-      "1557348890347573279"
-    ]
+    "channels": ["1557354144149405806"],
+    "dm": ["1557348890347573279"]
   },
   "members": [
     {
@@ -58,23 +54,11 @@
       "id": "omar",
       "address": "10.200.77.10",
       "facts": "none",
-      "reversePorts": [
-        22010,
-        28795,
-        25900,
-        28793
-      ]
+      "reversePorts": [22010, 28795, 25900, 28793]
     }
   ],
-  "ports": [
-    22,
-    5900,
-    8795,
-    8793
-  ],
-  "ignoreContainers": [
-    "^yolo-rel-"
-  ],
+  "ports": [22, 5900, 8795, 8793],
+  "ignoreContainers": ["^yolo-rel-"],
   "offlineAfterS": 180,
   "offlineConfirmTicks": 2
 }

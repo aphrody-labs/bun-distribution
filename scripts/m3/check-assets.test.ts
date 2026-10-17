@@ -3,12 +3,7 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import {
-  checkAppIcons,
-  checkAssets,
-  isLocalRef,
-  references,
-} from "./check-assets.ts";
+import { checkAppIcons, checkAssets, isLocalRef, references } from "./check-assets.ts";
 
 const root = mkdtempSync(join(tmpdir(), "check-assets-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -52,18 +47,14 @@ describe("reference extraction", () => {
       "${a}.png",
     ])
       expect(isLocalRef(ref)).toBe(false);
-    for (const ref of ["./a.png", "../b/c.svg", "icons/32x32.png"])
-      expect(isLocalRef(ref)).toBe(true);
+    for (const ref of ["./a.png", "../b/c.svg", "icons/32x32.png"]) expect(isLocalRef(ref)).toBe(true);
   });
 });
 
 describe("checkAssets and checkAppIcons on a synthetic repository", () => {
   write("package.json", "{}");
   write("apps/site/package.json", "{}");
-  write(
-    "apps/site/src/index.html",
-    '<link rel="stylesheet" href="./styles.css"><img src="./missing.png">',
-  );
+  write("apps/site/src/index.html", '<link rel="stylesheet" href="./styles.css"><img src="./missing.png">');
   write("apps/site/src/styles.css", ".a{background:url(./bg.png)}");
   write("apps/site/src/bg.png");
   write("apps/desk/package.json", "{}");
@@ -73,38 +64,20 @@ describe("checkAssets and checkAppIcons on a synthetic repository", () => {
   );
   write("apps/desk/src-tauri/icons/32x32.png");
   write("apps/desk/src-tauri/icons/icon.ico");
-  write(
-    "docs/guide.md",
-    "![shot](./img/shot.png)\n```md\n![ignored](./in-code.png)\n```\n",
-  );
+  write("docs/guide.md", "![shot](./img/shot.png)\n```md\n![ignored](./in-code.png)\n```\n");
 
   test("missing files are errors, present ones pass", () => {
-    const messages = checkAssets(root).map((f) => `${f.file}: ${f.message}`);
-    expect(messages).toContain(
-      "apps/site/src/index.html: html ./missing.png does not exist",
+    const messages = checkAssets(root).map(f => `${f.file}: ${f.message}`);
+    expect(messages).toContain("apps/site/src/index.html: html ./missing.png does not exist");
+    expect(messages).toContain("docs/guide.md: md-image ./img/shot.png does not exist");
+    expect(messages.some(m => m.includes("bg.png") || m.includes("styles.css") || m.includes("in-code.png"))).toBe(
+      false,
     );
-    expect(messages).toContain(
-      "docs/guide.md: md-image ./img/shot.png does not exist",
-    );
-    expect(
-      messages.some(
-        (m) =>
-          m.includes("bg.png") ||
-          m.includes("styles.css") ||
-          m.includes("in-code.png"),
-      ),
-    ).toBe(false);
   });
   test("apps need a favicon and Tauri configs the desktop icon formats", () => {
-    const messages = checkAppIcons(root).map((f) => `${f.file}: ${f.message}`);
-    expect(messages).toContain(
-      'apps/site/src/index.html: web app entry declares no favicon (<link rel="icon">)',
-    );
-    expect(messages).toContain(
-      "apps/desk/src-tauri/tauri.conf.json: bundle.icon has no .icns icon",
-    );
-    expect(
-      messages.some((m) => m.includes(".ico icon") || m.includes(".png icon")),
-    ).toBe(false);
+    const messages = checkAppIcons(root).map(f => `${f.file}: ${f.message}`);
+    expect(messages).toContain('apps/site/src/index.html: web app entry declares no favicon (<link rel="icon">)');
+    expect(messages).toContain("apps/desk/src-tauri/tauri.conf.json: bundle.icon has no .icns icon");
+    expect(messages.some(m => m.includes(".ico icon") || m.includes(".png icon"))).toBe(false);
   });
 });

@@ -17,8 +17,7 @@ const args = process.argv.slice(2);
 const asJson = args.includes("--json");
 const wantStatic = !args.includes("--live");
 const wantLive = !args.includes("--static");
-const color = (c: number) => (s: string) =>
-  asJson || !Bun.enableANSIColors ? s : `\x1b[${c}m${s}\x1b[0m`;
+const color = (c: number) => (s: string) => (asJson || !Bun.enableANSIColors ? s : `\x1b[${c}m${s}\x1b[0m`);
 const [green, red, yellow, dim, bold] = [color(32), color(31), color(33), color(2), color(1)];
 const read = (p: string) => Bun.file(join(p.startsWith("obscura") ? WEB : REPO, p)).text();
 const exists = (p: string) => Bun.file(join(REPO, p)).exists();
@@ -38,10 +37,7 @@ const THEMES: [string, RegExp][] = [
   ["Console et erreurs", /^op_(console|report_browser_exception|runtime_events)/],
   ["Réseau et cookies", /^op_(fetch|abort_signal|get_cookies|set_cookie)/],
   ["Navigation et historique", /^op_(navigate|session_history|history)/],
-  [
-    "Frames et realms",
-    /^op_(frame|initial_frame|register_document_realm|document_realm|post_frame_message)/,
-  ],
+  ["Frames et realms", /^op_(frame|initial_frame|register_document_realm|document_realm|post_frame_message)/],
   ["Tâches et boucle", /^op_(sleep|async_runtime|posted_task|begin_render_task)/],
   ["CDP", /^op_binding_called/],
   ["WebCrypto", /^op_(subtle|random_bytes)/],
@@ -82,48 +78,35 @@ function parseOps(src: string) {
   }
   const start = src.indexOf("pub fn build_extension");
   const body = src.slice(start, src.indexOf("\n}\n", start));
-  const registered = new Set([...body.matchAll(/\b(op_\w+)\(\)/g)].map((m) => m[1]!));
+  const registered = new Set([...body.matchAll(/\b(op_\w+)\(\)/g)].map(m => m[1]!));
   return { ops, registered, extensionLine: src.slice(0, start).split("\n").length };
 }
 
 const lineOf = (src: string, needle: string | RegExp) => {
   const lines = src.split("\n");
-  const i = lines.findIndex((l) =>
-    typeof needle === "string" ? l.includes(needle) : needle.test(l),
-  );
+  const i = lines.findIndex(l => (typeof needle === "string" ? l.includes(needle) : needle.test(l)));
   return i < 0 ? null : i + 1;
 };
 
 async function inventory() {
-  const [lock, opsSrc, runtime, flags, watchdog, boot, build, cdpRuntime, jsToml] =
-    await Promise.all([
-      read("Cargo.lock"),
-      read("obscura-js/src/ops.rs"),
-      read("obscura-js/src/runtime.rs"),
-      read("obscura-js/src/v8_flags.rs"),
-      read("obscura-js/src/cdp_watchdog.rs"),
-      read("obscura-js/js/bootstrap.js"),
-      read("obscura-js/build.rs"),
-      read("obscura-cdp/src/domains/runtime.rs"),
-      read("obscura-js/Cargo.toml"),
-    ]);
-  const versions = lockVersions(lock, [
-    "deno_core",
-    "v8",
-    "serde_v8",
-    "deno_ops",
-    "deno_error",
-    "deno_unsync",
+  const [lock, opsSrc, runtime, flags, watchdog, boot, build, cdpRuntime, jsToml] = await Promise.all([
+    read("Cargo.lock"),
+    read("obscura-js/src/ops.rs"),
+    read("obscura-js/src/runtime.rs"),
+    read("obscura-js/src/v8_flags.rs"),
+    read("obscura-js/src/cdp_watchdog.rs"),
+    read("obscura-js/js/bootstrap.js"),
+    read("obscura-js/build.rs"),
+    read("obscura-cdp/src/domains/runtime.rs"),
+    read("obscura-js/Cargo.toml"),
   ]);
+  const versions = lockVersions(lock, ["deno_core", "v8", "serde_v8", "deno_ops", "deno_error", "deno_unsync"]);
 
   let deno: Record<string, unknown> = {
     fork: "absent (bun scripts/tools/vendor/fetch.ts fetch deno)",
   };
   if (await exists("vendor/deno/Cargo.lock")) {
-    const [dlock, cli] = await Promise.all([
-      read("vendor/deno/Cargo.lock"),
-      read("vendor/deno/cli/Cargo.toml"),
-    ]);
+    const [dlock, cli] = await Promise.all([read("vendor/deno/Cargo.lock"), read("vendor/deno/cli/Cargo.toml")]);
     const dv = lockVersions(dlock, ["deno_core", "v8", "deno_runtime"]);
     deno = {
       fork: "vendor/deno (aphrody-labs/deno)",
@@ -137,31 +120,29 @@ async function inventory() {
   const { ops, registered, extensionLine } = parseOps(opsSrc);
   const themes = THEMES.map(([theme, re]) => ({
     theme,
-    ops: ops.filter((o) => re.test(o.name)),
-  })).filter((t) => t.ops.length);
-  const other = ops.filter((o) => !THEMES.some(([, re]) => re.test(o.name)));
+    ops: ops.filter(o => re.test(o.name)),
+  })).filter(t => t.ops.length);
+  const other = ops.filter(o => !THEMES.some(([, re]) => re.test(o.name)));
   if (other.length) themes.push({ theme: "Autres", ops: other });
 
-  const publicApi = [...runtime.matchAll(/^\s{4}pub (async )?fn (\w+)/gm)].map((m) => m[2]!);
+  const publicApi = [...runtime.matchAll(/^\s{4}pub (async )?fn (\w+)/gm)].map(m => m[2]!);
   return {
     versions,
     deno,
-    obscuraJsDeps: [...jsToml.matchAll(/^(deno_\w+)\s*=\s*(.+)$/gm)].map(
-      (m) => `${m[1]} = ${m[2]!.trim()}`,
-    ),
+    obscuraJsDeps: [...jsToml.matchAll(/^(deno_\w+)\s*=\s*(.+)$/gm)].map(m => `${m[1]} = ${m[2]!.trim()}`),
     extension: {
       file: `${join(WEB, "obscura-js/src/ops.rs")}:${extensionLine}`,
       declared: ops.length,
-      registered: ops.filter((o) => registered.has(o.name)).length,
-      notRegistered: ops.filter((o) => !registered.has(o.name)).map((o) => `${o.name}:${o.line}`),
-      fast: ops.filter((o) => o.kind === "fast").length,
-      nofast: ops.filter((o) => o.kind === "nofast").length,
-      slow: ops.filter((o) => o.kind === "slow").length,
-      async: ops.filter((o) => o.async).length,
-      renderOnly: ops.filter((o) => o.render).length,
-      themes: themes.map((t) => ({
+      registered: ops.filter(o => registered.has(o.name)).length,
+      notRegistered: ops.filter(o => !registered.has(o.name)).map(o => `${o.name}:${o.line}`),
+      fast: ops.filter(o => o.kind === "fast").length,
+      nofast: ops.filter(o => o.kind === "nofast").length,
+      slow: ops.filter(o => o.kind === "slow").length,
+      async: ops.filter(o => o.async).length,
+      renderOnly: ops.filter(o => o.render).length,
+      themes: themes.map(t => ({
         theme: t.theme,
-        ops: t.ops.map((o) => `${o.name}${o.kind === "fast" ? "⚡" : ""}${o.async ? "⏳" : ""}`),
+        ops: t.ops.map(o => `${o.name}${o.kind === "fast" ? "⚡" : ""}${o.async ? "⏳" : ""}`),
       })),
     },
     runtime: {
@@ -174,27 +155,20 @@ async function inventory() {
       icuLocale: `runtime.rs:${lineOf(runtime, "set_default_locale")}`,
       opsHandoff: `runtime.rs:${lineOf(runtime, "fn take_ops_handoff")}`,
     },
-    v8Flags: [...flags.matchAll(/^pub fn (\w+)/gm)].map((m) => m[1]!),
-    watchdog: [...watchdog.matchAll(/^\s*pub fn (\w+)/gm)].map((m) => m[1]!),
+    v8Flags: [...flags.matchAll(/^pub fn (\w+)/gm)].map(m => m[1]!),
+    watchdog: [...watchdog.matchAll(/^\s*pub fn (\w+)/gm)].map(m => m[1]!),
     bootstrap: {
       lines: boot.split("\n").length,
-      globals: new Set([...boot.matchAll(/globalThis\.([A-Za-z_$][\w$]*)\s*=/g)].map((m) => m[1]!))
-        .size,
+      globals: new Set([...boot.matchAll(/globalThis\.([A-Za-z_$][\w$]*)\s*=/g)].map(m => m[1]!)).size,
       denoCoreCapture: `bootstrap.js:${lineOf(boot, "globalThis.Deno.core")}`,
       handoff: `bootstrap.js:${lineOf(boot, "globalThis.__obscura_core_handoff =")}`,
     },
-    cdpRuntimeMethods: [...cdpRuntime.matchAll(/^\s*"([a-zA-Z]+)" =>/gm)].map(
-      (m) => `Runtime.${m[1]}`,
-    ),
+    cdpRuntimeMethods: [...cdpRuntime.matchAll(/^\s*"([a-zA-Z]+)" =>/gm)].map(m => `Runtime.${m[1]}`),
     tests: Object.fromEntries(
       await Promise.all(
-        ["obscura-js", "obscura", "obscura-browser", "obscura-cdp"].map(async (c) => [
+        ["obscura-js", "obscura", "obscura-browser", "obscura-cdp"].map(async c => [
           c,
-          (
-            await Array.fromAsync(new Bun.Glob("*.rs").scan({ cwd: join(WEB, c, "tests") })).catch(
-              () => [],
-            )
-          ).length,
+          (await Array.fromAsync(new Bun.Glob("*.rs").scan({ cwd: join(WEB, c, "tests") })).catch(() => [])).length,
         ]),
       ),
     ),
@@ -204,19 +178,13 @@ async function inventory() {
 // ───────────────────────────── page exécutée par Obscura ─────────────────────────────
 
 const WASM_ADD = [
-  0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, 0x01, 0x07, 0x01, 0x60, 0x02, 0x7f, 0x7f, 0x01,
-  0x7f, 0x03, 0x02, 0x01, 0x00, 0x07, 0x07, 0x01, 0x03, 0x61, 0x64, 0x64, 0x00, 0x00, 0x0a, 0x09,
-  0x01, 0x07, 0x00, 0x20, 0x00, 0x20, 0x01, 0x6a, 0x0b,
+  0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, 0x01, 0x07, 0x01, 0x60, 0x02, 0x7f, 0x7f, 0x01, 0x7f, 0x03, 0x02,
+  0x01, 0x00, 0x07, 0x07, 0x01, 0x03, 0x61, 0x64, 0x64, 0x00, 0x00, 0x0a, 0x09, 0x01, 0x07, 0x00, 0x20, 0x00, 0x20,
+  0x01, 0x6a, 0x0b,
 ];
 
 async function pbkdf2Expected() {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode("pw"),
-    "PBKDF2",
-    false,
-    ["deriveBits"],
-  );
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode("pw"), "PBKDF2", false, ["deriveBits"]);
   const bits = await crypto.subtle.deriveBits(
     { name: "PBKDF2", salt: new TextEncoder().encode("sel"), iterations: 1000, hash: "SHA-256" },
     key,
@@ -515,19 +483,13 @@ async function live(bin: string) {
     hostname: "127.0.0.1",
     port: 0,
     routes: {
-      "/": () =>
-        new Response(page(pbkdf2), { headers: { "content-type": "text/html; charset=utf-8" } }),
-      "/etat": () =>
-        new Response(page(pbkdf2), { headers: { "content-type": "text/html; charset=utf-8" } }),
+      "/": () => new Response(page(pbkdf2), { headers: { "content-type": "text/html; charset=utf-8" } }),
+      "/etat": () => new Response(page(pbkdf2), { headers: { "content-type": "text/html; charset=utf-8" } }),
       "/lib.js": () =>
-        new Response(
-          `export const answer = 42;\nexport default function hello(n) { return "lib:" + n; }\n`,
-          {
-            headers: { "content-type": "text/javascript" },
-          },
-        ),
-      "/data.json": () =>
-        Response.json({ v: 7, list: [1, 2, 3] }, { headers: { "set-cookie": "srv=bun; Path=/" } }),
+        new Response(`export const answer = 42;\nexport default function hello(n) { return "lib:" + n; }\n`, {
+          headers: { "content-type": "text/javascript" },
+        }),
+      "/data.json": () => Response.json({ v: 7, list: [1, 2, 3] }, { headers: { "set-cookie": "srv=bun; Path=/" } }),
       "/slow": async () => (await Bun.sleep(5000), new Response("trop tard")),
       "/frame.html": () =>
         new Response(
@@ -537,7 +499,7 @@ async function live(bin: string) {
           },
         ),
       "/report": {
-        POST: async (req) => {
+        POST: async req => {
           report.resolve(await req.json());
           return new Response("ok");
         },
@@ -560,14 +522,12 @@ async function live(bin: string) {
     stdout: "pipe",
     stderr: "pipe",
   });
-  const snapshot = Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]).then(([o, e, code]) => ({ o, e, code, ms: performance.now() - t0 }));
+  const snapshot = Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]).then(
+    ([o, e, code]) => ({ o, e, code, ms: performance.now() - t0 }),
+  );
   const first = await Promise.race([
-    report.promise.then((r) => ({ kind: "report" as const, r })),
-    snapshot.then((s) => ({ kind: "snapshot" as const, s })),
+    report.promise.then(r => ({ kind: "report" as const, r })),
+    snapshot.then(s => ({ kind: "snapshot" as const, s })),
   ]);
   let reportMs: number | null = null;
   let results: Probe[] = [];
@@ -579,10 +539,7 @@ async function live(bin: string) {
     const late = await Promise.race([report.promise, Bun.sleep(3000).then(() => null)]);
     if (late) ({ results, ua } = late);
   }
-  const snap = await Promise.race([
-    snapshot,
-    Bun.sleep(30_000).then(() => (proc.kill(), snapshot)),
-  ]);
+  const snap = await Promise.race([snapshot, Bun.sleep(30_000).then(() => (proc.kill(), snapshot))]);
   server.stop(true);
   if (!results.length) {
     // Pas de rapport POST : relire les résultats partiels écrits dans <pre id="out"> de l'instantané.
@@ -638,9 +595,7 @@ if (asJson) {
     );
     for (const t of e.themes) console.log(`  ${t.theme.padEnd(32)} ${dim(t.ops.join(" "))}`);
     console.log(
-      dim(
-        "  ⚡ = op rapide (appel direct depuis le JIT V8), ⏳ = op asynchrone (future Rust sur la boucle deno_core)",
-      ),
+      dim("  ⚡ = op rapide (appel direct depuis le JIT V8), ⏳ = op asynchrone (future Rust sur la boucle deno_core)"),
     );
     const r = inv.runtime;
     console.log(
@@ -650,9 +605,7 @@ if (asJson) {
       `  JsRuntime::new        ${r.jsRuntimeNew} · verrou de création d'isolat ${r.isolateLock} · locale ICU ${r.icuLocale}`,
     );
     console.log(`  snapshot V8           ${r.snapshot}`);
-    console.log(
-      `  garde de tas          ${r.heapGuard} (terminate_execution à l'approche de la limite)`,
-    );
+    console.log(`  garde de tas          ${r.heapGuard} (terminate_execution à l'approche de la limite)`);
     console.log(
       `  passage des ops       ${r.opsHandoff} · ${inv.bootstrap.denoCoreCapture} · ${inv.bootstrap.handoff}`,
     );
@@ -677,19 +630,16 @@ if (asJson) {
         : p.gap
           ? yellow(`écart connu : ${p.gap} — ${p.detail}`)
           : red(p.detail);
-      console.log(
-        `${mark} ${p.name} ${dim(`(${p.ms.toFixed(1)} ms)`)}\n    ${detail}\n    ${dim(p.via)}`,
-      );
+      console.log(`${mark} ${p.name} ${dim(`(${p.ms.toFixed(1)} ms)`)}\n    ${detail}\n    ${dim(p.via)}`);
     }
-    const ok = run.results.filter((p) => p.ok).length;
-    const gaps = run.results.filter((p) => !p.ok && p.gap).length;
-    const failed = run.results.filter((p) => !p.ok && !p.gap).length;
+    const ok = run.results.filter(p => p.ok).length;
+    const gaps = run.results.filter(p => !p.ok && p.gap).length;
+    const failed = run.results.filter(p => !p.ok && !p.gap).length;
     console.log(
       `\n${failed === 0 && ok > 0 ? green("CAPACITÉS OK") : red(`${failed} ÉCHEC(S)`)} — ${ok}/${run.results.length} sondes, ${gaps} écart(s) connu(s) d'Obscura · ` +
         `instantané ${run.snapshotMs.toFixed(0)} ms (indicatif)${run.reportMs ? ` · rapport reçu à ${run.reportMs.toFixed(0)} ms` : " · rapport POST non reçu, résultats lus dans l'instantané"} · UA ${run.ua.slice(0, 40)}`,
     );
-    if (run.exitCode !== 0)
-      console.log(red(`aphrody web browser snapshot : code ${run.exitCode} ${run.stderr}`));
+    if (run.exitCode !== 0) console.log(red(`aphrody web browser snapshot : code ${run.exitCode} ${run.stderr}`));
   }
 }
-process.exit(run && (run.results.length === 0 || run.results.some((p) => !p.ok && !p.gap)) ? 1 : 0);
+process.exit(run && (run.results.length === 0 || run.results.some(p => !p.ok && !p.gap)) ? 1 : 0);

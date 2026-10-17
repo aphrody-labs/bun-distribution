@@ -4,18 +4,11 @@ import { chmod, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-const entrypoint = resolve(
-  import.meta.dir,
-  "../../../../tools/aphrody/config/container/entrypoint.sh",
-);
+const entrypoint = resolve(import.meta.dir, "../../../../tools/aphrody/config/container/entrypoint.sh");
 const temporary: string[] = [];
 
 afterEach(async () => {
-  await Promise.all(
-    temporary
-      .splice(0)
-      .map((path) => rm(path, { recursive: true, force: true })),
-  );
+  await Promise.all(temporary.splice(0).map(path => rm(path, { recursive: true, force: true })));
 });
 
 async function fixture(executables: Record<string, string>, checkout = false) {
@@ -73,11 +66,7 @@ test("MCP uses the supported canonical subcommand when the link is absent", asyn
   const run = await fixture({ aphrody: printArguments });
   const result = await run(["mcp", "--stdio"]);
   expect(result.exitCode).toBe(0);
-  expect(result.stdout.split("\n").slice(1)).toEqual([
-    "mcp-server",
-    "--stdio",
-    "",
-  ]);
+  expect(result.stdout.split("\n").slice(1)).toEqual(["mcp-server", "--stdio", ""]);
 });
 
 test("API rejects an absent token before launching the server", async () => {
@@ -95,15 +84,7 @@ test("API receives the explicit container host, port and extra arguments", async
     PORT: "9876",
   });
   expect(result.exitCode).toBe(0);
-  expect(result.stdout.split("\n").slice(1)).toEqual([
-    "api",
-    "--host",
-    "0.0.0.0",
-    "--port",
-    "9876",
-    "--json",
-    "",
-  ]);
+  expect(result.stdout.split("\n").slice(1)).toEqual(["api", "--host", "0.0.0.0", "--port", "9876", "--json", ""]);
 });
 
 test("API reads the mounted secret and replaces a stale environment token", async () => {

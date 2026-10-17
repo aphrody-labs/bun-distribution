@@ -65,16 +65,9 @@ export type UsnRecord = {
 export const recordOf = (frn: bigint): number => Number(frn & RECORD_MASK);
 
 /** Decodes one record at the start of `buf`; undefined when the bytes are not a valid V2/V3 record. */
-export function parseUsnRecord(
-  buf: Uint8Array,
-  offset = 0,
-): UsnRecord | undefined {
+export function parseUsnRecord(buf: Uint8Array, offset = 0): UsnRecord | undefined {
   if (buf.byteLength - offset < 8) return undefined;
-  const v = new DataView(
-    buf.buffer,
-    buf.byteOffset + offset,
-    buf.byteLength - offset,
-  );
+  const v = new DataView(buf.buffer, buf.byteOffset + offset, buf.byteLength - offset);
   const length = v.getUint32(0, true);
   const major = v.getUint16(4, true);
   if (length < 8 || length > v.byteLength) return undefined;
@@ -101,11 +94,7 @@ export function parseUsnRecord(
   const nameLength = v.getUint16(base + 32, true);
   const nameOffset = v.getUint16(base + 34, true);
   if (nameOffset + nameLength > length) return undefined;
-  const name = Buffer.from(
-    buf.buffer,
-    buf.byteOffset + offset + nameOffset,
-    nameLength,
-  ).toString("utf16le");
+  const name = Buffer.from(buf.buffer, buf.byteOffset + offset + nameOffset, nameLength).toString("utf16le");
   return {
     major,
     frn,
@@ -138,8 +127,7 @@ export function parseUsnRecords(buf: Uint8Array): UsnRecord[] {
 /** Human-readable reason names (logs, NDJSON journal). */
 export function reasonNames(reason: number): string[] {
   const names: string[] = [];
-  for (const [k, bit] of Object.entries(USN_REASON))
-    if ((reason & bit) >>> 0 === bit) names.push(k);
+  for (const [k, bit] of Object.entries(USN_REASON)) if ((reason & bit) >>> 0 === bit) names.push(k);
   return names;
 }
 

@@ -9,30 +9,22 @@ export interface SourceControllerProfile {
   jobConfig: { path: string; sha256: string };
 }
 export interface SourceControllerPorts {
-  remote?: (
-    host: "dbfr",
-    command: string,
-    signal?: AbortSignal,
-  ) => Promise<string>;
+  remote?: (host: "dbfr", command: string, signal?: AbortSignal) => Promise<string>;
   signal?: AbortSignal;
 }
-const shellQuote = (value: string) =>
-  "'" + value.replaceAll("'", "'\\''") + "'";
+const shellQuote = (value: string) => "'" + value.replaceAll("'", "'\\''") + "'";
 export function sourceControllerCommand(profile: SourceControllerProfile) {
-  if (profile.host !== "dbfr")
-    throw new Error("The source controller targets only the declared DBFR bot");
+  if (profile.host !== "dbfr") throw new Error("The source controller targets only the declared DBFR bot");
   for (const artifact of [profile.runtime, profile.owner, profile.jobConfig]) {
     if (
       !/^\/[A-Za-z0-9_./-]+$/.test(artifact.path) ||
       artifact.path.split("/").includes("..") ||
       !/^[a-f0-9]{64}$/.test(artifact.sha256)
     )
-      throw new Error(
-        "Source controller requires fixed absolute pinned artifacts",
-      );
+      throw new Error("Source controller requires fixed absolute pinned artifacts");
   }
   const guards = [profile.runtime, profile.owner, profile.jobConfig].map(
-    (artifact) =>
+    artifact =>
       `test "$(sha256sum -- ${shellQuote(artifact.path)} | cut -d ' ' -f 1)" = ${shellQuote(artifact.sha256)}`,
   );
   return [
@@ -42,25 +34,19 @@ export function sourceControllerCommand(profile: SourceControllerProfile) {
     `BUN_BE_BUN=1 ${shellQuote(profile.runtime.path)} ${shellQuote(profile.owner.path)} source-job drain --config ${shellQuote(profile.jobConfig.path)} --config-sha256 ${shellQuote(profile.jobConfig.sha256)}`,
   ].join(" && ");
 }
-export async function drainSourceController(
-  profile: SourceControllerProfile,
-  ports: SourceControllerPorts = {},
-) {
+export async function drainSourceController(profile: SourceControllerProfile, ports: SourceControllerPorts = {}) {
   const command = sourceControllerCommand(profile);
   const remote =
     ports.remote ??
     (async (host, text, signal) => {
-      const result = await sourceJobRun(
-        ["aphrody", "infra", "ssh", "exec", "--host", host, "-c", text],
-        { timeoutMs: 1100000, signal },
-      );
-      if (result.code !== 0)
-        throw new Error("Source controller remote owner failed");
+      const result = await sourceJobRun(["aphrody", "infra", "ssh", "exec", "--host", host, "-c", text], {
+        timeoutMs: 1100000,
+        signal,
+      });
+      if (result.code !== 0) throw new Error("Source controller remote owner failed");
       return result.stdout;
     });
-  const result = JSON.parse(
-    await remote(profile.host, command, ports.signal),
-  ) as Record<string, unknown>;
+  const result = JSON.parse(await remote(profile.host, command, ports.signal)) as Record<string, unknown>;
   if (
     !["idle", "busy", "complete", "failed"].includes(String(result.status)) ||
     ![0, 1].includes(Number(result.handled))
@@ -80,7 +66,7 @@ export async function startSourceControllerWorker(
   limits: { joinMs?: number; killMs?: number; reapMs?: number } = {},
 ): Promise<ControllerWorker> {
   let ready!: () => void;
-  const readiness = new Promise<void>((resolve) => {
+  const readiness = new Promise<void>(resolve => {
     ready = resolve;
   });
   const child = Bun.spawn([runtime, entry, "source-controller"], {
@@ -93,14 +79,13 @@ export async function startSourceControllerWorker(
       if (
         message &&
         typeof message === "object" &&
-        (message as { schema?: unknown }).schema ===
-          "shenron-source-controller-ready/v1"
+        (message as { schema?: unknown }).schema === "shenron-source-controller-ready/v1"
       )
         ready();
     },
   });
   let exited = false;
-  void child.exited.then((code) => {
+  void child.exited.then(code => {
     exited = true;
     return code;
   });
@@ -121,10 +106,7 @@ export async function startSourceControllerWorker(
         throw Error("Source controller exited before readiness");
       }),
       new Promise<never>((_, reject) => {
-        startup = setTimeout(
-          () => reject(Error("Source controller readiness deadline exceeded")),
-          10000,
-        );
+        startup = setTimeout(() => reject(Error("Source controller readiness deadline exceeded")), 10000);
       }),
     ]);
   } catch (error) {
@@ -135,8 +117,7 @@ export async function startSourceControllerWorker(
         child.exited,
         new Promise<never>((_, reject) => {
           reap = setTimeout(
-            () =>
-              reject(new Error("Source controller startup teardown uncertain")),
+            () => reject(new Error("Source controller startup teardown uncertain")),
             limits.reapMs ?? 2500,
           );
         }),
@@ -151,16 +132,15 @@ export async function startSourceControllerWorker(
   return {
     async stop() {
       if (exited) {
-        if ((await child.exited) !== 0)
-          throw new Error("Source controller worker failed");
+        if ((await child.exited) !== 0) throw new Error("Source controller worker failed");
         return;
       }
       child.kill("SIGUSR1");
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
         const finished = await Promise.race([
-          child.exited.then((code) => ({ code })),
-          new Promise<null>((resolve) => {
+          child.exited.then(code => ({ code })),
+          new Promise<null>(resolve => {
             timer = setTimeout(() => resolve(null), limits.joinMs ?? 1110000);
           }),
         ]);
@@ -170,7 +150,7 @@ export async function startSourceControllerWorker(
           try {
             await Promise.race([
               child.exited,
-              new Promise<void>((resolve) => {
+              new Promise<void>(resolve => {
                 escalation = setTimeout(() => {
                   groupSignal("SIGKILL");
                   resolve();
@@ -186,10 +166,7 @@ export async function startSourceControllerWorker(
               child.exited,
               new Promise<never>((_, reject) => {
                 reap = setTimeout(
-                  () =>
-                    reject(
-                      new Error("Source controller group teardown uncertain"),
-                    ),
+                  () => reject(new Error("Source controller group teardown uncertain")),
                   limits.reapMs ?? 2500,
                 );
               }),
@@ -199,8 +176,7 @@ export async function startSourceControllerWorker(
           }
           throw new Error("Source controller exceeded its join deadline");
         }
-        if (finished.code !== 0)
-          throw new Error("Source controller worker failed");
+        if (finished.code !== 0) throw new Error("Source controller worker failed");
       } finally {
         if (timer) clearTimeout(timer);
       }
@@ -208,10 +184,7 @@ export async function startSourceControllerWorker(
   };
 }
 
-export async function runSourceControllerLoop(
-  profile: SourceControllerProfile,
-  ports: SourceControllerPorts = {},
-) {
+export async function runSourceControllerLoop(profile: SourceControllerProfile, ports: SourceControllerPorts = {}) {
   sourceControllerCommand(profile);
   let stopping = false,
     wake: (() => void) | undefined;
@@ -220,8 +193,7 @@ export async function runSourceControllerLoop(
     wake?.();
   };
   process.on("SIGUSR1", stop);
-  if (typeof process.send === "function")
-    process.send({ schema: "shenron-source-controller-ready/v1" });
+  if (typeof process.send === "function") process.send({ schema: "shenron-source-controller-ready/v1" });
   const abort = () => stop();
   ports.signal?.addEventListener("abort", abort, { once: true });
   if (ports.signal?.aborted) stop();
@@ -248,7 +220,7 @@ export async function runSourceControllerLoop(
         );
       }
       if (stopping) break;
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         const timer = setTimeout(() => {
           wake = undefined;
           resolve();
@@ -263,7 +235,6 @@ export async function runSourceControllerLoop(
   } finally {
     process.off("SIGUSR1", stop);
     ports.signal?.removeEventListener("abort", abort);
-    if (typeof process.disconnect === "function" && process.connected)
-      process.disconnect();
+    if (typeof process.disconnect === "function" && process.connected) process.disconnect();
   }
 }

@@ -1,13 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import {
-  existsSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -34,8 +28,7 @@ const fixture = () => {
   };
 };
 afterEach(() => {
-  for (const root of roots.splice(0))
-    rmSync(root, { recursive: true, force: true });
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
 test("TOML: missing System32 Bun is repaired only on apply, without modifying neighbors", async () => {
@@ -58,10 +51,9 @@ test("TOML: missing System32 Bun is repaired only on apply, without modifying ne
   expect(readFileSync(config, "utf8")).toBe(original);
   expect((await inspectRule(rule, true)).status).toBe("fixed");
   const updated = readFileSync(config, "utf8");
-  expect(
-    (Bun.TOML.parse(updated) as { mcp_servers: { bun: { command: string } } })
-      .mcp_servers.bun.command,
-  ).toBe(target);
+  expect((Bun.TOML.parse(updated) as { mcp_servers: { bun: { command: string } } }).mcp_servers.bun.command).toBe(
+    target,
+  );
   expect(updated).toContain("PRIVATE = 'keep-me'");
   expect((await inspectRule(rule, true)).status).toBe("current");
   expect(existsSync(join(root, "config.toml.bak"))).toBe(false);
@@ -72,11 +64,7 @@ test("JSON: only declared nested key changes and wrong hash blocks mutation", as
   const config = join(root, "config.json");
   writeFileSync(
     config,
-    JSON.stringify(
-      { mcp: { command: "C:\\Windows\\System32\\bun.exe", secret: "keep" } },
-      null,
-      2,
-    ),
+    JSON.stringify({ mcp: { command: "C:\\Windows\\System32\\bun.exe", secret: "keep" } }, null, 2),
   );
   const rule: Rule = {
     id: "json",
@@ -88,13 +76,8 @@ test("JSON: only declared nested key changes and wrong hash blocks mutation", as
     kind: "executable",
     sha256,
   };
-  expect(
-    (await inspectRule({ ...rule, sha256: "0".repeat(64) }, true)).status,
-  ).toBe("unverified");
-  expect(
-    (JSON.parse(readFileSync(config, "utf8")) as { mcp: { command: string } })
-      .mcp.command,
-  ).toBe(rule.from);
+  expect((await inspectRule({ ...rule, sha256: "0".repeat(64) }, true)).status).toBe("unverified");
+  expect((JSON.parse(readFileSync(config, "utf8")) as { mcp: { command: string } }).mcp.command).toBe(rule.from);
   expect((await inspectRule(rule, true)).status).toBe("fixed");
   const updated = readFileSync(config, "utf8");
   expect(JSON.parse(updated).mcp).toEqual({ command: target, secret: "keep" });
@@ -117,9 +100,7 @@ test("unrelated value and nonexistent target are never rewritten", async () => {
   };
   expect((await inspectRule(rule, true)).status).toBe("unmatched");
   writeFileSync(config, `[mcp_servers.bun]\ncommand = '${rule.from}'\n`);
-  expect(
-    (await inspectRule({ ...rule, to: join(root, "absent.exe") }, true)).status,
-  ).toBe("unverified");
+  expect((await inspectRule({ ...rule, to: join(root, "absent.exe") }, true)).status).toBe("unverified");
 });
 
 test("default rule is scoped to Codex Bun MCP and running runtime", async () => {
@@ -132,7 +113,7 @@ test("default rule is scoped to Codex Bun MCP and running runtime", async () => 
 test("PATH audit skips unresolved variables and never treats duplicate as missing", () => {
   const audit = auditPathEntries(
     "C:\\Windows;C:\\Windows;%USERPROFILE%\\bin;relative;C:\\Gone",
-    (path) => path === "C:\\Windows",
+    path => path === "C:\\Windows",
   );
   expect(audit).toEqual({ checked: 2, missing: 1, duplicate: 1, skipped: 2 });
 });
@@ -158,8 +139,7 @@ test("PATH registry rule replaces one exact entry, preserves order and is idempo
       return { ...record };
     },
     async write(_scope, expected, next) {
-      if (record.value !== expected.value || record.type !== expected.type)
-        return false;
+      if (record.value !== expected.value || record.type !== expected.type) return false;
       record = { value: next, type: "REG_SZ" };
       return true;
     },
@@ -191,12 +171,7 @@ test("PATH rule refuses ambiguous duplicates and unverified directory", async ()
       throw new Error("must not write");
     },
   };
-  expect((await inspectPathRule(rule, true, registry)).status).toBe(
-    "unmatched",
-  );
+  expect((await inspectPathRule(rule, true, registry)).status).toBe("unmatched");
   value = "C:\\Old";
-  expect(
-    (await inspectPathRule({ ...rule, sha256: "0".repeat(64) }, true, registry))
-      .status,
-  ).toBe("unverified");
+  expect((await inspectPathRule({ ...rule, sha256: "0".repeat(64) }, true, registry)).status).toBe("unverified");
 });

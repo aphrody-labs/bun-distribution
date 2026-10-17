@@ -14,7 +14,7 @@ let errors = 0;
 async function downloadChunk(chunk: string) {
   const url = `${BASE}/${chunk}`;
   const target = `${outDir}/${chunk}`;
-  if (await Bun.file(target).exists() && fs.statSync(target).size > 0) {
+  if ((await Bun.file(target).exists()) && fs.statSync(target).size > 0) {
     downloaded++;
     return;
   }

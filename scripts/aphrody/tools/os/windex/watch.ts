@@ -19,28 +19,10 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import type { EntryRecord, Task } from "./analyze.ts";
-import {
-  connectRedis,
-  EVENTS_CHANNEL,
-  invalidate,
-  type ChangeEvent,
-} from "./cache.ts";
-import {
-  defaultExcludes,
-  pathKey,
-  RECORD_VERSION,
-  underRoot,
-  type Config,
-  type HashMode,
-} from "./config.ts";
+import { connectRedis, EVENTS_CHANNEL, invalidate, type ChangeEvent } from "./cache.ts";
+import { defaultExcludes, pathKey, RECORD_VERSION, underRoot, type Config, type HashMode } from "./config.ts";
 import { driveDir, Journal } from "./ndjson.ts";
-import {
-  ERROR_JOURNAL_ENTRY_DELETED,
-  readMft,
-  Volume,
-  Win32Error,
-  type Journal as UsnJournal,
-} from "./ntfs.ts";
+import { ERROR_JOURNAL_ENTRY_DELETED, readMft, Volume, Win32Error, type Journal as UsnJournal } from "./ntfs.ts";
 import {
   connect,
   deletePath,
@@ -60,13 +42,7 @@ import { Pool } from "./pool.ts";
 import { buildCards, indexCards } from "./rag.ts";
 import { excluded, scanRoot } from "./scan.ts";
 import { loadApiSet, loadServices } from "./system.ts";
-import {
-  DATA_REASONS,
-  FILE_ATTRIBUTE_DIRECTORY,
-  USN_REASON,
-  type DirTree,
-  type UsnRecord,
-} from "./usn.ts";
+import { DATA_REASONS, FILE_ATTRIBUTE_DIRECTORY, USN_REASON, type DirTree, type UsnRecord } from "./usn.ts";
 import { volumeSerial } from "./win32.ts";
 
 export type WatchOptions = {
@@ -103,22 +79,16 @@ const LOG_DAYS = 7;
 function fileLog(cfg: Config, base: Log): Log {
   const dir = join(cfg.dir, "logs");
   mkdirSync(dir, { recursive: true });
-  const limit = new Date(Date.now() - LOG_DAYS * 86_400_000)
-    .toISOString()
-    .slice(0, 10)
-    .replaceAll("-", "");
+  const limit = new Date(Date.now() - LOG_DAYS * 86_400_000).toISOString().slice(0, 10).replaceAll("-", "");
   for (const f of readdirSync(dir)) {
     const m = /^watch-(\d{8})\.log$/.exec(f);
     if (m && m[1]! < limit) rmSync(join(dir, f), { force: true });
   }
-  return (msg) => {
+  return msg => {
     base(msg);
     const day = new Date().toISOString().slice(0, 10).replaceAll("-", "");
     try {
-      appendFileSync(
-        join(dir, `watch-${day}.log`),
-        `${new Date().toISOString()} ${msg}\n`,
-      );
+      appendFileSync(join(dir, `watch-${day}.log`), `${new Date().toISOString()} ${msg}\n`);
     } catch {
       // Logging never stops the watcher.
     }
@@ -145,8 +115,7 @@ function acquireLock(cfg: Config): () => void {
   writeFileSync(file, String(process.pid));
   return () => {
     try {
-      if (readFileSync(file, "utf8").trim() === String(process.pid))
-        unlinkSync(file);
+      if (readFileSync(file, "utf8").trim() === String(process.pid)) unlinkSync(file);
     } catch {
       // Already gone.
     }
@@ -178,14 +147,11 @@ class Applier {
 
   relevant(path: string | null | undefined): path is string {
     if (!path) return false;
-    return (
-      this.registered.some((r) => underRoot(path, r.path)) &&
-      !excluded(path, this.excludes)
-    );
+    return this.registered.some(r => underRoot(path, r.path)) && !excluded(path, this.excludes);
   }
 
   private underGraph(path: string): boolean {
-    return this.registered.some((r) => r.graph && underRoot(path, r.path));
+    return this.registered.some(r => r.graph && underRoot(path, r.path));
   }
 
   /** Indexes a directory that appeared with content (moved in from outside the roots). */
@@ -198,7 +164,7 @@ class Applier {
       maxHashBytes: 1 << 30,
       excludes: this.excludes,
       pool: this.pool,
-      sink: async (records) => {
+      sink: async records => {
         peIds.push(...(await upsertEntries(this.sql, records)).pe);
       },
     });
@@ -262,33 +228,28 @@ class Applier {
         at,
       });
     }
-    const relevant = changes.filter((c) => this.relevant(c.path));
+    const relevant = changes.filter(c => this.relevant(c.path));
     if (relevant.length) {
       // Metadata-only changes of stored files skip the content; anything else is fully re-analysed.
       const known = new Set<string>(
         (
           await this.sql.unsafe(
             `SELECT path_lc FROM windex.fs_node WHERE path_lc IN (SELECT jsonb_array_elements_text($1::jsonb))`,
-            [relevant.map((c) => pathKey(c.path))],
+            [relevant.map(c => pathKey(c.path))],
           )
         ).map((r: { path_lc: string }) => r.path_lc),
       );
-      const tasks: Task[] = relevant.map((c) => ({
+      const tasks: Task[] = relevant.map(c => ({
         path: c.path,
         dir: c.dir,
         hash: this.policy(c.path),
         maxHashBytes: 1 << 30,
         catalog: true,
-        metaOnly:
-          !c.dir &&
-          known.has(pathKey(c.path)) &&
-          (c.reasons & DATA_REASONS) === 0 &&
-          c.reasons !== 0,
+        metaOnly: !c.dir && known.has(pathKey(c.path)) && (c.reasons & DATA_REASONS) === 0 && c.reasons !== 0,
       }));
       const records: EntryRecord[] = [];
-      for (let i = 0; i < tasks.length; i += 64)
-        records.push(...(await this.pool.run(tasks.slice(i, i + 64))));
-      const gone = records.filter((r) => r.error === "ENOENT");
+      for (let i = 0; i < tasks.length; i += 64) records.push(...(await this.pool.run(tasks.slice(i, i + 64))));
+      const gone = records.filter(r => r.error === "ENOENT");
       for (const r of gone) {
         await deletePath(this.sql, r.path);
         events.push({
@@ -300,35 +261,24 @@ class Applier {
           at,
         });
       }
-      const live = records.filter((r) => r.error !== "ENOENT");
+      const live = records.filter(r => r.error !== "ENOENT");
       const maxUsn = relevant.reduce((m, c) => (c.usn > m ? c.usn : m), 0n);
       const r = await upsertEntries(this.sql, live, maxUsn || null);
       await linkParentsOf(
         this.sql,
-        live.map((x) => x.path),
+        live.map(x => x.path),
       );
       await refreshPeEdges(this.sql, r.pe);
       const created = live.filter(
-        (x) =>
-          x.pe &&
-          x.pe.kind !== "exe" &&
-          relevant.find((c) => c.path === x.path)!.reasons &
-            USN_REASON.FILE_CREATE,
+        x => x.pe && x.pe.kind !== "exe" && relevant.find(c => c.path === x.path)!.reasons & USN_REASON.FILE_CREATE,
       );
       if (created.length) {
         await refreshImporters(
           this.sql,
-          created.map((x) =>
-            x.path.slice(x.path.lastIndexOf("\\") + 1).toLowerCase(),
-          ),
+          created.map(x => x.path.slice(x.path.lastIndexOf("\\") + 1).toLowerCase()),
         );
       }
-      if (
-        live.some((x) =>
-          pathKey(x.path).endsWith("\\system32\\apisetschema.dll"),
-        )
-      )
-        await loadApiSet(this.sql);
+      if (live.some(x => pathKey(x.path).endsWith("\\system32\\apisetschema.dll"))) await loadApiSet(this.sql);
       for (const x of live) {
         events.push({
           v: RECORD_VERSION,
@@ -346,14 +296,11 @@ class Applier {
       try {
         await invalidate(this.redis, events);
       } catch (e) {
-        this.log(
-          `Redis : invalidation impossible (${(e as Error).message}), reconnexion au prochain lot`,
-        );
+        this.log(`Redis : invalidation impossible (${(e as Error).message}), reconnexion au prochain lot`);
         this.redis = null;
       }
     }
-    if (events.some((e) => this.underGraph(e.path)))
-      this.ragDirty ||= Date.now();
+    if (events.some(e => this.underGraph(e.path))) this.ragDirty ||= Date.now();
     this.applied += events.length;
     return events;
   }
@@ -374,8 +321,7 @@ export function collect(
     const path = tree.childPath(rec.parentRecord, rec.name);
     if (isDir) {
       if (rec.reason & USN_REASON.FILE_DELETE) tree.delete(rec.record);
-      else if (!(rec.reason & USN_REASON.RENAME_OLD_NAME))
-        tree.set(rec.record, rec.parentRecord, rec.name);
+      else if (!(rec.reason & USN_REASON.RENAME_OLD_NAME)) tree.set(rec.record, rec.parentRecord, rec.name);
     }
     if (path === undefined) continue;
     if (rec.reason & USN_REASON.RENAME_OLD_NAME) {
@@ -429,10 +375,7 @@ export function collect(
 }
 
 /** Settled changes: closed by their writer, directories, or open longer than SETTLE_MS. */
-function settled(
-  pending: Map<string, PendingChange>,
-  force = false,
-): PendingChange[] {
+function settled(pending: Map<string, PendingChange>, force = false): PendingChange[] {
   const now = Date.now();
   const out: PendingChange[] = [];
   for (const [k, p] of pending) {
@@ -455,9 +398,7 @@ export async function watch(cfg: Config, opts: WatchOptions): Promise<void> {
     try {
       redis = await connectRedis(cfg);
     } catch (e) {
-      log(
-        `Redis indisponible (${(e as Error).message}) : cache non invalidé jusqu'à reconnexion`,
-      );
+      log(`Redis indisponible (${(e as Error).message}) : cache non invalidé jusqu'à reconnexion`);
       redis = null;
     }
   };
@@ -473,17 +414,12 @@ export async function watch(cfg: Config, opts: WatchOptions): Promise<void> {
     await connectCache();
     const applier = new Applier(cfg, sql, pool, redis, journal, log);
     await applier.refreshRoots();
-    if (!applier.registered.length)
-      log(
-        "aucune racine enregistrée : lancer `windex scan` (le watcher les suivra)",
-      );
+    if (!applier.registered.length) log("aucune racine enregistrée : lancer `windex scan` (le watcher les suivra)");
     let vol: Volume | null = null;
     try {
       vol = Volume.open("C");
     } catch (e) {
-      log(
-        `journal USN inaccessible (${(e as Error).message}) : repli ReadDirectoryChangesW (fs.watch)`,
-      );
+      log(`journal USN inaccessible (${(e as Error).message}) : repli ReadDirectoryChangesW (fs.watch)`);
     }
     const timers = { roots: Date.now(), services: Date.now() };
     const housekeeping = async () => {
@@ -499,20 +435,14 @@ export async function watch(cfg: Config, opts: WatchOptions): Promise<void> {
         timers.services = Date.now();
         log(`services et pilotes rechargés : ${await loadServices(sql)}`);
       }
-      if (
-        applier.ragDirty &&
-        Date.now() - applier.ragDirty > opts.ragMinutes * 60_000 &&
-        !ragRunning
-      ) {
+      if (applier.ragDirty && Date.now() - applier.ragDirty > opts.ragMinutes * 60_000 && !ragRunning) {
         applier.ragDirty = 0;
         ragRunning = true;
         void (async () => {
           try {
             const cards = await buildCards(sql, cfg);
             const r = await indexCards(cfg, cards.dir);
-            log(
-              `RAG : ${cards.written} fiches écrites, ${cards.removed} retirées ; home index code ${r.code}`,
-            );
+            log(`RAG : ${cards.written} fiches écrites, ${cards.removed} retirées ; home index code ${r.code}`);
           } catch (e) {
             log(`RAG : échec (${(e as Error).message})`);
           } finally {
@@ -522,17 +452,7 @@ export async function watch(cfg: Config, opts: WatchOptions): Promise<void> {
       }
     };
     let ragRunning = false;
-    if (vol)
-      await tailUsn(
-        vol,
-        cfg,
-        sql,
-        applier,
-        opts,
-        log,
-        () => stop,
-        housekeeping,
-      );
+    if (vol) await tailUsn(vol, cfg, sql, applier, opts, log, () => stop, housekeeping);
     else await tailFsWatch(applier, opts, log, () => stop, housekeeping);
     vol?.close();
   } finally {
@@ -558,22 +478,14 @@ async function tailUsn(
   log("lecture de la MFT C: (arbre des répertoires) ...");
   const mft = readMft("C", false);
   const tree = mft.tree;
-  log(
-    `MFT : ${mft.records} enregistrements, ${tree.dirs.size} répertoires en ${Math.round(mft.ms)} ms`,
-  );
+  log(`MFT : ${mft.records} enregistrements, ${tree.dirs.size} répertoires en ${Math.round(mft.ms)} ms`);
   let j: UsnJournal = vol.queryOrCreate();
   const stored = await getVolume(sql, "C");
   let usn: bigint;
   let rescan = false;
-  if (
-    stored &&
-    stored.journalId === j.journalId &&
-    stored.nextUsn >= j.firstUsn
-  ) {
+  if (stored && stored.journalId === j.journalId && stored.nextUsn >= j.firstUsn) {
     usn = stored.nextUsn;
-    log(
-      `reprise du journal USN au point ${usn} (${j.nextUsn - usn} octets de journal à rejouer)`,
-    );
+    log(`reprise du journal USN au point ${usn} (${j.nextUsn - usn} octets de journal à rejouer)`);
   } else {
     usn = mft.journal.nextUsn;
     rescan = stored !== undefined;
@@ -606,9 +518,7 @@ async function tailUsn(
         applier.redis,
         log,
       );
-      log(
-        `rescan ${r.path} : ${report.entries} entrées, ${report.swept} supprimées`,
-      );
+      log(`rescan ${r.path} : ${report.entries} entrées, ${report.swept} supprimées`);
     }
   };
   if (rescan) await rescanRoots();
@@ -620,9 +530,7 @@ async function tailUsn(
       usn = r.next;
     } catch (e) {
       if (e instanceof Win32Error && e.code === ERROR_JOURNAL_ENTRY_DELETED) {
-        log(
-          "le journal USN a dépassé le point de lecture : rescan incrémental",
-        );
+        log("le journal USN a dépassé le point de lecture : rescan incrémental");
         j = vol.queryOrCreate();
         usn = j.nextUsn;
         await rescanRoots();
@@ -648,8 +556,7 @@ async function tailUsn(
     }
     // The checkpoint never passes a change that is still settling.
     let checkpoint = usn;
-    for (const p of pending.values())
-      if (p.usn < checkpoint) checkpoint = p.usn;
+    for (const p of pending.values()) if (p.usn < checkpoint) checkpoint = p.usn;
     if (checkpoint !== lastSaved) {
       try {
         await setVolume(sql, {
@@ -667,8 +574,7 @@ async function tailUsn(
     await housekeeping();
     if (!records.length) await Bun.sleep(opts.pollMs);
   }
-  if (pending.size || ops.length)
-    await applier.apply(ops, settled(pending, true)).catch(() => {});
+  if (pending.size || ops.length) await applier.apply(ops, settled(pending, true)).catch(() => {});
 }
 
 async function tailFsWatch(
@@ -717,12 +623,12 @@ async function tailFsWatch(
     }
     if (ready.length) {
       const deletes: Op[] = ready
-        .filter((p) => !existsSync(p.path))
-        .map((p) => ({ op: "delete", path: p.path, dir: false, usn: 0n }));
+        .filter(p => !existsSync(p.path))
+        .map(p => ({ op: "delete", path: p.path, dir: false, usn: 0n }));
       try {
         await applier.apply(
           deletes,
-          ready.filter((p) => existsSync(p.path)),
+          ready.filter(p => existsSync(p.path)),
         );
       } catch (e) {
         log(`application différée (${(e as Error).message})`);
@@ -757,11 +663,7 @@ export type ProbeResult = {
  * Measures the propagation of a created then deleted file to PostgreSQL (row visible / gone) and to the Redis
  * change channel. Requires a running watcher and `dir` below a registered root.
  */
-export async function probe(
-  cfg: Config,
-  dir: string,
-  timeoutMs = 30_000,
-): Promise<ProbeResult> {
+export async function probe(cfg: Config, dir: string, timeoutMs = 30_000): Promise<ProbeResult> {
   const sql = connect(cfg, 2);
   const sub = await connectRedis(cfg).catch(() => null);
   const file = `${dir.replace(/\\$/, "")}\\windex-probe-${Date.now()}.txt`;
@@ -772,8 +674,7 @@ export async function probe(
       await sub.subscribe(EVENTS_CHANNEL, (message: string) => {
         try {
           const e = JSON.parse(message) as ChangeEvent;
-          if (pathKey(e.path) === key && !seen.has(e.op))
-            seen.set(e.op, performance.now());
+          if (pathKey(e.path) === key && !seen.has(e.op)) seen.set(e.op, performance.now());
         } catch {
           // Foreign message.
         }
@@ -786,17 +687,14 @@ export async function probe(
       }
       return null;
     };
-    const exists = async () =>
-      (await sql`SELECT 1 FROM windex.fs_node WHERE path_lc = ${key}`).length >
-      0;
+    const exists = async () => (await sql`SELECT 1 FROM windex.fs_node WHERE path_lc = ${key}`).length > 0;
     const t0 = performance.now();
     writeFileSync(file, `windex probe ${new Date().toISOString()}\n`);
     const createVisibleMs = await until(exists, t0);
     const [row] =
       await sql`SELECT path, size, sha256, modified_at, usn::text AS usn FROM windex.fs_node WHERE path_lc = ${key}`;
     // The change event is published right after the row is written: give it a moment to arrive.
-    for (let i = 0; i < 100 && sub && !seen.has("upsert"); i++)
-      await Bun.sleep(5);
+    for (let i = 0; i < 100 && sub && !seen.has("upsert"); i++) await Bun.sleep(5);
     const createEvent = seen.get("upsert");
     const t1 = performance.now();
     unlinkSync(file);
@@ -805,14 +703,10 @@ export async function probe(
     const deleteEvent = seen.get("delete");
     return {
       file,
-      createVisibleMs:
-        createVisibleMs === null ? null : Math.round(createVisibleMs),
-      createEventMs:
-        createEvent === undefined ? null : Math.round(createEvent - t0),
-      deleteVisibleMs:
-        deleteVisibleMs === null ? null : Math.round(deleteVisibleMs),
-      deleteEventMs:
-        deleteEvent === undefined ? null : Math.round(deleteEvent - t1),
+      createVisibleMs: createVisibleMs === null ? null : Math.round(createVisibleMs),
+      createEventMs: createEvent === undefined ? null : Math.round(createEvent - t0),
+      deleteVisibleMs: deleteVisibleMs === null ? null : Math.round(deleteVisibleMs),
+      deleteEventMs: deleteEvent === undefined ? null : Math.round(deleteEvent - t1),
       row: row ?? null,
     };
   } finally {

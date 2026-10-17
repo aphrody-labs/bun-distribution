@@ -26,9 +26,7 @@ interface RepoTemplate {
 }
 
 const root = join(import.meta.dir, "../../../../docs/aphrody");
-const config = JSON.parse(
-  readFileSync(join(root, "tools/config/github/templates.json"), "utf8"),
-) as {
+const config = JSON.parse(readFileSync(join(root, "tools/config/github/templates.json"), "utf8")) as {
   repos: Record<string, RepoTemplate>;
 };
 
@@ -46,7 +44,7 @@ body:
     attributes:
       label: Composant affecté
       options:
-${r.components.map((c) => `        - ${c}`).join("\n")}
+${r.components.map(c => `        - ${c}`).join("\n")}
     validations:
       required: true
   - type: textarea
@@ -72,7 +70,7 @@ ${r.components.map((c) => `        - ${c}`).join("\n")}
       label: Environnement
       description: ${r.environmentDescription}
       value: |
-${r.environment.map((e) => `        - ${e}`).join("\n")}
+${r.environment.map(e => `        - ${e}`).join("\n")}
     validations:
       required: false
 `;
@@ -110,13 +108,13 @@ body:
 <!-- Décrivez clairement les modifications apportées et le composant ciblé. -->
 
 ### Composant(s) modifié(s) :
-${r.prComponents.map((c) => `- [ ] ${c}`).join("\n")}
+${r.prComponents.map(c => `- [ ] ${c}`).join("\n")}
 
 ---
 
 ## 🧪 Validations Requises
 Avant de soumettre, confirmez que les vérifications suivantes ont été exécutées :
-${r.prValidations.map((c) => `- [ ] ${c}`).join("\n")}
+${r.prValidations.map(c => `- [ ] ${c}`).join("\n")}
 `;
   return {
     ".github/ISSUE_TEMPLATE/bug_report.yml": bug,

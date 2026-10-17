@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable no-await-in-loop -- Artifact hashes and namespace lifecycle probes are deliberately serial and bounded. */
-import {
-  chmod,
-  lstat,
-  readlink,
-  realpath,
-  mkdir,
-  rmdir,
-} from "node:fs/promises";
+import { chmod, lstat, readlink, realpath, mkdir, rmdir } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve } from "node:path";
 
 export interface SourceJobConfig {
@@ -35,8 +28,7 @@ export interface SourceJobPlan {
   hostRouteSha256: string;
   hostIdentitySha256: string;
   googleJarSha256: string;
-  collectionSchema?:
-    "shenron-source-collection/v1" | "shenron-source-collection/v2";
+  collectionSchema?: "shenron-source-collection/v1" | "shenron-source-collection/v2";
 }
 export interface SourceJobResult {
   code: number;
@@ -50,19 +42,15 @@ export interface SourceJobPorts {
   account?: () => Promise<string | null>;
   signal?: AbortSignal;
 }
-const sha = (bytes: string | Uint8Array) =>
-  new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+const sha = (bytes: string | Uint8Array) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 const validSha = (value: string) => /^[a-f0-9]{64}$/.test(value);
 const logicalRoot = "/app/data/source-pipeline";
 function inside(root: string, path: string) {
   const child = relative(root, path);
-  return (
-    !!child && !isAbsolute(child) && child !== ".." && !child.startsWith("../")
-  );
+  return !!child && !isAbsolute(child) && child !== ".." && !child.startsWith("../");
 }
 function sourceCollectionSchema(source: Record<string, unknown>) {
-  if (source.batchCollection === undefined)
-    return "shenron-source-collection/v1" as const;
+  if (source.batchCollection === undefined) return "shenron-source-collection/v1" as const;
   const batch = source.batchCollection as Record<string, unknown> | null;
   const crawl = source.crawl as { mode?: unknown } | undefined;
   if (
@@ -77,15 +65,7 @@ function sourceCollectionSchema(source: Record<string, unknown>) {
     Number(batch.batchSize) < 1 ||
     Number(batch.batchSize) > 100000 ||
     Number(batch.batchSize) > Number(source.maxDocuments ?? 10000) ||
-    Object.keys(batch).some(
-      (key) =>
-        ![
-          "version",
-          "snapshotSha256",
-          "batchSize",
-          "maxBatchesPerCycle",
-        ].includes(key),
-    ) ||
+    Object.keys(batch).some(key => !["version", "snapshotSha256", "batchSize", "maxBatchesPerCycle"].includes(key)) ||
     (crawl && crawl.mode !== "attach")
   )
     throw Error("Explicit immutable source batch collection required");
@@ -102,12 +82,9 @@ export function validSourceCollectionReceipt(
     receipt.configSha256 !== configSha256 ||
     typeof receipt.pinnedConfigPath !== "string" ||
     !inside(logicalRoot, receipt.pinnedConfigPath) ||
-    ![
-      receipt.pinnedConfigSha256,
-      receipt.collectionSha256,
-      receipt.artifactsSha256,
-      receipt.revisionIdentity,
-    ].every((pin) => typeof pin === "string" && validSha(pin))
+    ![receipt.pinnedConfigSha256, receipt.collectionSha256, receipt.artifactsSha256, receipt.revisionIdentity].every(
+      pin => typeof pin === "string" && validSha(pin),
+    )
   )
     return false;
   if (expectedSchema === "shenron-source-collection/v1") return true;
@@ -129,16 +106,13 @@ export function validSourceCollectionReceipt(
       batch.batchReceiptSha256,
       batch.exportSha256,
       batch.validationSha256,
-    ].every((pin) => typeof pin === "string" && validSha(pin)) ||
-    ![batch.cursor, batch.nextCursor, batch.totalDocuments].every(
-      Number.isSafeInteger,
-    ) ||
+    ].every(pin => typeof pin === "string" && validSha(pin)) ||
+    ![batch.cursor, batch.nextCursor, batch.totalDocuments].every(Number.isSafeInteger) ||
     Number(batch.cursor) < 0 ||
     Number(batch.nextCursor) < Number(batch.cursor) ||
     Number(batch.nextCursor) > Number(batch.totalDocuments) ||
     Number(batch.nextCursor) - Number(batch.cursor) > 100000 ||
-    (Number(batch.totalDocuments) > 0 &&
-      Number(batch.nextCursor) === Number(batch.cursor)) ||
+    (Number(batch.totalDocuments) > 0 && Number(batch.nextCursor) === Number(batch.cursor)) ||
     typeof batch.exportComplete !== "boolean" ||
     typeof batch.validationComplete !== "boolean"
   )
@@ -149,32 +123,15 @@ export function validSourceCollectionReceipt(
     batch.batchReceiptPath,
     batch.exportPath,
     batch.validationPath,
-  ].every(
-    (path) =>
-      typeof path === "string" &&
-      isAbsolute(path) &&
-      resolve(path) === path &&
-      inside(logicalRoot, path),
-  );
+  ].every(path => typeof path === "string" && isAbsolute(path) && resolve(path) === path && inside(logicalRoot, path));
 }
-async function protectedPath(
-  path: string,
-  directory: boolean,
-  privateMode = true,
-) {
+async function protectedPath(path: string, directory: boolean, privateMode = true) {
   if (!isAbsolute(path) || resolve(path) !== path || /[:,\n\r\0]/.test(path))
     throw new Error("Invalid source job path");
   const info = await lstat(path);
-  if (
-    info.isSymbolicLink() ||
-    (await realpath(path)) !== path ||
-    (directory ? !info.isDirectory() : !info.isFile())
-  )
+  if (info.isSymbolicLink() || (await realpath(path)) !== path || (directory ? !info.isDirectory() : !info.isFile()))
     throw new Error("Source job path is not a regular owned path");
-  if (
-    ![0, process.getuid?.() ?? 1000].includes(info.uid) ||
-    info.mode & (privateMode ? 0o077 : 0o022)
-  )
+  if (![0, process.getuid?.() ?? 1000].includes(info.uid) || info.mode & (privateMode ? 0o077 : 0o022))
     throw new Error("Source job path permissions are unsafe");
 }
 async function fileSha(path: string) {
@@ -187,9 +144,7 @@ export async function sourceJobRun(
   options: { stdin?: Uint8Array; timeoutMs: number; signal?: AbortSignal },
 ): Promise<SourceJobResult> {
   const controller = new AbortController();
-  const signal = options.signal
-    ? AbortSignal.any([options.signal, controller.signal])
-    : controller.signal;
+  const signal = options.signal ? AbortSignal.any([options.signal, controller.signal]) : controller.signal;
   const child = Bun.spawn(args, {
     stdin: options.stdin ? new Blob([new Uint8Array(options.stdin)]) : "ignore",
     stdout: "pipe",
@@ -198,7 +153,7 @@ export async function sourceJobRun(
   });
   const timer = setTimeout(() => controller.abort(), options.timeoutMs);
   let exited = false;
-  void child.exited.then((code) => {
+  void child.exited.then(code => {
     exited = true;
     return code;
   });
@@ -234,10 +189,7 @@ export async function sourceJobRun(
       await Promise.race([
         child.exited,
         new Promise<never>((_, reject) => {
-          reapTimer = setTimeout(
-            () => reject(new Error("Source job process teardown uncertain")),
-            2500,
-          );
+          reapTimer = setTimeout(() => reject(new Error("Source job process teardown uncertain")), 2500);
         }),
       ]);
     } finally {
@@ -258,8 +210,7 @@ async function checked(
     signal,
     ...(stdin ? { stdin } : {}),
   });
-  if (result.code !== 0)
-    throw new Error("Source job native owner command failed");
+  if (result.code !== 0) throw new Error("Source job native owner command failed");
   return result.stdout;
 }
 async function verifyInputs(config: SourceJobConfig) {
@@ -297,18 +248,12 @@ async function verifyInputs(config: SourceJobConfig) {
   }
   if (
     !validSha(config.resources.relaysSha256) ||
-    (await fileSha(join(config.resources.path, "relays.json"))) !==
-      config.resources.relaysSha256
+    (await fileSha(join(config.resources.path, "relays.json"))) !== config.resources.relaysSha256
   )
     throw new Error("Source job relay resource hash differs");
   const source = await Bun.file(config.pipelineConfig).json();
-  if (source.collectionIsolation !== "required")
-    throw new Error("Source pipeline must require isolated collection");
-  if (
-    [source.input, source.policy, source.job].some(
-      (path) => typeof path !== "string",
-    )
-  )
+  if (source.collectionIsolation !== "required") throw new Error("Source pipeline must require isolated collection");
+  if ([source.input, source.policy, source.job].some(path => typeof path !== "string"))
     throw new Error("Source collection input paths are required");
   const logicalPaths: unknown[] = [
     source.input,
@@ -323,35 +268,21 @@ async function verifyInputs(config: SourceJobConfig) {
   ];
   if (
     logicalPaths
-      .filter((path) => path !== undefined)
+      .filter(path => path !== undefined)
       .some(
-        (path) =>
-          typeof path !== "string" ||
-          !isAbsolute(path) ||
-          resolve(path) !== path ||
-          !inside(logicalRoot, path),
+        path => typeof path !== "string" || !isAbsolute(path) || resolve(path) !== path || !inside(logicalRoot, path),
       )
   )
-    throw new Error(
-      "Source job config paths must stay in its private logical volume",
-    );
+    throw new Error("Source job config paths must stay in its private logical volume");
   if (source.search && source.search.cookieJar !== "/job/google-cookies.json")
     throw new Error("Source job Search must use its protected read-only jar");
   if (sourceCollectionSchema(source) === "shenron-source-collection/v2") {
     const input = join(config.dataRoot, relative(logicalRoot, source.input));
     await protectedPath(input, false);
-    if (
-      (await lstat(input)).size > 1024 ** 3 ||
-      (await fileSha(input)) !== source.batchCollection.snapshotSha256
-    )
+    if ((await lstat(input)).size > 1024 ** 3 || (await fileSha(input)) !== source.batchCollection.snapshotSha256)
       throw Error("Source batch input must be an immutable pinned snapshot");
   }
-  for (const input of [
-    config.runtime.path,
-    config.bundle.path,
-    config.resources.path,
-    config.googleJar,
-  ]) {
+  for (const input of [config.runtime.path, config.bundle.path, config.resources.path, config.googleJar]) {
     if (
       inside(config.dataRoot, input) ||
       inside(config.vpnStateRoot, input) ||
@@ -361,18 +292,10 @@ async function verifyInputs(config: SourceJobConfig) {
       throw new Error("Read-only source job artifact overlaps writable state");
   }
 }
-export async function planSourceJob(
-  config: SourceJobConfig,
-  ports: SourceJobPorts = {},
-): Promise<SourceJobPlan> {
+export async function planSourceJob(config: SourceJobConfig, ports: SourceJobPorts = {}): Promise<SourceJobPlan> {
   await verifyInputs(config);
   const run = ports.run ?? sourceJobRun;
-  const hostRoute = await checked(
-    run,
-    ["ip", "route", "show", "default"],
-    10000,
-    ports.signal,
-  );
+  const hostRoute = await checked(run, ["ip", "route", "show", "default"], 10000, ports.signal);
   return {
     schema: "shenron-source-vpn-job/v1",
     config,
@@ -384,16 +307,13 @@ export async function planSourceJob(
     hostRouteSha256: sha(hostRoute),
     hostIdentitySha256: await fileSha("/etc/machine-id"),
     googleJarSha256: await fileSha(config.googleJar),
-    collectionSchema: sourceCollectionSchema(
-      await Bun.file(config.pipelineConfig).json(),
-    ),
+    collectionSchema: sourceCollectionSchema(await Bun.file(config.pipelineConfig).json()),
   };
 }
 /** Only this typed job receives the capabilities required by its embedded VPN daemon. */
 export function sourceJobArgs(plan: SourceJobPlan, name: string): string[] {
   const c = plan.config;
-  if (!/^shenron-source-vpn-[a-f0-9]{16}$/.test(name))
-    throw new Error("Invalid owned source container identity");
+  if (!/^shenron-source-vpn-[a-f0-9]{16}$/.test(name)) throw new Error("Invalid owned source container identity");
   const guard = `import{readlink,lstat}from"node:fs/promises";setTimeout(()=>process.exit(124),${(c.timeoutMs ?? 900000) + 60000});if(await readlink("/proc/self/ns/net")===${JSON.stringify(plan.hostNetns)}||await readlink("/proc/self/ns/mnt")===${JSON.stringify(plan.hostMountns)})throw Error("VPN namespace isolation missing");try{await lstat("/run/dbus/system_bus_socket");throw Error("Host DBus must not be mounted");}catch(e){if(e.code!=="ENOENT")throw e;}const pins=${JSON.stringify(
     [
       ["/job/runtime", c.runtime.sha256],
@@ -434,14 +354,7 @@ export function sourceJobArgs(plan: SourceJobPlan, name: string): string[] {
     "no-new-privileges:true",
     "--cap-drop",
     "ALL",
-    ...[
-      "NET_ADMIN",
-      "SETUID",
-      "SETGID",
-      "CHOWN",
-      "DAC_OVERRIDE",
-      "KILL",
-    ].flatMap((cap) => ["--cap-add", cap]),
+    ...["NET_ADMIN", "SETUID", "SETGID", "CHOWN", "DAC_OVERRIDE", "KILL"].flatMap(cap => ["--cap-add", cap]),
     "--device",
     "/dev/net/tun:/dev/net/tun",
     "--tmpfs",
@@ -472,7 +385,7 @@ export function sourceJobArgs(plan: SourceJobPlan, name: string): string[] {
       "MULLVAD_RESOURCE_DIR=/job/resources",
       "MULLVAD_RPC_SOCKET_PATH=/run/bun-vpn/pipeline.sock",
       "APHRODY_GOOGLE_COOKIES_JSON=/job/google-cookies.json",
-    ].flatMap((env) => ["--env", env]),
+    ].flatMap(env => ["--env", env]),
     "--entrypoint",
     "/job/runtime",
     c.imageId,
@@ -508,16 +421,11 @@ async function finishSourceJob(
   }
   if (
     (await fileSha("/etc/resolv.conf")) !== plan.hostDnsSha256 ||
-    sha(await checked(run, ["ip", "route", "show", "default"], 10000)) !==
-      plan.hostRouteSha256
+    sha(await checked(run, ["ip", "route", "show", "default"], 10000)) !== plan.hostRouteSha256
   )
     throw new Error("Source job changed host networking");
 }
-export async function applySourceJob(
-  plan: SourceJobPlan,
-  expectedPlanSha256: string,
-  ports: SourceJobPorts = {},
-) {
+export async function applySourceJob(plan: SourceJobPlan, expectedPlanSha256: string, ports: SourceJobPorts = {}) {
   if (
     !validSha(expectedPlanSha256) ||
     sha(JSON.stringify(plan)) !== expectedPlanSha256 ||
@@ -529,9 +437,8 @@ export async function applySourceJob(
   if ((await fileSha(plan.config.pipelineConfig)) !== plan.pipelineConfigSha256)
     throw new Error("Source job config changed after plan");
   if (
-    sourceCollectionSchema(
-      await Bun.file(plan.config.pipelineConfig).json(),
-    ) !== (plan.collectionSchema ?? "shenron-source-collection/v1")
+    sourceCollectionSchema(await Bun.file(plan.config.pipelineConfig).json()) !==
+    (plan.collectionSchema ?? "shenron-source-collection/v1")
   )
     throw Error("Source collection protocol changed since plan");
   const run = ports.run ?? sourceJobRun;
@@ -545,23 +452,12 @@ export async function applySourceJob(
     throw new Error("Source job Google jar changed since plan");
   if (
     (await fileSha("/etc/resolv.conf")) !== plan.hostDnsSha256 ||
-    sha(
-      await checked(
-        run,
-        ["ip", "route", "show", "default"],
-        10000,
-        ports.signal,
-      ),
-    ) !== plan.hostRouteSha256
+    sha(await checked(run, ["ip", "route", "show", "default"], 10000, ports.signal)) !== plan.hostRouteSha256
   )
     throw new Error("Host networking changed since source job plan");
   const name = `shenron-source-vpn-${crypto.randomUUID().replaceAll("-", "").slice(0, 16)}`;
-  const account = await (
-    ports.account ??
-    (() => Bun.secrets.get({ service: "bun-vpn", name: "mullvad-account" }))
-  )();
-  if (!account || !/^\d{16}$/.test(account.trim()))
-    throw new Error("Source job protected VPN account unavailable");
+  const account = await (ports.account ?? (() => Bun.secrets.get({ service: "bun-vpn", name: "mullvad-account" })))();
+  if (!account || !/^\d{16}$/.test(account.trim())) throw new Error("Source job protected VPN account unavailable");
   const deadline = Date.now() + (plan.config.timeoutMs ?? 900000);
   const remaining = () => {
     const value = deadline - Date.now();
@@ -580,10 +476,7 @@ export async function applySourceJob(
     "/job/runtime",
     ...args,
   ];
-  const lock = join(
-    plan.config.dataRoot,
-    `.infra-vpn-${expectedPlanSha256}.lock`,
-  );
+  const lock = join(plan.config.dataRoot, `.infra-vpn-${expectedPlanSha256}.lock`);
   await mkdir(lock, { mode: 0o700 });
   try {
     if (
@@ -596,12 +489,7 @@ export async function applySourceJob(
     )
       throw new Error("Source job is already owned by another execution");
     created = true;
-    await checked(
-      run,
-      sourceJobArgs(plan, name),
-      Math.min(30000, remaining()),
-      ports.signal,
-    );
+    await checked(run, sourceJobArgs(plan, name), Math.min(30000, remaining()), ports.signal);
     const startupDeadline = Date.now() + Math.min(30000, remaining());
     for (;;) {
       const state = await run(exec(["vpn", "status"]), {
@@ -609,72 +497,39 @@ export async function applySourceJob(
         signal: ports.signal,
       });
       if (state.code === 0) break;
-      if (Date.now() >= startupDeadline)
-        throw new Error("Source job VPN IPC startup failed");
+      if (Date.now() >= startupDeadline) throw new Error("Source job VPN IPC startup failed");
       const running = await checked(
         run,
         ["docker", "inspect", "--format", "{{.State.Running}}", name],
         Math.min(10000, remaining()),
         ports.signal,
       );
-      if (running.trim() !== "true")
-        throw new Error("Source job VPN daemon exited");
+      if (running.trim() !== "true") throw new Error("Source job VPN daemon exited");
       await Bun.sleep(Math.min(100, remaining()));
     }
     await checked(
       run,
-      [
-        "docker",
-        "exec",
-        "-i",
-        "--env",
-        "BUN_BE_BUN=1",
-        name,
-        "/job/runtime",
-        "vpn",
-        "login",
-        "--stdin",
-      ],
+      ["docker", "exec", "-i", "--env", "BUN_BE_BUN=1", name, "/job/runtime", "vpn", "login", "--stdin"],
       Math.min(30000, remaining()),
       ports.signal,
       new TextEncoder().encode(account.trim() + "\n"),
     );
-    await checked(
-      run,
-      exec(["vpn", "connect"]),
-      Math.min(30000, remaining()),
-      ports.signal,
-    );
+    await checked(run, exec(["vpn", "connect"]), Math.min(30000, remaining()), ports.signal);
     const connectDeadline = Date.now() + Math.min(60000, remaining());
     for (;;) {
-      const state = await checked(
-        run,
-        exec(["vpn", "status"]),
-        Math.min(10000, remaining()),
-        ports.signal,
-      );
+      const state = await checked(run, exec(["vpn", "status"]), Math.min(10000, remaining()), ports.signal);
       if (/^Connected\b/.test(state.trim())) break;
-      if (Date.now() >= connectDeadline)
-        throw new Error("Source job VPN connection deadline exceeded");
+      if (Date.now() >= connectDeadline) throw new Error("Source job VPN connection deadline exceeded");
       await Bun.sleep(Math.min(100, remaining()));
     }
     const receiptName = `.infra-collection-${expectedPlanSha256}-${crypto.randomUUID()}.json`;
     const receiptDestination = logicalRoot + "/" + receiptName;
     const code = `import{chmod,rename}from"node:fs/promises";const exitResponse=await fetch("https://am.i.mullvad.net/json",{redirect:"error",signal:AbortSignal.timeout(15000)});if(!exitResponse.ok||(await exitResponse.json()).mullvad_exit_ip!==true)throw Error("Private Mullvad egress qualification failed");const google=await fetch("https://www.google.com/generate_204",{redirect:"error",signal:AbortSignal.timeout(15000)});if(google.status!==204)throw Error("Private Google TLS qualification failed");const m=await import("/job/pipeline.mjs");const r=await m.collectSourcePipeline(${JSON.stringify(logicalRoot + "/config.json")},{isolatedCollection:true,signal:AbortSignal.timeout(${remaining()})});const path=${JSON.stringify(receiptDestination)};await Bun.write(path+".new",JSON.stringify(r));await chmod(path+".new",0o600);await rename(path+".new",path);`;
-    await checked(
-      run,
-      exec(["-e", code], "1000:1000"),
-      remaining(),
-      ports.signal,
-    );
+    await checked(run, exec(["-e", code], "1000:1000"), remaining(), ports.signal);
     const receiptPath = join(plan.config.dataRoot, receiptName);
     await protectedPath(receiptPath, false);
-    if (Bun.file(receiptPath).size > 1048576)
-      throw new Error("Source collection receipt exceeds budget");
-    const receipt = (await Bun.file(receiptPath).json()) as Record<
-      string,
-      unknown
-    >;
+    if (Bun.file(receiptPath).size > 1048576) throw new Error("Source collection receipt exceeds budget");
+    const receipt = (await Bun.file(receiptPath).json()) as Record<string, unknown>;
     if (
       !validSourceCollectionReceipt(
         receipt,
@@ -683,10 +538,7 @@ export async function applySourceJob(
       )
     )
       throw new Error("Source collection receipt is invalid");
-    const pinnedConfig = join(
-      plan.config.dataRoot,
-      relative(logicalRoot, receipt.pinnedConfigPath as string),
-    );
+    const pinnedConfig = join(plan.config.dataRoot, relative(logicalRoot, receipt.pinnedConfigPath as string));
     await protectedPath(pinnedConfig, false);
     if ((await fileSha(pinnedConfig)) !== receipt.pinnedConfigSha256)
       throw new Error("Source collection config receipt differs");
@@ -695,8 +547,7 @@ export async function applySourceJob(
       const source = await Bun.file(plan.config.pipelineConfig).json();
       if (
         batch.sourceSha256 !== source.batchCollection.snapshotSha256 ||
-        Number(batch.nextCursor) - Number(batch.cursor) >
-          source.batchCollection.batchSize
+        Number(batch.nextCursor) - Number(batch.cursor) > source.batchCollection.batchSize
       )
         throw Error("Versioned collection snapshot or range differs");
       for (const [logical, expected] of [
@@ -706,15 +557,9 @@ export async function applySourceJob(
         [batch.exportPath, batch.exportSha256],
         [batch.validationPath, batch.validationSha256],
       ]) {
-        const path = join(
-          plan.config.dataRoot,
-          relative(logicalRoot, logical as string),
-        );
+        const path = join(plan.config.dataRoot, relative(logicalRoot, logical as string));
         await protectedPath(path, false);
-        if (
-          (await lstat(path)).size > 1024 ** 3 ||
-          (await fileSha(path)) !== expected
-        )
+        if ((await lstat(path)).size > 1024 ** 3 || (await fileSha(path)) !== expected)
           throw Error("Versioned collection artifact hash differs");
       }
     }
@@ -736,39 +581,29 @@ export async function applySourceJob(
 }
 export async function sourceJobCli(args: string[]) {
   if (args[0] === "drain") {
-    if (
-      args.length !== 5 ||
-      args[1] !== "--config" ||
-      args[3] !== "--config-sha256"
-    )
+    if (args.length !== 5 || args[1] !== "--config" || args[3] !== "--config-sha256")
       throw new Error("source-job drain --config PRIVATE --config-sha256 HASH");
     const { drainSourceOutbox } = await import("./shenron-source-outbox.ts");
     console.log(JSON.stringify(await drainSourceOutbox(args[2]!, args[4]!)));
     return;
   }
-  const [action, flag, configPath, planFlag, planPath, hashFlag, planHash] =
-    args;
+  const [action, flag, configPath, planFlag, planPath, hashFlag, planHash] = args;
   if (
     !["plan", "apply"].includes(action ?? "") ||
     flag !== "--config" ||
     !configPath ||
     planFlag !== "--plan" ||
     !planPath ||
-    (action === "apply"
-      ? hashFlag !== "--plan-sha256" || !planHash || args.length !== 7
-      : args.length !== 5)
+    (action === "apply" ? hashFlag !== "--plan-sha256" || !planHash || args.length !== 7 : args.length !== 5)
   )
-    throw new Error(
-      "source-job plan|apply --config PRIVATE --plan PRIVATE [--plan-sha256 HASH]",
-    );
+    throw new Error("source-job plan|apply --config PRIVATE --plan PRIVATE [--plan-sha256 HASH]");
   await protectedPath(configPath, false);
   const config = (await Bun.file(configPath).json()) as SourceJobConfig;
   if (action === "plan") {
     const plan = await planSourceJob(config);
     if (!isAbsolute(planPath) || resolve(planPath) !== planPath)
       throw new Error("Source job plan must be an absolute private path");
-    if (await Bun.file(planPath).exists())
-      throw new Error("Source job plan must be new");
+    if (await Bun.file(planPath).exists()) throw new Error("Source job plan must be new");
     await mkdir(resolve(planPath, ".."), { recursive: true, mode: 0o700 });
     await protectedPath(resolve(planPath, ".."), true);
     await Bun.write(planPath, JSON.stringify(plan));

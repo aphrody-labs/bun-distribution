@@ -16,25 +16,12 @@ import { join, resolve } from "node:path";
 import { main as cargoSerial } from "../rust/cargo-serial.ts";
 
 export const repoRoot = resolve(import.meta.dir, "../../../../docs/aphrody");
-export const installRoot = join(
-  repoRoot,
-  "target",
-  "aphrody-uutils",
-  "coreutils",
-);
+export const installRoot = join(repoRoot, "target", "aphrody-uutils", "coreutils");
 const WINDOWS = process.platform === "win32";
 const EXE = WINDOWS ? ".exe" : "";
 
 export const COREUTILS_VERSION = "0.12.0";
-export const REQUIRED_UTILITIES = [
-  "cat",
-  "cp",
-  "ls",
-  "rm",
-  "sha256sum",
-  "sort",
-  "whoami",
-];
+export const REQUIRED_UTILITIES = ["cat", "cp", "ls", "rm", "sha256sum", "sort", "whoami"];
 
 export interface Companion {
   /** Repository name under third_party/ and in the report. */
@@ -73,14 +60,10 @@ export const COMPANIONS: Companion[] = [
   },
 ];
 
-export function coreutilsFeature(
-  platform: NodeJS.Platform = process.platform,
-): "windows" | "unix" {
+export function coreutilsFeature(platform: NodeJS.Platform = process.platform): "windows" | "unix" {
   if (platform === "win32") return "windows";
   if (platform === "linux" || platform === "darwin") return "unix";
-  throw new Error(
-    `uutils/coreutils build is only wired for Windows, Linux and macOS, got: ${platform}`,
-  );
+  throw new Error(`uutils/coreutils build is only wired for Windows, Linux and macOS, got: ${platform}`);
 }
 
 /** `cargo install` arguments of one crate into the shared install root. */
@@ -96,18 +79,14 @@ export function installArgs(
 }
 
 /** Missing required utilities in the `coreutils --list` output. */
-export function missingUtilities(
-  listing: string,
-  required = REQUIRED_UTILITIES,
-): string[] {
+export function missingUtilities(listing: string, required = REQUIRED_UTILITIES): string[] {
   const available = new Set(listing.split(/\s+/).filter(Boolean));
-  return required.filter((utility) => !available.has(utility));
+  return required.filter(utility => !available.has(utility));
 }
 
 async function cargo(args: string[]): Promise<void> {
   const code = await cargoSerial(WINDOWS ? ["--msvc", ...args] : args);
-  if (code !== 0)
-    throw new Error(`cargo ${args.join(" ")} failed (exit ${code})`);
+  if (code !== 0) throw new Error(`cargo ${args.join(" ")} failed (exit ${code})`);
 }
 
 function run(binary: string, args: string[]): string {
@@ -117,9 +96,7 @@ function run(binary: string, args: string[]): string {
     stderr: "pipe",
   });
   if (result.exitCode !== 0)
-    throw new Error(
-      `${binary} ${args.join(" ")} failed (exit ${result.exitCode}): ${result.stderr.toString()}`,
-    );
+    throw new Error(`${binary} ${args.join(" ")} failed (exit ${result.exitCode}): ${result.stderr.toString()}`);
   return result.stdout.toString();
 }
 
@@ -136,19 +113,13 @@ export interface BuildReport {
 
 export async function build(verify: boolean): Promise<BuildReport> {
   const feature = coreutilsFeature();
-  await cargo(
-    installArgs({ crate: "coreutils", version: COREUTILS_VERSION }, feature),
-  );
+  await cargo(installArgs({ crate: "coreutils", version: COREUTILS_VERSION }, feature));
   const coreutils = join(installRoot, "bin", `coreutils${EXE}`);
   if (!existsSync(coreutils))
-    throw new Error(
-      `uutils build completed without the expected multicall binary: ${coreutils}`,
-    );
+    throw new Error(`uutils build completed without the expected multicall binary: ${coreutils}`);
   const missing = missingUtilities(run(coreutils, ["--list"]));
   if (missing.length > 0)
-    throw new Error(
-      `uutils multicall binary is missing required utilities: ${missing.join(", ")}`,
-    );
+    throw new Error(`uutils multicall binary is missing required utilities: ${missing.join(", ")}`);
   if (verify) run(coreutils, ["echo", "aphrody"]);
 
   const companions: BuildReport["companions"] = [];
@@ -173,12 +144,8 @@ export async function build(verify: boolean): Promise<BuildReport> {
       });
       continue;
     }
-    if (!existsSync(binary))
-      throw new Error(
-        `uutils companion build completed without expected binary: ${binary}`,
-      );
-    if (verify && companion.verifyArgs.length > 0)
-      run(binary, companion.verifyArgs);
+    if (!existsSync(binary)) throw new Error(`uutils companion build completed without expected binary: ${binary}`);
+    if (verify && companion.verifyArgs.length > 0) run(binary, companion.verifyArgs);
     companions.push({
       repository: companion.repository,
       binary,
@@ -190,13 +157,9 @@ export async function build(verify: boolean): Promise<BuildReport> {
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
-  const unknown = args.filter(
-    (arg) => !["--verify", "--json", "--help", "-h"].includes(arg),
-  );
+  const unknown = args.filter(arg => !["--verify", "--json", "--help", "-h"].includes(arg));
   if (args.includes("--help") || args.includes("-h")) {
-    console.log(
-      "Usage: bun scripts/build/os/build-uutils-coreutils.ts [--verify] [--json]",
-    );
+    console.log("Usage: bun scripts/build/os/build-uutils-coreutils.ts [--verify] [--json]");
   } else if (unknown.length > 0) {
     console.error(`Unknown argument: ${unknown.join(" ")}`);
     process.exitCode = 64;
@@ -211,9 +174,7 @@ if (import.meta.main) {
               ? `uutils/${companion.repository.slice(7)} is ready: ${companion.binary}`
               : `uutils/${companion.repository.slice(7)} is unavailable: ${companion.reason}`,
           );
-        console.log(
-          `uutils/coreutils is ready: ${report.coreutils} (${report.feature} feature set)`,
-        );
+        console.log(`uutils/coreutils is ready: ${report.coreutils} (${report.feature} feature set)`);
       }
     } catch (error) {
       console.error(error instanceof Error ? error.message : String(error));

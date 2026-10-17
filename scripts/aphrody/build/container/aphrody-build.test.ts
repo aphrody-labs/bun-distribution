@@ -1,13 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
 import { resolve } from "node:path";
-import {
-  buildArgs,
-  gitToken,
-  imageTag,
-  readPins,
-  runArgs,
-} from "./aphrody-build.ts";
+import { buildArgs, gitToken, imageTag, readPins, runArgs } from "./aphrody-build.ts";
 
 const ROOT = resolve(import.meta.dir, "../../../../docs/aphrody");
 
@@ -36,13 +30,9 @@ test("image build is tagged versioned and latest, from the small build context",
     wasmBindgen: "0.2.129",
   };
   const args = buildArgs(pins, "0123456789abcdef");
-  expect(imageTag(pins, "0123456789abcdef")).toBe(
-    "aphrody-build:1.98.1-bun1.4.2-012345678",
-  );
+  expect(imageTag(pins, "0123456789abcdef")).toBe("aphrody-build:1.98.1-bun1.4.2-012345678");
   expect(args).toContain("aphrody-build:latest");
-  expect(args).toContain(
-    "RUST_TARGETS=x86_64-unknown-linux-gnu wasm32-unknown-unknown",
-  );
+  expect(args).toContain("RUST_TARGETS=x86_64-unknown-linux-gnu wasm32-unknown-unknown");
   expect(args).toContain("BUN_RELEASE_VERSION=aphrody-v1.4.2-aphrody.1");
   expect(args.at(-1)).toBe("tools/config/container/build");
 });
@@ -78,9 +68,7 @@ test("run refuses unbounded or unsafe inputs", () => {
 });
 
 test("git token: caller environment first, gh last, never required", () => {
-  expect(gitToken({ APHRODY_GIT_TOKEN: "a", GH_TOKEN: "b" }, () => "c")).toBe(
-    "a",
-  );
+  expect(gitToken({ APHRODY_GIT_TOKEN: "a", GH_TOKEN: "b" }, () => "c")).toBe("a");
   expect(gitToken({ GITHUB_TOKEN: "d" }, () => "c")).toBe("d");
   expect(gitToken({}, () => "c")).toBe("c");
   expect(gitToken({}, () => undefined)).toBeUndefined();

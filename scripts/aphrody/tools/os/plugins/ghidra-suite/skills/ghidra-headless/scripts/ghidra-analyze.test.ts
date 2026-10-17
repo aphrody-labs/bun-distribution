@@ -1,23 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, describe, expect, test } from "bun:test";
-import {
-  chmodSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { findAnalyzeHeadless, LAUNCHER } from "./find-ghidra.ts";
-import {
-  analyze,
-  cmdQuote,
-  defaultProjectName,
-  launcherArgs,
-  parseArgs,
-} from "./ghidra-analyze.ts";
+import { analyze, cmdQuote, defaultProjectName, launcherArgs, parseArgs } from "./ghidra-analyze.ts";
 
 const WINDOWS = process.platform === "win32";
 const sandbox = mkdtempSync(join(tmpdir(), "ghidra-analyze-"));
@@ -29,15 +16,9 @@ function fakeGhidra(): string {
   mkdirSync(join(root, "support"), { recursive: true });
   const launcher = join(root, "support", LAUNCHER);
   if (WINDOWS) {
-    writeFileSync(
-      launcher,
-      "@echo off\r\necho ARGS %*\r\necho MAXMEM=%MAXMEM%\r\nexit /b 0\r\n",
-    );
+    writeFileSync(launcher, "@echo off\r\necho ARGS %*\r\necho MAXMEM=%MAXMEM%\r\nexit /b 0\r\n");
   } else {
-    writeFileSync(
-      launcher,
-      '#!/bin/sh\necho "ARGS $*"\necho "MAXMEM=$MAXMEM"\n',
-    );
+    writeFileSync(launcher, '#!/bin/sh\necho "ARGS $*"\necho "MAXMEM=$MAXMEM"\n');
     chmodSync(launcher, 0o755);
   }
   return root;
@@ -46,32 +27,16 @@ function fakeGhidra(): string {
 describe("ghidra-analyze", () => {
   test("parses options, script arguments and passthrough arguments", () => {
     const options = parseArgs(
-      [
-        "-o",
-        "out",
-        "-s",
-        "ExportAll.java",
-        "-a",
-        "x  y",
-        "--timeout",
-        "60",
-        "a.exe",
-        "--",
-        "-readOnly",
-      ],
+      ["-o", "out", "-s", "ExportAll.java", "-a", "x  y", "--timeout", "60", "a.exe", "--", "-readOnly"],
       "C:/cwd",
     );
     expect(options.binary).toBe("a.exe");
     expect(options.output).toBe("out");
-    expect(options.scripts).toEqual([
-      { name: "ExportAll.java", args: ["x", "y"] },
-    ]);
+    expect(options.scripts).toEqual([{ name: "ExportAll.java", args: ["x", "y"] }]);
     expect(options.timeout).toBe(60);
     expect(options.extra).toEqual(["-readOnly"]);
     expect(() => parseArgs(["-a", "x"])).toThrow("must follow --script");
-    expect(() => parseArgs(["--timeout", "0", "a"])).toThrow(
-      "positive integer",
-    );
+    expect(() => parseArgs(["--timeout", "0", "a"])).toThrow("positive integer");
     expect(() => parseArgs(["--bogus"])).toThrow("Unknown option");
   });
 
@@ -120,9 +85,7 @@ describe("ghidra-analyze", () => {
   });
 
   test("names the default project after the binary", () => {
-    expect(defaultProjectName("C:/x/my-app.v2.exe", 42)).toBe(
-      "ghidra_my_app_v2_42",
-    );
+    expect(defaultProjectName("C:/x/my-app.v2.exe", 42)).toBe("ghidra_my_app_v2_42");
   });
 
   test("quotes cmd arguments only when needed", () => {
@@ -134,9 +97,7 @@ describe("ghidra-analyze", () => {
 
   test("finds the launcher from GHIDRA_INSTALL_DIR", () => {
     const root = fakeGhidra();
-    expect(findAnalyzeHeadless({ GHIDRA_INSTALL_DIR: root, PATH: "" })).toBe(
-      join(root, "support", LAUNCHER),
-    );
+    expect(findAnalyzeHeadless({ GHIDRA_INSTALL_DIR: root, PATH: "" })).toBe(join(root, "support", LAUNCHER));
   });
 
   test("runs the launcher hidden and tees its output", async () => {
@@ -147,15 +108,7 @@ describe("ghidra-analyze", () => {
     const previous = process.env.GHIDRA_INSTALL_DIR;
     process.env.GHIDRA_INSTALL_DIR = root;
     try {
-      const options = parseArgs([
-        "-o",
-        output,
-        "--max-memory",
-        "2G",
-        "-s",
-        "S.java",
-        binary,
-      ]);
+      const options = parseArgs(["-o", output, "--max-memory", "2G", "-s", "S.java", binary]);
       expect(await analyze(options)).toBe(0);
     } finally {
       if (previous === undefined) delete process.env.GHIDRA_INSTALL_DIR;

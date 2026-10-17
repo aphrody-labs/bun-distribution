@@ -27,7 +27,7 @@ export class Pool {
         p?.resolve(e.data.records);
         this.waiters.shift()?.();
       };
-      w.onerror = (e) => {
+      w.onerror = e => {
         slot.busy = 0;
         for (const [id, p] of this.pending) {
           p.reject(new Error(`worker windex : ${e.message}`));
@@ -46,7 +46,7 @@ export class Pool {
     for (;;) {
       const free = this.workers.reduce((a, b) => (b.busy < a.busy ? b : a));
       if (free.busy < this.maxInFlightPerWorker) return free;
-      await new Promise<void>((resolve) => this.waiters.push(resolve));
+      await new Promise<void>(resolve => this.waiters.push(resolve));
     }
   }
 
@@ -80,9 +80,7 @@ export class Pool {
   }
 
   /** Deferred catalog lookups of a batch of paths (same order). */
-  catalogs(
-    paths: string[],
-  ): Promise<{ done: Promise<(CatalogSignature | null)[]> }> {
+  catalogs(paths: string[]): Promise<{ done: Promise<(CatalogSignature | null)[]> }> {
     return this.post<CatalogSignature | null>({ catalog: paths });
   }
 

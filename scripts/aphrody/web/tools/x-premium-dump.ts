@@ -170,11 +170,7 @@ async function main(): Promise<void> {
   writeFileSync(join(opts.outDir, "whoami.json"), JSON.stringify(me, null, 2));
   writeFileSync(join(opts.outDir, "_report.json"), JSON.stringify(report, null, 2));
 
-  const gap = await buildGapReport(
-    opts.outDir,
-    PREMIUM_OPS,
-    report.results as Record<string, { ok: boolean }>,
-  );
+  const gap = await buildGapReport(opts.outDir, PREMIUM_OPS, report.results as Record<string, { ok: boolean }>);
   gap.bundle_product_skus = [...BUNDLE_PRODUCT_SKUS];
   gap.notes = [
     ...(gap.notes as string[]),
@@ -190,16 +186,12 @@ async function main(): Promise<void> {
       headers: { "user-agent": client.session ? "Mozilla/5.0" : "Mozilla/5.0" },
     });
     const html = await res.text();
-    const bundles = [
-      ...html.matchAll(/abs\.twimg\.com\/responsive-web\/client-web\/[^"']+\.js/g),
-    ].map((m) => `https://${m[0]}`);
+    const bundles = [...html.matchAll(/abs\.twimg\.com\/responsive-web\/client-web\/[^"']+\.js/g)].map(
+      m => `https://${m[0]}`,
+    );
     writeFileSync(
       join(opts.outDir, "_premium_page_meta.json"),
-      JSON.stringify(
-        { status: res.status, bundle_count: bundles.length, bundles: bundles.slice(0, 20) },
-        null,
-        2,
-      ),
+      JSON.stringify({ status: res.status, bundle_count: bundles.length, bundles: bundles.slice(0, 20) }, null, 2),
     );
   } catch {
     /* optional */
@@ -208,10 +200,7 @@ async function main(): Promise<void> {
   if (opts.alsoStore && existsSync(opts.dbPath)) {
     const db = new Database(opts.dbPath);
     for (const op of PREMIUM_OPS) {
-      const p = join(
-        opts.outDir,
-        `${op === "BlueVerifiedFollowers" ? "BlueVerifiedFollowers" : op}.json`,
-      );
+      const p = join(opts.outDir, `${op === "BlueVerifiedFollowers" ? "BlueVerifiedFollowers" : op}.json`);
       if (existsSync(p)) {
         storeSnapshot(db, handle, `premium_${op}`, JSON.parse(readFileSync(p, "utf-8")));
       }
@@ -248,8 +237,7 @@ async function buildGapReport(
     operations: Record<string, { queryId: string }>;
   };
 
-  const prem = (s: string) =>
-    /(premium|blue|upsell|subscription|gift|paywall|verified|creator)/i.test(s);
+  const prem = (s: string) => /(premium|blue|upsell|subscription|gift|paywall|verified|creator)/i.test(s);
   const catalogPremium = Object.keys(catalog.operations ?? {}).filter(prem);
 
   const bundleQids: Record<string, string> = {};
@@ -282,11 +270,9 @@ async function buildGapReport(
     typenameSets[op] = [...set].toSorted();
   }
 
-  const ok = ops.filter((o) => results[o]?.ok);
-  const failed = ops.filter((o) => results[o] && !results[o].ok);
-  const notDumpedFromCatalog = catalogPremium.filter(
-    (o) => !ops.includes(o as (typeof ops)[number]),
-  );
+  const ok = ops.filter(o => results[o]?.ok);
+  const failed = ops.filter(o => results[o] && !results[o].ok);
+  const notDumpedFromCatalog = catalogPremium.filter(o => !ops.includes(o as (typeof ops)[number]));
 
   return {
     generated_at: new Date().toISOString(),
@@ -309,7 +295,7 @@ async function buildGapReport(
   };
 }
 
-main().catch((e) => {
+main().catch(e => {
   console.error(e instanceof Error ? e.message : String(e));
   process.exit(1);
 });
