@@ -2,11 +2,11 @@
 
 Ghidra Suite is a Codex-native reverse-engineering plugin for Ghidra 12.x. It combines three complementary surfaces:
 
-| Surface | Use it for |
-|---|---|
-| `ghidra-gui-computer-use` | Safe, visible interaction with Ghidra's Windows GUI: launch, project selection, navigation, and visual review. |
-| `ghidra-mcp-live` | Structured analysis and user-authorized edits in an already open CodeBrowser through GhidrAssistMCP on `localhost:8080`. |
-| `ghidra-headless` | Reproducible static analysis and exports for files or binary batches without opening the GUI. |
+| Surface                   | Use it for                                                                                                               |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `ghidra-gui-computer-use` | Safe, visible interaction with Ghidra's Windows GUI: launch, project selection, navigation, and visual review.           |
+| `ghidra-mcp-live`         | Structured analysis and user-authorized edits in an already open CodeBrowser through GhidrAssistMCP on `localhost:8080`. |
+| `ghidra-headless`         | Reproducible static analysis and exports for files or binary batches without opening the GUI.                            |
 
 The plugin also supplies focused Codex skills for binary triage, malware analysis, vulnerability assessment, decompilation cleanup, firmware, Nintendo DS, Nintendo 3DS, and CTF reverse engineering. `ghidra-workflows` routes common tasks between them.
 

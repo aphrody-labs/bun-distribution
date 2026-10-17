@@ -15,6 +15,7 @@ Apply the **`vulnerability-hunter`** skill.
 ## Routing logic
 
 Both modes work:
+
 - **Live MCP** — when the binary is open in Ghidra. The agent uses `mcp__ghidra__xrefs` and `get_code(format="decompiler")` to walk dangerous-API call sites in place.
 - **Headless** — the agent runs the `ghidra-headless` skill's `ExportAll.java`, then greps `*_decompiled.c` and `*_interesting.txt` for the bug-class patterns.
 

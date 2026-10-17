@@ -12,29 +12,31 @@ When you import a `.nds` file, the loader splits the ROM into **two separate Ghi
 ### Memory regions auto-created
 
 **ARM9 program**:
-| Region | Address | Size | Perms |
-|---|---|---|---|
-| Main RAM | `0x02000000` | 4 MB | R/W/X |
-| `Shared_WRAM` | `0x03000000` | 32 KB | R |
-| `ARM9_IO_Ports` | `0x04000000` | 16 MB | R |
-| `Standard_Palettes` | `0x05000000` | 16 MB | R |
-| `VRAM_Engine_A_BG_VRAM` | `0x06000000` | 2 MB | R |
-| `VRAM_Engine_B_BG_VRAM` | `0x06200000` | 2 MB | R |
-| `VRAM_Engine_A_OBJ_VRAM` | `0x06400000` | 2 MB | R |
-| `VRAM_Engine_B_OBJ_VRAM` | `0x06600000` | 2 MB | R |
-| `VRAM_LCDC` | `0x06800000` | 2 MB | R |
+
+| Region                   | Address      | Size  | Perms |
+| ------------------------ | ------------ | ----- | ----- |
+| Main RAM                 | `0x02000000` | 4 MB  | R/W/X |
+| `Shared_WRAM`            | `0x03000000` | 32 KB | R     |
+| `ARM9_IO_Ports`          | `0x04000000` | 16 MB | R     |
+| `Standard_Palettes`      | `0x05000000` | 16 MB | R     |
+| `VRAM_Engine_A_BG_VRAM`  | `0x06000000` | 2 MB  | R     |
+| `VRAM_Engine_B_BG_VRAM`  | `0x06200000` | 2 MB  | R     |
+| `VRAM_Engine_A_OBJ_VRAM` | `0x06400000` | 2 MB  | R     |
+| `VRAM_Engine_B_OBJ_VRAM` | `0x06600000` | 2 MB  | R     |
+| `VRAM_LCDC`              | `0x06800000` | 2 MB  | R     |
 
 **ARM7 program**:
-| Region | Address | Size |
-|---|---|---|
-| `Shared_WRAM` | `0x03000000` | 32 KB |
-| `ARM7_WRAM_` | `0x03800000` | 64 KB |
-| `ARM7_IO_Ports` | `0x04000000` | 8 MB |
-| Wireless Comm. WS0 (8K RAM) | `0x04800000` | 32 KB |
-| Wireless Comm. WS1 (I/O) | `0x04808000` | 2 MB |
+
+| Region                               | Address      | Size   |
+| ------------------------------------ | ------------ | ------ |
+| `Shared_WRAM`                        | `0x03000000` | 32 KB  |
+| `ARM7_WRAM_`                         | `0x03800000` | 64 KB  |
+| `ARM7_IO_Ports`                      | `0x04000000` | 8 MB   |
+| Wireless Comm. WS0 (8K RAM)          | `0x04800000` | 32 KB  |
+| Wireless Comm. WS1 (I/O)             | `0x04808000` | 2 MB   |
 | `VRAM_allocated_as_Work_RAM_to_ARM7` | `0x06000000` | 256 KB |
-| `GBA_Slot_ROM` | `0x06600000` | 32 MB |
-| `GBA_Slot_RAM` | `0x0A000000` | 64 KB |
+| `GBA_Slot_ROM`                       | `0x06600000` | 32 MB  |
+| `GBA_Slot_RAM`                       | `0x0A000000` | 64 KB  |
 
 > **Important caveat**: I/O / palette / VRAM regions are loaded with **R-only permissions**. Stores into them in disassembly are normal (the hardware accepts them) but the decompiler may flag them. Don't get confused — that's the loader's choice, not a sign of malformed code.
 
@@ -42,20 +44,21 @@ When you import a `.nds` file, the loader splits the ROM into **two separate Ghi
 
 NTRGhidra reads `NDSLabelList.java` and creates real Ghidra labels for every important MMIO register. **You don't need to look up addresses — search the symbol table.** Highlights:
 
-| Functional area | Labels you can search for directly |
-|---|---|
-| 2D Engine A | `REG_A_DISPCNT` (0x4000000), `REG_A_DISPSTAT` (0x4000004), `REG_VCOUNT` (0x4000006), `2D_ENGINE_A` (0x4000008), `REG_DISP3DCNT` (0x4000060), `REG_DISPCAPCNT`, `REG_DISP_MMEM_FIFO`, `REG_A_MASTER_BRIGHT` |
-| DMA / Timers / Keypad | `DMA_CHANNEL_0_to_3` (0x40000B0), `DMA_FILL` (0x40000E0), `TIMERS` (0x4000100), `REG_KEYINPUT` (0x4000130), `REG_KEYCNT` (0x4000132) |
-| IPC + Cart | `REG_IPCSYNC` (0x4000180), `REG_IPCFIFOCNT`, `REG_IPCFIFOSEND`, `REG_AUXSPICNT`, `REG_AUXSPIDATA`, `Gamecard_*` (8-byte command, encryption seeds) |
-| Memory + IRQ | `REG_EXMEMCNT` (0x4000204), `REG_IME` (0x4000208), `REG_IE` (0x4000210), `REG_IF` (0x4000214), `VRAMCNT_A` … `VRAMCNT_I`, `WRAMCNT` |
-| HW math | `REG_DIVCNT` (0x4000280), `REG_DIV_NUMER/DENOM/RESULT/REM`, `REG_SQRTCNT`, `SQRT_RESULT/PARAM` |
-| Power | `POSTFLG`, `POWCNT1` (0x4000304) |
+| Functional area       | Labels you can search for directly                                                                                                                                                                         |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2D Engine A           | `REG_A_DISPCNT` (0x4000000), `REG_A_DISPSTAT` (0x4000004), `REG_VCOUNT` (0x4000006), `2D_ENGINE_A` (0x4000008), `REG_DISP3DCNT` (0x4000060), `REG_DISPCAPCNT`, `REG_DISP_MMEM_FIFO`, `REG_A_MASTER_BRIGHT` |
+| DMA / Timers / Keypad | `DMA_CHANNEL_0_to_3` (0x40000B0), `DMA_FILL` (0x40000E0), `TIMERS` (0x4000100), `REG_KEYINPUT` (0x4000130), `REG_KEYCNT` (0x4000132)                                                                       |
+| IPC + Cart            | `REG_IPCSYNC` (0x4000180), `REG_IPCFIFOCNT`, `REG_IPCFIFOSEND`, `REG_AUXSPICNT`, `REG_AUXSPIDATA`, `Gamecard_*` (8-byte command, encryption seeds)                                                         |
+| Memory + IRQ          | `REG_EXMEMCNT` (0x4000204), `REG_IME` (0x4000208), `REG_IE` (0x4000210), `REG_IF` (0x4000214), `VRAMCNT_A` … `VRAMCNT_I`, `WRAMCNT`                                                                        |
+| HW math               | `REG_DIVCNT` (0x4000280), `REG_DIV_NUMER/DENOM/RESULT/REM`, `REG_SQRTCNT`, `SQRT_RESULT/PARAM`                                                                                                             |
+| Power                 | `POSTFLG`, `POWCNT1` (0x4000304)                                                                                                                                                                           |
 
 **Workflow consequence**: when you see `ldr r0, [r1, #0x130]` on `r1 = 0x04000000`, the operand resolves to `REG_KEYINPUT` automatically — no need to mentally compute the address. xrefs on `REG_KEYINPUT` give you every input-handling site instantly.
 
 ### Function entry points
 
 The loader creates two functions on import:
+
 - `_entry_arm9` — at the ARM9 entry point from the header.
 - `_entry_arm7` — at the ARM7 entry point.
 
@@ -96,14 +99,14 @@ To check what you got: open the program's Memory Map (`Window → Memory Map`) a
 
 ## Architecture — the dual-CPU reality
 
-| | ARM9 | ARM7 |
-|---|---|---|
-| Core | ARM946E-S | ARM7TDMI |
-| Clock | 67 MHz | 33 MHz |
-| Caches | 8 KB I + 4 KB D + DTCM/ITCM | none |
-| Role | Game logic, 3D, main loop | Sound, WiFi, touch, RTC, low-level I/O |
-| ITCM | `0x01FF8000+`, 32 KB, fast instr fetch | n/a |
-| DTCM | `0x027C0000+`, 16 KB, fast data | n/a |
+|        | ARM9                                   | ARM7                                   |
+| ------ | -------------------------------------- | -------------------------------------- |
+| Core   | ARM946E-S                              | ARM7TDMI                               |
+| Clock  | 67 MHz                                 | 33 MHz                                 |
+| Caches | 8 KB I + 4 KB D + DTCM/ITCM            | none                                   |
+| Role   | Game logic, 3D, main loop              | Sound, WiFi, touch, RTC, low-level I/O |
+| ITCM   | `0x01FF8000+`, 32 KB, fast instr fetch | n/a                                    |
+| DTCM   | `0x027C0000+`, 16 KB, fast data        | n/a                                    |
 
 They communicate via **IPC FIFO** (`REG_IPCFIFOSEND/RECV` at `0x4000188/0x4100000`) and **shared WRAM** (32 KB, mappable to either side via `WRAMCNT`).
 
@@ -112,15 +115,16 @@ They communicate via **IPC FIFO** (`REG_IPCFIFOSEND/RECV` at `0x4000188/0x410000
 ## BIOS calls (SWI numbers)
 
 ARM9 SWIs are documented in gbatek; ones you'll see most:
-| SWI | Function |
-|---|---|
-| `0x06` | `LZ77UnCompReadNormalWrite8bit` — LZ77 decompression |
-| `0x09` | `HuffUnComp` — Huffman decompression |
-| `0x0E` | `RLUnCompReadNormalWrite8bit` — RLE decompression |
+
+| SWI    | Function                                                     |
+| ------ | ------------------------------------------------------------ |
+| `0x06` | `LZ77UnCompReadNormalWrite8bit` — LZ77 decompression         |
+| `0x09` | `HuffUnComp` — Huffman decompression                         |
+| `0x0E` | `RLUnCompReadNormalWrite8bit` — RLE decompression            |
 | `0x0F` | `Diff8bitUnFilterWrite8bit` — animation/texture delta filter |
-| `0x18` | `IsDebugger` — anti-debug flag |
-| `0x20` | `CpuSet` — fast memory copy/fill |
-| `0x21` | `CpuFastSet` — same, 32-byte aligned |
+| `0x18` | `IsDebugger` — anti-debug flag                               |
+| `0x20` | `CpuSet` — fast memory copy/fill                             |
+| `0x21` | `CpuFastSet` — same, 32-byte aligned                         |
 
 Recognize these in disassembly as `swi 0xNN` (or `bx lr` patterns calling into BIOS at `0xFFFF0000`).
 
@@ -128,15 +132,15 @@ Recognize these in disassembly as `swi 0xNN` (or `bx lr` patterns calling into B
 
 All bundled CLI are already on `PATH` (the user keeps them under a single `nds-cli/` directory but you can invoke them by name). No GUI tools.
 
-| Tool | Use |
-|---|---|
-| **`NitroPacker.exe`** | unpack/repack the ROM (header dump, ARM9/ARM7 split, overlay + NitroFS extraction, ARM9 patching). Modern .NET replacement for the old `ndstool`. |
-| **`apicula.exe`** | view/convert NSBMD/NSBTX/NSBCA — NDS 3D models → glTF/COLLADA. |
-| **`DSDecmp.exe`** | LZ10/LZ11/Huff/RLE de/compression of standalone files (when working outside Ghidra). |
-| **`vgmstream-cli.exe`** | decode NDS audio streams (STRM/SWAV/SDAT entries) → WAV. |
-| **`ndspy`** (Python) | NARC archives, BMG/MSBT text, NCGR/NCLR/NSCR/NCER 2D graphics, soundArchive. |
-| **`nds`** (this CLI) | run/trace/dump/diff a live ROM via py-desmume — `nds dump`, `nds diff`, `nds ar-apply`, hooks, savestates. |
-| **gbatek** | THE reference for hardware (`https://problemkaputt.de/gbatek.htm`) — every register, every BIOS call, every quirk. |
+| Tool                    | Use                                                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`NitroPacker.exe`**   | unpack/repack the ROM (header dump, ARM9/ARM7 split, overlay + NitroFS extraction, ARM9 patching). Modern .NET replacement for the old `ndstool`. |
+| **`apicula.exe`**       | view/convert NSBMD/NSBTX/NSBCA — NDS 3D models → glTF/COLLADA.                                                                                    |
+| **`DSDecmp.exe`**       | LZ10/LZ11/Huff/RLE de/compression of standalone files (when working outside Ghidra).                                                              |
+| **`vgmstream-cli.exe`** | decode NDS audio streams (STRM/SWAV/SDAT entries) → WAV.                                                                                          |
+| **`ndspy`** (Python)    | NARC archives, BMG/MSBT text, NCGR/NCLR/NSCR/NCER 2D graphics, soundArchive.                                                                      |
+| **`nds`** (this CLI)    | run/trace/dump/diff a live ROM via py-desmume — `nds dump`, `nds diff`, `nds ar-apply`, hooks, savestates.                                        |
+| **gbatek**              | THE reference for hardware (`https://problemkaputt.de/gbatek.htm`) — every register, every BIOS call, every quirk.                                |
 
 ## Tool routing inside Ghidra
 

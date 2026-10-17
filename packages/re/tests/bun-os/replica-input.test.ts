@@ -2,13 +2,17 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, readdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { initializeReplicaInput, inspectReplicaInput } from "../../src/replica/input.js";
+import {
+  initializeReplicaInput,
+  inspectReplicaInput,
+} from "../../src/replica/input.js";
 
 function crc16(bytes: Uint8Array, initial = 0xffff): number {
   let crc = initial;
   for (const byte of bytes) {
     crc ^= byte;
-    for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ (crc & 1 ? 0xa001 : 0);
+    for (let bit = 0; bit < 8; bit++)
+      crc = (crc >>> 1) ^ (crc & 1 ? 0xa001 : 0);
   }
   return crc;
 }
@@ -36,7 +40,9 @@ function syntheticRom(): Uint8Array {
   return bytes;
 }
 
-async function withFixture(run: (root: string, source: string) => Promise<void>) {
+async function withFixture(
+  run: (root: string, source: string) => Promise<void>,
+) {
   const root = await mkdtemp(join(tmpdir(), "bun-engine-replica-"));
   try {
     const source = join(root, "synthetic.nds");
@@ -58,7 +64,9 @@ describe("Replica Nintendo DS input provenance", () => {
         gameCode: "TEST",
         validation: { valid: true },
       });
-      expect(evidence.sha256).toBe(new Bun.CryptoHasher("sha256").update(syntheticRom()).digest("hex"));
+      expect(evidence.sha256).toBe(
+        new Bun.CryptoHasher("sha256").update(syntheticRom()).digest("hex"),
+      );
       expect(evidence.sections[0]).toMatchObject({
         kind: "arm9",
         offset: 0x200,
@@ -96,7 +104,9 @@ describe("Replica Nintendo DS input provenance", () => {
       expect(evidence.validation.headerCrc.valid).toBeTrue();
       expect(evidence.sections[0]?.withinFile).toBeFalse();
       const output = join(root, "replica");
-      await expect(initializeReplicaInput(source, output)).rejects.toThrow("arm9 section");
+      await expect(initializeReplicaInput(source, output)).rejects.toThrow(
+        "arm9 section",
+      );
       expect(await Bun.file(join(output, "input.json")).exists()).toBeFalse();
     });
   });
@@ -120,8 +130,15 @@ describe("Replica Nintendo DS input provenance", () => {
       const second = await initializeReplicaInput(source, output);
       expect(second.created).toBeFalse();
       expect(await Bun.file(second.statusPath).text()).toBe(customStatus);
-      expect(await Bun.file(join(output, "recon.md")).text()).toBe("Observed independently\n");
-      expect((await readdir(output)).sort()).toEqual(["input.json", "recon.md", "screens", "status.json"]);
+      expect(await Bun.file(join(output, "recon.md")).text()).toBe(
+        "Observed independently\n",
+      );
+      expect((await readdir(output)).sort()).toEqual([
+        "input.json",
+        "recon.md",
+        "screens",
+        "status.json",
+      ]);
     });
   });
 
@@ -133,10 +150,14 @@ describe("Replica Nintendo DS input provenance", () => {
       const bytes = syntheticRom();
       bytes[0x700] = 42;
       await Bun.write(source, bytes);
-      await expect(initializeReplicaInput(source, output)).rejects.toThrow("fingerprint");
+      await expect(initializeReplicaInput(source, output)).rejects.toThrow(
+        "fingerprint",
+      );
       expect(await Bun.file(first.evidencePath).text()).toBe(originalManifest);
       await mkdir(join(output, ".input-initialize.lock"));
-      await expect(initializeReplicaInput(source, output)).rejects.toThrow("already in progress");
+      await expect(initializeReplicaInput(source, output)).rejects.toThrow(
+        "already in progress",
+      );
       expect(await Bun.file(first.evidencePath).text()).toBe(originalManifest);
     });
   });
@@ -146,9 +167,13 @@ describe("Replica Nintendo DS input provenance", () => {
       const output = join(root, "replica");
       await mkdir(output);
       await Bun.write(join(output, "status.json"), '{"state":"concurrent"}\n');
-      await expect(initializeReplicaInput(source, output)).rejects.toThrow("no matching input.json");
+      await expect(initializeReplicaInput(source, output)).rejects.toThrow(
+        "no matching input.json",
+      );
       expect(await Bun.file(join(output, "input.json")).exists()).toBeFalse();
-      expect(await Bun.file(join(output, "status.json")).text()).toBe('{"state":"concurrent"}\n');
+      expect(await Bun.file(join(output, "status.json")).text()).toBe(
+        '{"state":"concurrent"}\n',
+      );
     });
   });
 });

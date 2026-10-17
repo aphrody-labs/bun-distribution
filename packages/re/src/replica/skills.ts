@@ -35,9 +35,11 @@ export function resolveReplicaSkillId(value: string): ReplicaSkillId {
 function extractDescription(source: string): string {
   const frontmatter = source.match(/^---\r?\n([\s\S]*?)\r?\n---/u)?.[1] ?? "";
   const lines = frontmatter.split(/\r?\n/u);
-  const start = lines.findIndex(line => line.startsWith("description:"));
+  const start = lines.findIndex((line) => line.startsWith("description:"));
   if (start < 0) return "";
-  const description = [lines[start]!.slice("description:".length).replace(/^\s*>-?\s*/u, "")];
+  const description = [
+    lines[start]!.slice("description:".length).replace(/^\s*>-?\s*/u, ""),
+  ];
   for (const line of lines.slice(start + 1)) {
     if (/^[a-z][\w-]*:/iu.test(line)) break;
     description.push(line.trim());
@@ -49,15 +51,20 @@ export async function readReplicaSkill(value: string): Promise<string> {
   const id = resolveReplicaSkillId(value);
   const path = join(replicaRoot, id, "SKILL.md");
   const file = Bun.file(path);
-  if (!(await file.exists())) throw new Error(`Replica skill source is missing: ${path}`);
+  if (!(await file.exists()))
+    throw new Error(`Replica skill source is missing: ${path}`);
   return file.text();
 }
 
 export async function listReplicaSkills(): Promise<ReplicaSkill[]> {
   return Promise.all(
-    replicaSkillIds.map(async id => {
+    replicaSkillIds.map(async (id) => {
       const path = join(replicaRoot, id, "SKILL.md");
-      return { id, path, description: extractDescription(await Bun.file(path).text()) };
+      return {
+        id,
+        path,
+        description: extractDescription(await Bun.file(path).text()),
+      };
     }),
   );
 }

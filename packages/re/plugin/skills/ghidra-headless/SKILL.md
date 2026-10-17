@@ -47,22 +47,22 @@ The Java GhidraScripts in `scripts/ghidra_scripts/*.java` are platform-agnostic 
 
 ### Windows (PowerShell — recommended)
 
-| Task | Command |
-|------|---------|
-| Full analysis with all exports | `<plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -Script ExportAll.java -Output .\output <binary>` |
-| Decompile to C code | `<plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -Script ExportDecompiled.java -Output .\output <binary>` |
-| List functions | `<plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -Script ExportFunctions.java -Output .\output <binary>` |
-| Extract strings | `<plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -Script ExportStrings.java -Output .\output <binary>` |
-| Get call graph | `<plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -Script ExportCalls.java -Output .\output <binary>` |
-| Export symbols | `<plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -Script ExportSymbols.java -Output .\output <binary>` |
-| Find Ghidra path | `<plugin-root>/skills/ghidra-headless/scripts/find-ghidra.ps1` |
+| Task                           | Command                                                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Full analysis with all exports | `<plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -Script ExportAll.java -Output .\output <binary>`        |
+| Decompile to C code            | `<plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -Script ExportDecompiled.java -Output .\output <binary>` |
+| List functions                 | `<plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -Script ExportFunctions.java -Output .\output <binary>`  |
+| Extract strings                | `<plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -Script ExportStrings.java -Output .\output <binary>`    |
+| Get call graph                 | `<plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -Script ExportCalls.java -Output .\output <binary>`      |
+| Export symbols                 | `<plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -Script ExportSymbols.java -Output .\output <binary>`    |
+| Find Ghidra path               | `<plugin-root>/skills/ghidra-headless/scripts/find-ghidra.ps1`                                                            |
 
 ### Linux / macOS (bash)
 
-| Task | Command |
-|------|---------|
+| Task                           | Command                                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------- |
 | Full analysis with all exports | `<plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.sh -s ExportAll.java -o ./output <binary>` |
-| Find Ghidra path | `<plugin-root>/skills/ghidra-headless/scripts/find-ghidra.sh` |
+| Find Ghidra path               | `<plugin-root>/skills/ghidra-headless/scripts/find-ghidra.sh`                                           |
 
 (All other tasks: same script names, swap `.ps1` for `.sh` and `-Script` for `-s`, `-Output` for `-o`.)
 
@@ -75,6 +75,7 @@ The Java GhidraScripts in `scripts/ghidra_scripts/*.java` are platform-agnostic 
 - **Java 21+** must be on `PATH` or located via `JAVA_HOME`.
 
 The PS `find-ghidra.ps1` searches in this order:
+
 1. `$env:GHIDRA_INSTALL_DIR`
 2. `$env:GHIDRA_HOME`
 3. `%USERPROFILE%\ghidra`, `%LOCALAPPDATA%\Programs\ghidra`, `C:\ghidra`, `C:\Tools\ghidra`, `C:\Program Files\ghidra`, `%USERPROFILE%\Tools\ghidra`
@@ -88,6 +89,7 @@ The PS `find-ghidra.ps1` searches in this order:
 ```
 
 **Parameters:**
+
 - `-Binary <path>` (positional, mandatory) — the binary to analyze.
 - `-Output <dir>` (alias `-o`) — output directory (default: cwd).
 - `-Script <name[]>` (alias `-s`) — post-script(s) to run; pass an array or repeat the flag.
@@ -119,9 +121,11 @@ The PS `find-ghidra.ps1` searches in this order:
 Located under `scripts/ghidra_scripts/` (not in repo). Run via `-Script <Name>.java` (PS) or `-s <Name>.java` (bash).
 
 ### ExportAll.java
+
 Runs summary + decompile + functions + strings + interesting-pattern exports. Best first pass.
 
 **Output:**
+
 - `<name>_summary.txt` — architecture, sections, function count
 - `<name>_decompiled.c` — every function in C
 - `<name>_functions.json` — signatures + calls
@@ -129,21 +133,26 @@ Runs summary + decompile + functions + strings + interesting-pattern exports. Be
 - `<name>_interesting.txt` — flagged patterns (crypto / network / dangerous APIs)
 
 ### ExportDecompiled.java
+
 All functions → C pseudocode. **Output:** `<name>_decompiled.c`
 
 ### ExportFunctions.java
+
 Function list → JSON with addresses, signatures, parameters, calls/calledBy.
 **Output:** `<name>_functions.json`
 
 ### ExportStrings.java
+
 All strings (ASCII + Unicode) with addresses → JSON.
 **Output:** `<name>_strings.json`
 
 ### ExportCalls.java
+
 Call graph + entry-point candidates + most-called functions.
 **Output:** `<name>_calls.json`
 
 ### ExportSymbols.java
+
 Imports, exports, internal symbols.
 **Output:** `<name>_symbols.json`
 
@@ -202,17 +211,17 @@ Get-ChildItem .\samples\*.exe | ForEach-Object {
 
 ## Architecture / Processor IDs
 
-| Architecture | Processor ID |
-|--------------|--------------|
-| x86 32-bit | `x86:LE:32:default` |
-| x86 64-bit | `x86:LE:64:default` |
-| ARM 32-bit | `ARM:LE:32:v7` |
-| ARM 64-bit | `AARCH64:LE:64:v8A` |
-| MIPS 32-bit | `MIPS:BE:32:default` (or `:LE:`) |
-| PowerPC | `PowerPC:BE:32:default` |
-| Z80 | `z80:LE:16:default` |
-| 6502 | `6502:LE:16:default` |
-| AVR8 | `avr8:LE:16:default` |
+| Architecture | Processor ID                     |
+| ------------ | -------------------------------- |
+| x86 32-bit   | `x86:LE:32:default`              |
+| x86 64-bit   | `x86:LE:64:default`              |
+| ARM 32-bit   | `ARM:LE:32:v7`                   |
+| ARM 64-bit   | `AARCH64:LE:64:v8A`              |
+| MIPS 32-bit  | `MIPS:BE:32:default` (or `:LE:`) |
+| PowerPC      | `PowerPC:BE:32:default`          |
+| Z80          | `z80:LE:16:default`              |
+| 6502         | `6502:LE:16:default`             |
+| AVR8         | `avr8:LE:16:default`             |
 
 To enumerate every processor ID Ghidra knows about (181 on a stock 12.0.4 install):
 
@@ -226,23 +235,27 @@ Get-GhidraProcessor | Select-Object Id, Description
 ## Troubleshooting
 
 ### "Could not find Ghidra's analyzeHeadless"
+
 ```powershell
 [Environment]::SetEnvironmentVariable('GHIDRA_INSTALL_DIR','C:\path\to\ghidra','User')
 # Open a new pwsh session to pick up the change
 ```
 
 ### Analysis hangs / takes too long
+
 ```powershell
 <plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -Timeout 300 -Script ExportAll.java -Binary <bin>
 <plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -NoAnalysis -Script ExportSymbols.java -Binary <bin>
 ```
 
 ### Out of memory
+
 ```powershell
 <plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -MaxMemory 4G -Script ExportAll.java -Binary <bin>
 ```
 
 ### Wrong architecture detected
+
 ```powershell
 <plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 -Processor 'ARM:LE:32:v7' -Script ExportAll.java -Binary <bin>
 ```

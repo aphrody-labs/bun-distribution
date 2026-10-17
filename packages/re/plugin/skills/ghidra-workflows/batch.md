@@ -30,6 +30,7 @@ Run the `ghidra-headless` skill across every binary in a directory. No agent nee
 3. For each binary, dispatch:
 
    **PowerShell (Windows):**
+
    ```powershell
    <plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.ps1 `
      -Binary <path> `
@@ -41,6 +42,7 @@ Run the `ghidra-headless` skill across every binary in a directory. No agent nee
    ```
 
    **bash (Unix):**
+
    ```bash
    <plugin-root>/skills/ghidra-headless/scripts/ghidra-analyze.sh \
      -s <script> \

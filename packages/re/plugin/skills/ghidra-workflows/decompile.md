@@ -35,14 +35,17 @@ If the MCP server is offline, refuse:
 1. Probe the MCP server. If unreachable, return the refusal text above.
 
    **PowerShell (Windows):**
+
    ```powershell
    try { (Invoke-WebRequest -Uri http://localhost:8080/sse -TimeoutSec 2 -UseBasicParsing -SkipHttpErrorCheck).StatusCode } catch { 0 }
    ```
 
    **bash (Unix):**
+
    ```bash
    curl -s -o /dev/null -w "%{http_code}" -m 2 http://localhost:8080/sse
    ```
+
 2. Resolve the function — call `mcp__ghidra__search_functions_by_name` if it's a name, or pass the address directly. If ambiguous, list candidates and ask the user.
 3. Apply `decompile-cleaner` with:
    - The function reference (address or name).

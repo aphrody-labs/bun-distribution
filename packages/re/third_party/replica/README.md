@@ -51,19 +51,19 @@ The tools need Python 3.8 or newer. Nothing to pip install.
 
 ## The eleven
 
-| command | what it does |
-| --- | --- |
-| `/replica-recon` | Reverse-engineers any app: screens, flows, components, data model. From public pages, screenshots, store listings and your own account. |
-| `/replica-architect` | Plans the stack, database schema and API for your clone. |
-| `/replica-design` | Rebuilds the design system: colours, type, spacing, components. As tokens, with your own assets. |
-| `/replica-build` | Rebuilds the app screen by screen from the recon map. |
-| `/replica-backend` | Auth, database, payments and integrations. |
-| `/replica-test` | Clicks through every flow and tests it for bugs. |
-| `/replica-diff` | Compares your clone against the original. A parity score and what is missing. |
-| `/replica-entrepreneur` | Reads what the app's users hate in real reviews and turns it into fixes and a positioning angle. |
-| `/replica-brand` | Names and rebrands your version so it is yours. |
-| `/replica-launch` | Landing page, pricing and App Store listing. |
-| `/replica-deploy` | Ships it live on your own domain. |
+| command                 | what it does                                                                                                                            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `/replica-recon`        | Reverse-engineers any app: screens, flows, components, data model. From public pages, screenshots, store listings and your own account. |
+| `/replica-architect`    | Plans the stack, database schema and API for your clone.                                                                                |
+| `/replica-design`       | Rebuilds the design system: colours, type, spacing, components. As tokens, with your own assets.                                        |
+| `/replica-build`        | Rebuilds the app screen by screen from the recon map.                                                                                   |
+| `/replica-backend`      | Auth, database, payments and integrations.                                                                                              |
+| `/replica-test`         | Clicks through every flow and tests it for bugs.                                                                                        |
+| `/replica-diff`         | Compares your clone against the original. A parity score and what is missing.                                                           |
+| `/replica-entrepreneur` | Reads what the app's users hate in real reviews and turns it into fixes and a positioning angle.                                        |
+| `/replica-brand`        | Names and rebrands your version so it is yours.                                                                                         |
+| `/replica-launch`       | Landing page, pricing and App Store listing.                                                                                            |
+| `/replica-deploy`       | Ships it live on your own domain.                                                                                                       |
 
 ## How to use it
 

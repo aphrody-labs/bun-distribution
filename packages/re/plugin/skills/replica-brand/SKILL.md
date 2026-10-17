@@ -42,16 +42,16 @@ descriptive (Booklink), compound (Slotwise), invented (Calvo), metaphor
 For each of the 5, a row per check. Mark each **to run**, or the result with
 the date it was run. Never write "available" for a check nobody ran.
 
-| check | where |
-| --- | --- |
-| US trademark | tmsearch.uspto.gov, the app's class (usually 9 and 42) |
-| EU trademark | euipo.europa.eu eSearch, or TMview for many offices |
-| Canada | ised-isde.canada.ca trademarks database |
-| global | WIPO Global Brand Database |
-| domain | `whois name.com`, or the registrar's search |
-| App Store and Play | search the exact name |
-| handles | X, Instagram, TikTok, GitHub |
-| the web | search "name + category" |
+| check              | where                                                  |
+| ------------------ | ------------------------------------------------------ |
+| US trademark       | tmsearch.uspto.gov, the app's class (usually 9 and 42) |
+| EU trademark       | euipo.europa.eu eSearch, or TMview for many offices    |
+| Canada             | ised-isde.canada.ca trademarks database                |
+| global             | WIPO Global Brand Database                             |
+| domain             | `whois name.com`, or the registrar's search            |
+| App Store and Play | search the exact name                                  |
+| handles            | X, Instagram, TikTok, GitHub                           |
+| the web            | search "name + category"                               |
 
 These are screening checks, not legal clearance. Before spending money on
 the name, a trademark lawyer should do a proper search.

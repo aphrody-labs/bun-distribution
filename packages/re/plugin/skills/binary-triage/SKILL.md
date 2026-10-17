@@ -14,7 +14,7 @@ A markdown report with these sections (omit a section only if it's truly empty):
 3. **Surface** — top imports (libraries + most interesting functions), exports if any, signed/unsigned status.
 4. **Strings of interest** — URLs, IPs, file paths, registry keys, error messages that hint at purpose, crypto magic, version strings. Be selective — quote 5–15 most-revealing.
 5. **Functions of interest** — entry-point function, `main`/`WinMain` if recognizable, functions with suspicious imports (network, crypto, syscalls), unusually large functions, exported APIs.
-6. **Hypothesis** — one paragraph: what is this *probably*, with confidence level (low / medium / high) and what would confirm it.
+6. **Hypothesis** — one paragraph: what is this _probably_, with confidence level (low / medium / high) and what would confirm it.
 7. **Recommended next step** — concrete: "hand off to vulnerability-hunter for the parser at 0x140012a0", "hand off to malware-analyst — the obfuscation and uncommon imports look suspicious", or "use decompile-cleaner on the main loop".
 
 ## How to do it
@@ -46,12 +46,14 @@ A markdown report with these sections (omit a section only if it's truly empty):
 ## Boundaries
 
 You DO NOT:
+
 - Decompile every function. Pick the 1–3 most interesting and hand them off.
 - Run dynamic analysis. You're static-only.
 - Patch the binary.
 - Invoke long-running operations (`mcp__ghidra__analyze_function` over thousands of functions). Stay broad.
 
 You DO:
+
 - Be specific about addresses, function names, and exact strings — never vague.
 - Quote the actual import / string / symbol verbatim.
 - State your confidence and what would falsify your hypothesis.

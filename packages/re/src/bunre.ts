@@ -4,7 +4,11 @@ import { findBinary } from "./pipeline/runner.js";
 
 export async function runBunre(args: string[]): Promise<number> {
   const bin = await findBinary();
-  return Bun.spawn([bin, ...args], { stdin: "inherit", stdout: "inherit", stderr: "inherit" }).exited;
+  return Bun.spawn([bin, ...args], {
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: "inherit",
+  }).exited;
 }
 
 /** `re dbxv2 ...` */

@@ -7,14 +7,14 @@ Bun Engine is the emulation side of the `re` product: one native CLI (`crates/bu
 
 ## Identify and parse an image (formats plugin, in process)
 
-| Task | CLI | MCP |
-| --- | --- | --- |
-| Format, platform, detector, entry | `re formats identify <file> [--magika] --json` | `formats_inspect` |
-| Parsed header, known-firmware matches | `re formats header <file>` | `formats_inspect` |
-| Sections, load addresses, CPU | `re formats sections <file> --json` | `formats_inspect` |
-| Embedded file systems (NitroFS, FST, ISO 9660, ExeFS, PFS0/HFS0) | `re formats files <file> --json` | `formats_inspect` (`files: true`) |
-| Disassembly (6502, ARM/Thumb, LR35902, R3000, PPC, AArch64, m68k) | `re formats disasm <file> [--arch A] [--at ADDR] [--count N] --json` | `formats_disasm` |
-| CRC-32/MD5/SHA-1/SHA-256 | `re formats stream <file>` | `formats_inspect` (`digest: true`) |
+| Task                                                              | CLI                                                                  | MCP                                |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------- |
+| Format, platform, detector, entry                                 | `re formats identify <file> [--magika] --json`                       | `formats_inspect`                  |
+| Parsed header, known-firmware matches                             | `re formats header <file>`                                           | `formats_inspect`                  |
+| Sections, load addresses, CPU                                     | `re formats sections <file> --json`                                  | `formats_inspect`                  |
+| Embedded file systems (NitroFS, FST, ISO 9660, ExeFS, PFS0/HFS0)  | `re formats files <file> --json`                                     | `formats_inspect` (`files: true`)  |
+| Disassembly (6502, ARM/Thumb, LR35902, R3000, PPC, AArch64, m68k) | `re formats disasm <file> [--arch A] [--at ADDR] [--count N] --json` | `formats_disasm`                   |
+| CRC-32/MD5/SHA-1/SHA-256                                          | `re formats stream <file>`                                           | `formats_inspect` (`digest: true`) |
 
 BIOS dumps are matched against the public hashes of `plugins/consoles/firmware.json` and the free registry `plugins/consoles/free-firmware.json` (`header.known[]`): the PCSX-Redux OpenBIOS and the Normmatt GBA BIOS are reported as free replacements. Proprietary dumps are only identified, never fetched.
 

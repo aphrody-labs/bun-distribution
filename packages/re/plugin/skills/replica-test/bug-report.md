@@ -3,9 +3,10 @@
 - Severity: {{S1 | S2 | S3 | S4}}
 - Flow / case: {{F01 / F01-E1}}
 - Screen: {{S08}}
-- Build: {{commit}}  Browser / device: {{Chrome 140, 1440px}}
+- Build: {{commit}} Browser / device: {{Chrome 140, 1440px}}
 
 Steps
+
 1. {{exact step}}
 2. {{exact step}}
 
