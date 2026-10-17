@@ -13,14 +13,19 @@ tar -C /src/melonds --exclude=.git -cf - . | tar -C "$src" -xf -
 for p in /patches/melonds/*.patch; do patch -d "$src" -p1 --forward < "$p"; done
 
 export PKG_CONFIG_LIBDIR="$WASM_DEPS_MT/lib/pkgconfig" PKG_CONFIG_PATH=
+# melonDS throws (toml11 config parsing): the Qt 6.12 kit has wasm-exceptions disabled, so C++
+# exceptions use Emscripten's JS-based model (-fexceptions at compile and link).
 opt="-O3 -flto -msimd128"
-link="-L$WASM_DEPS_MT/lib;-sUSE_ZLIB=1;-O3;-flto;-msimd128;-sALLOW_MEMORY_GROWTH=1;-sUSE_SDL=2;-sPTHREAD_POOL_SIZE=6"
+cxxopt="$opt -fexceptions"
+link="-L$WASM_DEPS_MT/lib;-fexceptions;-sUSE_ZLIB=1;-O3;-flto;-msimd128;-sALLOW_MEMORY_GROWTH=1;-sUSE_SDL=2;-sPTHREAD_POOL_SIZE=6"
 # Closure Compiler (ADVANCED) fails on the Emscripten 5.0.5 glue of this Qt kit
 # ("JSC_UNDEFINED_VARIABLE setTempRet0" in the C++ exception helpers); MELONDS_CLOSURE=1 retries it.
 if [ "${MELONDS_CLOSURE:-0}" = 1 ]; then link="$link;--closure=1"; fi
+# Diagnostics: C++ exception messages and stacks, runtime assertions (MELONDS_DEBUG=1).
+if [ "${MELONDS_DEBUG:-0}" = 1 ]; then link="$link;-sASSERTIONS=1;-sEXCEPTION_STACK_TRACES=1"; fi
 "$QT_WASM_MT/bin/qt-cmake" -S "$src" -B "$build" -G Ninja \
   -DCMAKE_BUILD_TYPE=Release -DQT_HOST_PATH="$QT_HOST_PATH" \
-  -DCMAKE_C_FLAGS="$opt" -DCMAKE_CXX_FLAGS="$opt" \
+  -DCMAKE_C_FLAGS="$opt" -DCMAKE_CXX_FLAGS="$cxxopt" \
   -DCMAKE_PREFIX_PATH="$WASM_DEPS_MT" -DPKG_CONFIG_EXECUTABLE=/usr/bin/pkg-config \
   -DBUILD_QT_SDL=ON -DUSE_QT6=ON -DENABLE_JIT=OFF -DENABLE_OGLRENDERER=ON \
   -DENABLE_GDBSTUB=OFF -DENABLE_WAYLAND=OFF -DENABLE_LTO_RELEASE=OFF \
@@ -36,4 +41,9 @@ cat > /out/build.json <<JSON
   "qt": "$(basename "$(dirname "$QT_WASM_MT")")",
   "qtKit": "wasm_multithread",
   "emscripten": "$(emcc --version | head -1 | sed 's/.*) //;s/ .*//')",
-  "closure": ${MELONDS_CLOSURE:-
+  "closure": ${MELONDS_CLOSURE:-0},
+  "flags": "$opt",
+  "link": "$link"
+}
+JSON
+ls -la /out

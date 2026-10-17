@@ -106,8 +106,11 @@ impl super::RomDevice for Normal {
                 return Ok(());
             };
             if secure_area.read_le::<u64>(0) != 0xE7FF_DEFF_E7FF_DEFF {
+                // Without the ARM7 BIOS there is no key to decrypt with. Homebrew linked at
+                // 0x4000 (ndstool's default ARM9 offset) keeps plain code there, so boot it as is;
+                // an encrypted retail secure area then faults in the guest instead of here.
                 let Some(key_buf) = self.key_buf.as_ref() else {
-                    return Err(());
+                    return Ok(());
                 };
 
                 let res = key_buf.decrypt_64_bit([secure_area.read_le(0), secure_area.read_le(4)]);

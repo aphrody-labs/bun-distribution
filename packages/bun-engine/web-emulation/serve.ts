@@ -36,8 +36,10 @@ async function file(path: string | undefined): Promise<Response> {
   const blob = Bun.file(path);
   if (!(await blob.exists())) return new Response("not found", { status: 404 });
   const ext = path.slice(path.lastIndexOf(".")).toLowerCase();
+  // Published files live under content-addressed directories (`<core>/<hash>/`), so they can
+  // be cached forever; everything else revalidates.
   const immutable =
-    (ext === ".wasm" || ext === ".js") && !path.includes("runtime");
+    (ext === ".wasm" || ext === ".js") && /[\\/][0-9a-f]{12}[\\/]/.test(path);
   return new Response(blob, {
     headers: {
       "content-type": types[ext] ?? "application/octet-stream",

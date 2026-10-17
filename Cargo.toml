@@ -26,6 +26,7 @@ members = [
   "crates/bun-emu-host-sys",
   "crates/bun-engine-core",
   "crates/bun-os-shell",
+  "crates/bun-os-platform",
   "crates/bun-steam",
   "crates/ghidra-decompiler",
   "crates/aphrody-sprite-sheet",

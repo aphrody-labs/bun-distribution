@@ -8537,9 +8537,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "bun-os-platform"
+version = "1.4.4"
+dependencies = [
+ "aphrody-m3-tokens 1.4.4",
+ "bevy_app",
+ "bevy_ecs",
+ "fluent-bundle",
+ "icu_datetime",
+ "icu_decimal",
+ "icu_locale_core",
+ "icu_provider",
+ "intl-memoizer",
+ "serde",
+ "serde_json",
+ "toml 1.1.8+spec-1.1.0",
+ "unic-langid",
+ "windows 0.62.2",
+]
+
+[[package]]
 name = "bun-os-shell"
 version = "1.4.4"
 dependencies = [
+ "accesskit 0.24.1",
  "aphrody-m3-tokens 1.4.4",
  "aphrody-svg",
  "bevy",
@@ -22408,6 +22429,7 @@ dependencies = [
  "icu_locale_core",
  "icu_locale_fallback",
  "icu_provider",
+ "ixdtf",
  "serde",
  "tinystr",
  "zerovec",
@@ -22693,6 +22715,7 @@ dependencies = [
  "icu_locale_core",
  "icu_provider",
  "icu_time_data",
+ "ixdtf",
  "serde",
  "zerotrie",
  "zerovec",

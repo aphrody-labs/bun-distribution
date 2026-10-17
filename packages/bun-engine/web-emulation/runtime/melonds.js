@@ -75,8 +75,11 @@ export default async function init({ module_or_path } = {}) {
 }
 
 function config() {
+  // `[Instance0]` must be explicit: melonDS stores plain values in it (window geometry, the
+  // joystick id), and toml11 refuses to serialize values into an implicitly defined table.
   const keys = KEYS.map(([, name, qt]) => `${name} = ${qt}`).join("\n");
-  return `[Instance0.Keyboard]\n${keys}\n\n[Instance0.Joystick]\n${KEYS.map(([, name]) => `${name} = -1`).join("\n")}\n`;
+  // F11 (Qt::Key_F11) toggles fullscreen; the handle presses it once the first frame shows.
+  return `[Instance0]\n\n[Instance0.Keyboard]\n${keys}\nHK_FullscreenToggle = ${0x0100003a}\n`;
 }
 
 function mkdirs(fs, path) {
@@ -116,21 +119,35 @@ class Handle {
     const tick = () => {
       if (this.stopped) return;
       this.#apply(this.pageKeys | this.#pad());
-      if (this.first_frame_ms === null && this.lit)
+      if (this.first_frame_ms === null && this.lit) {
         this.first_frame_ms = performance.now() - this.started;
+        // `--fullscreen` is applied before Qt shows the window and gets lost; toggle it now so
+        // the screen panel fills the container (no title bar or menu) and touch maps exactly.
+        this.#key("keydown", "F11", "F11");
+        this.#key("keyup", "F11", "F11");
+      }
       if (this.first_frame_ms !== null) this.frames++;
       this.raf = requestAnimationFrame(tick);
     };
     this.raf = requestAnimationFrame(tick);
   }
 
+  /** Every element under the container, descending into Qt's (nested) shadow roots. */
+  #all(selector) {
+    const found = [];
+    const visit = (root) => {
+      found.push(...root.querySelectorAll(selector));
+      for (const el of root.querySelectorAll("*"))
+        if (el.shadowRoot) visit(el.shadowRoot);
+    };
+    visit(this.container);
+    if (this.container.shadowRoot) visit(this.container.shadowRoot);
+    return found;
+  }
+
   /** The canvas Qt draws the main window into (largest canvas of the container). */
   get canvas() {
-    const scope = this.container.shadowRoot ?? this.container;
-    const all = [
-      ...scope.querySelectorAll("canvas"),
-      ...this.container.querySelectorAll("canvas"),
-    ];
+    const all = this.#all("canvas");
     return (
       all.sort((a, b) => b.width * b.height - a.width * a.height)[0] ??
       this.container
@@ -138,11 +155,9 @@ class Handle {
   }
 
   #target() {
-    const scope = this.container.shadowRoot ?? this.container;
     return (
-      scope.querySelector(
-        "[contenteditable], input, .qt-window-input-element",
-      ) ?? this.canvas
+      this.#all("[contenteditable], input, .qt-window-input-element")[0] ??
+      this.canvas
     );
   }
 
@@ -161,22 +176,23 @@ class Handle {
     return bits;
   }
 
+  #key(type, key, code) {
+    this.#target().dispatchEvent(
+      new KeyboardEvent(type, {
+        key,
+        code,
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      }),
+    );
+  }
+
   #apply(keys) {
     const changed = keys ^ this.keys;
     if (!changed) return;
-    const target = this.#target();
     for (const [bit, , , key, code] of KEYS) {
-      if (!(changed & bit)) continue;
-      const type = keys & bit ? "keydown" : "keyup";
-      target.dispatchEvent(
-        new KeyboardEvent(type, {
-          key,
-          code,
-          bubbles: true,
-          composed: true,
-          cancelable: true,
-        }),
-      );
+      if (changed & bit) this.#key(keys & bit ? "keydown" : "keyup", key, code);
     }
     this.keys = keys;
   }
@@ -280,7 +296,7 @@ export async function start(canvas, rom, { system = "nds" } = {}) {
   canvas.replaceWith(container);
   const entry = globalThis.melonDS_entry ?? globalThis.createQtAppInstance;
   const instance = await globalThis.qtLoad({
-    arguments: ["/rom/game.nds", "--fullscreen"],
+    arguments: ["/rom/game.nds"],
     qt: {
       module: compiled,
       entryFunction: entry,

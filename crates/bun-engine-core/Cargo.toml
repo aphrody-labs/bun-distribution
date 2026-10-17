@@ -159,3 +159,7 @@ serde_json = { workspace = true }
 name = "bun-engine"
 path = "src/bin/bun-engine.rs"
 required-features = ["window", "nds", "nes", "gba", "psx", "arm", "wii", "cartridge"]
+
+[[example]]
+name = "bevy_web"
+required-features = ["runtime-web", "nes"]

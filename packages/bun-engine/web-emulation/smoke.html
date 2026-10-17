@@ -80,7 +80,8 @@
     };
     report(result);
   } catch (error) {
-    report({ ok: false, core, error: String(error?.stack ?? error), errors, ms: { total: performance.now() - t.begin } });
+    report({ ok: false, core, error: String(error?.stack ?? error?.message ?? JSON.stringify(error)),
+        errorType: error?.constructor?.name, errors, ms: { total: performance.now() - t.begin } });
   }
 </script>
 </body>

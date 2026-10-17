@@ -8,18 +8,22 @@ layout. The site only integrates these artifacts; it does not build them.
 | `build.ts` | Rust cores (`rust`), Qt cores through Docker (`qt`), index and firmware (`index`) |
 | `qt/Containerfile` | Pinned Emscripten 5.0.5 + Qt 6.12.0 for WebAssembly (single- and multi-threaded kits) + third-party libraries |
 | `qt/build-melonds.sh`, `qt/patches/melonds/` | melonDS Qt 6 front end for WebAssembly |
+| `qt/build-azahar.sh` | Azahar (3DS) Qt 6 front end attempt; `build.ts qt azahar` records where it stops |
 | `runtime/` | Browser helpers shipped with the cores: `firmware.js` (open-source firmware fetch, OPFS/IndexedDB cache, local user files), `touch.js` (pointer to bottom-screen mapping), `melonds.js` (ES module wrapper of the Qt build with the common API) |
 | `serve.ts` | Local cross-origin-isolated server (COOP same-origin, COEP credentialless) |
 | `smoke.ts`, `smoke.html` | Headless Chrome smoke test per core over the DevTools protocol |
 | `web-emulation.lock.json` | Every pinned input: toolchain, tool archives (sha256), image digests, Ubuntu snapshot, Qt, source commits, test content |
 
-Builds run on the workstation only (never on the VPS). `build.ts` waits until no other
-cargo/rustc/docker build is running before it starts one.
+Builds run on the build host (the VPS, Linux x86_64), not on the workstation. `build.ts` picks
+the pinned wasm-bindgen/Binaryen archive for the host (`linux-x64` or `win32-x64`), runs cargo
+through `scripts/cargo.ts` (with `bun msvc` only on Windows), and waits for other Docker builds
+before starting one.
 
 ```sh
-bun packages/bun-engine/web-emulation/build.ts rust dust-nds zakuro-3ds   # Rust cores, both variants
+bun packages/bun-engine/web-emulation/build.ts rust dust-nds zakuro-3ds   # Rust cores (Bevy facade)
 docker build -f packages/bun-engine/web-emulation/qt/Containerfile -t bun-os/qt-wasm:6.12.0-emsdk5.0.5 packages/bun-engine/web-emulation/qt
 bun packages/bun-engine/web-emulation/build.ts qt melonds                 # Qt cores in that image
+bun packages/bun-engine/web-emulation/build.ts qt azahar                  # attempt; blockers in report.json
 bun packages/bun-engine/web-emulation/smoke.ts dust-nds zakuro-3ds melonds
 bun packages/bun-engine/web-emulation/serve.ts                            # http://localhost:8787/smoke/?core=...
 ```
@@ -34,16 +38,19 @@ dist/web-emulation/
   firmware/firmware.json          open-source firmware served with the cores (sha256, sha512, SRI, source order)
   firmware/<file>                 openbios.bin, normatt_gba_bios.bin
   runtime/{firmware,touch,melonds}.js
-  <core>/manifest.json
-  <core>/bun_engine.js            wasm-bindgen --target web glue (Rust cores)
-  <core>/bun_engine_bg.wasm       wasm-opt -O3, stripped
-  <core>/threads/...              optional +atomics variant (`build.ts rust --threads`)
-  melonds/{melonds.js,melonDS.js,melonDS.wasm,qtloader.js,build.json}
+  <core>/manifest.json            the only mutable file of a core
+  <core>/<hash>/bun_engine.js     wasm-bindgen --target web glue (Rust cores)
+  <core>/<hash>/bun_engine_bg.wasm  wasm-opt -O3, stripped
+  <core>/threads/<hash>/...       optional +atomics variant (`build.ts rust --threads`)
+  melonds/<hash>/{index.js,melonDS.js,melonDS.wasm,qtloader.js,melonDS.html,build.json}
 ```
 
-Served by the site under `/emulation/<core>/`: `application/wasm` for `.wasm`, immutable cache
-for `*.wasm`/`*.js`, `no-cache` for `manifest.json`, with COOP `same-origin` and COEP
-`credentialless` on the page.
+`<hash>` is the first 12 hex digits of the wasm's SHA-256: every file under it can be served
+with `Cache-Control: public, max-age=31536000, immutable`; `manifest.json` (which names the
+current `<hash>/...` paths) must be `no-cache`. Older hash directories are removed when a core is
+republished. `application/wasm` for `.wasm`; the page sends COOP `same-origin` and COEP
+`credentialless`. melonDS's wrapper is `index.js` because `melonds.js` and Emscripten's
+`melonDS.js` collide on case-insensitive file systems.
 
 ## Manifest schema (`<core>/manifest.json`, `schemaVersion` 1)
 
@@ -120,3 +127,37 @@ one codegen unit, `panic=abort`, stripped) with `+simd128,+bulk-memory,...`, wit
 `wasm-bindgen --target web` and `wasm-opt -O3` (Binaryen) with debug info, producers and
 target-feature sections stripped. Bevy's `webgpu` and `webgl2` features are exclusive, so the
 artifacts are WebGPU only (Chrome/Edge 113+, Firefox 141+, Safari 26). `--threads` adds an
+`+atomics`/shared-memory variant (`-Zbuild-std`); it is not built by default because Bevy runs
+its schedules single-threaded in browsers, so it buys nothing today.
+
+Qt: `qt-cmake` from the `wasm_multithread` kit, `-O3 -flto -msimd128`, `ALLOW_MEMORY_GROWTH`,
+pthreads. Closure Compiler is off: with Emscripten 5.0.5 and this Qt kit it fails on the glue
+(`JSC_UNDEFINED_VARIABLE setTempRet0` in the C++ exception helpers); `MELONDS_CLOSURE=1` retries
+it. melonDS runs its emulation on a `QThread`, so only the multi-threaded kit applies. The JIT is
+off (WebAssembly has no writable executable memory). The OpenGL renderer is compiled (the front
+end needs its symbols) but never selected: the patched GL context factory returns no context on
+Emscripten (WebGL2 is not desktop GL 3.2 and Qt for WebAssembly does not support GL contexts on
+secondary threads), so melonDS falls back to its software renderer and QPainter screen panel.
+
+## Cores and limits
+
+| Core | Path | State |
+| --- | --- | --- |
+| `dust-nds` | Rust, Bevy on WebGPU | builds; smoke: GodMode9i, 120 frames, non-black, no console errors |
+| `melonds` | Qt 6 + Emscripten (pthreads) | builds; boots GodMode9i at full speed; keyboard injection verified (F11 fullscreen) |
+| `zakuro-3ds` | Rust, Bevy on WebGPU | Zakuro ported to wasm32 (in-memory images, no Vulkan/Cranelift/libloading, browser clock); build pending |
+| `azahar` | Qt 6 + Emscripten | recipe written (interpreter CPU, software renderer, no key blob); not yet run |
+| `tetanes-nes`, `rustboyadvance-gba`, `starpsx-psx` | Rust, Bevy | recipes in `build.ts`; after DS/3DS |
+
+- DS cores need no firmware: Dust has an HLE BIOS and boots plaintext homebrew without the ARM7
+  BIOS; melonDS uses its built-in FreeBIOS. Commercial cartridges with an encrypted secure area
+  need the user's own BIOS (local file).
+- Dust's interpreter reaches about 44 emulated fps in headless Chrome on the workstation (DS is
+  59.8 Hz); melonDS's interpreter (on its own pthread) runs at 60/60.
+- mGBA is not vendored; DuckStation is CC BY-NC-ND since 2024 (no derivative builds allowed), so
+  neither is built here.
+- container2wasm (v0.8.4) runs a whole Linux container on an emulated CPU (Bochs for x86_64,
+  TinyEMU for riscv64, QEMU-wasm for `--to-js`): an Alpine shell is realistic for the Linux
+  machine, console emulators are not (an emulator inside an emulated CPU). Its CLI ships only for
+  Linux; build it on the VPS with `c2w --to-js alpine:3.22 out/htdocs` when the Linux machine is
+  scheduled.

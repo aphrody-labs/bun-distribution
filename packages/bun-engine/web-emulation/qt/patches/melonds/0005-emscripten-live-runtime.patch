@@ -1,0 +1,25 @@
+--- a/src/frontend/qt_sdl/main.cpp
++++ b/src/frontend/qt_sdl/main.cpp
+@@ -64,6 +64,9 @@
+ 
+ #include "Net_PCap.h"
+ #include "Net_Slirp.h"
++#ifdef __EMSCRIPTEN__
++#include <emscripten.h>
++#endif
+ 
+ using namespace melonDS;
+ 
+@@ -425,6 +428,12 @@
+     }
+ 
+     int ret = melon.exec();
++#ifdef __EMSCRIPTEN__
++    // Qt for WebAssembly returns from exec() at once and keeps dispatching from the browser.
++    // Tearing down here would join the emulation thread on the main thread and stall the page:
++    // leave main() without running destructors and keep the runtime alive.
++    emscripten_exit_with_live_runtime();
++#endif
+ 
+     delete options;
+ 

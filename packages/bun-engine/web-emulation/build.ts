@@ -106,9 +106,25 @@ export async function waitForDocker(what: string) {
   for (;;) {
     const out =
       process.platform === "win32"
-        ? Bun.spawnSync(["powershell", "-NoProfile", "-Command", script]).stdout.toString()
-        : Bun.spawnSync(["sh", "-c", "pgrep -fc 'docker (build|run)' || true"]).stdout.toString();
-    if (!out.split(/\s+/).filter(Boolean).map(Number).some((n) => n > 0)) return;
+        ? Bun.spawnSync([
+            "powershell",
+            "-NoProfile",
+            "-Command",
+            script,
+          ]).stdout.toString()
+        : Bun.spawnSync([
+            "sh",
+            "-c",
+            "pgrep -fc 'docker (build|run)' || true",
+          ]).stdout.toString();
+    if (
+      !out
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(Number)
+        .some((n) => n > 0)
+    )
+      return;
     if (!announced) log(`waiting for another docker build before ${what}`);
     announced = true;
     await Bun.sleep(20_000);
@@ -143,8 +159,13 @@ async function tool(
   name: "wasm-bindgen" | "binaryen",
   exe: string,
 ): Promise<string> {
-  const pin = lock.tools[name];
-  const dir = join(work, "tools", `${name}-${pin.version}`);
+  const platform = `${process.platform}-${process.arch}`;
+  const pin = {
+    version: lock.tools[name].version,
+    ...lock.tools[name].platforms[platform],
+  };
+  if (!pin.url) throw new Error(`${name}: no pinned build for ${platform}`);
+  const dir = join(work, "tools", `${name}-${pin.version}-${platform}`);
   const found = existsSync(dir) ? findFile(dir, exe) : undefined;
   if (found) return found;
   mkdirSync(dir, { recursive: true });
@@ -223,20 +244,13 @@ async function buildRust(id: string, core: RustCore, threads: boolean) {
     );
   }
   log(`cargo ${id} (${variant}): ${features.join(",")}`);
+  // Windows needs the MSVC environment for build scripts; Linux runs the wrapper directly.
+  const msvc =
+    process.platform === "win32"
+      ? ["bun", "msvc", "exec", "--toolset", "14.44", "--"]
+      : [];
   const cargoSeconds = await run(
-    [
-      "bun",
-      "msvc",
-      "exec",
-      "--toolset",
-      "14.44",
-      "--",
-      "bun",
-      "scripts/cargo.ts",
-      "exec",
-      "--",
-      ...cargo,
-    ],
+    [...msvc, "bun", "scripts/cargo.ts", "exec", "--", ...cargo],
     {
       env: {
         CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS: rustflags.join(" "),
@@ -300,7 +314,16 @@ async function buildRust(id: string, core: RustCore, threads: boolean) {
     optimized,
   ]);
   const before = sizes(bound);
-  const target = join(dist, id, threads ? "threads" : "");
+  // Content-addressed directory: everything under it can be cached as immutable; only
+  // manifest.json revalidates. Older builds of the same variant are removed.
+  const hash = (await sha256(optimized)).slice(0, 12);
+  const parent = threads ? join(dist, id, "threads") : join(dist, id);
+  mkdirSync(parent, { recursive: true });
+  for (const old of readdirSync(parent).filter((d) =>
+    /^([0-9a-f]{12}|bun_engine.*|snippets)$/.test(d),
+  ))
+    rmSync(join(parent, old), { recursive: true, force: true });
+  const target = join(parent, hash);
   mkdirSync(target, { recursive: true });
   await Bun.write(join(target, "bun_engine_bg.wasm"), Bun.file(optimized));
   await Bun.write(
@@ -422,8 +445,67 @@ async function rust(ids: string[], threads: boolean) {
   await index();
 }
 
+/** Run a Qt recipe in the pinned container; artifacts land in `out`. */
+async function dockerBuild(id: string, out: string, image: string) {
+  rmSync(out, { recursive: true, force: true });
+  mkdirSync(out, { recursive: true });
+  await waitForDocker(`docker ${id}`);
+  log(`docker build of ${id}`);
+  return run([
+    "docker",
+    "run",
+    "--rm",
+    "-v",
+    `${join(root, "vendor", id)}:/src/${id}:ro`,
+    "-v",
+    `${join(here, "qt", "patches")}:/patches:ro`,
+    "-v",
+    `${join(here, "qt", `build-${id}.sh`)}:/usr/local/bin/build-${id}.sh:ro`,
+    "-v",
+    `${out}:/out`,
+    // Build trees persist in a named volume so iterations stay incremental.
+    "-v",
+    "bun-os-qt-work:/work",
+    "-e",
+    `MELONDS_DEBUG=${Bun.env.MELONDS_DEBUG ?? "0"}`,
+    image,
+    "bash",
+    `/usr/local/bin/build-${id}.sh`,
+  ]);
+}
+
+/**
+ * A Qt recipe that is not shippable yet (Azahar): run it, keep the log, and record where it
+ * stops instead of publishing anything.
+ */
+async function attempt(id: string, image: string) {
+  const out = join(work, "qt", id);
+  const started = performance.now();
+  let ok = true;
+  try {
+    await dockerBuild(id, out, image);
+  } catch {
+    ok = false;
+  }
+  const logText = existsSync(join(out, "build.log"))
+    ? await Bun.file(join(out, "build.log")).text()
+    : "";
+  const blockers = [
+    ...new Set(
+      logText.split("\n").filter((l) => /error:|CMake Error|FAILED:/.test(l)),
+    ),
+  ].slice(0, 40);
+  return {
+    kind: "qt",
+    ok: ok && existsSync(join(out, "build.json")),
+    seconds: (performance.now() - started) / 1000,
+    log: join(out, "build.log"),
+    blockers,
+  };
+}
+
 /** Qt front ends through the pinned container (melonDS first). */
-async function qt(ids: string[]) {
+async function qt(ids: string[], publishOnly = false) {
   const image = lock.docker.images["qt-wasm"].ref;
   const report: Record<string, unknown> = (await Bun.file(
     join(dist, "report.json"),
@@ -431,38 +513,27 @@ async function qt(ids: string[]) {
     ? await Bun.file(join(dist, "report.json")).json()
     : {};
   for (const id of ids) {
+    if (id === "azahar") {
+      report.azahar = await attempt(id, image);
+      await Bun.write(
+        join(dist, "report.json"),
+        `${JSON.stringify(report, null, 2)}\n`,
+      );
+      continue;
+    }
     if (id !== "melonds")
       throw new Error(`no Qt recipe for ${id}; see README (Qt cores)`);
     const out = join(work, "qt", id);
-    rmSync(out, { recursive: true, force: true });
-    mkdirSync(out, { recursive: true });
-    await waitForDocker(`docker ${id}`);
-    log(`docker build of ${id}`);
-    const seconds = await run([
-      "docker",
-      "run",
-      "--rm",
-      "-v",
-      `${join(root, "vendor", "melonds")}:/src/melonds:ro`,
-      "-v",
-      `${join(here, "qt", "patches")}:/patches:ro`,
-      "-v",
-      `${join(here, "qt", "build-melonds.sh")}:/usr/local/bin/build-melonds.sh:ro`,
-      "-v",
-      `${out}:/out`,
-      // Build trees persist in a named volume so iterations stay incremental.
-      "-v",
-      "bun-os-qt-work:/work",
-      image,
-      "bash",
-      "/usr/local/bin/build-melonds.sh",
-    ]);
-    const target = join(dist, "melonds");
+    const seconds = publishOnly ? 0 : await dockerBuild(id, out, image);
+    const hash = (await sha256(join(out, "melonDS.wasm"))).slice(0, 12);
+    rmSync(join(dist, "melonds"), { recursive: true, force: true });
+    const target = join(dist, "melonds", hash);
     mkdirSync(target, { recursive: true });
     for (const file of readdirSync(out))
       await Bun.write(join(target, file), Bun.file(join(out, file)));
+    // index.js: "melonds.js" would collide with melonDS.js on case-insensitive file systems.
     await Bun.write(
-      join(target, "melonds.js"),
+      join(target, "index.js"),
       Bun.file(join(here, "runtime", "melonds.js")),
     );
     const build = await Bun.file(join(out, "build.json")).json();
@@ -486,8 +557,8 @@ async function qt(ids: string[]) {
       kind: "qt-emscripten",
       systems: ["nds"],
       extensions: [".nds", ".srl", ".dsi"],
-      module: "melonds.js",
-      wasm: "melonDS.wasm",
+      module: `${hash}/index.js`,
+      wasm: `${hash}/melonDS.wasm`,
       start: "start",
       threads: true,
       renderer: "qt-raster",
@@ -600,10 +671,11 @@ if (import.meta.main) {
       args.length ? args : Object.keys(rustCores),
       rest.includes("--threads"),
     );
-  else if (command === "qt") await qt(args.length ? args : ["melonds"]);
+  else if (command === "qt")
+    await qt(args.length ? args : ["melonds"], rest.includes("--publish-only"));
   else if (command === "index") await index();
   else
     throw new Error(
-      "usage: build.ts rust [core...] [--threads] | qt [melonds] | index",
+      "usage: build.ts rust [core...] [--threads] | qt [melonds|azahar] [--publish-only] | index",
     );
 }

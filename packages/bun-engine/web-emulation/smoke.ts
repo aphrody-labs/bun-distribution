@@ -98,6 +98,16 @@ export async function smoke(cores: string[], threads: boolean) {
       "--no-first-run",
       "--no-default-browser-check",
       "--enable-unsafe-webgpu",
+      // GPU-less Linux hosts (the VPS): WebGPU on SwiftShader's Vulkan.
+      ...(process.platform === "linux"
+        ? [
+            "--enable-features=Vulkan",
+            "--use-vulkan=swiftshader",
+            "--use-webgpu-adapter=swiftshader",
+            "--enable-unsafe-swiftshader",
+            ...(process.getuid?.() === 0 ? ["--no-sandbox"] : []),
+          ]
+        : []),
       "--autoplay-policy=no-user-gesture-required",
       "--window-size=800,1000",
       "about:blank",

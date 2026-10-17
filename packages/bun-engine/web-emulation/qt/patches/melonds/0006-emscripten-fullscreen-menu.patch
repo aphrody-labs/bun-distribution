@@ -1,0 +1,22 @@
+--- a/src/frontend/qt_sdl/Window.cpp
++++ b/src/frontend/qt_sdl/Window.cpp
+@@ -2159,13 +2159,19 @@
+     {
+         showFullScreen();
+         if (hasMenu)
++#ifdef __EMSCRIPTEN__
++            // Qt for WebAssembly keeps drawing a zero-height menu bar; the page owns the controls.
++            menuBar()->hide();
++#else
+             menuBar()->setFixedHeight(0); // Don't use hide() as menubar actions stop working
++#endif
+     }
+     else
+     {
+         showNormal();
+         if (hasMenu)
+         {
++            menuBar()->show();
+             int menuBarHeight = menuBar()->sizeHint().height();
+             menuBar()->setFixedHeight(menuBarHeight);
+         }
