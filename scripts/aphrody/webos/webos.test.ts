@@ -42,7 +42,7 @@ describe("Bun fork host access boundary", () => {
     const { hostAccessProblem, isLoopbackHost } = await import(
       webosOwnerModule("src/server/guard.ts")
     );
-    const server = { hostname: "127.0.0.1", requestIP: () => ({ address: "127.0.0.1" }) };
+    const server = { hostname: "127.0.0.1", port: 3001, requestIP: () => ({ address: "127.0.0.1" }) };
     const request = new Request("http://127.0.0.1:3001/api/shell");
     expect(isLoopbackHost("localhost")).toBe(true);
     expect(isLoopbackHost("example.com")).toBe(false);
