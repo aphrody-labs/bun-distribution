@@ -868,7 +868,7 @@ async function triggerDiscordAnnouncement(article: {
 }) {
   const secret = process.env.DISCORD_ANNOUNCE_SECRET || "default-secret-key-12345";
   try {
-    const res = await fetch("http://localhost:3006/announce", {
+    const res = await fetch(`${process.env.RG_API_URL ?? "https://api.rosegriffon.fr"}/v1/discord/announce`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
