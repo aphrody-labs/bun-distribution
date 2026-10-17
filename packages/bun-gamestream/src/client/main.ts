@@ -2,12 +2,7 @@
  * Bun OS gamestream browser client: WebRTC receive, WebGPU presentation with FSR1 upscaling,
  * input over a data channel. Falls back to a plain <video> element without WebGPU.
  */
-import type {
-  InputMessage,
-  SenderInfo,
-  SenderStats,
-  ServerMessage,
-} from "../protocol.ts";
+import type { InputMessage, SenderInfo, SenderStats, ServerMessage } from "../protocol.ts";
 import { captureInput, type InputCounters } from "./input.ts";
 import { type UpscaleMode, WebGpuPresenter } from "./renderer.ts";
 import { createTestSource } from "./test-source.ts";
@@ -18,11 +13,7 @@ declare class MediaStreamTrackProcessor {
 }
 
 interface ClientState {
-  path:
-    | "pending"
-    | "webgpu-trackprocessor"
-    | "webgpu-videoframecallback"
-    | "video-fallback";
+  path: "pending" | "webgpu-trackprocessor" | "webgpu-videoframecallback" | "video-fallback";
   source: "webrtc" | "test";
   adapter: string;
   upscale: UpscaleMode;
@@ -66,8 +57,7 @@ let lastFrame: VideoFrame | null = null;
     gamestreamBenchmark: () => Promise<Record<string, number>>;
   }
 ).gamestreamBenchmark = async () => {
-  if (!presenter || !lastFrame)
-    throw new Error("no WebGPU frame presented yet");
+  if (!presenter || !lastFrame) throw new Error("no WebGPU frame presented yet");
   const frame = lastFrame.clone();
   const mode = presenter.mode;
   try {
@@ -102,9 +92,7 @@ function fail(message: string): void {
 // Layout: fit the stream aspect ratio in the window, canvas in device pixels.
 // ---------------------------------------------------------------------------------------------
 function layout(): void {
-  const aspect = state.sender
-    ? state.sender.width / state.sender.height
-    : 16 / 9;
+  const aspect = state.sender ? state.sender.width / state.sender.height : 16 / 9;
   let width = innerWidth;
   let height = width / aspect;
   if (height > innerHeight) {
@@ -127,19 +115,11 @@ layout();
 // ---------------------------------------------------------------------------------------------
 let presenter: WebGpuPresenter | null = null;
 try {
-  presenter = await WebGpuPresenter.create(
-    canvas,
-    state.upscale,
-    Number(query.get("sharpness") ?? 0.2),
-  );
+  presenter = await WebGpuPresenter.create(canvas, state.upscale, Number(query.get("sharpness") ?? 0.2));
   state.adapter = presenter.adapterInfo;
-  console.log(
-    `[gamestream] WebGPU adapter: ${presenter.adapterInfo || "unknown"} (${presenter.canvasFormat})`,
-  );
+  console.log(`[gamestream] WebGPU adapter: ${presenter.adapterInfo || "unknown"} (${presenter.canvasFormat})`);
 } catch (error) {
-  console.warn(
-    `[gamestream] WebGPU unavailable, using <video>: ${String(error)}`,
-  );
+  console.warn(`[gamestream] WebGPU unavailable, using <video>: ${String(error)}`);
 }
 
 const pictureElement = (): HTMLElement => (canvas.hidden ? video : canvas);
@@ -149,10 +129,7 @@ function presented(width: number, height: number): void {
   state.frameSize = `${width}x${height}`;
 }
 
-async function pumpTrackProcessor(
-  track: MediaStreamTrack,
-  gpu: WebGpuPresenter,
-): Promise<void> {
+async function pumpTrackProcessor(track: MediaStreamTrack, gpu: WebGpuPresenter): Promise<void> {
   const reader = new MediaStreamTrackProcessor({
     track,
     maxBufferSize: 1,
@@ -185,31 +162,22 @@ function present(track: MediaStreamTrack, stream: MediaStream): void {
     void video.play();
     return;
   }
-  if (
-    typeof MediaStreamTrackProcessor === "function" &&
-    query.get("source") !== "video"
-  ) {
+  if (typeof MediaStreamTrackProcessor === "function" && query.get("source") !== "video") {
     state.path = "webgpu-trackprocessor";
-    void pumpTrackProcessor(track, presenter).catch((error) =>
-      fail(`frame pump: ${String(error)}`),
-    );
+    void pumpTrackProcessor(track, presenter).catch(error => fail(`frame pump: ${String(error)}`));
   } else {
     state.path = "webgpu-videoframecallback";
     video.srcObject = stream;
     void video.play();
     pumpVideoFrames(presenter);
   }
-  console.log(
-    `[gamestream] presenting through ${state.path} (${state.upscale})`,
-  );
+  console.log(`[gamestream] presenting through ${state.path} (${state.upscale})`);
 }
 
 // ---------------------------------------------------------------------------------------------
 // Signalling and WebRTC
 // ---------------------------------------------------------------------------------------------
-const socket = new WebSocket(
-  `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`,
-);
+const socket = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`);
 const pc = new RTCPeerConnection({
   iceServers: [],
   bundlePolicy: "max-bundle",
@@ -221,7 +189,7 @@ const sendInput = (message: InputMessage) => {
   if (channel?.readyState === "open") channel.send(JSON.stringify(message));
 };
 
-pc.ontrack = (event) => {
+pc.ontrack = event => {
   const receiver = event.receiver as RTCRtpReceiver & {
     jitterBufferTarget?: number;
     playoutDelayHint?: number;
@@ -236,19 +204,18 @@ pc.ontrack = (event) => {
     void audio.play().catch(() => undefined);
   }
 };
-pc.ondatachannel = (event) => {
+pc.ondatachannel = event => {
   channel = event.channel;
   channel.onopen = () => {
     console.log("[gamestream] input channel open");
     counters ??= captureInput(stage, pictureElement, sendInput);
   };
-  channel.onmessage = (event) => {
+  channel.onmessage = event => {
     const message = JSON.parse(String(event.data)) as { t: string; ts: number };
-    if (message.t === "pong")
-      state.rttMs = Math.round((performance.now() - message.ts) * 10) / 10;
+    if (message.t === "pong") state.rttMs = Math.round((performance.now() - message.ts) * 10) / 10;
   };
 };
-pc.onicecandidate = (event) => {
+pc.onicecandidate = event => {
   if (event.candidate?.candidate) {
     socket.send(
       JSON.stringify({
@@ -278,20 +245,16 @@ function startTestSource(): void {
   status.textContent = "";
   const test = createTestSource();
   present(test.track, test.stream);
-  counters = captureInput(stage, pictureElement, (message) => {
+  counters = captureInput(stage, pictureElement, message => {
     const values = Object.entries(message)
       .filter(([key]) => key !== "t")
-      .map(([, value]) =>
-        typeof value === "number"
-          ? Math.round(value * 1000) / 1000
-          : String(value),
-      );
+      .map(([, value]) => (typeof value === "number" ? Math.round(value * 1000) / 1000 : String(value)));
     if (message.t !== "ping") test.note(`${message.t} ${values.join(" ")}`);
   });
   console.log("[gamestream] local test source active");
 }
 
-socket.onmessage = async (event) => {
+socket.onmessage = async event => {
   const message = JSON.parse(String(event.data)) as ServerMessage;
   if (state.source === "test") return;
   switch (message.type) {
@@ -299,14 +262,10 @@ socket.onmessage = async (event) => {
       state.sender = message.sender;
       layout();
       if (!message.sender || query.get("source") === "test") {
-        if (!message.sender)
-          console.warn(
-            "[gamestream] no sender on the server; using the local test source",
-          );
+        if (!message.sender) console.warn("[gamestream] no sender on the server; using the local test source");
         startTestSource();
         return;
       }
-      status.textContent = "connecting...";
       socket.send(JSON.stringify({ type: "start" }));
       break;
     case "offer": {
@@ -323,10 +282,7 @@ socket.onmessage = async (event) => {
       });
       break;
     case "state":
-      status.textContent =
-        message.ice === "connected" || message.ice === "completed"
-          ? ""
-          : `ice ${message.ice}`;
+      status.textContent = "";
       break;
     case "stats": {
       const { type: _type, ...stats } = message;
@@ -338,9 +294,8 @@ socket.onmessage = async (event) => {
       break;
   }
 };
-socket.onclose = (event) => {
-  if (state.source !== "test")
-    fail(`signalling closed (${event.code} ${event.reason})`);
+socket.onclose = event => {
+  if (state.source !== "test") fail(`signalling closed (${event.code} ${event.reason})`);
 };
 stage.addEventListener("click", () => void audio.play().catch(() => undefined));
 
@@ -354,9 +309,9 @@ let previous: {
   jitter: number;
   emitted: number;
 } | null = null;
-let showHud = query.get("hud") !== "0";
+let showHud = query.get("hud") === "1";
 let ticks = 0;
-window.addEventListener("keydown", (event) => {
+window.addEventListener("keydown", event => {
   if (event.code === "F8") showHud = !showHud;
 });
 
@@ -366,7 +321,7 @@ setInterval(async () => {
   lastPresented = state.framesPresented;
   state.inputSent = counters?.sent ?? 0;
   const report = await pc.getStats();
-  report.forEach((entry) => {
+  report.forEach(entry => {
     if (entry.type === "inbound-rtp" && entry.kind === "video") {
       const current = {
         decode: entry.totalDecodeTime ?? 0,
@@ -377,30 +332,19 @@ setInterval(async () => {
       if (previous) {
         const frames = Math.max(1, current.frames - previous.frames);
         const emitted = Math.max(1, current.emitted - previous.emitted);
-        state.receiver.decodeMs =
-          Math.round(((current.decode - previous.decode) / frames) * 10000) /
-          10;
-        state.receiver.jitterBufferMs =
-          Math.round(((current.jitter - previous.jitter) / emitted) * 10000) /
-          10;
+        state.receiver.decodeMs = Math.round(((current.decode - previous.decode) / frames) * 10000) / 10;
+        state.receiver.jitterBufferMs = Math.round(((current.jitter - previous.jitter) / emitted) * 10000) / 10;
       }
       previous = current;
       state.receiver.fps = entry.framesPerSecond ?? 0;
       state.receiver.decoder = entry.decoderImplementation ?? "";
-      state.receiver.powerEfficientDecoder = String(
-        entry.powerEfficientDecoder ?? "",
-      );
+      state.receiver.powerEfficientDecoder = String(entry.powerEfficientDecoder ?? "");
       state.receiver.dropped = entry.framesDropped ?? 0;
       state.receiver.lost = entry.packetsLost ?? 0;
       state.receiver.size = `${entry.frameWidth ?? 0}x${entry.frameHeight ?? 0}`;
     }
-    if (
-      entry.type === "candidate-pair" &&
-      entry.nominated &&
-      entry.state === "succeeded"
-    ) {
-      state.receiver.iceRttMs =
-        Math.round((entry.currentRoundTripTime ?? 0) * 1000 * 10) / 10;
+    if (entry.type === "candidate-pair" && entry.nominated && entry.state === "succeeded") {
+      state.receiver.iceRttMs = Math.round((entry.currentRoundTripTime ?? 0) * 1000 * 10) / 10;
     }
   });
   const encode = state.server?.encodeMs ?? 0;
@@ -409,9 +353,7 @@ setInterval(async () => {
   const decode = Number(state.receiver.decodeMs ?? 0);
   const frameMs = state.sender ? 1000 / state.sender.fps : 16.7;
   // capture wait (half a frame) + encode + one-way network + jitter buffer + decode + present (half a refresh)
-  state.receiver.estimatedLatencyMs = Math.round(
-    frameMs / 2 + encode + network + jitter + decode + 8.3,
-  );
+  state.receiver.estimatedLatencyMs = Math.round(frameMs / 2 + encode + network + jitter + decode + 8.3);
   hud.hidden = !showHud;
   hud.textContent = [
     `path      ${state.source} ${state.path} / ${state.upscale}  ${state.frameSize} -> ${state.canvasSize}`,
@@ -422,8 +364,6 @@ setInterval(async () => {
     `latency   ~${state.receiver.estimatedLatencyMs} ms (estimate)  input sent ${state.inputSent}  ice ${state.ice}`,
   ].join("\n");
   if (++ticks % 5 === 0) {
-    console.log(
-      `[gamestream] stats ${JSON.stringify({ ...state, errors: state.errors.length })}`,
-    );
+    console.log(`[gamestream] stats ${JSON.stringify({ ...state, errors: state.errors.length })}`);
   }
 }, 1000);
