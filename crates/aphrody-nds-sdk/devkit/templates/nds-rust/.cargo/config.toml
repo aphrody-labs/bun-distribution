@@ -1,0 +1,21 @@
+# Used through `devkit/build.sh nds-rust`, which exports BLOCKSDS and the Wonderful toolchain path.
+[build]
+target = "../../targets/armv5te-nintendo-ds.json"
+
+[unstable]
+build-std = ["core", "alloc", "compiler_builtins"]
+build-std-features = ["compiler-builtins-mem"]
+json-target-spec = true
+
+[target.armv5te-nintendo-ds]
+rustflags = [
+  "-C", "link-arg=-mthumb",
+  "-C", "link-arg=-mcpu=arm946e-s+nofp",
+  "-C", "link-arg=-specs=/opt/blocksds/core/sys/crts/ds_arm9.specs",
+  "-C", "link-arg=-L/opt/blocksds/core/libs/libnds/lib",
+  "-C", "link-arg=-Wl,--start-group",
+  "-C", "link-arg=-lnds9",
+  "-C", "link-arg=-lc",
+  "-C", "link-arg=-lgcc",
+  "-C", "link-arg=-Wl,--end-group",
+]

@@ -1,0 +1,20 @@
+[package]
+name = "ctr-hello"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# Standalone project: not a member of the Bun OS workspace. Build with
+# `devkit/build.sh 3ds-rust` (cargo-3ds, devkitARM, nightly Rust with rust-src).
+[workspace]
+
+[dependencies]
+ctru-rs = { git = "https://github.com/rust3ds/ctru-rs" }
+
+# ctru-rs comes from the pinned submodule, not the network.
+[patch."https://github.com/rust3ds/ctru-rs"]
+ctru-rs = { path = "../../../../../vendor/ctru-rs/ctru-rs" }
+ctru-sys = { path = "../../../../../vendor/ctru-rs/ctru-sys" }
+
+[package.metadata.cargo-3ds]
+romfs_dir = "romfs"

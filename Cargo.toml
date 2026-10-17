@@ -1,5 +1,5 @@
 [workspace]
-exclude = ["vendor/starpsx", "vendor/zakuro", "vendor/tetanes", "vendor/rustboyadvance-ng", "vendor/uutils", "packages/bun-tauri", "apps/aphrody-model-view", "toolchains/bun", "apps/aphrody-drive", "apps/pdfcraft/vendor", "apps/figcraft/plugins", "apps/artcraft", "crates/artcraft-tauri-plugin-http", "crates/sqlite_tasks", "vendor/magika", "crates/bevy/tests-integration", "crates/bevy/examples/mobile/android_basic", "crates/bevy_color/crates/gen_tests"]
+exclude = ["vendor/cargo-3ds", "vendor/ctru-rs", "vendor/citro3d-rs", "vendor/starpsx", "vendor/zakuro", "vendor/tetanes", "vendor/rustboyadvance-ng", "vendor/uutils", "packages/bun-tauri", "apps/aphrody-model-view", "toolchains/bun", "apps/aphrody-drive", "apps/pdfcraft/vendor", "apps/figcraft/plugins", "apps/artcraft", "crates/artcraft-tauri-plugin-http", "crates/sqlite_tasks", "vendor/magika", "crates/bevy/tests-integration", "crates/bevy/examples/mobile/android_basic", "crates/bevy_color/crates/gen_tests"]
 resolver = "3"
 members = [
   "crates/apkeep",
@@ -528,6 +528,7 @@ members = [
   "crates/aphrody-ctr-emu",
   "crates/aphrody-ctr-desktop",
   "crates/aphrody-nds-sdk",
+  "crates/aphrody-nds-sys",
   "crates/aphrody-emu-utils",
   "crates/aphrody-emu-utils-macros",
   "crates/aphrody-homebrew",

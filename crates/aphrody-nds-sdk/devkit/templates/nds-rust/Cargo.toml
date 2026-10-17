@@ -1,0 +1,21 @@
+[package]
+name = "nds-hello"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# Standalone project: not a member of the Bun OS workspace.
+[workspace]
+
+[dependencies]
+aphrody-nds-sys = { path = "../../../../aphrody-nds-sys" }
+
+[profile.dev]
+panic = "abort"
+opt-level = 1
+
+[profile.release]
+panic = "abort"
+opt-level = "s"
+lto = true
+codegen-units = 1

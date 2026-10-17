@@ -52,3 +52,88 @@ pub fn is_debugger<E: Engine, const ADDR: usize>(emu: &Emu<E>) -> (u32, u32, u32
         .write_le::<u16>(ADDR & emu.main_mem_mask().get() as usize, emu.is_debugger() as u16);
     (emu.is_debugger() as u32, (emu.is_debugger() as u32) << 2, 0x027F_FFE0)
 }
+
+/// LZ77 (LZSS) decompression, `LZ77UnCompReadNormalWrite8bit`: `src` holds the header word
+/// (type 1, size in bits 8..32) followed by flag bytes and tokens.
+pub fn lz77_uncomp(
+    src: u32,
+    dst: u32,
+    mut read_8: impl FnMut(u32) -> u8,
+    mut write_8: impl FnMut(u32, u8),
+) {
+    let header = u32::from_le_bytes([read_8(src), read_8(src + 1), read_8(src + 2), read_8(src + 3)]);
+    let (mut src, mut remaining, mut out) = (src.wrapping_add(4), (header >> 8) as usize, dst);
+    while remaining > 0 {
+        let flags = read_8(src);
+        src = src.wrapping_add(1);
+        for bit in (0..8).rev() {
+            if remaining == 0 {
+                break;
+            }
+            if flags >> bit & 1 == 0 {
+                write_8(out, read_8(src));
+                src = src.wrapping_add(1);
+                out = out.wrapping_add(1);
+                remaining -= 1;
+            } else {
+                let (b0, b1) = (read_8(src), read_8(src.wrapping_add(1)));
+                src = src.wrapping_add(2);
+                let len = ((b0 >> 4) as usize + 3).min(remaining);
+                let disp = (((b0 & 0xF) as u32) << 8 | b1 as u32) + 1;
+                for _ in 0..len {
+                    let byte = read_8(out.wrapping_sub(disp));
+                    write_8(out, byte);
+                    out = out.wrapping_add(1);
+                }
+                remaining -= len;
+            }
+        }
+    }
+}
+
+/// Run-length decompression, `RLUnCompReadNormalWrite8bit` (header type 3).
+pub fn rl_uncomp(
+    src: u32,
+    dst: u32,
+    mut read_8: impl FnMut(u32) -> u8,
+    mut write_8: impl FnMut(u32, u8),
+) {
+    let header = u32::from_le_bytes([read_8(src), read_8(src + 1), read_8(src + 2), read_8(src + 3)]);
+    let (mut src, mut remaining, mut out) = (src.wrapping_add(4), (header >> 8) as usize, dst);
+    while remaining > 0 {
+        let flag = read_8(src);
+        src = src.wrapping_add(1);
+        let len = (flag & 0x7F) as usize + if flag & 0x80 != 0 { 3 } else { 1 };
+        let len = len.min(remaining);
+        if flag & 0x80 != 0 {
+            let value = read_8(src);
+            src = src.wrapping_add(1);
+            for _ in 0..len {
+                write_8(out, value);
+                out = out.wrapping_add(1);
+            }
+        } else {
+            for _ in 0..len {
+                write_8(out, read_8(src));
+                src = src.wrapping_add(1);
+                out = out.wrapping_add(1);
+            }
+        }
+        remaining -= len;
+    }
+}
+
+/// 8-bit difference unfilter writing bytes, `Diff8bitUnFilterWrite8bit` (header type 8).
+pub fn diff_8_unfilter(
+    src: u32,
+    dst: u32,
+    mut read_8: impl FnMut(u32) -> u8,
+    mut write_8: impl FnMut(u32, u8),
+) {
+    let header = u32::from_le_bytes([read_8(src), read_8(src + 1), read_8(src + 2), read_8(src + 3)]);
+    let mut value = 0_u8;
+    for i in 0..(header >> 8) {
+        value = value.wrapping_add(read_8(src.wrapping_add(4 + i)));
+        write_8(dst.wrapping_add(i), value);
+    }
+}

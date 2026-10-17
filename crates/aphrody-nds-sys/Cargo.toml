@@ -1,0 +1,16 @@
+[package]
+name = "aphrody-nds-sys"
+description = "no_std Nintendo DS (ARM9) bindings: hardware map, registers and the libnds entry points used by Rust homebrew."
+version.workspace = true
+edition.workspace = true
+license = "Zlib"
+repository.workspace = true
+authors.workspace = true
+keywords = ["nintendo-ds", "libnds", "no-std", "homebrew"]
+categories = ["no-std", "external-ffi-bindings", "hardware-support"]
+publish = false
+
+[dependencies]
+
+[lints]
+workspace = true

@@ -2392,6 +2392,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-nds-sys"
+version = "1.4.4"
+
+[[package]]
 name = "aphrody-nie-app"
 version = "1.4.4"
 dependencies = [
@@ -23105,9 +23109,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0242819d153cba4b4b05a5a8f2a7e9bbf97b6055b2a002b395c96b5ff3c0222"
 dependencies = [
  "cfg-if 1.0.5",
- "js-sys",
- "wasm-bindgen",
- "web-sys",
 ]
 
 [[package]]
@@ -33996,7 +33997,6 @@ name = "rustboyadvance-utils"
 version = "0.1.0"
 dependencies = [
  "goblin 0.10.7",
- "instant",
  "log",
  "ringbuf",
 ]

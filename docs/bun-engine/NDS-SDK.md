@@ -95,4 +95,68 @@ deleted afterwards.
 | Inazuma Eleven (France) `.nds`, Inazuma Eleven 2 Tempete de Glace (France) `.nds` | Boot, run 1500+ frames without a crash; intro cutscene renders on the lower screen with a 64 KiB EEPROM backup (the upper screen is black there). With the flash default the game shows its own "loading failed" message, which is the signature of a wrong backup chip, not of a core failure. |
 | 138 `.cia` titles in `usr/bin/3ds` (system titles `00040010`, `0004001B`, `00040030`, `0004009B`, `000400DB`, `00040130`, `00040138`, `00048005`, `0004800F`) | All refused by the 3DS core: the contents are encrypted and Zakuro needs decrypted titles. Decryption needs console keys, which the SDK neither ships nor accepts. Not a core defect. |
 
-Homebrew test programs: see the developer toolchain section below.
+Homebrew built from source (see below) and booted the same way:
+
+| Program | Result |
+| --- | --- |
+| `iecode-cpp` DS starter (C, BlocksDS libnds, `.nds`) | Boots; libnds console text renders on the lower screen (`irqInit`, `swiWaitForVBlank`, key scan, console). |
+| `aphrody-nds-sys` Rust template (`.nds`) | Boots; "Hello from Rust on the DS" renders. |
+| `iecode-cpp` 3DS starter (C, libctru, `.3dsx`) | Boots; libctru console text renders on the top screen. |
+| `ctru-rs` examples `hello-world`, `buttons`, `gfx-bitmap`, `romfs` (Rust, `.3dsx`) | All boot and draw; no fault. |
+
+## Developer toolchain
+
+`crates/aphrody-nds-sdk/devkit/` turns the SDK into a development environment.
+
+| Item | Where |
+| --- | --- |
+| Build and boot script | `devkit/build.sh nds-c|nds-rust|3ds-c|3ds-rust|run` (builds in a temporary directory, nothing lands in the tree) |
+| Rust DS target | `devkit/targets/armv5te-nintendo-ds.json` (ARM946E-S, soft float, no atomics CAS, panic abort), built with `-Zbuild-std=core,alloc,compiler_builtins` on the pinned nightly |
+| `no_std` DS bindings | `crates/aphrody-nds-sys`: memory map and registers, key and IRQ bits, and the libnds entry points Rust homebrew needs, linked against `libnds9` only when a ROM is built |
+| DS Rust template | `devkit/templates/nds-rust` (links with the BlocksDS `ds_arm9.specs`, packs with `ndstool` and the stock `arm7_minimal.elf`) |
+| 3DS Rust template | `devkit/templates/3ds-rust` (`ctru-rs` from the pinned submodule through a `[patch]`, built by `cargo-3ds`; target `armv6k-nintendo-3ds` is a rustc tier 3 target) |
+| 3DS bindings | `ctru-sys` and `ctru-rs` in `vendor/ctru-rs`, `citro3d-rs` in `vendor/citro3d-rs` |
+| C starters | `packages/iecode-cpp/homebrew/{nds,3ds}` (their Makefiles and DS source were broken and are fixed in that repository) |
+
+Installed toolchains (outside the repository, on the build host only):
+
+* BlocksDS (libnds, dswifi, maxmod, libxm7, ndstool, grit, mmutil) under `/opt/blocksds/core`,
+  from Wonderful pacman (`toolchain-gcc-arm-none-eabi`, `blocksds-toolchain`).
+* devkitPro (devkitARM, libctru, citro3d, citro2d, 3dstools, calico and the `3ds-*` portlibs) under
+  `/opt/devkitpro`, copied from the official `devkitpro/devkitarm` image because
+  `pkg.devkitpro.org` answers the VPS with a bot challenge.
+* `cargo-3ds` built from `vendor/cargo-3ds` (`vendor/cargo-3ds`, `vendor/ctru-rs` and
+  `vendor/citro3d-rs` are excluded from the root Cargo workspace).
+
+### Homebrew libraries and where the SDK uses them
+
+| Library | Source | Use |
+| --- | --- | --- |
+| libnds, dswifi, maxmod, libxm7, ndstool (BlocksDS) | toolchain install, snapshot in `packages/iecode-cpp` | Build DS homebrew; ABI reference for the Dust HLE BIOS and registers; real test ROMs |
+| libnds (devkitPro), calico | `vendor/libnds`, `vendor/calico` | Header and ABI reference (SWI numbers, registers, FIFO) |
+| libfat / nitroFS | inside libnds (`fatfs`, nitrofs) | Filesystem for DS homebrew; Dust runs the DLDI/FAT path |
+| libctru, citro3d, citro2d | `vendor/libctru`, `vendor/citro3d`, `vendor/citro2d` | Build 3DS homebrew; service and SVC ABI reference for Zakuro |
+| 3ds-portlibs, newlib, libc | devkitPro install, `vendor/newlib-cygwin` | Libraries and C runtime of 3DS homebrew |
+| ctru-rs, citro3d-rs, cargo-3ds | `vendor/ctru-rs`, `vendor/citro3d-rs`, `vendor/cargo-3ds` | Rust 3DS homebrew |
+| picaGL, ndsrs/nds-rs | not vendored | picaGL is not required by the SDK; no `nds-rs` repository exists upstream, `aphrody-nds-sys` fills that role |
+
+### HLE findings from the ABI review
+
+* The DS BIOS call table of libnds (`nds/bios.h`) matches Dust's HLE: SoftReset, WaitByLoop,
+  IntrWait, VBlankIntrWait, Halt, Div, CpuSet, CpuFastSet, Sqrt, GetCRC16, IsDebugger, BitUnPack,
+  the decompressors, sound tables and CustomHalt.
+* Dust left `LZ77UnCompReadNormalWrite8bit`, `RLUnCompReadNormalWrite8bit` and
+  `Diff8bitUnFilterWrite8bit` on the ARM9 as logged TODOs, so a game calling them got no data.
+  They are implemented now (`cpu/hle_bios/common.rs`, wired in `arm9.rs`). Still missing: BitUnPack,
+  Huffman, the callback variants (`0x12`, `0x13`, `0x15`, `0x18`, which need to call guest code from
+  the HLE) and every decompressor on the ARM7.
+* Both starters, the Rust ROMs and the ctru-rs examples run without an unimplemented SVC or fatal
+  error report from `aphrody-ctr-emu`.
+
+### Known limits
+
+* DS backup chip detection is a table plus the save file size; unknown games default to a 512 KiB
+  flash and may need `Options::save_type`.
+* The 3DS core boots decrypted images only. Retail CIAs and cartridges need external decryption,
+  which the SDK does not provide.
+* DS 3D output uses the software renderer; `aphrody-dust-wgpu` stays a separate frontend.

@@ -53,10 +53,14 @@ fn bit_unpack<E: Engine>(
     slog::error!(_emu.arm9.logger, "Unimplemented BitUnPack SWI");
 }
 
-fn diff_8_unfilter_write_8<E: Engine>(_emu: &mut Emu<E>) {
-    // TODO
-    #[cfg(feature = "log")]
-    slog::error!(_emu.arm9.logger, "Unimplemented Diff8bitUnFilterWrite8bit SWI");
+fn diff_8_unfilter_write_8<E: Engine>(emu: &mut Emu<E>, src: u32, dst: u32) {
+    let emu = std::cell::RefCell::new(emu);
+    common::diff_8_unfilter(
+        src,
+        dst,
+        |addr| bus::read_8::<CpuAccess, _>(&mut emu.borrow_mut(), addr),
+        |addr, value| bus::write_8::<CpuAccess, _>(&mut emu.borrow_mut(), addr, value),
+    );
 }
 
 fn diff_16_unfilter<E: Engine>(_emu: &mut Emu<E>) {
@@ -71,10 +75,14 @@ fn huff_uncomp_read_callback<E: Engine>(_emu: &mut Emu<E>) {
     slog::error!(_emu.arm9.logger, "Unimplemented HuffUnCompReadByCallback SWI");
 }
 
-fn lz77_uncomp_read_normal_write_8<E: Engine>(_emu: &mut Emu<E>) {
-    // TODO
-    #[cfg(feature = "log")]
-    slog::error!(_emu.arm9.logger, "Unimplemented LZ77UnCompReadNormalWrite8bit SWI");
+fn lz77_uncomp_read_normal_write_8<E: Engine>(emu: &mut Emu<E>, src: u32, dst: u32) {
+    let emu = std::cell::RefCell::new(emu);
+    common::lz77_uncomp(
+        src,
+        dst,
+        |addr| bus::read_8::<CpuAccess, _>(&mut emu.borrow_mut(), addr),
+        |addr, value| bus::write_8::<CpuAccess, _>(&mut emu.borrow_mut(), addr, value),
+    );
 }
 
 fn lz77_uncomp_read_callback_write_16<E: Engine>(_emu: &mut Emu<E>) {
@@ -83,10 +91,14 @@ fn lz77_uncomp_read_callback_write_16<E: Engine>(_emu: &mut Emu<E>) {
     slog::error!(_emu.arm9.logger, "Unimplemented LZ77UnCompReadByCallbackWrite16bit SWI");
 }
 
-fn rl_uncomp_read_normal_write_8<E: Engine>(_emu: &mut Emu<E>) {
-    // TODO
-    #[cfg(feature = "log")]
-    slog::error!(_emu.arm9.logger, "Unimplemented RLUnCompReadNormalWrite8bit SWI");
+fn rl_uncomp_read_normal_write_8<E: Engine>(emu: &mut Emu<E>, src: u32, dst: u32) {
+    let emu = std::cell::RefCell::new(emu);
+    common::rl_uncomp(
+        src,
+        dst,
+        |addr| bus::read_8::<CpuAccess, _>(&mut emu.borrow_mut(), addr),
+        |addr, value| bus::write_8::<CpuAccess, _>(&mut emu.borrow_mut(), addr, value),
+    );
 }
 
 fn rl_uncomp_read_callback_write_16<E: Engine>(_emu: &mut Emu<E>) {
@@ -308,17 +320,17 @@ pub fn handle_swi<E: Engine>(emu: &mut Emu<E>, number: u8, mut r0_3: [u32; 4]) {
 
         0x10 => bit_unpack(emu, r0_3[0], r0_3[1], r0_3[2]),
 
-        0x11 => lz77_uncomp_read_normal_write_8(emu),
+        0x11 => lz77_uncomp_read_normal_write_8(emu, r0_3[0], r0_3[1]),
 
         0x12 => lz77_uncomp_read_callback_write_16(emu),
 
         0x13 => huff_uncomp_read_callback(emu),
 
-        0x14 => rl_uncomp_read_normal_write_8(emu),
+        0x14 => rl_uncomp_read_normal_write_8(emu, r0_3[0], r0_3[1]),
 
         0x15 => rl_uncomp_read_callback_write_16(emu),
 
-        0x16 => diff_8_unfilter_write_8(emu),
+        0x16 => diff_8_unfilter_write_8(emu, r0_3[0], r0_3[1]),
 
         0x18 => diff_16_unfilter(emu),
 
