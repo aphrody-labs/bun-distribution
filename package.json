@@ -582,6 +582,9 @@
     "cargo:fmt": "bun scripts/cargo.ts fmt",
     "cargo:check": "bun scripts/cargo.ts check",
     "cargo:test": "bun scripts/cargo.ts test",
+    "cargo:nie": "bun scripts/cargo.ts exec -- check --locked -p \"aphrody-nie-*\"",
+    "turbo:rg": "turbo run build typecheck --filter=\"./packages/rg-*\" --filter=\"./packages/achillea-*\" --filter=\"./packages/azalee*\" --filter=\"./apps/rg-*\" --filter=\"./apps/azalee-web\"",
+    "turbo:nie": "turbo run build typecheck cargo:nie --filter=\"./packages/inagle*\" --filter=\"./packages/nie-*\" --filter=\"./apps/iecode-web\" --filter=\"//\"",
     "plan": "bun src/cli.ts plan",
     "workspace:source": "bun src/cli.ts workspace",
     "sources": "bun src/cli.ts sources",
@@ -650,7 +653,8 @@
     "@aphrody/bun-types": "catalog:",
     "@types/node": "catalog:",
     "undici-types": "catalog:",
-    "@typescript/typescript6": "catalog:"
+    "@typescript/typescript6": "catalog:",
+    "turbo": "catalog:"
   },
   "overrides": {
     "@preact/signals-react": "catalog:",

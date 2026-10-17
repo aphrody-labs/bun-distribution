@@ -1,0 +1,35 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "stream",
+  "envMode": "loose",
+  "globalDependencies": ["bunfig.toml", "tsconfig.json", "tsconfig.base.json"],
+  "globalEnv": ["NODE_ENV", "CI", "VERCEL_ENV", "NEXT_PUBLIC_*", "SUPABASE_*"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "compile": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "outputs": []
+    },
+    "lint": {
+      "outputs": []
+    },
+    "test": {
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "//#cargo:nie": {
+      "inputs": ["Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".cargo/config.toml", "crates/aphrody-nie-*/**"],
+      "outputs": []
+    }
+  }
+}

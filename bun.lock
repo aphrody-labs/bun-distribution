@@ -15,6 +15,7 @@
         "@aphrody/bun-types": "catalog:",
         "@types/node": "catalog:",
         "@typescript/typescript6": "catalog:",
+        "turbo": "catalog:",
         "undici-types": "catalog:",
       },
     },

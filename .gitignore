@@ -5,6 +5,7 @@
 /node_modules/
 /target/
 /build/
+.turbo/
 /install/
 /dist/
 /assets/presskit/__MACOSX/
