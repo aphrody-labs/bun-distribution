@@ -316,15 +316,15 @@ Le CLI se compile en binaire autonome embarquant le runtime Bun : il tourne sans
 `node_modules`, ce qui en fait le sidecar naturel d'une application Tauri.
 
 ```bash
-bun run --cwd packages/rg-azalee compile          # → packages/rg-azalee/bin/azalee
-bun packages/rg-azalee/scripts/build-standalone.ts --install   # + copie dans ~/.local/bin
+bun run --cwd packages/azalee compile          # → packages/azalee/dist/azalee
+bun packages/azalee/scripts/build-standalone.ts --install   # + copie dans ~/.local/bin
 ```
 
 Côté application (patron Tauri v2 — pas encore de projet Tauri dans ce dépôt) :
 
 ```jsonc
 // tauri.conf.json — Tauri suffixe le binaire par le triplet cible
-{ "bundle": { "externalBin": ["bin/azalee"] } }
+{ "bundle": { "externalBin": ["dist/azalee"] } }
 ```
 
 ```rust
@@ -485,7 +485,7 @@ bun test                    # from packages/azalee
 bun run type-check          # tsc --noEmit (vrais types workspace)
 bun run lint                # oxlint
 bun run build               # tsc -p tsconfig.build.json
-bun run compile             # binaire autonome → bin/azalee
+bun run compile             # binaire autonome → dist/azalee
 ```
 
 Les tests (`test/`) s'appuient sur les **vrais artefacts** de la machine

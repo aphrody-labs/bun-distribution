@@ -74,7 +74,7 @@
   "scripts": {
     "build": "bun check -p tsconfig.build.json",
     "cli": "bun src/cli.ts",
-    "compile": "bun scripts/build-standalone.ts",
+    "compile": "bun build src/cli.ts --compile --minify --sourcemap --bytecode --format esm --outfile dist/azalee",
     "serve": "bun src/cli.ts serve",
     "test": "bun test",
     "lint": "bun lint -A style -A pedantic -A restriction src",

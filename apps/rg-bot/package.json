@@ -27,7 +27,7 @@
     "start:api": "bun src/index.ts api",
     "start:all": "bun src/index.ts all",
     "build": "bun build src/index.ts --target=bun --packages=external --outdir=dist",
-    "compile": "bun build src/entry-standalone.ts --compile --minify --sourcemap --outfile=dist/rg-bot",
+    "compile": "bun build src/entry-standalone.ts --compile --minify --sourcemap --bytecode --format esm --outfile dist/rg-bot",
     "type-check": "bun check --noEmit",
     "lint": "bun lint src",
     "lint:fix": "bun lint --fix src",

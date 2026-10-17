@@ -7,7 +7,7 @@
  * `tauri.conf.json > bundle.externalBin`, et la webview parle à
  * `azalee serve` en HTTP local).
  *
- *     bun packages/azalee/scripts/build-standalone.ts            # -> bin/azalee
+ *     bun packages/azalee/scripts/build-standalone.ts            # -> dist/azalee
  *     bun packages/azalee/scripts/build-standalone.ts --install  # + copie dans ~/.local/bin
  */
 
@@ -29,7 +29,7 @@ const { values } = parseArgs({
 
 const pkgRoot = path.resolve(import.meta.dir, "..");
 const entry = path.join(pkgRoot, "src/cli.ts");
-const outDir = path.join(pkgRoot, "bin");
+const outDir = path.join(pkgRoot, "dist");
 const outFile = path.join(outDir, "azalee");
 
 await mkdir(outDir, { recursive: true });
@@ -42,6 +42,9 @@ const compile = Bun.spawn(
     "--compile",
     "--minify",
     "--sourcemap",
+    "--bytecode",
+    "--format",
+    "esm",
     ...(values.target ? [`--target=${values.target}`] : []),
     ...(values["compile-executable-path"] ? [`--compile-executable-path=${values["compile-executable-path"]}`] : []),
     entry,
@@ -52,11 +55,14 @@ const compile = Bun.spawn(
 );
 if ((await compile.exited) !== 0) throw new Error("Azalee standalone compilation failed");
 
-const size = Bun.file(outFile).size;
-console.log(`built=${outFile} size=${(size / 1024 / 1024).toFixed(1)}Mo ms=${Date.now() - started}`);
+// Bun appends `.exe` to Windows executables.
+const windows = values.target ? values.target.includes("windows") : process.platform === "win32";
+const builtFile = windows ? `${outFile}.exe` : outFile;
+const size = Bun.file(builtFile).size;
+console.log(`built=${builtFile} size=${(size / 1024 / 1024).toFixed(1)}Mo ms=${Date.now() - started}`);
 
 if (values.install) {
   const target = path.join(process.env.HOME || homedir(), ".local/bin/azalee");
-  await $`install -m 755 ${outFile} ${target}`;
+  await $`install -m 755 ${builtFile} ${target}`;
   console.log(`installed=${target}`);
 }

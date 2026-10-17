@@ -15,7 +15,7 @@
  */
 
 import { dlopen, FFIType, ptr } from "bun:ffi";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { nativeLibrary, readOwnedBytes, readOwnedJson, readOwnedString, toCString } from "@aphrody/runtime-sdk/ffi";
 import { resolveFormat } from "../docs/vfs-catalog.js";
 import { iecodePath } from "../core/roots.js";
@@ -382,6 +382,8 @@ const nativeLib = nativeLibrary({
   symbols: NIE_FFI_SYMBOLS,
   envPaths: ["IECODE_LIB_PATH", "NIE_FFI_PATH"],
   searchDirs: [
+    // A compiled `inagle` binary ships the library next to itself.
+    dirname(process.execPath),
     resolve(process.cwd(), "target/release"),
     resolve(process.cwd(), "target/debug"),
     resolve(process.cwd(), "../target/release"),

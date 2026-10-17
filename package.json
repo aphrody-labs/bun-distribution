@@ -582,6 +582,7 @@
     "cargo:nie": "bun scripts/cargo.ts exec -- check --locked -p \"aphrody-nie-*\"",
     "turbo:rg": "turbo run build typecheck --filter=\"./packages/rg-*\" --filter=\"./packages/achillea-*\" --filter=\"./packages/azalee*\" --filter=\"./apps/rg-*\" --filter=\"./apps/azalee-web\"",
     "turbo:nie": "turbo run build typecheck cargo:nie --filter=\"./packages/inagle*\" --filter=\"./packages/nie-*\" --filter=\"./apps/iecode-web\" --filter=\"//\"",
+    "compile:rg": "bun run --cwd apps/rg-bot compile && bun run --cwd packages/rg-cron compile && bun run --cwd packages/inagle compile && bun run --cwd packages/azalee compile && bun run --cwd packages/achillea-contract compile",
     "plan": "bun src/cli.ts plan",
     "workspace:source": "bun src/cli.ts workspace",
     "sources": "bun src/cli.ts sources",
@@ -1002,6 +1003,7 @@
   },
   "patchedDependencies": {
     "@ag-ui/core@1.0.1": "patches/ag-ui-core-1.0.1.patch",
+    "@aphrody/agent-browser@1.0.0-canary.2": "patches/aphrody/@aphrody%2Fagent-browser@1.0.0-canary.2.patch",
     "@discordjs/rest@2.6.3": "patches/aphrody/@discordjs%2Frest@2.6.3.patch"
   }
 }

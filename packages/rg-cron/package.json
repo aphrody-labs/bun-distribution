@@ -16,7 +16,7 @@
     "test": "bun test src",
     "start": "bun src/index.ts",
     "qa:website": "bun src/index.ts --run website:qa",
-    "build": "bun build src/index.ts --compile --minify --sourcemap --bytecode --format esm --outfile dist/rg-cron",
+    "compile": "bun build src/index.ts --compile --minify --sourcemap --bytecode --format esm --outfile dist/rg-cron",
     "type-check": "bun check -p tsconfig.typecheck.json --noEmit",
     "lint": "bun lint -c ../rg-config/oxlintrc.json src",
     "typecheck": "bun check -p tsconfig.typecheck.json --noEmit"

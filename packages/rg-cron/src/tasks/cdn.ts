@@ -1,13 +1,11 @@
 import { Glob } from "bun";
 import { mkdir, stat, writeFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
 import { brotliCompressSync, gzipSync, constants } from "node:zlib";
 import { execSync } from "node:child_process";
+import { workspacePath } from "@aphrody/paths";
 import { SHARED_ASSETS_PATH } from "@rosegriffon/assets";
 
-const SOURCE_DIR =
-  process.env.RG_ASSETS_SOURCE_DIR ?? fileURLToPath(new URL("../../../assets/public/", import.meta.url));
 const CDN_STATIC_ROOT = process.env.CDN_STATIC_ROOT ?? "/var/www/cdn/static";
 const DEST_DIR = sharedAssetsDestDir(CDN_STATIC_ROOT);
 
@@ -28,16 +26,19 @@ export function sharedAssetsDestDir(staticRoot: string): string {
 export async function syncCdnAssets(): Promise<{ success: boolean; error?: string }> {
   console.log("[Cron CDN] Démarrage de la synchronisation des assets CDN...");
   try {
+    // Resolved at call time from the workspace root (cwd or APHRODY_WORKSPACE_ROOT), so the compiled binary
+    // never depends on its own bundled location.
+    const sourceDir = process.env.RG_ASSETS_SOURCE_DIR ?? workspacePath("packages", "rg-assets", "public");
     // Utilise l'implémentation native ultra-rapide de Glob de Bun
     const glob = new Glob("**/*");
-    const files = Array.from(glob.scanSync({ cwd: SOURCE_DIR, onlyFiles: true }));
+    const files = Array.from(glob.scanSync({ cwd: sourceDir, onlyFiles: true }));
     console.log(`[Cron CDN] ${files.length} assets trouvés pour la synchronisation vers ${DEST_DIR}.`);
 
     let copyCount = 0;
     let skipCount = 0;
 
     for (const relPath of files) {
-      const srcPath = join(SOURCE_DIR, relPath);
+      const srcPath = join(sourceDir, relPath);
       const fileContent = await Bun.file(srcPath).arrayBuffer();
       const buffer = Buffer.from(fileContent);
 

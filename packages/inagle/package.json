@@ -180,6 +180,7 @@
   "scripts": {
     "build": "bun check -p tsconfig.build.json",
     "cli": "bun src/cli.ts",
+    "compile": "bun build src/cli.ts --compile --minify --sourcemap --bytecode --format esm --outfile dist/inagle",
     "push": "bun src/cli.ts push",
     "import:cfgbin:postgres": "bun scripts/import-cfgbin-postgres.ts",
     "import:passives:postgres": "bun scripts/import-passives-postgres.ts",

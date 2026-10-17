@@ -6,12 +6,28 @@
  *   bun src/cli.ts --check    échoue si `generated/` est périmé (CI)
  */
 
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
+import { join, resolve } from "node:path";
 
 import { generateContract } from "./generate";
 
-const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+/**
+ * Package root: `ACHILLEA_CONTRACT_ROOT`, else the source checkout next to this module, else the working directory
+ * (the package itself or the workspace root). A compiled binary has no module directory on disk, so it relies on
+ * the last two.
+ */
+function packageRoot(): string {
+  const explicit = process.env.ACHILLEA_CONTRACT_ROOT?.trim();
+  if (explicit) return resolve(explicit);
+  const candidates = [join(import.meta.dir, ".."), process.cwd(), join(process.cwd(), "packages", "achillea-contract")];
+  const root = candidates.find(
+    candidate => existsSync(join(candidate, "generated")) && existsSync(join(candidate, "..", "achillea-types", "src")),
+  );
+  if (!root) throw new Error("achillea-contract root not found: run it from the package or the workspace root");
+  return root;
+}
+
+const PACKAGE_ROOT = packageRoot();
 const TYPES_ROOT = join(PACKAGE_ROOT, "..", "achillea-types", "src");
 const OUTPUT_DIR = join(PACKAGE_ROOT, "generated");
 

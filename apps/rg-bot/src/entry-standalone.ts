@@ -1,3 +1,5 @@
+import packageJson from "../package.json" with { type: "json" };
+
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
   console.log(`Rose Griffon Discord Bot`);
   console.log(`Usage: rg-bot [options]\n`);
@@ -9,7 +11,7 @@ if (process.argv.includes("--help") || process.argv.includes("-h")) {
 }
 
 if (process.argv.includes("--version") || process.argv.includes("-v")) {
-  console.log(`@rosegriffon/bot v1.0.1 (Bun ${typeof Bun !== "undefined" ? Bun.version : process.version})`);
+  console.log(`@rosegriffon/bot v${packageJson.version} (Bun ${Bun.version})`);
   process.exit(0);
 }
 

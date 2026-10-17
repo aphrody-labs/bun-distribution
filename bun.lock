@@ -5053,6 +5053,7 @@
   ],
   "patchedDependencies": {
     "@discordjs/rest@2.6.3": "patches/aphrody/@discordjs%2Frest@2.6.3.patch",
+    "@aphrody/agent-browser@1.0.0-canary.2": "patches/aphrody/@aphrody%2Fagent-browser@1.0.0-canary.2.patch",
     "@ag-ui/core@1.0.1": "patches/ag-ui-core-1.0.1.patch",
   },
   "overrides": {

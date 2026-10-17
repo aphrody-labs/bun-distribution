@@ -22,7 +22,7 @@ export const CONTRACT_TARGETS: readonly ContractTarget[] = [
   {
     file: "achillea.schema.json",
     language: "JSON Schema 2020-12",
-    render: contract => `${JSON.stringify(emitJsonSchema(contract), null, "\t")}\n`,
+    render: contract => `${JSON.stringify(emitJsonSchema(contract), null, 2)}\n`,
   },
   { file: "achillea.rs", language: "Rust (serde)", render: emitRust },
   { file: "Achillea.swift", language: "Swift (Codable)", render: emitSwift },

@@ -1,0 +1,15 @@
+diff --git a/src/client.ts b/src/client.ts
+index 9fba47d..40860f6 100644
+--- a/src/client.ts
++++ b/src/client.ts
+@@ -14,7 +14,9 @@ import type {
+ } from "./types.ts";
+ 
+ // Child-process runner of AgentBrowser.exec/execAsync; the command line is `yolo browser`.
+-const OWN_LAUNCHER = realpathSync(join(import.meta.dir, "cli.ts"));
++// A compiled single-file binary has no `cli.ts` on disk: keep the unresolved path instead of failing at import.
++const OWN_LAUNCHER_PATH = join(import.meta.dir, "cli.ts");
++const OWN_LAUNCHER = existsSync(OWN_LAUNCHER_PATH) ? realpathSync(OWN_LAUNCHER_PATH) : OWN_LAUNCHER_PATH;
+ 
+ function hasFlag(args: readonly string[], flag: string): boolean {
+   return args.some((arg) => arg === flag || arg.startsWith(`${flag}=`));
