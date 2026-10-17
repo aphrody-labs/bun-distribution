@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { statfsSync } from "node:fs";
+import os from "node:os";
 import { runProcess } from "@aphrody/bun-workspace/process";
 
 /** The platform wrapper owns admission only; this shared owner controls child lifetime. */
@@ -35,14 +36,21 @@ async function main(): Promise<number> {
   // `target/`) with an equal share of the host's cores, so slots never wait on Cargo's
   // directory lock or oversubscribe the CPU.
   const slot = Number(Bun.env.APHRODY_NATIVE_SLOT ?? 0);
-  const slots = Math.max(1, Number(Bun.env.APHRODY_NATIVE_SLOTS ?? 3));
+  const slots = Math.max(1, Number(Bun.env.APHRODY_NATIVE_SLOTS ?? 1));
   // APHRODY_NATIVE_SLOT_ROOT moves the extra slots to another volume when the system disk is tight.
   if (Number.isSafeInteger(slot) && slot > 0 && env.CARGO_TARGET_DIR) {
     const root = Bun.env.APHRODY_NATIVE_SLOT_ROOT || env.CARGO_TARGET_DIR;
     env.CARGO_TARGET_DIR = `${root}${root.includes("\\") ? "\\" : "/"}slot-${slot}`;
   }
+  // Workstation builds stay in the background: a quarter of the cores shared between the slots,
+  // at idle priority (inherited by cargo, rustc and the linkers).
   if (env.CARGO_BUILD_JOBS === "auto")
-    env.CARGO_BUILD_JOBS = String(Math.max(1, Math.floor(navigator.hardwareConcurrency / slots)));
+    env.CARGO_BUILD_JOBS = String(
+      Math.max(1, Math.floor(Number(Bun.env.APHRODY_NATIVE_CORES ?? navigator.hardwareConcurrency / 4) / slots)),
+    );
+  try {
+    os.setPriority(os.constants.priority.PRIORITY_LOW);
+  } catch {}
   for (const key of Object.keys(env)) {
     if (key.startsWith("APHRODY_NATIVE_")) delete env[key];
   }

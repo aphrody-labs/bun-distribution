@@ -4,7 +4,7 @@
 Admits an Aphrody Bun native build into one of the host's build slots on Windows.
 .DESCRIPTION
 Named Windows mutexes Global\Aphrody.Bun.Native.Slot<N> own admission: up to
-APHRODY_NATIVE_SLOTS builds (default 3) run at once and later callers wait for a
+APHRODY_NATIVE_SLOTS builds (default 1) run at once and later callers wait for a
 free slot instead of failing. The admitted slot is exported as APHRODY_NATIVE_SLOT
 so the worker gives each slot its own Cargo target directory and job share. Bun's
 shared process owner handles native arguments, streams, deadlines and process tree
@@ -38,7 +38,7 @@ try {
     }
     $AphrodyBun = (Resolve-Path -LiteralPath $env:APHRODY_NATIVE_BUN).ProviderPath
     $AphrodyWorker = (Resolve-Path -LiteralPath $env:APHRODY_NATIVE_WORKER).ProviderPath
-    $AphrodySlots = 3
+    $AphrodySlots = 1
     if ($env:APHRODY_NATIVE_SLOTS) { $AphrodySlots = [Math]::Max(1, [Math]::Min(16, [int]$env:APHRODY_NATIVE_SLOTS)) }
     $AphrodyDeadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
     $AphrodyWaiting = $false
